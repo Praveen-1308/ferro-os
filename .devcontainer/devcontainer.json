@@ -1,7 +1,8 @@
 {
   "name": "FerroOS Cloud Environment & Live Web Desktop",
   "image": "mcr.microsoft.com/devcontainers/rust:latest",
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y qemu-system-x86 novnc websockify python3 python3-minimal cpio gzip linux-image-virtual net-tools",
+  "postCreateCommand": "bash tools/setup-codespaces.sh",
+  "postAttachCommand": "bash tools/run-codespaces-gui.sh &",
   "forwardPorts": [6080],
   "portsAttributes": {
     "6080": {
