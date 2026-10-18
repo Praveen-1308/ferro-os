@@ -123,6 +123,16 @@ qemu-system-x86_64 \
   -m 512M
 ```
 
+### 3. Run Live in Your Web Browser via GitHub Codespaces (Zero Local Install)
+You can interact with the live desktop directly in your web browser:
+1. On the [ferro-os repository](https://github.com/Praveen-1308/ferro-os), click **Code** -> **Codespaces** -> **Create codespace on main**.
+2. In the Codespaces terminal, run:
+   ```bash
+   ./tools/run-codespaces-gui.sh
+   ```
+3. Codespaces will automatically forward port `6080`. Click **Open in Browser**.
+4. The interactive FerroOS GUI desktop with Python 3 will open directly in a new browser tab!
+
 ---
 
 ## 📂 Repository Structure
