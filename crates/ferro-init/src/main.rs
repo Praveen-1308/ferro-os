@@ -31,8 +31,11 @@ mod linux_init {
         // 1. Mount virtual filesystems
         mount_essential_filesystems();
 
-        // 2. Set Hostname
+        // 2. Set Hostname & Environment
         set_hostname("ferro-os");
+        std::env::set_var("PATH", "/bin:/sbin:/usr/bin:/usr/sbin");
+        std::env::set_var("HOME", "/");
+        std::env::set_var("TERM", "linux");
 
         // 3. Create required directories
         let _ = fs::create_dir_all("/var/run");

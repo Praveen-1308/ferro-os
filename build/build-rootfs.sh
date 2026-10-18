@@ -74,29 +74,23 @@ PY_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.versi
 PY_LIB_DIR="/usr/lib/python$PY_VERSION"
 if [ -d "$PY_LIB_DIR" ]; then
     mkdir -p "$ROOTFS/usr/lib/python$PY_VERSION"
-    # Copy essential standard library modules
-    cp -r "$PY_LIB_DIR"/{os.py,stat.py,posixpath.py,genericpath.py,_collections_abc.py,abc.py,io.py,types.py,encodings} "$ROOTFS/usr/lib/python$PY_VERSION/" 2>/dev/null || true
+    cp -r "$PY_LIB_DIR"/* "$ROOTFS/usr/lib/python$PY_VERSION/" 2>/dev/null || true
 fi
 
 echo "--> 5. Creating Startup Scripts & Configuration..."
+cat << 'EOF' > "$ROOTFS/etc/init.d/test.py"
+import sys
+print(f">>> SUCCESS: Python {sys.version.split()[0]} is running natively on FerroOS (Rust PID 1)! <<<")
+EOF
+
 cat << 'EOF' > "$ROOTFS/etc/init.d/rcS"
-#!/bin/sh
 echo "---------------------------------------------------------"
 echo "  FerroOS Early Startup: rcS                             "
 echo "---------------------------------------------------------"
 echo "[rcS] Verifying Python 3 execution on FerroOS..."
-if command -v python3 >/dev/null 2>&1; then
-    python3 -c "import sys; print(f'>>> SUCCESS: Python {sys.version.split()[0]} is running natively on FerroOS! <<<')"
-else
-    echo "[rcS] Warning: python3 binary not found."
-fi
+python3 /etc/init.d/test.py
 echo "---------------------------------------------------------"
-
-# If booted with ferro.test=1 kernel parameter, cleanly power off after testing
-if grep -q "ferro.test=1" /proc/cmdline 2>/dev/null; then
-    echo "[rcS] CI test flag detected (ferro.test=1). Shutting down cleanly..."
-    /sbin/poweroff
-fi
+poweroff
 EOF
 chmod +x "$ROOTFS/etc/init.d/rcS"
 

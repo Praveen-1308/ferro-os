@@ -121,19 +121,51 @@ fn run_sh(args: &[String]) -> ExitCode {
     ExitCode::SUCCESS
 }
 
+fn parse_command_line(line: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    let mut quote_char = ' ';
+
+    for c in line.chars() {
+        match c {
+            '"' | '\'' if !in_quotes => {
+                in_quotes = true;
+                quote_char = c;
+            }
+            c if in_quotes && c == quote_char => {
+                in_quotes = false;
+            }
+            c if c.is_whitespace() && !in_quotes => {
+                if !current.is_empty() {
+                    tokens.push(current.clone());
+                    current.clear();
+                }
+            }
+            _ => {
+                current.push(c);
+            }
+        }
+    }
+    if !current.is_empty() {
+        tokens.push(current);
+    }
+    tokens
+}
+
 fn execute_line(line: &str) -> ExitCode {
-    let parts: Vec<&str> = line.split_whitespace().collect();
+    let parts = parse_command_line(line);
     if parts.is_empty() {
         return ExitCode::SUCCESS;
     }
 
-    let cmd = parts[0];
+    let cmd = &parts[0];
     let args = &parts[1..];
 
     // Shell Builtins
-    match cmd {
+    match cmd.as_str() {
         "cd" => {
-            let target = if args.is_empty() { "/" } else { args[0] };
+            let target = if args.is_empty() { "/" } else { &args[0] };
             if let Err(e) = env::set_current_dir(target) {
                 eprintln!("cd: {}: {}", target, e);
                 return ExitCode::FAILURE;
@@ -164,12 +196,12 @@ fn execute_line(line: &str) -> ExitCode {
         }
         Err(_) => {
             // Fallback: try executing via ferro-core internal applet
-            match cmd {
-                "ls" => run_ls(&args.iter().map(|s| s.to_string()).collect::<Vec<_>>()),
-                "cat" => run_cat(&args.iter().map(|s| s.to_string()).collect::<Vec<_>>()),
-                "echo" => run_echo(&args.iter().map(|s| s.to_string()).collect::<Vec<_>>()),
+            match cmd.as_str() {
+                "ls" => run_ls(args),
+                "cat" => run_cat(args),
+                "echo" => run_echo(args),
                 "pwd" => run_pwd(&[]),
-                "uname" => run_uname(&args.iter().map(|s| s.to_string()).collect::<Vec<_>>()),
+                "uname" => run_uname(args),
                 "clear" => run_clear(&[]),
                 _ => {
                     eprintln!("sh: {}: command not found", cmd);
