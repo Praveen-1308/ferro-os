@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_ROOT/build_out"
 INITRD="$BUILD_DIR/initramfs.cpio.gz"
+KERNEL="$BUILD_DIR/vmlinuz"
 LOG_FILE="$BUILD_DIR/qemu_boot.log"
 
 if [ ! -f "$INITRD" ]; then
@@ -16,24 +17,20 @@ if [ ! -f "$INITRD" ]; then
     exit 1
 fi
 
-# Locate host Linux kernel
-KERNEL=$(ls -1 /boot/vmlinuz* 2>/dev/null | head -n1 || true)
-if [ -z "$KERNEL" ] || [ ! -f "$KERNEL" ]; then
-    echo "ERROR: No Linux kernel found in /boot/vmlinuz*."
+if [ ! -f "$KERNEL" ]; then
+    echo "ERROR: Kernel not found at $KERNEL."
     exit 1
 fi
 
-echo "Using Kernel:  $KERNEL"
+echo "Using Kernel:    $KERNEL"
 echo "Using Initramfs: $INITRD"
-echo "Starting QEMU test (timeout 20s)..."
+echo "Starting QEMU test (timeout 25s)..."
 
-# Ensure /etc/init.d/rcS triggers poweroff in CI test mode so QEMU exits cleanly
-# Run QEMU with timeout
 set +e
-timeout 20s qemu-system-x86_64 \
+timeout 25s qemu-system-x86_64 \
     -kernel "$KERNEL" \
     -initrd "$INITRD" \
-    -append "console=ttyS0 quiet panic=1" \
+    -append "console=ttyS0 quiet panic=1 ferro.test=1" \
     -nographic \
     -m 256M \
     -no-reboot \

@@ -37,8 +37,9 @@ jobs:
       - name: Copy Kernel for Distribution
         run: |
           KERNEL=$(ls -1 /boot/vmlinuz* | head -n1)
-          cp "$KERNEL" build_out/vmlinuz
-          chmod +r build_out/vmlinuz
+          sudo cp "$KERNEL" build_out/vmlinuz
+          sudo chmod +r build_out/vmlinuz
+          sudo chown $USER:$USER build_out/vmlinuz
 
       - name: Run QEMU Headless Boot & Python Verification
         run: |

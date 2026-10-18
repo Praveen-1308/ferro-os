@@ -91,6 +91,12 @@ else
     echo "[rcS] Warning: python3 binary not found."
 fi
 echo "---------------------------------------------------------"
+
+# If booted with ferro.test=1 kernel parameter, cleanly power off after testing
+if grep -q "ferro.test=1" /proc/cmdline 2>/dev/null; then
+    echo "[rcS] CI test flag detected (ferro.test=1). Shutting down cleanly..."
+    /sbin/poweroff
+fi
 EOF
 chmod +x "$ROOTFS/etc/init.d/rcS"
 
