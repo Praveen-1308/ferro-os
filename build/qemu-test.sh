@@ -30,7 +30,8 @@ set +e
 timeout 25s qemu-system-x86_64 \
     -kernel "$KERNEL" \
     -initrd "$INITRD" \
-    -append "console=ttyS0 quiet panic=1 ferro.test=1" \
+    -append "console=ttyS0 quiet panic=1 ferro.test=1 vga=792" \
+    -vga std \
     -nographic \
     -m 256M \
     -no-reboot \

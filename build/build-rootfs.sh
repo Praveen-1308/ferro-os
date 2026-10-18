@@ -46,6 +46,16 @@ chmod +x "$ROOTFS/usr/bin/ferro-pkg"
 ln -sf /usr/bin/ferro-pkg "$ROOTFS/usr/bin/rpk"
 ln -sf /usr/bin/ferro-pkg "$ROOTFS/bin/rpk"
 
+# Framebuffer Desktop GUI (ferro-gui)
+cp "$PROJECT_ROOT/target/release/ferro-gui" "$ROOTFS/usr/bin/ferro-gui"
+cp "$PROJECT_ROOT/target/release/ferro-gui" "$ROOTFS/bin/ferro-gui"
+chmod +x "$ROOTFS/usr/bin/ferro-gui" "$ROOTFS/bin/ferro-gui"
+
+# Snapshot tool
+mkdir -p "$ROOTFS/tools"
+cp "$PROJECT_ROOT/tools/ppm2png.py" "$ROOTFS/tools/ppm2png.py"
+chmod +x "$ROOTFS/tools/ppm2png.py"
+
 echo "--> 4. Packaging Standard C Library (glibc) & Python 3 Runtime..."
 if [ -f /lib64/ld-linux-x86-64.so.2 ]; then
     cp /lib64/ld-linux-x86-64.so.2 "$ROOTFS/lib64/"
@@ -76,6 +86,7 @@ copy_deps "$PYTHON_BIN"
 copy_deps "$PROJECT_ROOT/target/release/ferro-init"
 copy_deps "$PROJECT_ROOT/target/release/ferro-core"
 copy_deps "$PROJECT_ROOT/target/release/ferro-pkg"
+copy_deps "$PROJECT_ROOT/target/release/ferro-gui"
 
 # Copy complete Python 3 standard library
 PY_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
@@ -209,6 +220,11 @@ echo "pipeline-test-ok" | grep "test-ok"
 # 4. Run System Verification Suite
 echo "[rcS] Running System Verification Suite..."
 python3 /etc/init.d/test.py
+
+# 5. Launch and Verify Pure-Rust Desktop GUI (ferro-gui)
+echo "[rcS] Launching FerroOS Framebuffer GUI (ferro-gui)..."
+ferro-gui --snapshot
+python3 /tools/ppm2png.py /tmp/ferro-desktop.ppm /tmp/ferro-desktop.png
 
 echo "---------------------------------------------------------"
 # In automated test mode, cleanly power down

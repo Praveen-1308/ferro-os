@@ -1,0 +1,9 @@
+[package]
+name = "ferro-gui"
+version = "0.1.0"
+edition = "2021"
+authors = ["Praveen Kumar Gorle"]
+description = "Pure Rust Framebuffer Desktop & Window Manager for FerroOS"
+
+[dependencies]
+libc = "0.2"

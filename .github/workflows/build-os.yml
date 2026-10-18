@@ -50,12 +50,12 @@ jobs:
         run: |
           cat << 'EOF' > build_out/run-ferro-os.sh
           #!/usr/bin/env bash
-          # Launch FerroOS in QEMU
+          # Launch FerroOS in QEMU with Graphical Desktop
           qemu-system-x86_64 \
             -kernel vmlinuz \
             -initrd initramfs.cpio.gz \
-            -append "console=ttyS0 quiet" \
-            -nographic \
+            -append "console=ttyS0 quiet vga=792" \
+            -vga std \
             -m 512M
           EOF
           chmod +x build_out/run-ferro-os.sh
@@ -69,3 +69,4 @@ jobs:
             build_out/initramfs.cpio.gz
             build_out/run-ferro-os.sh
             build_out/qemu_boot.log
+            docs/screenshot.png
