@@ -110,8 +110,3 @@ ferro-os/
 └── README.md
 ```
 
----
-
-## 📜 License
-
-MIT or Apache-2.0.
