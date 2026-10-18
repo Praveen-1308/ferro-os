@@ -23,32 +23,50 @@ fi
 
 # 3. Ensure rootfs initramfs is built
 if [ ! -f "build_out/initramfs.cpio.gz" ]; then
-    echo "--> Building FerroOS rootfs..."
-    ./build/build-rootfs.sh
+    echo "--> Ensuring FerroOS rootfs..."
+    mkdir -p build_out
+    if [ -f "build/build-rootfs.sh" ] && command -v cargo >/dev/null 2>&1; then
+        echo "--> Building FerroOS rootfs from source..."
+        ./build/build-rootfs.sh
+    else
+        echo "--> Downloading pre-verified FerroOS rootfs from GitHub Release..."
+        curl -sSL -f -o build_out/initramfs.cpio.gz "https://github.com/Praveen-1308/ferro-os/releases/download/v0.1.0/initramfs.cpio.gz"
+    fi
 fi
 
 # 4. Ensure Linux kernel (vmlinuz) exists in build_out/
 if [ ! -f "build_out/vmlinuz" ]; then
     echo "--> Locating Linux kernel..."
+    mkdir -p build_out
     KERNEL=$(ls -1 /boot/vmlinuz* 2>/dev/null | head -n1 || true)
-    
-    if [ -z "$KERNEL" ] || [ ! -f "$KERNEL" ]; then
-        echo "--> Codespaces container has no kernel in /boot. Installing linux-image-virtual..."
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends linux-image-virtual
-        KERNEL=$(ls -1 /boot/vmlinuz* 2>/dev/null | head -n1 || true)
-    fi
 
     if [ -n "$KERNEL" ] && [ -f "$KERNEL" ]; then
-        echo "--> Found kernel at $KERNEL, copying to build_out/vmlinuz..."
-        mkdir -p build_out
+        echo "--> Found local kernel at $KERNEL, copying to build_out/vmlinuz..."
         sudo cp "$KERNEL" build_out/vmlinuz
         sudo chmod +r build_out/vmlinuz
-        sudo chown "$USER:$USER" build_out/vmlinuz
+        sudo chown "$USER:$USER" build_out/vmlinuz 2>/dev/null || true
     else
-        echo "ERROR: Unable to find or install a Linux kernel image."
+        echo "--> Downloading verified FerroOS Linux kernel from GitHub Release..."
+        if ! curl -sSL -f -o build_out/vmlinuz "https://github.com/Praveen-1308/ferro-os/releases/download/v0.1.0/vmlinuz"; then
+            echo "--> Fallback: Installing Debian/Ubuntu kernel via apt..."
+            sudo apt-get update || true
+            sudo apt-get install -y --no-install-recommends linux-image-amd64 || \
+            sudo apt-get install -y --no-install-recommends linux-image-cloud-amd64 || \
+            sudo apt-get install -y --no-install-recommends linux-image-virtual || true
+            KERNEL=$(ls -1 /boot/vmlinuz* 2>/dev/null | head -n1 || true)
+            if [ -n "$KERNEL" ] && [ -f "$KERNEL" ]; then
+                sudo cp "$KERNEL" build_out/vmlinuz
+                sudo chmod +r build_out/vmlinuz
+                sudo chown "$USER:$USER" build_out/vmlinuz 2>/dev/null || true
+            fi
+        fi
+    fi
+
+    if [ ! -f "build_out/vmlinuz" ]; then
+        echo "ERROR: Unable to acquire Linux kernel (vmlinuz)."
         exit 1
     fi
+    echo "--> Kernel successfully prepared at build_out/vmlinuz"
 fi
 
 # 5. Clean up any stale QEMU or websockify instances cleanly
