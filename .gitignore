@@ -5,4 +5,5 @@
 *.qcow2
 *.tar.gz
 rootfs/
+build_out/
 .DS_Store
