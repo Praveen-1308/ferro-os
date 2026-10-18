@@ -221,14 +221,19 @@ echo "pipeline-test-ok" | grep "test-ok"
 echo "[rcS] Running System Verification Suite..."
 python3 /etc/init.d/test.py
 
-# 5. Launch and Verify Pure-Rust Desktop GUI (ferro-gui)
+# 5. Launch FerroOS Framebuffer GUI (ferro-gui)
 echo "[rcS] Launching FerroOS Framebuffer GUI (ferro-gui)..."
-ferro-gui --snapshot
-python3 /tools/ppm2png.py /tmp/ferro-desktop.ppm /tmp/ferro-desktop.png
-
-echo "---------------------------------------------------------"
-# In automated test mode, cleanly power down
-poweroff
+if grep -q "ferro.test=1" /proc/cmdline 2>/dev/null; then
+    echo "[rcS] Running in CI test mode: taking snapshot and powering off..."
+    ferro-gui --snapshot
+    python3 /tools/ppm2png.py /tmp/ferro-desktop.ppm /tmp/ferro-desktop.png
+    echo "---------------------------------------------------------"
+    poweroff
+else
+    echo "[rcS] Running in live interactive mode: starting persistent desktop GUI..."
+    ferro-gui &
+    echo "---------------------------------------------------------"
+fi
 EOF
 chmod +x "$ROOTFS/etc/init.d/rcS"
 

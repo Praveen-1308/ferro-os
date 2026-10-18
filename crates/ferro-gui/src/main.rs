@@ -317,8 +317,22 @@ fn main() -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
-    // Keep running if in interactive mode
-    ExitCode::SUCCESS
+    // Keep running in interactive mode
+    println!("[ferro-gui] Entering interactive desktop loop...");
+    loop {
+        std::thread::sleep(std::time::Duration::from_millis(500));
+
+        // Periodically refresh the RAM counter on top bar
+        let mem_str = read_meminfo_string();
+        fb.fill_gradient_v(WIDTH - 450, 0, 450, 32, 0xFF020617, 0xFF0f172a);
+        fb.draw_text(WIDTH - 440, 12, &mem_str, 0xFF22c55e);
+        fb.draw_text(WIDTH - 240, 12, "Kernel 6.1-Rust", 0xFFcbd5e1);
+        fb.draw_text(WIDTH - 70, 12, "12:00", 0xFFf8fafc);
+
+        if Path::new("/dev/fb0").exists() {
+            fb.copy_to_device("/dev/fb0");
+        }
+    }
 }
 
 fn read_meminfo_string() -> String {
