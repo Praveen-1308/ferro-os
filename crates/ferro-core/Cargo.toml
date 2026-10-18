@@ -1,0 +1,9 @@
+[package]
+name = "ferro-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Praveen Kumar Gorle"]
+description = "Multi-call core utilities and shell for FerroOS written in Rust"
+
+[dependencies]
+libc = "0.2"

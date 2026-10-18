@@ -1,0 +1,9 @@
+[package]
+name = "ferro-init"
+version = "0.1.0"
+edition = "2021"
+authors = ["Praveen Kumar Gorle"]
+description = "Fast, lightweight PID 1 init system in Rust for FerroOS"
+
+[dependencies]
+libc = "0.2"

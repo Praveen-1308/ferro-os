@@ -1,0 +1,8 @@
+/target
+**/*.rs.bk
+*.iso
+*.img
+*.qcow2
+*.tar.gz
+rootfs/
+.DS_Store
