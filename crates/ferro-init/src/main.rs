@@ -1,14 +1,13 @@
 //! ferro-init: PID 1 Init System for FerroOS written in Rust.
-//! Responsible for early system mounts, signal handling, zombie reaping,
-//! and launching userspace services.
+//! Responsible for early system mounts, network loopback bringup,
+//! service execution, zombie reaping, and shell lifecycle.
 
 use std::process::ExitCode;
 
 #[cfg(target_os = "linux")]
 mod linux_init {
-    use std::ffi::{CStr, CString};
+    use std::ffi::CString;
     use std::fs;
-    use std::os::unix::process::CommandExt;
     use std::path::Path;
     use std::process::Command;
 
@@ -26,7 +25,7 @@ mod linux_init {
 
     pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         println!("{}", BANNER);
-        println!("[ferro-init] Initializing FerroOS PID 1...");
+        println!("[ferro-init] Initializing FerroOS PID 1 (Rust)...");
 
         // 1. Mount virtual filesystems
         mount_essential_filesystems();
@@ -34,27 +33,29 @@ mod linux_init {
         // 2. Set Hostname & Environment
         set_hostname("ferro-os");
         std::env::set_var("PATH", "/bin:/sbin:/usr/bin:/usr/sbin");
-        std::env::set_var("HOME", "/");
+        std::env::set_var("HOME", "/root");
         std::env::set_var("TERM", "linux");
+        std::env::set_var("USER", "root");
 
         // 3. Create required directories
+        let _ = fs::create_dir_all("/root");
         let _ = fs::create_dir_all("/var/run");
+        let _ = fs::create_dir_all("/var/log");
+        let _ = fs::create_dir_all("/var/lib/rpk");
         let _ = fs::create_dir_all("/tmp");
 
-        println!("[ferro-init] Virtual filesystems mounted successfully.");
+        // 4. Initialize Network (Loopback & DNS)
+        init_network();
 
-        // 4. Run startup scripts if present (/etc/init.d/rcS)
-        if Path::new("/etc/init.d/rcS").exists() {
-            println!("[ferro-init] Executing /etc/init.d/rcS...");
-            let _ = Command::new("/bin/sh")
-                .arg("/etc/init.d/rcS")
-                .status();
-        }
+        println!("[ferro-init] Virtual filesystems and network initialized.");
 
-        // 5. Main loop: Spawn interactive shell or service supervisor
+        // 5. Execute init scripts in /etc/init.d/ in order
+        run_init_scripts();
+
+        // 6. Main loop: Spawn interactive shell or service supervisor
         loop {
-            println!("[ferro-init] Starting interactive shell session (/bin/sh)...");
-            
+            println!("[ferro-init] Spawning login shell (/bin/sh)...");
+
             let mut shell_cmd = if Path::new("/bin/sh").exists() {
                 Command::new("/bin/sh")
             } else if Path::new("/bin/ferro-core").exists() {
@@ -67,18 +68,17 @@ mod linux_init {
                 continue;
             };
 
-            // Spawn shell in foreground
             match shell_cmd.status() {
                 Ok(status) => {
                     println!("[ferro-init] Shell exited with: {:?}", status);
                 }
                 Err(e) => {
                     eprintln!("[ferro-init] Failed to execute shell: {}", e);
-                    std::thread::sleep(std::time::Duration::from_secs(2));
+                    std::thread::sleep(std::time::Duration::from_secs(1));
                 }
             }
 
-            // Reap any orphaned zombies
+            // Clean up any zombies
             reap_zombies();
         }
     }
@@ -107,7 +107,6 @@ mod linux_init {
     }
 
     fn mount_essential_filesystems() {
-        // MS_NOSUID = 2, MS_NODEV = 4, MS_NOEXEC = 8
         mount_fs("proc", "/proc", "proc", libc::MS_NOSUID | libc::MS_NODEV | libc::MS_NOEXEC, None);
         mount_fs("sysfs", "/sys", "sysfs", libc::MS_NOSUID | libc::MS_NODEV | libc::MS_NOEXEC, None);
         mount_fs("devtmpfs", "/dev", "devtmpfs", libc::MS_NOSUID, None);
@@ -119,6 +118,54 @@ mod linux_init {
         let c_name = CString::new(name).unwrap();
         unsafe {
             libc::sethostname(c_name.as_ptr(), name.len());
+        }
+    }
+
+    fn init_network() {
+        // Setup DNS default fallback
+        let resolv_path = Path::new("/etc/resolv.conf");
+        if !resolv_path.exists() {
+            let _ = fs::write(resolv_path, "nameserver 1.1.1.1\nnameserver 8.8.8.8\n");
+        }
+
+        // Setup loopback via ioctl
+        unsafe {
+            let sock = libc::socket(libc::AF_INET, libc::SOCK_DGRAM, 0);
+            if sock >= 0 {
+                let mut ifr: libc::ifreq = std::mem::zeroed();
+                let ifname = b"lo\0";
+                std::ptr::copy_nonoverlapping(
+                    ifname.as_ptr() as *const libc::c_char,
+                    ifr.ifr_name.as_mut_ptr(),
+                    ifname.len(),
+                );
+                // IFF_UP = 0x1, IFF_RUNNING = 0x40
+                ifr.ifr_ifru.ifru_flags = (libc::IFF_UP | libc::IFF_RUNNING) as libc::c_short;
+                libc::ioctl(sock, libc::SIOCSIFFLAGS, &ifr);
+                libc::close(sock);
+            }
+        }
+    }
+
+    fn run_init_scripts() {
+        let init_dir = Path::new("/etc/init.d");
+        if !init_dir.exists() {
+            return;
+        }
+
+        if let Ok(entries) = fs::read_dir(init_dir) {
+            let mut scripts: Vec<_> = entries.flatten().map(|e| e.path()).collect();
+            scripts.sort();
+
+            for script in scripts {
+                if script.is_file() {
+                    let path_str = script.to_string_lossy().to_string();
+                    if path_str.ends_with(".sh") || path_str.ends_with("/rcS") {
+                        println!("[ferro-init] Executing startup script {}...", path_str);
+                        let _ = Command::new("/bin/sh").arg(&path_str).status();
+                    }
+                }
+            }
         }
     }
 

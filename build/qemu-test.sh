@@ -43,8 +43,8 @@ echo "----------------------------------------------------------"
 cat "$LOG_FILE"
 echo "----------------------------------------------------------"
 
-if grep -q "SUCCESS: Python" "$LOG_FILE"; then
-    echo " [PASSED] FerroOS booted successfully and executed Python 3 on Rust PID 1!"
+if grep -q "SUCCESS: All core system capabilities verified!" "$LOG_FILE"; then
+    echo " [PASSED] FerroOS booted, tested rpk package manager, executed Python 3, and verified all core capabilities on Rust PID 1!"
     exit 0
 else
     echo " [FAILED] Expected success message not found in QEMU boot log."

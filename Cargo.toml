@@ -3,4 +3,5 @@ resolver = "2"
 members = [
     "crates/ferro-init",
     "crates/ferro-core",
+    "crates/ferro-pkg",
 ]
