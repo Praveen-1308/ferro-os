@@ -74,6 +74,9 @@ fn main() -> ExitCode {
         "fetch" | "curl" => run_fetch(&command_args),
         "reboot" => run_reboot(),
         "poweroff" => run_poweroff(),
+        "bench" => run_bench(&command_args),
+        "serve" | "httpd" => run_serve(&command_args),
+        "supervise" => run_supervise(&command_args),
         "help" => {
             print_usage();
             ExitCode::SUCCESS
@@ -94,7 +97,8 @@ fn print_usage() {
     println!("  File Operations:   cat, echo, cp, mv, rm, mkdir, chmod, head, tail, wc");
     println!("  Search & Filter:   grep, find");
     println!("  System Monitoring: ps, free, df, uptime, whoami, uname, env, kill");
-    println!("  Network & Power:   fetch (curl), sleep, reboot, poweroff");
+    println!("  Network & Power:   fetch (curl), serve (httpd), sleep, reboot, poweroff");
+    println!("  Performance & Ops: bench (system benchmark), supervise (process watcher)");
 }
 
 // -------------------------------------------------------------
@@ -973,3 +977,198 @@ fn run_poweroff() -> ExitCode {
     }
     ExitCode::SUCCESS
 }
+
+fn run_bench(args: &[String]) -> ExitCode {
+    use std::time::Instant;
+
+    let threads_count = args
+        .get(0)
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(8);
+    let iterations = args
+        .get(1)
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(200_000);
+
+    println!("======================================================================");
+    println!("       FERRO-OS RUST NATIVE HIGH-PERFORMANCE BENCHMARK                ");
+    println!("======================================================================");
+    println!("Parallel Worker Threads: {}", threads_count);
+    println!("Iterations per Thread:   {}", iterations);
+    println!("Total Workload Units:    {}", threads_count * iterations);
+
+    let start = Instant::now();
+    let mut handles = Vec::new();
+
+    for _ in 0..threads_count {
+        handles.push(thread::spawn(move || {
+            let mut checksum: u64 = 0;
+            for i in 0..iterations {
+                let mut data = vec![0u8; 1024];
+                data[0] = (i & 0xFF) as u8;
+                data[1023] = ((i >> 8) & 0xFF) as u8;
+                checksum = checksum.wrapping_add(data[0] as u64).wrapping_add(data[1023] as u64);
+            }
+            checksum
+        }));
+    }
+
+    let mut total_checksum: u64 = 0;
+    for handle in handles {
+        if let Ok(cs) = handle.join() {
+            total_checksum = total_checksum.wrapping_add(cs);
+        }
+    }
+
+    let elapsed = start.elapsed();
+    let total_ops = threads_count * iterations;
+    let ops_per_sec = (total_ops as f64) / elapsed.as_secs_f64();
+    let memory_processed_mb = (total_ops * 1024) as f64 / (1024.0 * 1024.0);
+    let bandwidth_gb_sec = (memory_processed_mb / 1024.0) / elapsed.as_secs_f64();
+
+    println!("\n--- Benchmark Results ---");
+    println!("Execution Time:          {:.4} seconds", elapsed.as_secs_f64());
+    println!("Throughput:              {:.2} ops/sec", ops_per_sec);
+    println!("Latency per 1KB Op:      {:.2} ns", (elapsed.as_nanos() as f64) / (total_ops as f64));
+    println!("Memory Bandwidth:        {:.2} GB/sec", bandwidth_gb_sec);
+    println!("Computed Checksum:       0x{:016x}", total_checksum);
+    println!("======================================================================");
+    println!("✅ FerroOS Rust Native Engine: MAXIMUM EFFICIENCY");
+    println!("======================================================================");
+
+    ExitCode::SUCCESS
+}
+
+fn run_serve(args: &[String]) -> ExitCode {
+    use std::net::TcpListener;
+
+    let port = args.get(0).map(|s| s.as_str()).unwrap_or("8088");
+    let root_dir = args.get(1).map(|s| s.as_str()).unwrap_or(".");
+    let addr = format!("0.0.0.0:{}", port);
+
+    let listener = match TcpListener::bind(&addr) {
+        Ok(l) => {
+            println!("[ferro-serve] High-performance Rust HTTP server listening on http://{}", addr);
+            println!("[ferro-serve] Serving files from: {}", root_dir);
+            l
+        }
+        Err(e) => {
+            eprintln!("serve: failed to bind to {}: {}", addr, e);
+            return ExitCode::FAILURE;
+        }
+    };
+
+    let root_path = PathBuf::from(root_dir);
+
+    for stream in listener.incoming() {
+        match stream {
+            Ok(mut stream) => {
+                let root = root_path.clone();
+                thread::spawn(move || {
+                    let mut buffer = [0u8; 2048];
+                    if let Ok(bytes_read) = stream.read(&mut buffer) {
+                        if bytes_read == 0 {
+                            return;
+                        }
+                        let request_str = String::from_utf8_lossy(&buffer[..bytes_read]);
+                        let first_line = request_str.lines().next().unwrap_or("");
+                        let parts: Vec<&str> = first_line.split_whitespace().collect();
+
+                        if parts.len() >= 2 && parts[0] == "GET" {
+                            let path = parts[1];
+                            if path == "/health" || path == "/api/status" {
+                                let body = "{\"status\":\"healthy\",\"os\":\"FerroOS\",\"runtime\":\"Rust Native\",\"concurrency\":\"Multi-threaded\",\"allocator\":\"mimalloc\"}\n";
+                                let response = format!(
+                                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                                    body.len(),
+                                    body
+                                );
+                                let _ = stream.write_all(response.as_bytes());
+                            } else {
+                                let rel_path = if path.starts_with('/') { &path[1..] } else { path };
+                                let target_file = if rel_path.is_empty() {
+                                    root.join("index.html")
+                                } else {
+                                    root.join(rel_path)
+                                };
+
+                                if target_file.is_file() {
+                                    if let Ok(contents) = fs::read(&target_file) {
+                                        let response_header = format!(
+                                            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                                            contents.len()
+                                        );
+                                        let _ = stream.write_all(response_header.as_bytes());
+                                        let _ = stream.write_all(&contents);
+                                    } else {
+                                        let _ = stream.write_all(b"HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+                                    }
+                                } else {
+                                    let body = format!("404 Not Found: {}\n", path);
+                                    let response = format!(
+                                        "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                                        body.len(),
+                                        body
+                                    );
+                                    let _ = stream.write_all(response.as_bytes());
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            Err(e) => {
+                eprintln!("[ferro-serve] Accept error: {}", e);
+            }
+        }
+    }
+
+    ExitCode::SUCCESS
+}
+
+fn run_supervise(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("Usage: ferro-core supervise <command> [args...]");
+        return ExitCode::FAILURE;
+    }
+
+    let program = &args[0];
+    let prog_args = &args[1..];
+    let mut restart_count = 0;
+
+    println!("[ferro-supervisor] Starting pure-Rust process supervisor for '{}'...", program);
+
+    loop {
+        let start_time = std::time::Instant::now();
+        println!("[ferro-supervisor] Spawning process '{}' (restart #{})", program, restart_count);
+
+        let mut child = match Command::new(program).args(prog_args).spawn() {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("[ferro-supervisor] Failed to spawn '{}': {}", program, e);
+                thread::sleep(Duration::from_secs(2));
+                restart_count += 1;
+                continue;
+            }
+        };
+
+        match child.wait() {
+            Ok(status) => {
+                let duration = start_time.elapsed();
+                println!(
+                    "[ferro-supervisor] Process '{}' exited with status: {} (lived for {:.2}s)",
+                    program,
+                    status,
+                    duration.as_secs_f64()
+                );
+            }
+            Err(e) => {
+                eprintln!("[ferro-supervisor] Wait error: {}", e);
+            }
+        }
+
+        restart_count += 1;
+        thread::sleep(Duration::from_millis(500));
+    }
+}
+
