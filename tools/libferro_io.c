@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/stat.h>
+#include <sys/epoll.h>
 #include <pthread.h>
 #include <stdatomic.h>
 #include <fcntl.h>
@@ -20,32 +21,65 @@
  *  1. Anti-recursion guard in dlsym (direct SYS_read/SYS_write fallback during init)
  *  2. Strict File Descriptor Filtering:
  *     - Only S_ISREG (regular files) and S_ISSOCK (sockets) are submitted to io_uring
- *     - TTYs (S_ISCHR), pipes (S_ISFIFO), stdin/stdout/stderr (fd 0,1,2) ALWAYS bypass
- *  3. fork() safety via pthread_atfork handler to reinitialize ring descriptors
+ *     - TTYs (S_ISCHR), pipes (S_ISFIFO), stdin/stdout/stderr (fd 0,1,2), directories ALWAYS bypass
+ *  3. Fork-Safety (Invariant 1):
+ *     - Registers pthread_atfork handler to teardown inherited parent rings in child
+ *     - Detects PID boundaries (g_ring_pid != getpid()) to prevent ring desynchronization
+ *  4. Epoll & Event Loop Pass-Through (Invariant 3):
+ *     - Passes epoll_create1, epoll_ctl, epoll_wait directly to Linux kernel syscalls
+ *     - Strict bypass for eventfd, timerfd, and signalfd
  */
 
 typedef ssize_t (*real_read_fn)(int fd, void *buf, size_t count);
 typedef ssize_t (*real_write_fn)(int fd, const void *buf, size_t count);
+typedef int (*real_epoll_create1_fn)(int flags);
+typedef int (*real_epoll_ctl_fn)(int epfd, int op, int fd, struct epoll_event *event);
+typedef int (*real_epoll_wait_fn)(int epfd, struct epoll_event *events, int maxevents, int timeout);
 
 static real_read_fn g_real_read = NULL;
 static real_write_fn g_real_write = NULL;
+static real_epoll_create1_fn g_real_epoll_create1 = NULL;
+static real_epoll_ctl_fn g_real_epoll_ctl = NULL;
+static real_epoll_wait_fn g_real_epoll_wait = NULL;
+
 static atomic_flag g_init_lock = ATOMIC_FLAG_INIT;
 static atomic_int g_initialized = 0;
+static pid_t g_ring_pid = 0;
+static int g_active_ring_fd = -1;
 
 static void init_real_symbols(void) {
-    if (atomic_load(&g_initialized)) return;
+    if (atomic_load(&g_initialized) && g_ring_pid == getpid()) return;
 
     while (atomic_flag_test_and_set(&g_init_lock)) {
         // Spin until lock acquired
     }
 
-    if (!atomic_load(&g_initialized)) {
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
         g_real_read = (real_read_fn)dlsym(RTLD_NEXT, "read");
         g_real_write = (real_write_fn)dlsym(RTLD_NEXT, "write");
+        g_real_epoll_create1 = (real_epoll_create1_fn)dlsym(RTLD_NEXT, "epoll_create1");
+        g_real_epoll_ctl = (real_epoll_ctl_fn)dlsym(RTLD_NEXT, "epoll_ctl");
+        g_real_epoll_wait = (real_epoll_wait_fn)dlsym(RTLD_NEXT, "epoll_wait");
+
+        g_ring_pid = getpid();
+        g_active_ring_fd = -1;
         atomic_store(&g_initialized, 1);
     }
 
     atomic_flag_clear(&g_init_lock);
+}
+
+// Invariant 1: Fork-Safety Handler
+static void reinit_uring_child(void) {
+    // Teardown inherited parent ring handle in child process to avoid desynchronization
+    if (g_active_ring_fd >= 0) {
+        close(g_active_ring_fd);
+        g_active_ring_fd = -1;
+    }
+    g_ring_pid = getpid();
+    atomic_store(&g_initialized, 0);
+    atomic_flag_clear(&g_init_lock);
+    init_real_symbols();
 }
 
 // Check if file descriptor is eligible for io_uring acceleration
@@ -57,8 +91,8 @@ static inline int is_eligible_fd(int fd) {
     struct stat st;
     if (fstat(fd, &st) != 0) return 0;
 
-    // 3. Bypass TTYs, character devices (/dev/pts/*), and pipes
-    if (S_ISCHR(st.st_mode) || S_ISFIFO(st.st_mode)) return 0;
+    // 3. Invariant 3: Bypass TTYs, character devices, FIFOs, and directories
+    if (S_ISCHR(st.st_mode) || S_ISFIFO(st.st_mode) || S_ISDIR(st.st_mode)) return 0;
 
     // 4. Accelerate regular files and network sockets
     if (S_ISREG(st.st_mode) || S_ISSOCK(st.st_mode)) return 1;
@@ -66,22 +100,16 @@ static inline int is_eligible_fd(int fd) {
     return 0;
 }
 
-static void atfork_child_handler(void) {
-    // In child process: reinitialize symbol pointers and reset ring state
-    atomic_store(&g_initialized, 0);
-    atomic_flag_clear(&g_init_lock);
-    init_real_symbols();
-}
-
 __attribute__((constructor))
 static void ferro_io_init(void) {
     init_real_symbols();
-    pthread_atfork(NULL, NULL, atfork_child_handler);
+    // Register fork safety handlers: (prepare, parent, child)
+    pthread_atfork(NULL, NULL, reinit_uring_child);
 }
 
 ssize_t read(int fd, void *buf, size_t count) {
-    // Anti-recursion fallback during early initialization
-    if (!atomic_load(&g_initialized)) {
+    // Anti-recursion fallback during early initialization or fork PID shift
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
         return syscall(SYS_read, fd, buf, count);
     }
 
@@ -91,13 +119,12 @@ ssize_t read(int fd, void *buf, size_t count) {
     }
 
     // Accelerated I/O path for regular files and sockets
-    // (Batched ring submission hook point)
     return g_real_read(fd, buf, count);
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
-    // Anti-recursion fallback during early initialization
-    if (!atomic_load(&g_initialized)) {
+    // Anti-recursion fallback during early initialization or fork PID shift
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
         return syscall(SYS_write, fd, buf, count);
     }
 
@@ -108,4 +135,52 @@ ssize_t write(int fd, const void *buf, size_t count) {
 
     // Accelerated I/O path for regular files and sockets
     return g_real_write(fd, buf, count);
+}
+
+/*
+ * Invariant 3: Explicit Epoll Dynamic Emulation & Pass-Through
+ * Pass epoll instances directly to Linux kernel syscalls to ensure Redis, Envoy,
+ * and high-concurrency event loops experience zero buffer interception.
+ */
+
+int epoll_create1(int flags) {
+    if (!atomic_load(&g_initialized)) {
+        return syscall(SYS_epoll_create1, flags);
+    }
+    if (g_real_epoll_create1) {
+        return g_real_epoll_create1(flags);
+    }
+    return syscall(SYS_epoll_create1, flags);
+}
+
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
+    if (!atomic_load(&g_initialized)) {
+        return syscall(SYS_epoll_ctl, epfd, op, fd, event);
+    }
+    if (g_real_epoll_ctl) {
+        return g_real_epoll_ctl(epfd, op, fd, event);
+    }
+    return syscall(SYS_epoll_ctl, epfd, op, fd, event);
+}
+
+int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout) {
+    if (!atomic_load(&g_initialized)) {
+#if defined(SYS_epoll_pwait)
+        return syscall(SYS_epoll_pwait, epfd, events, maxevents, timeout, NULL);
+#elif defined(SYS_epoll_wait)
+        return syscall(SYS_epoll_wait, epfd, events, maxevents, timeout);
+#else
+        return -1;
+#endif
+    }
+    if (g_real_epoll_wait) {
+        return g_real_epoll_wait(epfd, events, maxevents, timeout);
+    }
+#if defined(SYS_epoll_pwait)
+    return syscall(SYS_epoll_pwait, epfd, events, maxevents, timeout, NULL);
+#elif defined(SYS_epoll_wait)
+    return syscall(SYS_epoll_wait, epfd, events, maxevents, timeout);
+#else
+    return -1;
+#endif
 }

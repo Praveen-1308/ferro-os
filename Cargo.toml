@@ -6,6 +6,7 @@ members = [
     "crates/ferro-pkg",
     "crates/ferro-gui",
     "crates/ferro-compositor",
+    "crates/xdg-desktop-portal-ferro",
 ]
 
 [profile.release]
