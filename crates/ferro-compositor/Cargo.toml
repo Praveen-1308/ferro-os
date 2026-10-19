@@ -1,0 +1,10 @@
+[package]
+name = "ferro-compositor"
+version = "0.1.0"
+edition = "2021"
+authors = ["Praveen Kumar Gorle"]
+description = "High-performance Wayland GPU compositor for FerroOS written in pure Rust"
+
+[dependencies]
+# Core system and event interfaces
+libc = "0.2"
