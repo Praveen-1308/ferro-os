@@ -1,19 +1,52 @@
 FROM debian:bookworm-slim
 
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV DISPLAY=:0
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    qemu-system-x86 \
+    xvfb \
+    x11vnc \
     novnc \
     websockify \
     net-tools \
     procps \
+    dbus-x11 \
+    xfce4-session \
+    xfwm4 \
+    xfdesktop4 \
+    xfce4-panel \
+    xfce4-settings \
+    xfce4-terminal \
+    thunar \
+    mousepad \
+    galculator \
+    xfce4-taskmanager \
+    adwaita-icon-theme \
+    fonts-dejavu-core \
+    python3 \
+    python3-tk \
+    sudo \
+    x11-xserver-utils \
     && rm -rf /var/lib/apt/lists/*
 
 RUN if [ -f "/usr/share/novnc/vnc.html" ]; then ln -sf /usr/share/novnc/vnc.html /usr/share/novnc/index.html; fi
 
-WORKDIR /ferro
-COPY build_out/vmlinuz /ferro/vmlinuz
-COPY build_out/initramfs.cpio.gz /ferro/initramfs.cpio.gz
+# Create ferro user with passwordless sudo
+RUN useradd -m -s /bin/bash -u 1000 ferro && \
+    echo "ferro ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Copy setup scripts and entrypoint
+COPY tools/entrypoint-desktop.sh /usr/local/bin/entrypoint-desktop.sh
+RUN chmod +x /usr/local/bin/entrypoint-desktop.sh
+
+COPY tools/desktop-setup/ /etc/ferro-desktop/
+RUN chmod +x /etc/ferro-desktop/install.sh && bash /etc/ferro-desktop/install.sh
+
+USER ferro
+WORKDIR /home/ferro
 
 EXPOSE 6080
 
-CMD ["sh", "-c", "qemu-system-x86_64 -kernel /ferro/vmlinuz -initrd /ferro/initramfs.cpio.gz -append 'console=ttyS0 quiet vga=792' -vga std -vnc 0.0.0.0:0 -m 512M -no-reboot & sleep 1 && websockify --web /usr/share/novnc 0.0.0.0:6080 127.0.0.1:5900"]
+CMD ["/usr/local/bin/entrypoint-desktop.sh"]
