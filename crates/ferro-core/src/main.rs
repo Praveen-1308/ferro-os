@@ -10,6 +10,17 @@ use std::process::{Child, Command, ExitCode, Stdio};
 use std::thread;
 use std::time::Duration;
 
+#[cfg(target_os = "linux")]
+extern "C" {
+    fn kill(pid: i32, sig: i32) -> i32;
+    fn sync();
+    fn reboot(cmd: i32) -> i32;
+}
+#[cfg(target_os = "linux")]
+const LINUX_REBOOT_CMD_RESTART: i32 = 0x01234567;
+#[cfg(target_os = "linux")]
+const LINUX_REBOOT_CMD_POWER_OFF: i32 = 0x4321fedc;
+
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     if args.is_empty() {
@@ -390,13 +401,17 @@ fn run_cat(args: &[String]) -> ExitCode {
         let _ = io::copy(&mut io::stdin(), &mut io::stdout());
         return ExitCode::SUCCESS;
     }
+    let mut exit = ExitCode::SUCCESS;
     for file in args {
         match fs::read_to_string(file) {
             Ok(content) => print!("{}", content),
-            Err(e) => eprintln!("cat: {}: {}", file, e),
+            Err(e) => {
+                eprintln!("cat: {}: {}", file, e);
+                exit = ExitCode::FAILURE;
+            }
         }
     }
-    ExitCode::SUCCESS
+    exit
 }
 
 fn run_echo(args: &[String]) -> ExitCode {
@@ -533,12 +548,14 @@ fn run_grep(args: &[String]) -> ExitCode {
     let pattern = &args[pattern_idx];
     let files = &args[pattern_idx + 1..];
 
-    let search_in_stream = |reader: Box<dyn BufRead>, label: Option<&str>| {
+    let mut found = false;
+    let mut search_in_stream = |reader: Box<dyn BufRead>, label: Option<&str>| {
         let pat = if case_insensitive { pattern.to_lowercase() } else { pattern.to_string() };
         for line_res in reader.lines() {
             if let Ok(line) = line_res {
                 let check_line = if case_insensitive { line.to_lowercase() } else { line.clone() };
                 if check_line.contains(&pat) {
+                    found = true;
                     if let Some(lbl) = label {
                         print!("{}:", lbl);
                     }
@@ -562,7 +579,7 @@ fn run_grep(args: &[String]) -> ExitCode {
             }
         }
     }
-    ExitCode::SUCCESS
+    if found { ExitCode::SUCCESS } else { ExitCode::FAILURE }
 }
 
 fn run_find(args: &[String]) -> ExitCode {
@@ -829,7 +846,7 @@ fn run_kill(args: &[String]) -> ExitCode {
     if let Ok(pid) = pid_str.parse::<i32>() {
         #[cfg(target_os = "linux")]
         unsafe {
-            if libc::kill(pid, signal) != 0 {
+            if kill(pid, signal) != 0 {
                 let err = io::Error::last_os_error();
                 eprintln!("kill: ({}): {}", pid, err);
                 return ExitCode::FAILURE;
@@ -941,8 +958,8 @@ fn run_reboot() -> ExitCode {
     println!("[ferro-core] Rebooting system...");
     #[cfg(target_os = "linux")]
     unsafe {
-        libc::sync();
-        libc::reboot(libc::LINUX_REBOOT_CMD_RESTART);
+        sync();
+        reboot(LINUX_REBOOT_CMD_RESTART);
     }
     ExitCode::SUCCESS
 }
@@ -951,8 +968,8 @@ fn run_poweroff() -> ExitCode {
     println!("[ferro-core] Powering off system...");
     #[cfg(target_os = "linux")]
     unsafe {
-        libc::sync();
-        libc::reboot(libc::LINUX_REBOOT_CMD_POWER_OFF);
+        sync();
+        reboot(LINUX_REBOOT_CMD_POWER_OFF);
     }
     ExitCode::SUCCESS
 }
