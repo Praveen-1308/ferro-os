@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FerroOS Recovery Center
+Comment=Advanced Boot, Crash Recovery, and System Diagnostics Environment
+Exec=xfce4-terminal --title="FerroOS Advanced Recovery" --command="ferro-core recovery"
+Icon=system-software-update
+Categories=System;Settings;Utility;
+Terminal=false
+StartupNotify=true
