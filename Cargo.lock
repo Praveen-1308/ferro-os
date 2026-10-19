@@ -42,16 +42,10 @@ dependencies = [
 [[package]]
 name = "ferro-core"
 version = "0.1.0"
-dependencies = [
- "libc",
-]
 
 [[package]]
 name = "ferro-gui"
 version = "0.1.0"
-dependencies = [
- "libc",
-]
 
 [[package]]
 name = "ferro-init"
