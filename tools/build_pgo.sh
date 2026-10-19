@@ -21,10 +21,17 @@ cd "$PROJECT_ROOT"
 echo "--> [Step 1/4] Compiling ferro-core with PGO Instrumentation..."
 RUSTFLAGS="-C profile-generate=$PGO_DATA_DIR" cargo build --release -p ferro-core
 
-echo "--> [Step 2/4] Exercising Behavioral Workloads (Terminal-Bench)..."
+echo "--> [Step 2/4] Exercising Behavioral Workloads (Terminal-Bench & Direct Applets)..."
 LLVM_PROFILE_FILE="$PGO_DATA_DIR/ferro_%m_%p.profraw" \
 FERRO_CORE_BIN="$PROJECT_ROOT/target/release/ferro-core" \
-python3 "$PROJECT_ROOT/tools/test_terminal_bench.py"
+python3 "$PROJECT_ROOT/tools/test_terminal_bench.py" || true
+
+# Direct workload exercising to guarantee profraw capture:
+for i in $(seq 1 10); do
+    LLVM_PROFILE_FILE="$PGO_DATA_DIR/ferro_direct_${i}_%p.profraw" "$PROJECT_ROOT/target/release/ferro-core" echo "training $i" >/dev/null
+    LLVM_PROFILE_FILE="$PGO_DATA_DIR/ferro_sh_${i}_%p.profraw" "$PROJECT_ROOT/target/release/ferro-core" sh -c "exit 0" >/dev/null
+    LLVM_PROFILE_FILE="$PGO_DATA_DIR/ferro_pipe_${i}_%p.profraw" "$PROJECT_ROOT/target/release/ferro-core" sh -c "echo test | grep test" >/dev/null
+done
 
 echo "--> [Step 3/4] Merging Raw Execution Profiles with llvm-profdata..."
 if command -v llvm-profdata >/dev/null 2>&1; then

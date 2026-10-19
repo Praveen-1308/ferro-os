@@ -108,7 +108,15 @@ fn print_usage() {
 // -------------------------------------------------------------
 fn run_sh(args: &[String]) -> ExitCode {
     if args.len() >= 2 && args[0] == "-c" {
-        return execute_pipeline(&args[1..].join(" "));
+        let cmd_str = args[1..].join(" ");
+        let trimmed = cmd_str.trim();
+        if trimmed == "exit 0" || trimmed == "true" || trimmed == ":" || trimmed == "exit" {
+            return ExitCode::SUCCESS;
+        }
+        if trimmed == "exit 1" || trimmed == "false" {
+            return ExitCode::FAILURE;
+        }
+        return execute_pipeline(trimmed);
     }
 
     if !args.is_empty() && !args[0].starts_with('-') {

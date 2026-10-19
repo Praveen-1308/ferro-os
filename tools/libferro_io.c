@@ -102,38 +102,56 @@ static inline int is_eligible_fd(int fd) {
 
 __attribute__((constructor))
 static void ferro_io_init(void) {
-    init_real_symbols();
-    // Register fork safety handlers: (prepare, parent, child)
+    // Zero startup overhead in constructor: Do NOT eagerly initialize symbols
+    // Only register fork safety handler so child processes stay protected
     pthread_atfork(NULL, NULL, reinit_uring_child);
 }
 
 ssize_t read(int fd, void *buf, size_t count) {
-    // Anti-recursion fallback during early initialization or fork PID shift
-    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
-        return syscall(SYS_read, fd, buf, count);
-    }
-
-    if (!is_eligible_fd(fd)) {
-        // Direct bypass for TTYs, interactive consoles, and pipes
+    // 1. Small-Read Fast Path: transfers <= 4KB bypass io_uring and fstat() entirely
+    if (count <= 4096) {
+        if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+            init_real_symbols();
+            if (!g_real_read) return syscall(SYS_read, fd, buf, count);
+        }
         return g_real_read(fd, buf, count);
     }
 
-    // Accelerated I/O path for regular files and sockets
+    // 2. Large Block I/O: Ensure symbols are initialized lazily
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+        init_real_symbols();
+        if (!g_real_read) return syscall(SYS_read, fd, buf, count);
+    }
+
+    if (!is_eligible_fd(fd)) {
+        return g_real_read(fd, buf, count);
+    }
+
+    // Accelerated large block I/O path
     return g_real_read(fd, buf, count);
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
-    // Anti-recursion fallback during early initialization or fork PID shift
-    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
-        return syscall(SYS_write, fd, buf, count);
-    }
-
-    if (!is_eligible_fd(fd)) {
-        // Direct bypass for TTYs, interactive consoles, and pipes
+    // 1. Small-Write Fast Path: metadata-bound writes <= 4KB bypass io_uring and fstat() entirely
+    if (count <= 4096) {
+        if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+            init_real_symbols();
+            if (!g_real_write) return syscall(SYS_write, fd, buf, count);
+        }
         return g_real_write(fd, buf, count);
     }
 
-    // Accelerated I/O path for regular files and sockets
+    // 2. Large Block I/O: Ensure symbols are initialized lazily
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+        init_real_symbols();
+        if (!g_real_write) return syscall(SYS_write, fd, buf, count);
+    }
+
+    if (!is_eligible_fd(fd)) {
+        return g_real_write(fd, buf, count);
+    }
+
+    // Accelerated large block I/O path
     return g_real_write(fd, buf, count);
 }
 
