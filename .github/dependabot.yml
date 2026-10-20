@@ -1,0 +1,41 @@
+# Dependabot configuration for FerroOS
+# Automatically scans dependencies and submits pull requests for security advisories and updates
+
+version: 2
+updates:
+  # 1. Cargo (Rust crates in Cargo.toml)
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Praveen-1308"
+    labels:
+      - "dependencies"
+      - "rust"
+      - "security"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # 2. GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "sunday"
+      time: "04:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "Praveen-1308"
+    labels:
+      - "ci"
+      - "actions"
+    commit-message:
+      prefix: "ci(actions)"
+      include: "scope"

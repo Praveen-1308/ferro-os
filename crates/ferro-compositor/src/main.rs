@@ -31,17 +31,17 @@ pub struct DamageRect {
 /// GPU Hardware Driver Target (Invariant 4)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GpuDriverTarget {
-    IntelIrisMesa,       // Intel Gen9/11/Xe Mesa DRM
-    AmdRadeonMesa,       // AMD RDNA/GCN radeonsi Mesa DRM
-    ArmMaliPanfrost,     // ARM Mali Midgard/Bifrost/Valhall
-    QualcommAdreno,      // Qualcomm Adreno freedreno
+    IntelIrisMesa,           // Intel Gen9/11/Xe Mesa DRM
+    AmdRadeonMesa,           // AMD RDNA/GCN radeonsi Mesa DRM
+    ArmMaliPanfrost,         // ARM Mali Midgard/Bifrost/Valhall
+    QualcommAdreno,          // Qualcomm Adreno freedreno
     SoftwareVirtualFallback, // Headless QEMU, llvmpipe, virgl
 }
 
 /// Shader Pipeline Execution Backend (Invariant 4)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ShaderPipelineBackend {
-    DualKawaseHardwareAccelerated,   // Multi-pass hardware downsample/upsample
+    DualKawaseHardwareAccelerated, // Multi-pass hardware downsample/upsample
     SinglePassBoxBlurGracefulFallback, // Separable 1D box blur fallback for headless/software
 }
 
@@ -78,11 +78,36 @@ pub struct WindowSurface {
 pub fn detect_gpu_environment() -> (GpuDriverTarget, ShaderPipelineBackend) {
     if let Ok(force) = env::var("FERRO_GPU_DRIVER") {
         match force.to_lowercase().as_str() {
-            "intel" => return (GpuDriverTarget::IntelIrisMesa, ShaderPipelineBackend::DualKawaseHardwareAccelerated),
-            "amd" => return (GpuDriverTarget::AmdRadeonMesa, ShaderPipelineBackend::DualKawaseHardwareAccelerated),
-            "mali" => return (GpuDriverTarget::ArmMaliPanfrost, ShaderPipelineBackend::DualKawaseHardwareAccelerated),
-            "adreno" => return (GpuDriverTarget::QualcommAdreno, ShaderPipelineBackend::DualKawaseHardwareAccelerated),
-            "software" | "headless" => return (GpuDriverTarget::SoftwareVirtualFallback, ShaderPipelineBackend::SinglePassBoxBlurGracefulFallback),
+            "intel" => {
+                return (
+                    GpuDriverTarget::IntelIrisMesa,
+                    ShaderPipelineBackend::DualKawaseHardwareAccelerated,
+                )
+            }
+            "amd" => {
+                return (
+                    GpuDriverTarget::AmdRadeonMesa,
+                    ShaderPipelineBackend::DualKawaseHardwareAccelerated,
+                )
+            }
+            "mali" => {
+                return (
+                    GpuDriverTarget::ArmMaliPanfrost,
+                    ShaderPipelineBackend::DualKawaseHardwareAccelerated,
+                )
+            }
+            "adreno" => {
+                return (
+                    GpuDriverTarget::QualcommAdreno,
+                    ShaderPipelineBackend::DualKawaseHardwareAccelerated,
+                )
+            }
+            "software" | "headless" => {
+                return (
+                    GpuDriverTarget::SoftwareVirtualFallback,
+                    ShaderPipelineBackend::SinglePassBoxBlurGracefulFallback,
+                )
+            }
             _ => {}
         }
     }
@@ -90,18 +115,33 @@ pub fn detect_gpu_environment() -> (GpuDriverTarget, ShaderPipelineBackend) {
     // Inspect Linux DRM subsystem if available
     if let Ok(driver) = fs::read_to_string("/sys/class/drm/card0/device/driver") {
         if driver.contains("i915") || driver.contains("xe") {
-            return (GpuDriverTarget::IntelIrisMesa, ShaderPipelineBackend::DualKawaseHardwareAccelerated);
+            return (
+                GpuDriverTarget::IntelIrisMesa,
+                ShaderPipelineBackend::DualKawaseHardwareAccelerated,
+            );
         } else if driver.contains("amdgpu") || driver.contains("radeon") {
-            return (GpuDriverTarget::AmdRadeonMesa, ShaderPipelineBackend::DualKawaseHardwareAccelerated);
+            return (
+                GpuDriverTarget::AmdRadeonMesa,
+                ShaderPipelineBackend::DualKawaseHardwareAccelerated,
+            );
         } else if driver.contains("panfrost") || driver.contains("mali") {
-            return (GpuDriverTarget::ArmMaliPanfrost, ShaderPipelineBackend::DualKawaseHardwareAccelerated);
+            return (
+                GpuDriverTarget::ArmMaliPanfrost,
+                ShaderPipelineBackend::DualKawaseHardwareAccelerated,
+            );
         } else if driver.contains("msm") || driver.contains("kgsl") {
-            return (GpuDriverTarget::QualcommAdreno, ShaderPipelineBackend::DualKawaseHardwareAccelerated);
+            return (
+                GpuDriverTarget::QualcommAdreno,
+                ShaderPipelineBackend::DualKawaseHardwareAccelerated,
+            );
         }
     }
 
     // Default to graceful software fallback if no hardware GPU or in container/VM
-    (GpuDriverTarget::SoftwareVirtualFallback, ShaderPipelineBackend::SinglePassBoxBlurGracefulFallback)
+    (
+        GpuDriverTarget::SoftwareVirtualFallback,
+        ShaderPipelineBackend::SinglePassBoxBlurGracefulFallback,
+    )
 }
 
 /// Ferro-Compositor Core State Engine
@@ -118,18 +158,16 @@ impl CompositorState {
     pub fn new() -> Self {
         let (gpu_target, shader_pipeline) = detect_gpu_environment();
         Self {
-            outputs: vec![
-                DisplayOutput {
-                    name: "eDP-1 (Primary Display)".to_string(),
-                    width: 2560,
-                    height: 1600,
-                    refresh_rate_mhz: 120_000, // 120Hz ProMotion / High Refresh
-                    scale_factor: 2.0,         // Retina HiDPI
-                    damage_regions: Vec::new(),
-                    gpu_target,
-                    shader_pipeline,
-                }
-            ],
+            outputs: vec![DisplayOutput {
+                name: "eDP-1 (Primary Display)".to_string(),
+                width: 2560,
+                height: 1600,
+                refresh_rate_mhz: 120_000, // 120Hz ProMotion / High Refresh
+                scale_factor: 2.0,         // Retina HiDPI
+                damage_regions: Vec::new(),
+                gpu_target,
+                shader_pipeline,
+            }],
             surfaces: HashMap::new(),
             next_surface_id: 1,
             active_seat_focused_id: None,
@@ -167,7 +205,12 @@ impl CompositorState {
 
         self.surfaces.insert(id, surface);
         self.active_seat_focused_id = Some(id);
-        self.record_damage(DamageRect { x: 0, y: 0, width, height });
+        self.record_damage(DamageRect {
+            x: 0,
+            y: 0,
+            width,
+            height,
+        });
         id
     }
 
@@ -184,8 +227,12 @@ impl CompositorState {
         self.frame_counter += 1;
 
         // Invariant 4: Dual-Kawase vs Single-Pass Box Blur Pipeline
-        let pipeline = self.outputs.first().map(|o| o.shader_pipeline).unwrap_or(ShaderPipelineBackend::SinglePassBoxBlurGracefulFallback);
-        
+        let pipeline = self
+            .outputs
+            .first()
+            .map(|o| o.shader_pipeline)
+            .unwrap_or(ShaderPipelineBackend::SinglePassBoxBlurGracefulFallback);
+
         match pipeline {
             ShaderPipelineBackend::DualKawaseHardwareAccelerated => {
                 // Hardware GPU path: Multi-pass downsample/upsample ping-pong
@@ -235,7 +282,10 @@ fn main() -> ExitCode {
             LayerShellZone::Top,
             true,
         );
-        println!("[ferro-compositor] Initialized Top Omnibar Surface (ID: {}, Acrylic Blur: ON)", panel_id);
+        println!(
+            "[ferro-compositor] Initialized Top Omnibar Surface (ID: {}, Acrylic Blur: ON)",
+            panel_id
+        );
 
         let dock_id = comp.create_surface(
             "Ferro Floating Dock",
@@ -245,7 +295,10 @@ fn main() -> ExitCode {
             LayerShellZone::Overlay,
             true,
         );
-        println!("[ferro-compositor] Initialized Floating Dock Surface (ID: {}, Spring Physics: ON)", dock_id);
+        println!(
+            "[ferro-compositor] Initialized Floating Dock Surface (ID: {}, Spring Physics: ON)",
+            dock_id
+        );
 
         // 2. Scaffold Client Application Surfaces
         let term_id = comp.create_surface(
@@ -256,7 +309,10 @@ fn main() -> ExitCode {
             LayerShellZone::Bottom,
             true,
         );
-        println!("[ferro-compositor] Client Wayland Surface Created (ID: {}, Title: '{}')", term_id, "Ferro Terminal");
+        println!(
+            "[ferro-compositor] Client Wayland Surface Created (ID: {}, Title: '{}')",
+            term_id, "Ferro Terminal"
+        );
 
         // 3. Test Invariant 4: Hardware Acceleration & Fallback Pipeline Validation
         let output = comp.outputs[0].clone();
@@ -271,15 +327,31 @@ fn main() -> ExitCode {
         }
         let avg_latency = total_latency / 60.0;
 
-        println!("Display Output:      {} (2560x1600 @ 120Hz HiDPI scale 2.0x)", comp.outputs[0].name);
-        println!("Active Wayland Apps: {} managed surfaces", comp.surfaces.len());
-        println!("Composited Frames:   {} frames with zero-copy damage tracking", comp.frame_counter);
-        println!("Compositing Latency: {:.3} ms per frame (< 1% GPU budget at 120 FPS)", avg_latency);
+        println!(
+            "Display Output:      {} (2560x1600 @ 120Hz HiDPI scale 2.0x)",
+            comp.outputs[0].name
+        );
+        println!(
+            "Active Wayland Apps: {} managed surfaces",
+            comp.surfaces.len()
+        );
+        println!(
+            "Composited Frames:   {} frames with zero-copy damage tracking",
+            comp.frame_counter
+        );
+        println!(
+            "Compositing Latency: {:.3} ms per frame (< 1% GPU budget at 120 FPS)",
+            avg_latency
+        );
         println!("Multi-GPU Support:   Intel Iris/Xe, AMD Radeon, ARM Mali, Qualcomm Adreno");
         println!("Graceful Fallback:   Single-Pass Box Blur active for headless/software VMs");
-        println!("================================================================================");
+        println!(
+            "================================================================================"
+        );
         println!("✅ Ferro-Compositor: All GPU Targets & Graceful Fallback Invariants Verified.");
-        println!("================================================================================");
+        println!(
+            "================================================================================"
+        );
     }
 
     ExitCode::SUCCESS

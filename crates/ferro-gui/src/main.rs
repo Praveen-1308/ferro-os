@@ -48,12 +48,28 @@ impl Framebuffer {
         }
     }
 
-    fn fill_gradient_v(&mut self, x: usize, y: usize, w: usize, h: usize, col_top: u32, col_bot: u32) {
+    fn fill_gradient_v(
+        &mut self,
+        x: usize,
+        y: usize,
+        w: usize,
+        h: usize,
+        col_top: u32,
+        col_bot: u32,
+    ) {
         let x_end = (x + w).min(self.width);
         let y_end = (y + h).min(self.height);
 
-        let (r1, g1, b1) = ((col_top >> 16) & 0xFF, (col_top >> 8) & 0xFF, col_top & 0xFF);
-        let (r2, g2, b2) = ((col_bot >> 16) & 0xFF, (col_bot >> 8) & 0xFF, col_bot & 0xFF);
+        let (r1, g1, b1) = (
+            (col_top >> 16) & 0xFF,
+            (col_top >> 8) & 0xFF,
+            col_top & 0xFF,
+        );
+        let (r2, g2, b2) = (
+            (col_bot >> 16) & 0xFF,
+            (col_bot >> 8) & 0xFF,
+            col_bot & 0xFF,
+        );
 
         for py in y..y_end {
             let t = (py - y) as f32 / h as f32;
@@ -143,16 +159,8 @@ impl Framebuffer {
 
     fn draw_cursor(&mut self, cx: usize, cy: usize) {
         let cursor_map = [
-            0b10000000,
-            0b11000000,
-            0b11100000,
-            0b11110000,
-            0b11111000,
-            0b11111100,
-            0b11110000,
-            0b10011000,
-            0b00011000,
-            0b00001100,
+            0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11110000,
+            0b10011000, 0b00011000, 0b00001100,
         ];
 
         for (row, &byte) in cursor_map.iter().enumerate() {
@@ -247,7 +255,12 @@ fn main() -> ExitCode {
     fb.draw_text(w1_x + 180, w1_y + 125, "glibc x86_64", 0xFFe2e8f0);
 
     // Progress Bar: Memory
-    fb.draw_text(w1_x + 20, w1_y + 165, "Memory Usage (24 MB / 512 MB):", 0xFFcbd5e1);
+    fb.draw_text(
+        w1_x + 20,
+        w1_y + 165,
+        "Memory Usage (24 MB / 512 MB):",
+        0xFFcbd5e1,
+    );
     fb.fill_rect(w1_x + 20, w1_y + 185, w1_w - 40, 18, 0xFF0f172a);
     fb.fill_rect(w1_x + 20, w1_y + 185, (w1_w - 40) / 10, 18, 0xFF06b6d4); // 10% filled
     fb.draw_rect_outline(w1_x + 20, w1_y + 185, w1_w - 40, 18, 0xFF334155);
@@ -259,10 +272,30 @@ fn main() -> ExitCode {
     fb.draw_rect_outline(w1_x + 20, w1_y + 240, w1_w - 40, 18, 0xFF334155);
 
     // System Metrics List
-    fb.draw_text(w1_x + 20, w1_y + 280, "Kernel Syscalls:    Active", 0xFF94a3b8);
-    fb.draw_text(w1_x + 20, w1_y + 305, "Loopback Network:   UP (127.0.0.1)", 0xFF94a3b8);
-    fb.draw_text(w1_x + 20, w1_y + 330, "Boot Timing:        320 ms", 0xFF38bdf8);
-    fb.draw_text(w1_x + 20, w1_y + 355, "Display Driver:     /dev/fb0 (mmap)", 0xFFa855f7);
+    fb.draw_text(
+        w1_x + 20,
+        w1_y + 280,
+        "Kernel Syscalls:    Active",
+        0xFF94a3b8,
+    );
+    fb.draw_text(
+        w1_x + 20,
+        w1_y + 305,
+        "Loopback Network:   UP (127.0.0.1)",
+        0xFF94a3b8,
+    );
+    fb.draw_text(
+        w1_x + 20,
+        w1_y + 330,
+        "Boot Timing:        320 ms",
+        0xFF38bdf8,
+    );
+    fb.draw_text(
+        w1_x + 20,
+        w1_y + 355,
+        "Display Driver:     /dev/fb0 (mmap)",
+        0xFFa855f7,
+    );
 
     // 4. Window 2: Interactive Terminal / Python 3
     let w2_x = 520;
@@ -274,19 +307,59 @@ fn main() -> ExitCode {
     // Console content
     let start_y = w2_y + 45;
     fb.draw_text(w2_x + 15, start_y, "root@ferro-os:~# python3", 0xFFf8fafc);
-    fb.draw_text(w2_x + 15, start_y + 25, "Python 3.12.3 on FerroOS (Rust PID 1)", 0xFF94a3b8);
-    fb.draw_text(w2_x + 15, start_y + 45, "Type \"help\", \"copyright\", or \"license\".", 0xFF64748b);
-    
-    fb.draw_text(w2_x + 15, start_y + 80, ">>> import os, sys, math", 0xFF38bdf8);
-    fb.draw_text(w2_x + 15, start_y + 105, ">>> print('Hello from Rust Framebuffer GUI!')", 0xFF38bdf8);
-    fb.draw_text(w2_x + 15, start_y + 130, "Hello from Rust Framebuffer GUI!", 0xFF22c55e);
+    fb.draw_text(
+        w2_x + 15,
+        start_y + 25,
+        "Python 3.12.3 on FerroOS (Rust PID 1)",
+        0xFF94a3b8,
+    );
+    fb.draw_text(
+        w2_x + 15,
+        start_y + 45,
+        "Type \"help\", \"copyright\", or \"license\".",
+        0xFF64748b,
+    );
+
+    fb.draw_text(
+        w2_x + 15,
+        start_y + 80,
+        ">>> import os, sys, math",
+        0xFF38bdf8,
+    );
+    fb.draw_text(
+        w2_x + 15,
+        start_y + 105,
+        ">>> print('Hello from Rust Framebuffer GUI!')",
+        0xFF38bdf8,
+    );
+    fb.draw_text(
+        w2_x + 15,
+        start_y + 130,
+        "Hello from Rust Framebuffer GUI!",
+        0xFF22c55e,
+    );
 
     fb.draw_text(w2_x + 15, start_y + 165, ">>> math.sqrt(2026)", 0xFF38bdf8);
     fb.draw_text(w2_x + 15, start_y + 190, "45.0111097397076", 0xFFe2e8f0);
 
-    fb.draw_text(w2_x + 15, start_y + 225, ">>> os.system('rpk list')", 0xFF38bdf8);
-    fb.draw_text(w2_x + 15, start_y + 250, "PACKAGE        VERSION   STATUS", 0xFFcbd5e1);
-    fb.draw_text(w2_x + 15, start_y + 270, "neofetch-lite  1.0.0     installed", 0xFF22c55e);
+    fb.draw_text(
+        w2_x + 15,
+        start_y + 225,
+        ">>> os.system('rpk list')",
+        0xFF38bdf8,
+    );
+    fb.draw_text(
+        w2_x + 15,
+        start_y + 250,
+        "PACKAGE        VERSION   STATUS",
+        0xFFcbd5e1,
+    );
+    fb.draw_text(
+        w2_x + 15,
+        start_y + 270,
+        "neofetch-lite  1.0.0     installed",
+        0xFF22c55e,
+    );
 
     fb.draw_text(w2_x + 15, start_y + 305, ">>> |", 0xFFf8fafc); // blinking cursor
 
@@ -341,10 +414,18 @@ fn read_meminfo_string() -> String {
         let mut avail = 0;
         for line in content.lines() {
             if line.starts_with("MemTotal:") {
-                total = line.split_whitespace().nth(1).and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
+                total = line
+                    .split_whitespace()
+                    .nth(1)
+                    .and_then(|s| s.parse::<u64>().ok())
+                    .unwrap_or(0);
             }
             if line.starts_with("MemAvailable:") {
-                avail = line.split_whitespace().nth(1).and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
+                avail = line
+                    .split_whitespace()
+                    .nth(1)
+                    .and_then(|s| s.parse::<u64>().ok())
+                    .unwrap_or(0);
             }
         }
         let used = total.saturating_sub(avail);

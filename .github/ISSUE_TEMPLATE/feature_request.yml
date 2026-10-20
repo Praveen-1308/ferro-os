@@ -1,0 +1,37 @@
+name: "Feature Request"
+description: "Suggest a new feature, applet, or architectural optimization for FerroOS"
+title: "[FEATURE]: "
+labels: ["enhancement", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We welcome community proposals for FerroOS!
+        FerroOS emphasizes high memory safety (Rust), minimal footprint, and raw POSIX/Linux performance.
+  - type: input
+    id: title
+    attributes:
+      label: Feature Summary
+      description: A brief one-sentence summary of the proposed feature.
+      placeholder: "e.g., Support Btrfs subvolume snapshots in ferro-core"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Motivation & Use Case
+      description: What real-world problem does this feature solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Implementation
+      description: How should this be implemented in Rust userspace, kernel modules, or interposition layers?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What other approaches or workarounds have you evaluated?

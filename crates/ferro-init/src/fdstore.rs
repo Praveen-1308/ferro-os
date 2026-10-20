@@ -49,7 +49,10 @@ pub unsafe fn send_fd(sock: libc::c_int, fd_to_send: libc::c_int, text: &str) ->
     }
 }
 
-pub unsafe fn recv_fd(sock: libc::c_int, text_buf: &mut [u8]) -> io::Result<(usize, Option<libc::c_int>)> {
+pub unsafe fn recv_fd(
+    sock: libc::c_int,
+    text_buf: &mut [u8],
+) -> io::Result<(usize, Option<libc::c_int>)> {
     let mut iov = libc::iovec {
         iov_base: text_buf.as_mut_ptr() as *mut libc::c_void,
         iov_len: text_buf.len(),
@@ -93,11 +96,12 @@ impl FdStoreServer {
     }
 
     pub fn start(&self) -> io::Result<thread::JoinHandle<()>> {
-        let sock_path = if Path::new("/run/ferro").exists() || fs::create_dir_all("/run/ferro").is_ok() {
-            DEFAULT_SOCKET_PATH
-        } else {
-            FALLBACK_SOCKET_PATH
-        };
+        let sock_path =
+            if Path::new("/run/ferro").exists() || fs::create_dir_all("/run/ferro").is_ok() {
+                DEFAULT_SOCKET_PATH
+            } else {
+                FALLBACK_SOCKET_PATH
+            };
 
         let _ = fs::remove_file(sock_path);
         let listener = UnixListener::bind(sock_path)?;
@@ -151,7 +155,10 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
                         }
                         let resp = format!("STORED {}\n", name);
                         let _ = send_fd(raw_sock, -1, &resp);
-                        println!("  [FD Store] Stored descriptor {} for service '{}'", fd, name);
+                        println!(
+                            "  [FD Store] Stored descriptor {} for service '{}'",
+                            fd, name
+                        );
                     } else {
                         let _ = send_fd(raw_sock, -1, "ERROR No FD passed in SCM_RIGHTS\n");
                     }

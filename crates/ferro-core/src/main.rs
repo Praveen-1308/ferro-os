@@ -638,7 +638,10 @@ fn run_cp(args: &[String]) -> ExitCode {
     for src_str in sources {
         let src_path = Path::new(src_str);
         if !src_path.exists() {
-            eprintln!("cp: cannot stat '{}': No such file or directory", src_path.display());
+            eprintln!(
+                "cp: cannot stat '{}': No such file or directory",
+                src_path.display()
+            );
             failed = true;
             continue;
         }
@@ -655,17 +658,30 @@ fn run_cp(args: &[String]) -> ExitCode {
 
         if src_path.is_dir() {
             if !recursive {
-                eprintln!("cp: -r not specified; omitting directory '{}'", src_path.display());
+                eprintln!(
+                    "cp: -r not specified; omitting directory '{}'",
+                    src_path.display()
+                );
                 failed = true;
                 continue;
             }
             if let Err(e) = copy_recursive(src_path, &effective_dst) {
-                eprintln!("cp: error copying directory '{}' to '{}': {}", src_path.display(), effective_dst.display(), e);
+                eprintln!(
+                    "cp: error copying directory '{}' to '{}': {}",
+                    src_path.display(),
+                    effective_dst.display(),
+                    e
+                );
                 failed = true;
             }
         } else {
             if let Err(e) = copy_file_zero_copy(src_path, &effective_dst) {
-                eprintln!("cp: error copying '{}' to '{}': {}", src_path.display(), effective_dst.display(), e);
+                eprintln!(
+                    "cp: error copying '{}' to '{}': {}",
+                    src_path.display(),
+                    effective_dst.display(),
+                    e
+                );
                 failed = true;
             }
         }
@@ -703,7 +719,10 @@ fn run_mv(args: &[String]) -> ExitCode {
     for src_str in sources {
         let src_path = Path::new(src_str);
         if !src_path.exists() {
-            eprintln!("mv: cannot stat '{}': No such file or directory", src_path.display());
+            eprintln!(
+                "mv: cannot stat '{}': No such file or directory",
+                src_path.display()
+            );
             failed = true;
             continue;
         }
@@ -723,10 +742,16 @@ fn run_mv(args: &[String]) -> ExitCode {
             let res = if src_path.is_dir() {
                 copy_recursive(src_path, &effective_dst).and_then(|_| fs::remove_dir_all(src_path))
             } else {
-                copy_file_zero_copy(src_path, &effective_dst).and_then(|_| fs::remove_file(src_path))
+                copy_file_zero_copy(src_path, &effective_dst)
+                    .and_then(|_| fs::remove_file(src_path))
             };
             if let Err(e) = res {
-                eprintln!("mv: error moving '{}' to '{}': {}", src_path.display(), effective_dst.display(), e);
+                eprintln!(
+                    "mv: error moving '{}' to '{}': {}",
+                    src_path.display(),
+                    effective_dst.display(),
+                    e
+                );
                 failed = true;
             }
         }
@@ -784,10 +809,18 @@ fn run_grep(args: &[String]) -> ExitCode {
 
     let mut found = false;
     let mut search_in_stream = |reader: Box<dyn BufRead>, label: Option<&str>| {
-        let pat = if case_insensitive { pattern.to_lowercase() } else { pattern.to_string() };
+        let pat = if case_insensitive {
+            pattern.to_lowercase()
+        } else {
+            pattern.to_string()
+        };
         for line_res in reader.lines() {
             if let Ok(line) = line_res {
-                let check_line = if case_insensitive { line.to_lowercase() } else { line.clone() };
+                let check_line = if case_insensitive {
+                    line.to_lowercase()
+                } else {
+                    line.clone()
+                };
                 if check_line.contains(&pat) {
                     found = true;
                     if let Some(lbl) = label {
@@ -806,14 +839,22 @@ fn run_grep(args: &[String]) -> ExitCode {
         for file in files {
             match File::open(file) {
                 Ok(f) => {
-                    let label = if files.len() > 1 { Some(file.as_str()) } else { None };
+                    let label = if files.len() > 1 {
+                        Some(file.as_str())
+                    } else {
+                        None
+                    };
                     search_in_stream(Box::new(BufReader::new(f)), label);
                 }
                 Err(e) => eprintln!("grep: {}: {}", file, e),
             }
         }
     }
-    if found { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+    if found {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }
 
 fn run_find(args: &[String]) -> ExitCode {
@@ -908,7 +949,11 @@ fn run_tail(args: &[String]) -> ExitCode {
     };
 
     let lines: Vec<String> = reader.lines().filter_map(|r| r.ok()).collect();
-    let start = if lines.len() > count { lines.len() - count } else { 0 };
+    let start = if lines.len() > count {
+        lines.len() - count
+    } else {
+        0
+    };
     for line in &lines[start..] {
         println!("{}", line);
     }
@@ -941,7 +986,13 @@ fn run_wc(args: &[String]) -> ExitCode {
         }
     }
 
-    println!(" {:5} {:5} {:5} {}", lines, words, bytes, file.map_or("", |s| s.as_str()));
+    println!(
+        " {:5} {:5} {:5} {}",
+        lines,
+        words,
+        bytes,
+        file.map_or("", |s| s.as_str())
+    );
     ExitCode::SUCCESS
 }
 
@@ -1127,7 +1178,10 @@ fn run_fetch(args: &[String]) -> ExitCode {
     let dest_path = args.get(1);
 
     if !url.starts_with("http://") {
-        eprintln!("fetch: only http:// is currently supported by minimal client: {}", url);
+        eprintln!(
+            "fetch: only http:// is currently supported by minimal client: {}",
+            url
+        );
         return ExitCode::FAILURE;
     }
 
@@ -1237,7 +1291,9 @@ fn run_bench(args: &[String]) -> ExitCode {
                 let mut data = vec![0u8; 1024];
                 data[0] = (i & 0xFF) as u8;
                 data[1023] = ((i >> 8) & 0xFF) as u8;
-                checksum = checksum.wrapping_add(data[0] as u64).wrapping_add(data[1023] as u64);
+                checksum = checksum
+                    .wrapping_add(data[0] as u64)
+                    .wrapping_add(data[1023] as u64);
             }
             checksum
         }));
@@ -1257,9 +1313,15 @@ fn run_bench(args: &[String]) -> ExitCode {
     let bandwidth_gb_sec = (memory_processed_mb / 1024.0) / elapsed.as_secs_f64();
 
     println!("\n--- Benchmark Results ---");
-    println!("Execution Time:          {:.4} seconds", elapsed.as_secs_f64());
+    println!(
+        "Execution Time:          {:.4} seconds",
+        elapsed.as_secs_f64()
+    );
     println!("Throughput:              {:.2} ops/sec", ops_per_sec);
-    println!("Latency per 1KB Op:      {:.2} ns", (elapsed.as_nanos() as f64) / (total_ops as f64));
+    println!(
+        "Latency per 1KB Op:      {:.2} ns",
+        (elapsed.as_nanos() as f64) / (total_ops as f64)
+    );
     println!("Memory Bandwidth:        {:.2} GB/sec", bandwidth_gb_sec);
     println!("Computed Checksum:       0x{:016x}", total_checksum);
     println!("======================================================================");
@@ -1278,7 +1340,10 @@ fn run_serve(args: &[String]) -> ExitCode {
 
     let listener = match TcpListener::bind(&addr) {
         Ok(l) => {
-            println!("[ferro-serve] High-performance Rust HTTP server listening on http://{}", addr);
+            println!(
+                "[ferro-serve] High-performance Rust HTTP server listening on http://{}",
+                addr
+            );
             println!("[ferro-serve] Serving files from: {}", root_dir);
             l
         }
@@ -1315,7 +1380,11 @@ fn run_serve(args: &[String]) -> ExitCode {
                                 );
                                 let _ = stream.write_all(response.as_bytes());
                             } else {
-                                let rel_path = if path.starts_with('/') { &path[1..] } else { path };
+                                let rel_path = if path.starts_with('/') {
+                                    &path[1..]
+                                } else {
+                                    path
+                                };
                                 let target_file = if rel_path.is_empty() {
                                     root.join("index.html")
                                 } else {
@@ -1366,11 +1435,17 @@ fn run_supervise(args: &[String]) -> ExitCode {
     let prog_args = &args[1..];
     let mut restart_count = 0;
 
-    println!("[ferro-supervisor] Starting pure-Rust process supervisor for '{}'...", program);
+    println!(
+        "[ferro-supervisor] Starting pure-Rust process supervisor for '{}'...",
+        program
+    );
 
     loop {
         let start_time = std::time::Instant::now();
-        println!("[ferro-supervisor] Spawning process '{}' (restart #{})", program, restart_count);
+        println!(
+            "[ferro-supervisor] Spawning process '{}' (restart #{})",
+            program, restart_count
+        );
 
         let mut child = match Command::new(program).args(prog_args).spawn() {
             Ok(c) => c,
@@ -1409,7 +1484,9 @@ fn run_gamemode(args: &[String]) -> ExitCode {
             println!("⬡ FerroOS Dynamic GameMode Subsystem v0.1.0");
             println!("  Interactive Priority: Elevated (Nice -10 ready)");
             println!("  Direct Scanout: Armed for Vulkan/DRM/KMS swapchains");
-            if let Ok(gov) = fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor") {
+            if let Ok(gov) =
+                fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
+            {
                 println!("  Current CPU Governor: {}", gov.trim());
             } else {
                 println!("  Current CPU Governor: schedutil / performance (managed by platform)");
@@ -1417,10 +1494,15 @@ fn run_gamemode(args: &[String]) -> ExitCode {
             ExitCode::SUCCESS
         }
         "on" | "enable" => {
-            println!("⚡ [GameMode] Activating High-Performance Gaming & 3D Acceleration Profile...");
+            println!(
+                "⚡ [GameMode] Activating High-Performance Gaming & 3D Acceleration Profile..."
+            );
             let mut cpu_idx = 0;
             loop {
-                let path = format!("/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor", cpu_idx);
+                let path = format!(
+                    "/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor",
+                    cpu_idx
+                );
                 if !Path::new(&path).exists() {
                     break;
                 }
@@ -1442,10 +1524,15 @@ fn run_gamemode(args: &[String]) -> ExitCode {
             ExitCode::SUCCESS
         }
         "off" | "disable" => {
-            println!("🌱 [GameMode] Deactivating High-Performance Profile. Restoring Balanced Mode...");
+            println!(
+                "🌱 [GameMode] Deactivating High-Performance Profile. Restoring Balanced Mode..."
+            );
             let mut cpu_idx = 0;
             loop {
-                let path = format!("/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor", cpu_idx);
+                let path = format!(
+                    "/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor",
+                    cpu_idx
+                );
                 if !Path::new(&path).exists() {
                     break;
                 }
@@ -1567,9 +1654,15 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                 }
             }
 
-            println!("================================================================================");
-            println!("     ⬡ FERRO-OS LOCAL SHARED-MEMORY DNS CACHING RESOLVER (v0.1.0)              ");
-            println!("================================================================================");
+            println!(
+                "================================================================================"
+            );
+            println!(
+                "     ⬡ FERRO-OS LOCAL SHARED-MEMORY DNS CACHING RESOLVER (v0.1.0)              "
+            );
+            println!(
+                "================================================================================"
+            );
             let socket = match UdpSocket::bind(format!("127.0.0.1:{}", port)) {
                 Ok(s) => {
                     println!("  [Listener] Bound to 127.0.0.1:{}", port);
@@ -1577,7 +1670,9 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                 }
                 Err(e) => {
                     if port == 53 {
-                        println!("  [Listener] Port 53 requires root, falling back to 127.0.0.1:5353...");
+                        println!(
+                            "  [Listener] Port 53 requires root, falling back to 127.0.0.1:5353..."
+                        );
                         match UdpSocket::bind("127.0.0.1:5353") {
                             Ok(s) => s,
                             Err(e2) => {
@@ -1605,12 +1700,18 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
 
             println!("  [Upstream] Primary Forwarder: {}", upstream_addr);
             let hosts_map = Arc::new(load_hosts_map());
-            println!("  [SHM Host Table] Loaded {} static hosts from /etc/hosts", hosts_map.len());
+            println!(
+                "  [SHM Host Table] Loaded {} static hosts from /etc/hosts",
+                hosts_map.len()
+            );
             println!("  [Latency Target] Sub-10µs memory-mapped in-cache resolution");
             println!("  Service is running. Press Ctrl+C to terminate.");
-            println!("================================================================================");
+            println!(
+                "================================================================================"
+            );
 
-            let cache: Arc<RwLock<HashMap<String, DnsCacheEntry>>> = Arc::new(RwLock::new(HashMap::new()));
+            let cache: Arc<RwLock<HashMap<String, DnsCacheEntry>>> =
+                Arc::new(RwLock::new(HashMap::new()));
             let mut buf = [0u8; 4096];
             let mut upstream_buf = [0u8; 4096];
 
@@ -1641,7 +1742,12 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                     let resp = build_a_response(id, &buf[12..q_end], *ip);
                     let _ = socket.send_to(&resp, client_src);
                     let dt = t0.elapsed();
-                    println!("  ⚡ [HOSTS HIT] {:<25} -> {:?} in {:.2} µs", domain, ip, dt.as_micros());
+                    println!(
+                        "  ⚡ [HOSTS HIT] {:<25} -> {:?} in {:.2} µs",
+                        domain,
+                        ip,
+                        dt.as_micros()
+                    );
                     continue;
                 }
 
@@ -1656,7 +1762,11 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                                 resp[0..2].copy_from_slice(&id.to_be_bytes());
                                 let _ = socket.send_to(&resp, client_src);
                                 let dt = t0.elapsed();
-                                println!("  🚀 [CACHE HIT] {:<25} in {:.2} µs", domain, dt.as_micros());
+                                println!(
+                                    "  🚀 [CACHE HIT] {:<25} in {:.2} µs",
+                                    domain,
+                                    dt.as_micros()
+                                );
                                 cache_hit = true;
                             }
                         }
@@ -1676,7 +1786,11 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                             let _ = socket.send_to(&resp, client_src);
 
                             let dt = t0.elapsed();
-                            println!("  🌐 [CACHE MISS] {:<24} -> Upstream in {:.2} ms", domain, dt.as_secs_f64() * 1000.0);
+                            println!(
+                                "  🌐 [CACHE MISS] {:<24} -> Upstream in {:.2} ms",
+                                domain,
+                                dt.as_secs_f64() * 1000.0
+                            );
 
                             // Cache with 60s default TTL
                             let mut w_cache = cache.write().unwrap();
@@ -1748,7 +1862,11 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                     println!("⬡ DNS Resolution Result for '{}':", domain);
                     println!("  Target Server:  {}", target);
                     println!("  Bytes Received: {} bytes", amt);
-                    println!("  Lookup Latency: {} µs ({:.3} ms)", micros, dt.as_secs_f64() * 1000.0);
+                    println!(
+                        "  Lookup Latency: {} µs ({:.3} ms)",
+                        micros,
+                        dt.as_secs_f64() * 1000.0
+                    );
                     if micros < 50 {
                         println!("  Cache Status:   🚀 IN-MEMORY CACHE / SHM HOSTS HIT (< 50 µs)");
                     } else {
@@ -1774,9 +1892,16 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                 }
             }
 
-            println!("================================================================================");
-            println!("      FERRO-OS LOCAL DNS RESOLVER BENCHMARK: {} ({} Queries)                     ", domain, count);
-            println!("================================================================================");
+            println!(
+                "================================================================================"
+            );
+            println!(
+                "      FERRO-OS LOCAL DNS RESOLVER BENCHMARK: {} ({} Queries)                     ",
+                domain, count
+            );
+            println!(
+                "================================================================================"
+            );
 
             let client = match UdpSocket::bind("0.0.0.0:0") {
                 Ok(s) => {
@@ -1837,7 +1962,9 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
             println!("  Latency (Avg):     {:.2} µs", avg_us);
             println!("  Latency (p50):     {} µs", p50_us);
             println!("  Latency (p99):     {} µs", p99_us);
-            println!("--------------------------------------------------------------------------------");
+            println!(
+                "--------------------------------------------------------------------------------"
+            );
             if avg_us < 20.0 {
                 println!("✅ ULTRA-FAST RESOLUTION: In-memory DNS cache achieved < 20 µs average latency!");
             } else {
@@ -1851,7 +1978,9 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
             println!("\nCommands:");
             println!("  start [--port 5353] [--upstream 1.1.1.1:53]  Run local caching daemon");
             println!("  query <domain> [--port 5353]                 Perform a single timed query");
-            println!("  bench <domain> [count] [--port 5353]         Benchmark resolution latency & QPS");
+            println!(
+                "  bench <domain> [count] [--port 5353]         Benchmark resolution latency & QPS"
+            );
             ExitCode::SUCCESS
         }
     }
@@ -1894,7 +2023,10 @@ unsafe fn send_fd(sock: libc::c_int, fd_to_send: libc::c_int, text: &str) -> io:
     }
 }
 
-unsafe fn recv_fd(sock: libc::c_int, text_buf: &mut [u8]) -> io::Result<(usize, Option<libc::c_int>)> {
+unsafe fn recv_fd(
+    sock: libc::c_int,
+    text_buf: &mut [u8],
+) -> io::Result<(usize, Option<libc::c_int>)> {
     let mut iov = libc::iovec {
         iov_base: text_buf.as_mut_ptr() as *mut libc::c_void,
         iov_len: text_buf.len(),
@@ -2064,14 +2196,15 @@ fn run_recovery() -> ExitCode {
             }
             "2" => {
                 println!("[RECOVERY] Restoring fallback /etc/resolv.conf and /etc/hosts...");
-                let _ = fs::write("/etc/resolv.conf", "nameserver 1.1.1.1\nnameserver 8.8.8.8\n");
+                let _ = fs::write(
+                    "/etc/resolv.conf",
+                    "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+                );
                 let _ = fs::write("/etc/hosts", "127.0.0.1 localhost ferro-os\n");
                 println!("✅ Defaults restored successfully.");
                 ExitCode::SUCCESS
             }
-            "3" => {
-                run_bench(&["8".to_string(), "100000".to_string()])
-            }
+            "3" => run_bench(&["8".to_string(), "100000".to_string()]),
             "4" => {
                 let _ = fs::create_dir_all("/var/lib/ferro");
                 let _ = fs::write("/var/lib/ferro/system_crashed", "TRIGGER_SAFE_MODE\n");
@@ -2084,9 +2217,7 @@ fn run_recovery() -> ExitCode {
                 println!("✅ Crash simulation marker written to /var/lib/ferro/system_crashed.");
                 ExitCode::SUCCESS
             }
-            "6" => {
-                run_sh(&[])
-            }
+            "6" => run_sh(&[]),
             _ => {
                 println!("Exiting Recovery.");
                 ExitCode::SUCCESS
@@ -2161,8 +2292,14 @@ mod tests {
 
         copy_recursive(&temp_dir, &dst_dir).unwrap();
 
-        assert_eq!(fs::read_to_string(dst_dir.join("root.txt")).unwrap(), "hello root");
-        assert_eq!(fs::read_to_string(dst_dir.join("subdir").join("nested.txt")).unwrap(), "hello nested");
+        assert_eq!(
+            fs::read_to_string(dst_dir.join("root.txt")).unwrap(),
+            "hello root"
+        );
+        assert_eq!(
+            fs::read_to_string(dst_dir.join("subdir").join("nested.txt")).unwrap(),
+            "hello nested"
+        );
 
         let _ = fs::remove_dir_all(temp_dir);
         let _ = fs::remove_dir_all(dst_dir);
@@ -2171,7 +2308,9 @@ mod tests {
     #[test]
     fn test_dns_parser() {
         // \x06google\x03com\x00
-        let wire = [0x06, b'g', b'o', b'o', b'g', b'l', b'e', 0x03, b'c', b'o', b'm', 0x00];
+        let wire = [
+            0x06, b'g', b'o', b'o', b'g', b'l', b'e', 0x03, b'c', b'o', b'm', 0x00,
+        ];
         let (domain, end) = parse_dns_qname(&wire, 0).unwrap();
         assert_eq!(domain, "google.com");
         assert_eq!(end, 12);
@@ -2181,6 +2320,3 @@ mod tests {
         assert_eq!(resp[2..4], [0x81, 0x80]); // standard response
     }
 }
-
-
-

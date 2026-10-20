@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: FerroOS Discussions
+    url: https://github.com/Praveen-1308/ferro-os/discussions
+    about: Ask questions, discuss architecture, and share real-world benchmark results with the community.
+  - name: Security Vulnerability Reporting
+    url: https://github.com/Praveen-1308/ferro-os/security/advisories/new
+    about: Privately report a security vulnerability in FerroOS.

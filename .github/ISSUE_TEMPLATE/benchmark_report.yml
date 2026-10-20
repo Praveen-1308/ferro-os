@@ -1,0 +1,50 @@
+name: "Benchmark Submission & Empirical Report"
+description: "Submit reproducible benchmark metrics comparing FerroOS against other distributions"
+title: "[BENCHMARK]: "
+labels: ["benchmarks", "performance"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        FerroOS is empirically benchmarked across 12 real-world production application scenarios.
+        Submit your hardware numbers and comparison runs here!
+  - type: dropdown
+    id: benchmark_type
+    attributes:
+      label: Benchmark Scenario
+      options:
+        - "Scenario 01: PostgreSQL 16 OLTP (pgbench)"
+        - "Scenario 02: Postfix MTA & Maildir Spool"
+        - "Scenario 03: Redis 7.2 In-Memory Key-Value"
+        - "Scenario 04: Redpanda / Kafka Event Broker"
+        - "Scenario 05: MinIO S3 Object Store Streaming"
+        - "Scenario 06: NATS JetStream Event Broker"
+        - "Scenario 07: SQLite 3 FTS5 Full-Text Search"
+        - "Scenario 08: Nginx + Gunicorn Python API Gateway"
+        - "Scenario 09: Qdrant Vector DB AI Embeddings"
+        - "Scenario 10: VictoriaMetrics Time-Series Ingestion"
+        - "Scenario 11: Linux Kernel Compilation / Build Farm"
+        - "Scenario 12: Full-Stack Microservices Cold Boot"
+        - "Custom / External Real-World Stack"
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware & Environment Specifications
+      placeholder: "Apple M-Series / AMD EPYC 7763, RAM allocated, Storage type (NVMe)"
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Empirical Metrics & Numbers
+      description: Provide TPS, latency (p50, p99), throughput (MB/s), or boot time (ms).
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction_script
+    attributes:
+      label: Reproduction Script / CLI Commands
+      description: Exact commands or python benchmark orchestrator used.
+      render: shell

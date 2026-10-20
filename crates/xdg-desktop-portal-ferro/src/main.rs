@@ -36,13 +36,16 @@ impl FerroFileChooser {
         multiple: bool,
         _filter_exts: &[&str],
     ) -> (PortalResponse, Vec<String>) {
-        println!("[portal-ferro:FileChooser] OpenFile requested by '{}' (Title: '{}', Multiple: {})", app_id, title, multiple);
-        
+        println!(
+            "[portal-ferro:FileChooser] OpenFile requested by '{}' (Title: '{}', Multiple: {})",
+            app_id, title, multiple
+        );
+
         // In full GUI session, pops up the declarative Ferro-Shell FilePicker dialog.
         // Returns valid file:// URIs:
         let sample_file = self.default_folder.join("document.txt");
         let uri = format!("file://{}", sample_file.display());
-        
+
         (PortalResponse::Success, vec![uri])
     }
 
@@ -53,11 +56,14 @@ impl FerroFileChooser {
         title: &str,
         suggested_name: &str,
     ) -> (PortalResponse, Vec<String>) {
-        println!("[portal-ferro:FileChooser] SaveFile requested by '{}' (Title: '{}', Suggestion: '{}')", app_id, title, suggested_name);
-        
+        println!(
+            "[portal-ferro:FileChooser] SaveFile requested by '{}' (Title: '{}', Suggestion: '{}')",
+            app_id, title, suggested_name
+        );
+
         let target_file = self.default_folder.join(suggested_name);
         let uri = format!("file://{}", target_file.display());
-        
+
         (PortalResponse::Success, vec![uri])
     }
 }
@@ -86,8 +92,12 @@ impl FerroScreenCast {
 
     /// Handle org.freedesktop.impl.portal.ScreenCast.CreateSession
     pub fn create_session(&mut self, session_id: &str, app_id: &str) -> PortalResponse {
-        println!("[portal-ferro:ScreenCast] CreateSession '{}' for app '{}'", session_id, app_id);
-        self.active_sessions.insert(session_id.to_string(), app_id.to_string());
+        println!(
+            "[portal-ferro:ScreenCast] CreateSession '{}' for app '{}'",
+            session_id, app_id
+        );
+        self.active_sessions
+            .insert(session_id.to_string(), app_id.to_string());
         PortalResponse::Success
     }
 
@@ -98,13 +108,19 @@ impl FerroScreenCast {
         source_type: SourceType,
         multiple: bool,
     ) -> PortalResponse {
-        println!("[portal-ferro:ScreenCast] SelectSources for '{}' (SourceType: {:?}, Multiple: {})", session_id, source_type, multiple);
+        println!(
+            "[portal-ferro:ScreenCast] SelectSources for '{}' (SourceType: {:?}, Multiple: {})",
+            session_id, source_type, multiple
+        );
         PortalResponse::Success
     }
 
     /// Handle org.freedesktop.impl.portal.ScreenCast.Start
     pub fn start(&mut self, session_id: &str) -> (PortalResponse, u32) {
-        println!("[portal-ferro:ScreenCast] Start ScreenCast stream for session '{}'", session_id);
+        println!(
+            "[portal-ferro:ScreenCast] Start ScreenCast stream for session '{}'",
+            session_id
+        );
         println!("[portal-ferro:ScreenCast] Wired zero-copy DMA-BUF stream from ferro-compositor to PipeWire node {}", self.pipewire_node_id);
         (PortalResponse::Success, self.pipewire_node_id)
     }
@@ -115,7 +131,10 @@ pub struct FerroScreenshot;
 
 impl FerroScreenshot {
     pub fn capture_screen(interactive: bool) -> (PortalResponse, String) {
-        println!("[portal-ferro:Screenshot] CaptureScreen requested (Interactive: {})", interactive);
+        println!(
+            "[portal-ferro:Screenshot] CaptureScreen requested (Interactive: {})",
+            interactive
+        );
         let output_path = "/tmp/ferro_screenshot.png".to_string();
         (PortalResponse::Success, format!("file://{}", output_path))
     }
@@ -133,11 +152,13 @@ fn main() -> ExitCode {
 
     // 1. Verify FileChooser interface
     let file_chooser = FerroFileChooser::new();
-    let (res, files) = file_chooser.open_file("org.mozilla.firefox", "Open File", false, &["png", "pdf"]);
+    let (res, files) =
+        file_chooser.open_file("org.mozilla.firefox", "Open File", false, &["png", "pdf"]);
     assert_eq!(res, PortalResponse::Success);
     println!("--> FileChooser.OpenFile Verified: {:?}", files);
 
-    let (res, save_files) = file_chooser.save_file("com.visualstudio.code", "Save File As", "main.rs");
+    let (res, save_files) =
+        file_chooser.save_file("com.visualstudio.code", "Save File As", "main.rs");
     assert_eq!(res, PortalResponse::Success);
     println!("--> FileChooser.SaveFile Verified: {:?}", save_files);
 
@@ -147,7 +168,10 @@ fn main() -> ExitCode {
     screencast.select_sources("session-001", SourceType::Monitor, false);
     let (res, stream_node) = screencast.start("session-001");
     assert_eq!(res, PortalResponse::Success);
-    println!("--> ScreenCast.Start Verified (PipeWire Node ID: {})", stream_node);
+    println!(
+        "--> ScreenCast.Start Verified (PipeWire Node ID: {})",
+        stream_node
+    );
 
     // 3. Verify Screenshot interface
     let (res, shot_uri) = FerroScreenshot::capture_screen(false);

@@ -1,0 +1,71 @@
+name: CI - FerroOS Automated Test & Lint Suite
+
+on:
+  push:
+    branches: [ "main", "release/**" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust-check:
+    name: Rust Check & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Verify Formatting (cargo fmt)
+        run: cargo fmt --check
+
+      - name: Workspace Check (cargo check)
+        run: cargo check --workspace --verbose
+
+      - name: Workspace Unit Tests (cargo test)
+        run: cargo test --workspace --verbose
+
+      - name: Workspace Clippy (cargo clippy)
+        run: cargo clippy --workspace -- -W clippy::all
+
+  e2e-empirical-tests:
+    name: Empirical E2E Real-World Test Suites
+    runs-on: ubuntu-latest
+    needs: rust-check
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile Release Binaries
+        run: cargo build --release --workspace
+
+      - name: Run 12-Scenario File I/O Matrix Suite
+        run: python3 tools/test_e2e_all_file_scenarios.py
+
+      - name: Run 12-Scenario Multi-Arch Package Keeper (rpk) Suite
+        run: python3 tools/test_e2e_rpk_multiarch_secure.py
+
+      - name: Run Crash-Only & Zero-Downtime Socket Handover Suite
+        run: python3 tools/test_e2e_fdstore_crash_recovery.py
+
+      - name: Run Local Shared-Memory DNS Resolver Suite
+        run: python3 tools/test_e2e_dns_cache.py

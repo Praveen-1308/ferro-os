@@ -96,13 +96,19 @@ mod linux_init {
             }
             BootOption::SafeMode => {
                 println!("[ferro-init] Booting in SAFE MODE (Minimal Services, Zero Daemons)...");
-                println!("[ferro-init] Non-essential drivers, servers, and background daemons disabled.");
+                println!(
+                    "[ferro-init] Non-essential drivers, servers, and background daemons disabled."
+                );
                 enter_emergency_shell("Safe Mode");
             }
             BootOption::SafeModeNetworking => {
-                println!("[ferro-init] Booting in SAFE MODE WITH NETWORKING (Server / Remote Rescue)...");
+                println!(
+                    "[ferro-init] Booting in SAFE MODE WITH NETWORKING (Server / Remote Rescue)..."
+                );
                 init_network();
-                println!("[ferro-init] Loopback and network stacks are active. Launching rescue shell.");
+                println!(
+                    "[ferro-init] Loopback and network stacks are active. Launching rescue shell."
+                );
                 enter_emergency_shell("Safe Mode (Networking)");
             }
             BootOption::EmergencyShell => {
@@ -162,7 +168,10 @@ mod linux_init {
 
     fn record_boot_in_progress() {
         let _ = fs::remove_file(CLEAN_SHUTDOWN_FLAG);
-        let _ = fs::write("/var/log/ferro_boot.log", format!("Boot started at {:?}\n", Instant::now()));
+        let _ = fs::write(
+            "/var/log/ferro_boot.log",
+            format!("Boot started at {:?}\n", Instant::now()),
+        );
     }
 
     pub fn mark_clean_shutdown() {
@@ -173,9 +182,15 @@ mod linux_init {
     // Interactive Boot & Recovery Menus
     // -------------------------------------------------------------
     fn prompt_boot_menu_with_timeout(timeout_secs: i64) -> BootOption {
-        println!("================================================================================");
-        println!("                        FERRO-OS ADVANCED BOOT LOADER                           ");
-        println!("================================================================================");
+        println!(
+            "================================================================================"
+        );
+        println!(
+            "                        FERRO-OS ADVANCED BOOT LOADER                           "
+        );
+        println!(
+            "================================================================================"
+        );
         println!(" [1] Normal Boot (Full Modern Desktop, Rust Shell, & Server Suite)");
         println!(" [2] Safe Mode (Minimal Drivers, Basic Framebuffer, Zero Background Daemons)");
         println!(" [3] Safe Mode with Networking (Rescue Servers & Headless Recovery)");
@@ -185,8 +200,13 @@ mod linux_init {
         println!(" [7] Hardware Telemetry & Memory Stress Diagnostics");
         println!(" [8] Reboot System");
         println!(" [9] Power Off");
-        println!("================================================================================");
-        print!("Auto-booting Normal Mode in {} seconds... Press [1-9] or [Space/Esc]: ", timeout_secs);
+        println!(
+            "================================================================================"
+        );
+        print!(
+            "Auto-booting Normal Mode in {} seconds... Press [1-9] or [Space/Esc]: ",
+            timeout_secs
+        );
         let _ = io::stdout().flush();
 
         if let Some(ch) = poll_stdin_char(timeout_secs * 1000) {
@@ -218,7 +238,9 @@ mod linux_init {
             } else {
                 println!("                   FERRO-OS ADVANCED RECOVERY ENVIRONMENT                       ");
             }
-            println!("================================================================================");
+            println!(
+                "================================================================================"
+            );
             println!("  [1] Continue to Normal Boot");
             println!("  [2] Safe Mode (Minimal Drivers, Isolated Userland)");
             println!("  [3] Safe Mode with Networking (Loopback + Network Drivers + SSH)");
@@ -228,7 +250,9 @@ mod linux_init {
             println!("  [7] Hardware Telemetry & High-Bandwidth RAM Stress Test");
             println!("  [8] Reboot System");
             println!("  [9] Power Off");
-            println!("================================================================================");
+            println!(
+                "================================================================================"
+            );
             print!("Select an action [1-9]: ");
             let _ = io::stdout().flush();
 
@@ -272,9 +296,15 @@ mod linux_init {
     // Recovery Subsystems & Diagnostics
     // -------------------------------------------------------------
     fn run_system_diagnostic_and_repair() {
-        println!("\n================================================================================");
-        println!("               FERRO-OS AUTOMATED SYSTEM DIAGNOSTIC & SELF-REPAIR               ");
-        println!("================================================================================");
+        println!(
+            "\n================================================================================"
+        );
+        println!(
+            "               FERRO-OS AUTOMATED SYSTEM DIAGNOSTIC & SELF-REPAIR               "
+        );
+        println!(
+            "================================================================================"
+        );
 
         // Check 1: Virtual Mounts
         print!("[DIAGNOSTIC] Checking essential virtual filesystems (/proc, /sys, /dev, /tmp)... ");
@@ -303,7 +333,8 @@ mod linux_init {
 
         // Check 3: Essential Binaries
         print!("[DIAGNOSTIC] Validating Core Utility Binaries (/bin/ferro-core, /bin/sh)... ");
-        let core_ok = Path::new("/bin/ferro-core").exists() || Path::new("/usr/local/bin/ferro-core").exists();
+        let core_ok = Path::new("/bin/ferro-core").exists()
+            || Path::new("/usr/local/bin/ferro-core").exists();
         let sh_ok = Path::new("/bin/sh").exists();
         if core_ok && sh_ok {
             println!("PASS (Present & Executable)");
@@ -317,7 +348,10 @@ mod linux_init {
             println!("PASS");
         } else {
             println!("REPAIRED (Created fallback nameservers 1.1.1.1, 8.8.8.8)");
-            let _ = fs::write("/etc/resolv.conf", "nameserver 1.1.1.1\nnameserver 8.8.8.8\n");
+            let _ = fs::write(
+                "/etc/resolv.conf",
+                "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+            );
         }
 
         // Check 5: Allocator Integrity
@@ -333,26 +367,42 @@ mod linux_init {
             println!("FAIL (Memory corruption detected!)");
         }
 
-        println!("================================================================================");
+        println!(
+            "================================================================================"
+        );
         println!("✅ Automated System Self-Repair Complete: All Core Subsystems Verified.");
-        println!("================================================================================");
+        println!(
+            "================================================================================"
+        );
     }
 
     fn run_system_restore() {
-        println!("\n================================================================================");
+        println!(
+            "\n================================================================================"
+        );
         println!("                 FERRO-OS CONFIGURATION ROLLBACK & RESTORE                     ");
-        println!("================================================================================");
+        println!(
+            "================================================================================"
+        );
         println!("[RESTORE] Resetting /etc/resolv.conf to pristine defaults...");
-        let _ = fs::write("/etc/resolv.conf", "nameserver 1.1.1.1\nnameserver 8.8.8.8\n");
+        let _ = fs::write(
+            "/etc/resolv.conf",
+            "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+        );
 
         println!("[RESTORE] Resetting /etc/hosts...");
-        let _ = fs::write("/etc/hosts", "127.0.0.1 localhost ferro-os\n::1 localhost ip6-localhost ip6-loopback\n");
+        let _ = fs::write(
+            "/etc/hosts",
+            "127.0.0.1 localhost ferro-os\n::1 localhost ip6-localhost ip6-loopback\n",
+        );
 
         println!("[RESTORE] Purging stale locks and PID files in /var/run and /tmp...");
         if let Ok(entries) = fs::read_dir("/var/run") {
             for entry in entries.flatten() {
                 let p = entry.path();
-                if p.extension().map_or(false, |ext| ext == "pid" || ext == "lock") {
+                if p.extension()
+                    .map_or(false, |ext| ext == "pid" || ext == "lock")
+                {
                     let _ = fs::remove_file(p);
                 }
             }
@@ -362,15 +412,25 @@ mod linux_init {
         let _ = fs::remove_file(CRASH_MARKER_FLAG);
         mark_clean_shutdown();
 
-        println!("================================================================================");
+        println!(
+            "================================================================================"
+        );
         println!("✅ Configuration Rollback Applied Successfully.");
-        println!("================================================================================");
+        println!(
+            "================================================================================"
+        );
     }
 
     fn run_hardware_diagnostics() {
-        println!("\n================================================================================");
-        println!("                   FERRO-OS HARDWARE & MEMORY TELEMETRY                         ");
-        println!("================================================================================");
+        println!(
+            "\n================================================================================"
+        );
+        println!(
+            "                   FERRO-OS HARDWARE & MEMORY TELEMETRY                         "
+        );
+        println!(
+            "================================================================================"
+        );
 
         // Memory telemetry
         if let Ok(file) = File::open("/proc/meminfo") {
@@ -400,20 +460,37 @@ mod linux_init {
         }
         let elapsed = start.elapsed();
         let ops_sec = (iterations as f64) / elapsed.as_secs_f64();
-        println!("  Evaluated 50M compute operations in {:.4} seconds", elapsed.as_secs_f64());
-        println!("  Calculation Throughput: {:.2} Million ops/sec", ops_sec / 1e6);
+        println!(
+            "  Evaluated 50M compute operations in {:.4} seconds",
+            elapsed.as_secs_f64()
+        );
+        println!(
+            "  Calculation Throughput: {:.2} Million ops/sec",
+            ops_sec / 1e6
+        );
         println!("  Accumulator Checksum:   0x{:016x}", accum);
-        println!("================================================================================");
+        println!(
+            "================================================================================"
+        );
     }
 
     // -------------------------------------------------------------
     // Shell & Supervisor Execution
     // -------------------------------------------------------------
     fn enter_emergency_shell(label: &str) {
-        println!("\n================================================================================");
-        println!("    FERRO-OS ROOT COMMAND PROMPT [{}]    ", label.to_uppercase());
-        println!("    Type 'exit' to return to boot menu, or use 'reboot' / 'poweroff'.           ");
-        println!("================================================================================");
+        println!(
+            "\n================================================================================"
+        );
+        println!(
+            "    FERRO-OS ROOT COMMAND PROMPT [{}]    ",
+            label.to_uppercase()
+        );
+        println!(
+            "    Type 'exit' to return to boot menu, or use 'reboot' / 'poweroff'.           "
+        );
+        println!(
+            "================================================================================"
+        );
 
         loop {
             let mut shell_cmd = if Path::new("/bin/sh").exists() {
@@ -474,7 +551,9 @@ mod linux_init {
                 cmd.arg("sh");
                 cmd
             } else {
-                eprintln!("[ferro-init] ERROR: No shell binary found at /bin/sh or /bin/ferro-core");
+                eprintln!(
+                    "[ferro-init] ERROR: No shell binary found at /bin/sh or /bin/ferro-core"
+                );
                 std::thread::sleep(std::time::Duration::from_secs(5));
                 continue;
             };
@@ -509,22 +588,51 @@ mod linux_init {
                 c_tgt.as_ptr(),
                 c_fst.as_ptr(),
                 flags,
-                c_data.as_ref().map_or(std::ptr::null(), |d| d.as_ptr() as *const libc::c_void),
+                c_data
+                    .as_ref()
+                    .map_or(std::ptr::null(), |d| d.as_ptr() as *const libc::c_void),
             )
         };
 
         if res != 0 {
             let err = std::io::Error::last_os_error();
-            eprintln!("[ferro-init] Warning: mount {} on {} failed: {}", source, target, err);
+            eprintln!(
+                "[ferro-init] Warning: mount {} on {} failed: {}",
+                source, target, err
+            );
         }
     }
 
     fn mount_essential_filesystems() {
-        mount_fs("proc", "/proc", "proc", libc::MS_NOSUID | libc::MS_NODEV | libc::MS_NOEXEC, None);
-        mount_fs("sysfs", "/sys", "sysfs", libc::MS_NOSUID | libc::MS_NODEV | libc::MS_NOEXEC, None);
+        mount_fs(
+            "proc",
+            "/proc",
+            "proc",
+            libc::MS_NOSUID | libc::MS_NODEV | libc::MS_NOEXEC,
+            None,
+        );
+        mount_fs(
+            "sysfs",
+            "/sys",
+            "sysfs",
+            libc::MS_NOSUID | libc::MS_NODEV | libc::MS_NOEXEC,
+            None,
+        );
         mount_fs("devtmpfs", "/dev", "devtmpfs", libc::MS_NOSUID, None);
-        mount_fs("tmpfs", "/tmp", "tmpfs", libc::MS_NOSUID | libc::MS_NODEV, Some("mode=1777"));
-        mount_fs("devpts", "/dev/pts", "devpts", libc::MS_NOSUID | libc::MS_NOEXEC, Some("gid=5,mode=620"));
+        mount_fs(
+            "tmpfs",
+            "/tmp",
+            "tmpfs",
+            libc::MS_NOSUID | libc::MS_NODEV,
+            Some("mode=1777"),
+        );
+        mount_fs(
+            "devpts",
+            "/dev/pts",
+            "devpts",
+            libc::MS_NOSUID | libc::MS_NOEXEC,
+            Some("gid=5,mode=620"),
+        );
     }
 
     fn set_hostname(name: &str) {
