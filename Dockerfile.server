@@ -53,6 +53,22 @@ COPY tools/libferro_io.c /tmp/libferro_io.c
 RUN gcc -shared -fPIC -O3 -Wall -Wextra /tmp/libferro_io.c -o /usr/lib/libferro_io.so -ldl -lpthread && \
     rm /tmp/libferro_io.c
 
+# 4b. Optimized Ultra-Throughput SQLite Engine (Lookaside memory pool, DEFAULT_MEMSTATUS=0, DIRECT_OVERFLOW_READ, FTS5)
+COPY tools/sqlite/sqlite-amalgamation-3450100/sqlite3.c /tmp/sqlite3.c
+RUN ARCH=$(uname -m) && \
+    LIB_DIR="/usr/lib/${ARCH}-linux-gnu" && \
+    gcc -O3 -fPIC -shared \
+        -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS \
+        -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_ENABLE_MATH_FUNCTIONS \
+        -DSQLITE_THREADSAFE=1 -DSQLITE_DIRECT_OVERFLOW_READ -DSQLITE_DEFAULT_MEMSTATUS=0 \
+        -DSQLITE_MAX_MMAP_SIZE=0x7fff0000 \
+        /tmp/sqlite3.c -o ${LIB_DIR}/libsqlite3.so.0.8.6 -lpthread -ldl -lm && \
+    ln -sf ${LIB_DIR}/libsqlite3.so.0.8.6 ${LIB_DIR}/libsqlite3.so.0 && \
+    if [ -d "/lib/${ARCH}-linux-gnu" ]; then \
+        cp -f ${LIB_DIR}/libsqlite3.so.0.8.6 /lib/${ARCH}-linux-gnu/libsqlite3.so.0.8.6 || true; \
+    fi && \
+    rm /tmp/sqlite3.c
+
 # Configure kernel VFS and dentry cache defaults
 RUN mkdir -p /etc/sysctl.d && \
     printf "vm.vfs_cache_pressure = 50\nvm.swappiness = 10\nvm.max_map_count = 1048576\n" > /etc/sysctl.d/99-ferro-performance.conf
