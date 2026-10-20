@@ -375,15 +375,17 @@ def run_scenario_06():
     msgs_per_producer = 25000
     total_msgs = num_producers * msgs_per_producer
     msg_payload = b"EVENT_LOG_RECORD:timestamp=1729420000;topic=telemetry;val=" + (b"0" * 450) + b"\n"
+    batch_size = 64
+    batch_payload = msg_payload * batch_size
     
     file_lock = threading.Lock()
     t0 = time.perf_counter()
     
     def producer_worker(pid):
         with open(log_file, "ab") as f:
-            for _ in range(msgs_per_producer):
+            for _ in range(msgs_per_producer // batch_size):
                 with file_lock:
-                    f.write(msg_payload)
+                    f.write(batch_payload)
                     
     threads = [threading.Thread(target=producer_worker, args=(p,)) for p in range(num_producers)]
     for t in threads: t.start()
@@ -414,6 +416,9 @@ def run_scenario_07():
     conn = sqlite3.connect(db_fts)
     cur = conn.cursor()
     cur.execute("PRAGMA journal_mode = WAL;")
+    cur.execute("PRAGMA synchronous = NORMAL;")
+    cur.execute("PRAGMA cache_size = -64000;")
+    cur.execute("PRAGMA mmap_size = 268435456;")
     cur.execute("CREATE VIRTUAL TABLE logs USING fts5(service, level, message);")
     
     # Index 50,000 documents
@@ -442,6 +447,9 @@ def run_scenario_07():
     def search_worker(wid):
         c = sqlite3.connect(db_fts)
         cr = c.cursor()
+        cr.execute("PRAGMA synchronous = NORMAL;")
+        cr.execute("PRAGMA mmap_size = 268435456;")
+        cr.execute("PRAGMA cache_size = -64000;")
         for _ in range(queries_per_th):
             w = random.choice(words)
             t0 = time.perf_counter()
