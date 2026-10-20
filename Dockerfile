@@ -30,6 +30,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     breeze-cursor-theme \
     mesa-utils \
     libgl1-mesa-dri \
+    mesa-vulkan-drivers \
+    vulkan-tools \
+    libgbm1 \
+    libdrm2 \
+    glmark2-x11 \
     sudo \
     x11-xserver-utils \
     fonts-noto-core \
@@ -49,6 +54,10 @@ RUN useradd -m -s /bin/bash -u 1000 ferro && \
 # Copy entrypoint script
 COPY tools/entrypoint-desktop.sh /usr/local/bin/entrypoint-desktop.sh
 RUN chmod +x /usr/local/bin/entrypoint-desktop.sh
+
+# Copy FerroOS core utilities (zero-copy cp, gamemode)
+COPY --from=ferro-os-server:latest /usr/local/bin/ferro-core /usr/local/bin/ferro-core
+RUN ln -sf /usr/local/bin/ferro-core /usr/local/bin/gamemode
 
 USER ferro
 WORKDIR /home/ferro
