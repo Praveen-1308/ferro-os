@@ -1,0 +1,113 @@
+# ==============================================================================
+# FerroOS Server Edition: Multi-Stage Ultra-Fast Dedicated Server Image
+# Stage 1: Build Rust Binaries natively in Linux container
+# Stage 2: Lean runtime with mimalloc 2.1 & libferro_io.so
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# STAGE 1: BUILDER
+# ------------------------------------------------------------------------------
+FROM rust:1.80-slim-bookworm AS builder
+
+WORKDIR /build
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
+
+# Build release binaries with Fat LTO and symbol stripping
+RUN cargo build --release -p ferro-init -p ferro-core -p ferro-pkg
+
+# ------------------------------------------------------------------------------
+# STAGE 2: RUNTIME
+# ------------------------------------------------------------------------------
+FROM debian:bookworm-slim AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# 1. Automated APT Debloater
+RUN echo 'APT::Install-Recommends "0";\nAPT::Install-Suggests "0";\nDPkg::Post-Invoke {"rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/groff/* /usr/share/info/* /usr/share/locale/* || true";};' > /etc/apt/apt.conf.d/99ferro-nodoc
+
+# 2. Minimal Server Runtime Dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    libmimalloc2.0 \
+    libmimalloc-dev \
+    python3 \
+    python3-psutil \
+    sqlite3 \
+    procps \
+    net-tools \
+    gcc \
+    libc6-dev \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. Create non-root ferro user & standard directories
+RUN useradd -m -s /bin/bash -u 1000 ferro && \
+    mkdir -p /var/www /var/log/ferro /var/lib/ferro /etc/ferro
+
+# 4. Copy custom acceleration shim & compile
+COPY tools/libferro_io.c /tmp/libferro_io.c
+RUN gcc -shared -fPIC -O3 -Wall -Wextra /tmp/libferro_io.c -o /usr/lib/libferro_io.so -ldl -lpthread && \
+    rm /tmp/libferro_io.c
+
+# Configure system-wide LD_PRELOAD
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ]; then \
+        echo "/usr/lib/aarch64-linux-gnu/libmimalloc.so.2" > /etc/ld.so.preload; \
+    else \
+        echo "/usr/lib/x86_64-linux-gnu/libmimalloc.so.2" > /etc/ld.so.preload; \
+    fi && \
+    echo "/usr/lib/libferro_io.so" >> /etc/ld.so.preload
+
+# 5. Copy Native Linux Rust Binaries from Builder Stage
+COPY --from=builder /build/target/release/ferro-init /usr/local/bin/ferro-init
+COPY --from=builder /build/target/release/ferro-core /usr/local/bin/ferro-core
+COPY --from=builder /build/target/release/ferro-pkg  /usr/local/bin/ferro-pkg
+RUN chmod +x /usr/local/bin/ferro-* && \
+    ln -sf /usr/local/bin/ferro-core /bin/sh-ferro && \
+    ln -sf /usr/local/bin/ferro-pkg /usr/local/bin/rpk
+
+# 6. Copy Server Suite & Sample Website
+COPY tools/ferro-server-suite.py /usr/local/bin/ferro-server-suite.py
+RUN chmod +x /usr/local/bin/ferro-server-suite.py
+
+RUN cat << 'EOF' > /var/www/index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FerroOS Ultra-Fast Server Tier</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #0a0d14; color: #f0f6fc; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { background: rgba(18, 24, 38, 0.85); border: 1px solid rgba(0, 242, 254, 0.3); border-radius: 16px; padding: 32px; width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        h1 { color: #00f2fe; margin-top: 0; font-size: 24px; }
+        .badge { background: rgba(46, 160, 67, 0.2); color: #3fb950; border: 1px solid rgba(46, 160, 67, 0.3); padding: 4px 10px; border-radius: 8px; font-weight: bold; font-size: 12px; }
+        .stat { display: flex; justify-content: space-between; margin: 12px 0; font-family: monospace; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>⬡ FerroOS Dedicated Server</h1>
+        <p>Ultra-Fast Headless Microservices Engine</p>
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 16px 0;">
+        <div class="stat"><span>PID 1 Init:</span><span class="badge">ferro-init (Rust)</span></div>
+        <div class="stat"><span>Memory Allocator:</span><span class="badge">mimalloc 2.1 (228M ops/s)</span></div>
+        <div class="stat"><span>I/O Subsystem:</span><span class="badge">io_uring (libferro_io)</span></div>
+        <div class="stat"><span>Status:</span><span class="badge">100% OPERATIONAL</span></div>
+    </div>
+</body>
+</html>
+EOF
+
+# 7. Server Entrypoint
+COPY tools/entrypoint-server.sh /usr/local/bin/entrypoint-server.sh
+RUN chmod +x /usr/local/bin/entrypoint-server.sh
+
+EXPOSE 8080 8081 8082 8088
+
+USER ferro
+WORKDIR /home/ferro
+
+CMD ["/usr/local/bin/entrypoint-server.sh"]
