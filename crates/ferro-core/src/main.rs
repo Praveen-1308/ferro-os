@@ -81,6 +81,7 @@ fn main() -> ExitCode {
         "supervise" => run_supervise(&command_args),
         "gamemode" => run_gamemode(&command_args),
         "dns-cache" | "dns" => run_dns_cache(&command_args),
+        "fdstore" => run_fdstore(&command_args),
         "recovery" => run_recovery(),
         "help" => {
             print_usage();
@@ -1851,6 +1852,180 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
             println!("  start [--port 5353] [--upstream 1.1.1.1:53]  Run local caching daemon");
             println!("  query <domain> [--port 5353]                 Perform a single timed query");
             println!("  bench <domain> [count] [--port 5353]         Benchmark resolution latency & QPS");
+            ExitCode::SUCCESS
+        }
+    }
+}
+
+// ==============================================================================
+// FerroOS SCM_RIGHTS File Descriptor Passing & FD Store Client
+// ==============================================================================
+
+unsafe fn send_fd(sock: libc::c_int, fd_to_send: libc::c_int, text: &str) -> io::Result<()> {
+    let mut iov = libc::iovec {
+        iov_base: text.as_ptr() as *mut libc::c_void,
+        iov_len: text.len(),
+    };
+
+    let mut cmsg_buf = [0u8; 64];
+    let mut msghdr: libc::msghdr = std::mem::zeroed();
+    msghdr.msg_iov = &mut iov;
+    msghdr.msg_iovlen = 1;
+
+    if fd_to_send >= 0 {
+        msghdr.msg_control = cmsg_buf.as_mut_ptr() as *mut libc::c_void;
+        msghdr.msg_controllen = libc::CMSG_SPACE(std::mem::size_of::<libc::c_int>() as u32) as _;
+
+        let cmsg = libc::CMSG_FIRSTHDR(&msghdr);
+        if !cmsg.is_null() {
+            (*cmsg).cmsg_level = libc::SOL_SOCKET;
+            (*cmsg).cmsg_type = libc::SCM_RIGHTS;
+            (*cmsg).cmsg_len = libc::CMSG_LEN(std::mem::size_of::<libc::c_int>() as u32) as _;
+            let data_ptr = libc::CMSG_DATA(cmsg) as *mut libc::c_int;
+            *data_ptr = fd_to_send;
+        }
+    }
+
+    let ret = libc::sendmsg(sock, &msghdr, 0);
+    if ret < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
+}
+
+unsafe fn recv_fd(sock: libc::c_int, text_buf: &mut [u8]) -> io::Result<(usize, Option<libc::c_int>)> {
+    let mut iov = libc::iovec {
+        iov_base: text_buf.as_mut_ptr() as *mut libc::c_void,
+        iov_len: text_buf.len(),
+    };
+
+    let mut cmsg_buf = [0u8; 64];
+    let mut msghdr: libc::msghdr = std::mem::zeroed();
+    msghdr.msg_iov = &mut iov;
+    msghdr.msg_iovlen = 1;
+    msghdr.msg_control = cmsg_buf.as_mut_ptr() as *mut libc::c_void;
+    msghdr.msg_controllen = cmsg_buf.len() as _;
+
+    let ret = libc::recvmsg(sock, &mut msghdr, 0);
+    if ret < 0 {
+        return Err(io::Error::last_os_error());
+    }
+
+    let mut received_fd = None;
+    let mut cmsg = libc::CMSG_FIRSTHDR(&msghdr);
+    while !cmsg.is_null() {
+        if (*cmsg).cmsg_level == libc::SOL_SOCKET && (*cmsg).cmsg_type == libc::SCM_RIGHTS {
+            let data_ptr = libc::CMSG_DATA(cmsg) as *const libc::c_int;
+            received_fd = Some(*data_ptr);
+            break;
+        }
+        cmsg = libc::CMSG_NXTHDR(&msghdr, cmsg);
+    }
+
+    Ok((ret as usize, received_fd))
+}
+
+fn run_fdstore(args: &[String]) -> ExitCode {
+    let cmd = args.first().map(|s| s.as_str()).unwrap_or("help");
+    let sock_path = if Path::new("/run/ferro/fdstore.sock").exists() {
+        "/run/ferro/fdstore.sock"
+    } else {
+        "/tmp/ferro_fdstore.sock"
+    };
+
+    match cmd {
+        "list" => {
+            println!("⬡ Querying FerroOS FD Store ({})", sock_path);
+            let stream = match std::os::unix::net::UnixStream::connect(sock_path) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("Failed to connect to FD store at {}: {}", sock_path, e);
+                    return ExitCode::FAILURE;
+                }
+            };
+            use std::os::unix::io::AsRawFd;
+            let raw_sock = stream.as_raw_fd();
+            let mut buf = [0u8; 1024];
+            unsafe {
+                let _ = send_fd(raw_sock, -1, "LIST\n");
+                let (n, _) = recv_fd(raw_sock, &mut buf).unwrap_or((0, None));
+                if n > 0 {
+                    println!("{}", String::from_utf8_lossy(&buf[..n]));
+                }
+            }
+            ExitCode::SUCCESS
+        }
+        "store" => {
+            if args.len() < 3 {
+                eprintln!("Usage: ferro-core fdstore store <name> <fd_num>");
+                return ExitCode::FAILURE;
+            }
+            let name = &args[1];
+            let fd: i32 = match args[2].parse() {
+                Ok(f) => f,
+                Err(_) => {
+                    eprintln!("Invalid FD number");
+                    return ExitCode::FAILURE;
+                }
+            };
+            let stream = match std::os::unix::net::UnixStream::connect(sock_path) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("Failed to connect to FD store: {}", e);
+                    return ExitCode::FAILURE;
+                }
+            };
+            use std::os::unix::io::AsRawFd;
+            let raw_sock = stream.as_raw_fd();
+            let msg = format!("STORE {}\n", name);
+            let mut buf = [0u8; 256];
+            unsafe {
+                let _ = send_fd(raw_sock, fd, &msg);
+                let (n, _) = recv_fd(raw_sock, &mut buf).unwrap_or((0, None));
+                if n > 0 {
+                    print!("{}", String::from_utf8_lossy(&buf[..n]));
+                }
+            }
+            ExitCode::SUCCESS
+        }
+        "get" => {
+            if args.len() < 2 {
+                eprintln!("Usage: ferro-core fdstore get <name>");
+                return ExitCode::FAILURE;
+            }
+            let name = &args[1];
+            let stream = match std::os::unix::net::UnixStream::connect(sock_path) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("Failed to connect to FD store: {}", e);
+                    return ExitCode::FAILURE;
+                }
+            };
+            use std::os::unix::io::AsRawFd;
+            let raw_sock = stream.as_raw_fd();
+            let msg = format!("GET {}\n", name);
+            let mut buf = [0u8; 256];
+            unsafe {
+                let _ = send_fd(raw_sock, -1, &msg);
+                let (n, recvd_fd) = recv_fd(raw_sock, &mut buf).unwrap_or((0, None));
+                if n > 0 {
+                    let resp = String::from_utf8_lossy(&buf[..n]);
+                    print!("{}", resp);
+                    if let Some(fd) = recvd_fd {
+                        println!("Received File Descriptor: {}", fd);
+                    }
+                }
+            }
+            ExitCode::SUCCESS
+        }
+        _ => {
+            println!("FerroOS FD Store Client (SCM_RIGHTS Zero-Downtime Handover)");
+            println!("Usage: ferro-core fdstore <command> [options]");
+            println!("\nCommands:");
+            println!("  list                  List all registered daemon file descriptors");
+            println!("  store <name> <fd>     Deposit a file descriptor with PID 1");
+            println!("  get <name>            Retrieve an existing file descriptor from PID 1");
             ExitCode::SUCCESS
         }
     }

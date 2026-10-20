@@ -4,11 +4,14 @@
 
 use std::process::ExitCode;
 
+mod fdstore;
+
 #[cfg(target_os = "linux")]
 mod linux_init {
+    use super::fdstore;
     use std::ffi::CString;
-    use std::fs::{self, File, OpenOptions};
-    use std::io::{self, BufRead, BufReader, Read, Write};
+    use std::fs::{self, File};
+    use std::io::{self, BufRead, BufReader, Write};
     use std::path::Path;
     use std::process::Command;
     use std::time::Instant;
@@ -63,6 +66,10 @@ mod linux_init {
         let _ = fs::create_dir_all("/var/lib/rpk");
         let _ = fs::create_dir_all(STATE_DIR);
         let _ = fs::create_dir_all("/tmp");
+        let _ = fs::create_dir_all("/run/ferro");
+
+        // 3b. Start FD Store Daemon (SCM_RIGHTS Zero-Downtime Socket Handover)
+        let _ = fdstore::FdStoreServer::new().start();
 
         // 4. Detect Previous Crash / Dirty Shutdown
         let crash_detected = detect_crash_state();
