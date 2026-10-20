@@ -53,6 +53,10 @@ COPY tools/libferro_io.c /tmp/libferro_io.c
 RUN gcc -shared -fPIC -O3 -Wall -Wextra /tmp/libferro_io.c -o /usr/lib/libferro_io.so -ldl -lpthread && \
     rm /tmp/libferro_io.c
 
+# Configure kernel VFS and dentry cache defaults
+RUN mkdir -p /etc/sysctl.d && \
+    printf "vm.vfs_cache_pressure = 50\nvm.swappiness = 10\nvm.max_map_count = 1048576\n" > /etc/sysctl.d/99-ferro-performance.conf
+
 # Configure system-wide LD_PRELOAD
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then \
