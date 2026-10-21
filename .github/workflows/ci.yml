@@ -78,3 +78,6 @@ jobs:
 
       - name: Run 12-Scenario SchedExt & CPU Scheduler Suite
         run: python3 tools/test_e2e_sched_ext.py
+
+      - name: Run 12-Scenario Steam & Proton Gaming Layer Suite
+        run: python3 tools/test_e2e_gaming_layer.py
