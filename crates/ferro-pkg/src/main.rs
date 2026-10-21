@@ -1142,6 +1142,9 @@ fn cmd_msi_extract(args: &[String]) -> ExitCode {
         if (args[i] == "--target" || args[i] == "-t") && i + 1 < args.len() {
             target_dir = PathBuf::from(&args[i + 1]);
             i += 2;
+        } else if !args[i].starts_with('-') {
+            target_dir = PathBuf::from(&args[i]);
+            i += 1;
         } else {
             i += 1;
         }
