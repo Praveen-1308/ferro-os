@@ -10,7 +10,7 @@
 [![CodeQL Security Analysis](https://github.com/Praveen-1308/ferro-os/actions/workflows/codeql.yml/badge.svg)](https://github.com/Praveen-1308/ferro-os/actions/workflows/codeql.yml)
 [![Nightly Health Cron](https://github.com/Praveen-1308/ferro-os/actions/workflows/nightly-cron.yml/badge.svg)](https://github.com/Praveen-1308/ferro-os/actions/workflows/nightly-cron.yml)
 [![Release](https://img.shields.io/badge/Release-v1.0.0--Gold-blue.svg)](https://github.com/Praveen-1308/ferro-os/releases/tag/v1.0.0-gold-recovery-point)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status: Open Experimental](https://img.shields.io/badge/Status-Open%20Experimental-blue.svg)](LICENSE)
 [![Benchmarks](https://img.shields.io/badge/Enterprise%20Benchmarks-12%2F12%20%231%20Sweep-brightgreen.svg)](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)
 
 **[🌐 Live Documentation Portal](https://praveen-1308.github.io/ferro-os/)** • **[📊 Interactive Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)** • **[🚀 Quick Start](#-quick-start)** • **[💬 Discussions](https://github.com/Praveen-1308/ferro-os/discussions)**
@@ -418,7 +418,7 @@ ferro-os/
 ├── Dockerfile.server         # Server Edition container (mimalloc, libferro_io, microservices)
 ├── CONTRIBUTING.md           # Developer guidelines & zero-mock testing philosophy
 ├── SECURITY.md               # Vulnerability disclosure policy
-├── LICENSE                   # MIT License
+├── LICENSE                   # Project Notice & Experimental Terms
 └── README.md
 ```
 
@@ -433,7 +433,7 @@ We welcome contributions from developers across the globe! Please review:
 
 ---
 
-## 📜 License
+## 📜 Project Status & Terms
 
-FerroOS is open-source software which is still in experimental stages
+FerroOS is an open-source experimental operating system project developed for research, exploration, and performance benchmarking. No formal license or copyright registration has been applied. It is freely provided "as is" for community experimentation, study, and evaluation.
 

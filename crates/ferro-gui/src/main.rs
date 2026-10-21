@@ -316,7 +316,7 @@ fn main() -> ExitCode {
     fb.draw_text(
         w2_x + 15,
         start_y + 45,
-        "Type \"help\", \"copyright\", or \"license\".",
+        "Type \"help\" for more information.",
         0xFF64748b,
     );
 
