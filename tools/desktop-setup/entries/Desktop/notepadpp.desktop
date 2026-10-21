@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Notepad++
+Comment=Notepad++ v8.9.8.1 (64-bit Windows)
+Exec=ferro-core win-run /home/ferro/notepadpp/notepad++.exe --prefix /home/ferro/.wine-x64
+Icon=/home/ferro/.icons/extracted/notepadpp_exact.png
+Terminal=false
+Type=Application
+Categories=Utility;TextEditor;

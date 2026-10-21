@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Gears of War (PC)
+Comment=Tactical Third-Person Shooter & Launcher (Epic Games / Microsoft)
+Exec=/home/ferro/GearsOfWar/gears_launcher.py
+Icon=applications-games
+Terminal=false
+Type=Application
+Categories=Game;ActionGame;

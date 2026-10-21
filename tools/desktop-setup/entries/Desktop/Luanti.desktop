@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Luanti (Minetest 3D)
+Comment=Infinite-world 3D voxel sandbox game (64-bit Windows PE)
+Exec=ferro-core win-run /home/ferro/games/minetest_win64/luanti-5.17.0-win64/bin/luanti.exe --prefix /home/ferro/.wine-x64
+Icon=/home/ferro/.icons/extracted/luanti_1_48x48x32.png
+Terminal=false
+Type=Application
+Categories=Game;Simulation;

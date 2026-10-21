@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Unigine Valley 1.0
+Comment=Forest & Nature 3D Benchmark (Unigine Corp)
+Exec=/home/ferro/bin/ferro-launch 'Unigine Valley 1.0' '/home/ferro/games/unigine_valley/extracted/app/bin/Valley.exe' '/home/ferro/.icons/extracted/unigine_valley.png'
+Icon=/home/ferro/.icons/extracted/unigine_valley.png
+Terminal=false
+Type=Application
+Categories=Game;Benchmark;

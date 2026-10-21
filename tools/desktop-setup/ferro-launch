@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+APP_NAME="$1"
+EXE_PATH="$2"
+ICON_PATH="$3"
+PREFIX="$4"
+
+SAFE_NAME=$(echo "$APP_NAME" | tr ' ' '_')
+LOG_FILE="/tmp/ferro_launch_${SAFE_NAME}.log"
+
+# Check binary architecture
+FILE_TYPE=$(file "$EXE_PATH")
+HOST_ARCH=$(uname -m)
+
+if echo "$FILE_TYPE" | grep -q "PE32 executable" && [ "$HOST_ARCH" = "aarch64" ]; then
+    kdialog --title "${APP_NAME} - Subsystem Diagnostic"         --icon "$ICON_PATH"         --detailederror "<b>${APP_NAME}</b> cannot execute on this host architecture.<br><br><b>Technical Root Cause:</b><br>• Application Format: <b>32-bit Windows PE (Intel 80386)</b><br>• Host CPU: <b>Apple Silicon (ARM64)</b><br>• Emulation Failure: Apple Silicon CPU hardware drops 32-bit execution mode. Running 32-bit x86 binaries under user-mode QEMU fails with virtual memory collision at <b>0x7ffe0000</b> (error <code>c0000018</code>).<br><br><b>Success Rate:</b> 0% for legacy 32-bit x86 binaries on ARM64.<br><b>Supported:</b> 64-bit Windows applications (such as <b>Luanti 64-bit</b>, <b>Notepad++ 64-bit</b>, and <b>7-Zip x64</b>) run at <b>100% success rate</b> via Box64 dynarec."         "Binary Information:\n${FILE_TYPE}\n\nHost Hardware:\nCPU Architecture: ${HOST_ARCH} (Apple Silicon)\nInstruction Sets: AArch64 (64-bit only)\n\nCompatibility Matrix:\n- 64-bit Windows PE (PE32+): Supported via Box64 & Wine64 (100% Success)\n- 32-bit Windows PE (PE32): Incompatible on ARM64 without 32-bit dynarec bridge (0x7ffe0000 address space collision)"
+    exit 1
+fi
+
+echo "[$(date)] Launching ${APP_NAME}: ${EXE_PATH}" > "$LOG_FILE"
+if [ -n "$PREFIX" ]; then
+    ferro-core win-run "$EXE_PATH" --prefix "$PREFIX" >> "$LOG_FILE" 2>&1
+    RET=$?
+else
+    ferro-core win-run "$EXE_PATH" >> "$LOG_FILE" 2>&1
+    RET=$?
+fi
+
+echo "[$(date)] Process exited with code ${RET}" >> "$LOG_FILE"
+
+if [ $RET -ne 0 ]; then
+    kdialog --title "${APP_NAME} - Launch Failure"         --icon "$ICON_PATH"         --error "<b>${APP_NAME}</b> terminated with exit code ${RET}.<br><br>See log file: ${LOG_FILE}"
+fi

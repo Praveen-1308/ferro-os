@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Neverball 3D
+Exec=env PULSE_SERVER=unix:/run/user/1000/pulse/native SDL_AUDIODRIVER=pulseaudio PULSE_LATENCY_MSEC=60 ferro-core game run /usr/games/neverball
+Icon=neverball
+Categories=Game;
+Terminal=false
+StartupNotify=true

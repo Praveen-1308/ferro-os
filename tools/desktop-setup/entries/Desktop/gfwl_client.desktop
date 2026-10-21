@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Games for Windows - LIVE
+Comment=Microsoft Games for Windows Marketplace Client (Legacy 32-bit PE)
+Exec=/home/ferro/bin/ferro-launch 'Games for Windows - LIVE' '/home/ferro/GFWL/Program Files/Microsoft Games for Windows - LIVE/Client/GFWLive.exe' '/home/ferro/.icons/extracted/gfwl_1_256x256x32.png'
+Icon=/home/ferro/.icons/extracted/gfwl_1_256x256x32.png
+Terminal=false
+Type=Application
+Categories=Game;

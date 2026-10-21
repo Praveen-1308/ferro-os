@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=7-Zip File Manager
+Comment=High-compression file archiver (64-bit Windows)
+Exec=ferro-core win-run /home/ferro/7zip/extracted/_7zFM.exe --prefix /home/ferro/.wine-x64
+Icon=/home/ferro/.icons/extracted/7zFM_1_110x63x8.png
+Terminal=false
+Type=Application
+Categories=Utility;Archiving;

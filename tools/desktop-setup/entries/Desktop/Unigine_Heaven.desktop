@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Unigine Heaven 4.0
+Comment=DirectX & OpenGL 3D Benchmark (Unigine Corp)
+Exec=/home/ferro/bin/ferro-launch 'Unigine Heaven 4.0' '/home/ferro/games/unigine_heaven/extracted/app/bin/Heaven.exe' '/home/ferro/.icons/extracted/unigine_heaven.png'
+Icon=/home/ferro/.icons/extracted/unigine_heaven.png
+Terminal=false
+Type=Application
+Categories=Game;Benchmark;
