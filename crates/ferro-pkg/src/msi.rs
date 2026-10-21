@@ -5,6 +5,7 @@
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
+use flate2::read::DeflateDecoder;
 
 /// Magic bytes for Microsoft Compound Document File (OLE CFBF)
 pub const OLE_MAGIC: [u8; 8] = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
@@ -298,32 +299,64 @@ impl MsiExtractor {
                 }
             }
 
-            // If stream is a Cabinet archive, scan and extract embedded PE binaries
+            // If stream is a Cabinet archive, decompress and unpack embedded files
             if s.data.len() >= 4 && &s.data[0..4] == CAB_MAGIC {
-                let embedded = scan_for_pe_signatures(&s.data);
-                for (offset, bin_name) in embedded {
-                    let bin_path = target_dir.join(sanitize_filename(&bin_name));
-                    if offset < s.data.len() {
-                        let pe_data = &s.data[offset..];
-                        if let Ok(mut bf) = File::create(&bin_path) {
-                            let _ = bf.write_all(pe_data);
-                            total_bytes += pe_data.len() as u64;
+                if let Ok(cab_files) = extract_cabinet_stream(&s.data) {
+                    for (file_name, file_bytes) in cab_files {
+                        let clean_sub = sanitize_filename(&file_name);
+                        let sub_path = target_dir.join(&clean_sub);
+                        if let Ok(mut sf) = File::create(&sub_path) {
+                            let _ = sf.write_all(&file_bytes);
+                            total_bytes += file_bytes.len() as u64;
                             #[cfg(target_os = "linux")]
                             {
                                 use std::os::unix::fs::PermissionsExt;
-                                let _ = fs::set_permissions(
-                                    &bin_path,
-                                    fs::Permissions::from_mode(0o755),
-                                );
+                                if file_bytes.len() >= 2 && file_bytes[0..2] == PE_DOS_MAGIC {
+                                    let _ = fs::set_permissions(&sub_path, fs::Permissions::from_mode(0o755));
+                                }
                             }
-                            if main_exe.is_none() {
-                                main_exe = Some(bin_path.clone());
+                            if file_bytes.len() >= 2 && file_bytes[0..2] == PE_DOS_MAGIC && main_exe.is_none() {
+                                main_exe = Some(sub_path.clone());
                             }
-                            extracted.push(bin_path);
+                            extracted.push(sub_path);
+                        }
+                    }
+                } else {
+                    // Fallback: scan for embedded PE binaries
+                    let embedded = scan_for_pe_signatures(&s.data);
+                    for (offset, bin_name) in embedded {
+                        let bin_path = target_dir.join(sanitize_filename(&bin_name));
+                        if offset < s.data.len() {
+                            let pe_data = &s.data[offset..];
+                            if let Ok(mut bf) = File::create(&bin_path) {
+                                let _ = bf.write_all(pe_data);
+                                total_bytes += pe_data.len() as u64;
+                                #[cfg(target_os = "linux")]
+                                {
+                                    use std::os::unix::fs::PermissionsExt;
+                                    let _ = fs::set_permissions(
+                                        &bin_path,
+                                        fs::Permissions::from_mode(0o755),
+                                    );
+                                }
+                                if main_exe.is_none() {
+                                    main_exe = Some(bin_path.clone());
+                                }
+                                extracted.push(bin_path);
+                            }
                         }
                     }
                 }
             }
+        }
+
+        // Generate virtualized user-space registry hive and prefix structure
+        if let Some(ref exe) = main_exe {
+            let app_name = exe
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("WindowsApp");
+            let _ = generate_virtual_wine_prefix(target_dir, app_name, exe);
         }
 
         // Generate .desktop shortcut if executable found
@@ -422,4 +455,183 @@ fn scan_for_pe_signatures(data: &[u8]) -> Vec<(usize, String)> {
 
 fn dirs_home() -> Option<PathBuf> {
     std::env::var_os("HOME").map(PathBuf::from)
+}
+
+/// Pure-Rust MS-CAB (Microsoft Cabinet) Archive Parser & Decompressor
+/// Supports uncompressed (0x0000) and MSZIP / Deflate (0x0001) compression formats.
+pub fn extract_cabinet_stream(data: &[u8]) -> io::Result<Vec<(String, Vec<u8>)>> {
+    if data.len() < 36 || &data[0..4] != CAB_MAGIC {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Not a valid Microsoft Cabinet (MSCF) archive",
+        ));
+    }
+
+    let coff_files = u32::from_le_bytes([data[16], data[17], data[18], data[19]]) as usize;
+    let c_folders = u16::from_le_bytes([data[26], data[27]]) as usize;
+    let c_files = u16::from_le_bytes([data[28], data[29]]) as usize;
+    let flags = u16::from_le_bytes([data[30], data[31]]);
+
+    let mut header_len = 36;
+    let mut cb_cf_folder = 0;
+    let mut cb_cf_data = 0;
+
+    if (flags & 0x0004) != 0 && data.len() >= 40 {
+        let cb_cf_header = u16::from_le_bytes([data[32], data[33]]) as usize;
+        cb_cf_folder = data[34] as usize;
+        cb_cf_data = data[35] as usize;
+        header_len = 36 + cb_cf_header;
+    }
+
+    // 1. Parse CFFOLDER entries
+    let mut folders = Vec::new();
+    let mut cur = header_len;
+    for _ in 0..c_folders {
+        if cur + 8 + cb_cf_folder > data.len() {
+            break;
+        }
+        let coff_cab_start = u32::from_le_bytes([data[cur], data[cur + 1], data[cur + 2], data[cur + 3]]) as usize;
+        let c_cf_data = u16::from_le_bytes([data[cur + 4], data[cur + 5]]) as usize;
+        let type_compress = u16::from_le_bytes([data[cur + 6], data[cur + 7]]);
+        folders.push((coff_cab_start, c_cf_data, type_compress));
+        cur += 8 + cb_cf_folder;
+    }
+
+    // 2. Parse CFFILE entries
+    let mut files = Vec::new();
+    cur = coff_files;
+    for _ in 0..c_files {
+        if cur + 16 > data.len() {
+            break;
+        }
+        let cb_file = u32::from_le_bytes([data[cur], data[cur + 1], data[cur + 2], data[cur + 3]]) as usize;
+        let uoff_folder = u32::from_le_bytes([data[cur + 4], data[cur + 5], data[cur + 6], data[cur + 7]]) as usize;
+        let i_folder = u16::from_le_bytes([data[cur + 8], data[cur + 9]]) as usize;
+        cur += 16;
+
+        let name_start = cur;
+        while cur < data.len() && data[cur] != 0 {
+            cur += 1;
+        }
+        let raw_name = String::from_utf8_lossy(&data[name_start..cur]).to_string();
+        if cur < data.len() {
+            cur += 1; // skip null terminator
+        }
+        files.push((raw_name, cb_file, uoff_folder, i_folder));
+    }
+
+    // 3. Decompress folders and extract files
+    let mut extracted_files = Vec::new();
+    for (folder_idx, (coff_cab_start, c_cf_data, type_compress)) in folders.into_iter().enumerate() {
+        let mut folder_bytes = Vec::new();
+        let mut blk_off = coff_cab_start;
+
+        for _ in 0..c_cf_data {
+            if blk_off + 8 + cb_cf_data > data.len() {
+                break;
+            }
+            let cb_data = u16::from_le_bytes([data[blk_off + 4], data[blk_off + 5]]) as usize;
+            let _cb_uncomp = u16::from_le_bytes([data[blk_off + 6], data[blk_off + 7]]) as usize;
+            blk_off += 8 + cb_cf_data;
+
+            if blk_off + cb_data > data.len() {
+                break;
+            }
+            let chunk = &data[blk_off..blk_off + cb_data];
+            blk_off += cb_data;
+
+            if type_compress == 0 {
+                // Uncompressed
+                folder_bytes.extend_from_slice(chunk);
+            } else if type_compress == 1 {
+                // MSZIP (Deflate with 2-byte 'CK' header)
+                let payload = if chunk.len() >= 2 && chunk[0] == 0x43 && chunk[1] == 0x4B {
+                    &chunk[2..]
+                } else {
+                    chunk
+                };
+                let mut decoder = DeflateDecoder::new(payload);
+                let _ = decoder.read_to_end(&mut folder_bytes);
+            }
+        }
+
+        // Slice files belonging to this folder
+        for (name, cb_file, uoff_folder, i_folder) in &files {
+            if *i_folder == folder_idx {
+                let start = *uoff_folder;
+                let end = start + cb_file;
+                if end <= folder_bytes.len() {
+                    extracted_files.push((name.clone(), folder_bytes[start..end].to_vec()));
+                }
+            }
+        }
+    }
+
+    Ok(extracted_files)
+}
+
+/// Generates a virtualized Wine registry hive (system.reg and user.reg) inside the isolated prefix.
+pub fn generate_virtual_wine_prefix(target_dir: &Path, app_name: &str, main_exe: &Path) -> io::Result<()> {
+    let drive_c = target_dir.join("drive_c");
+    let prog_files = drive_c.join("Program Files").join(app_name);
+    let sys32 = drive_c.join("windows/system32");
+    let users = drive_c.join("users/ferro");
+
+    fs::create_dir_all(&prog_files)?;
+    fs::create_dir_all(&sys32)?;
+    fs::create_dir_all(&users)?;
+
+    let exe_name = main_exe
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("app.exe");
+    let win_path = format!("C:\\\\Program Files\\\\{}\\\\{}", app_name, exe_name);
+
+    let system_reg_content = format!(
+r#"WINE REGISTRY Version 2
+;; All keys relative to \\Machine
+
+[Software\\Microsoft\\Windows\\CurrentVersion]
+"ProgramFilesDir"="C:\\Program Files"
+"CommonFilesDir"="C:\\Program Files\\Common Files"
+
+[Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\{exe_name}]
+@="{win_path}"
+"Path"="C:\\Program Files\\{app_name}"
+
+[Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{app_name}]
+"DisplayName"="{app_name}"
+"DisplayVersion"="1.0.0"
+"InstallLocation"="C:\\Program Files\\{app_name}"
+"Publisher"="FerroOS Virtual Subsystem"
+"UninstallString"="\"C:\\Program Files\\{app_name}\\uninstall.exe\""
+
+[Software\\{app_name}]
+"Installed"=dword:00000001
+"InstallPath"="C:\\Program Files\\{app_name}"
+"#);
+    fs::write(target_dir.join("system.reg"), system_reg_content)?;
+
+    let user_reg_content = format!(
+r#"WINE REGISTRY Version 2
+;; All keys relative to \\User\\S-1-5-21-0-0-0-1000
+
+[Environment]
+"PATH"="C:\\windows\\system32;C:\\windows;C:\\Program Files\\{app_name}"
+"TEMP"="C:\\users\\ferro\\Temp"
+"TMP"="C:\\users\\ferro\\Temp"
+
+[Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders]
+"AppData"="C:\\users\\ferro\\AppData\\Roaming"
+"Desktop"="C:\\users\\ferro\\Desktop"
+"Personal"="C:\\users\\ferro\\Documents"
+"Programs"="C:\\users\\ferro\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs"
+
+[Software\\{app_name}]
+"FirstRun"=dword:00000000
+"#);
+    fs::write(target_dir.join("user.reg"), user_reg_content)?;
+    fs::write(target_dir.join("userdef.reg"), "WINE REGISTRY Version 2\n")?;
+
+    Ok(())
 }

@@ -4032,6 +4032,8 @@ fn run_win_run(args: &[String]) -> ExitCode {
                 } else {
                     eprintln!("  ⚠️ Notice: 32-bit x86 Windows binary detected on an ARM64 host without Box86.");
                     eprintln!("     Standard QEMU user-mode emulation may encounter the 0x7ffe0000 memory address collision.");
+                    eprintln!("     Architecture Constraint: Apple Silicon / ARM64 v9 cores omit AArch32 hardware mode.");
+                    eprintln!("     Box86 requires 32-bit ARM execution. For 32-bit PEs on 64-bit-only ARM, Wine WoW64 mode is required.");
                     eprintln!("     Box86 bridge or native 64-bit/ARM64 binary is recommended.");
                     if let Some(wine) = which_bin("wine").or_else(|| which_bin("wine64")) {
                         let mut w = Command::new(wine);

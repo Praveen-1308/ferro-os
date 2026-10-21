@@ -16,6 +16,7 @@ use std::process::ExitCode;
 use tar::{Archive, Builder};
 
 pub mod msi;
+pub mod pe;
 
 const DEFAULT_DB_PATH: &str = "/var/lib/rpk/db.json";
 
@@ -323,6 +324,7 @@ fn main() -> ExitCode {
         "game" => cmd_game(&filtered_args[1..]),
         "msi-extract" | "msi" => cmd_msi_extract(&filtered_args[1..]),
         "msi-info" => cmd_msi_info(&filtered_args[1..]),
+        "pe-info" | "pe-inspect" | "pe" => cmd_pe_info(&filtered_args[1..]),
         "help" | "--help" => {
             print_usage();
             ExitCode::SUCCESS
@@ -355,6 +357,7 @@ fn print_usage() {
     println!("  msi-extract <file>    Extract Windows .msi installer without Windows VM");
     println!("                        Options: --target <dir>");
     println!("  msi-info <file>       Inspect streams & embedded binaries inside an .msi");
+    println!("  pe-info <file.exe>    Inspect PE headers, sections, imports & native Win32 shims");
 }
 
 // ==============================================================================
@@ -1179,6 +1182,46 @@ fn cmd_msi_extract(args: &[String]) -> ExitCode {
     }
 }
 
+fn cmd_pe_info(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("rpk pe-info: usage: rpk pe-info <file.exe>");
+        return ExitCode::FAILURE;
+    }
+
+    let pe_path = Path::new(&args[0]);
+    match pe::PeInspector::open(pe_path) {
+        Ok(inspector) => match inspector.analyze() {
+            Ok(analysis) => {
+                println!("🔍 [Windows PE Analysis] '{}'", pe_path.display());
+                println!("  • Architecture:     {}", analysis.architecture.description());
+                println!("  • Subsystem:        {}", analysis.subsystem.description());
+                println!("  • Entrypoint RVA:   0x{:08X}", analysis.entry_point_rva);
+                println!("  • Image Base:       0x{:016X}", analysis.image_base);
+                println!("  • Virtual Image:    {} KiB (Section Alignment: {} B)", analysis.size_of_image / 1024, analysis.section_alignment);
+                println!("  • Total Sections:   {}", analysis.sections.len());
+                for s in &analysis.sections {
+                    println!("      [{:8}] VirtAddr: 0x{:08X} (Size: {:6} B) RawSize: {:6} B", s.name, s.virtual_address, s.virtual_size, s.raw_data_size);
+                }
+                println!("  • Imported DLLs:    {}", analysis.imports.len());
+                for imp in &analysis.imports {
+                    println!("      [{}] ({} imported functions)", imp.dll_name, imp.functions.len());
+                }
+                println!("  • Native Shims:     {:.1}% standard NTDLL/KERNEL32 coverage", analysis.native_stub_coverage_pct);
+                println!("  🚀 Recommended:     {}", analysis.recommended_engine);
+                ExitCode::SUCCESS
+            }
+            Err(e) => {
+                eprintln!("rpk pe-info: failed to analyze PE '{}': {}", pe_path.display(), e);
+                ExitCode::FAILURE
+            }
+        },
+        Err(e) => {
+            eprintln!("rpk pe-info: failed to open PE '{}': {}", pe_path.display(), e);
+            ExitCode::FAILURE
+        }
+    }
+}
+
 // ==============================================================================
 // Unit Tests
 // ==============================================================================
@@ -1344,6 +1387,204 @@ mod tests {
         assert!(report.main_executable.is_some());
         assert!(report.desktop_shortcut.is_some());
 
+        // Verify virtualized Wine registry hive generation
+        assert!(temp_dir.join("system.reg").exists());
+        assert!(temp_dir.join("user.reg").exists());
+        assert!(temp_dir.join("drive_c/Program Files/App").exists());
+
+        let sys_reg = fs::read_to_string(temp_dir.join("system.reg")).unwrap();
+        assert!(sys_reg.contains(r#"[Software\App]"#) || sys_reg.contains(r#"[Software\\App]"#));
+        assert!(sys_reg.contains("\"Installed\"=dword:00000001"));
+
         let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_cabinet_extractor_uncompressed() {
+        let mut cab = Vec::new();
+        cab.extend_from_slice(b"MSCF");
+        cab.extend_from_slice(&[0u8; 4]);
+        cab.extend_from_slice(&100u32.to_le_bytes());
+        cab.extend_from_slice(&[0u8; 4]);
+        cab.extend_from_slice(&44u32.to_le_bytes()); // coffFiles
+        cab.extend_from_slice(&[0u8; 4]);
+        cab.push(3);
+        cab.push(1);
+        cab.extend_from_slice(&1u16.to_le_bytes()); // cFolders = 1
+        cab.extend_from_slice(&1u16.to_le_bytes()); // cFiles = 1
+        cab.extend_from_slice(&0u16.to_le_bytes()); // flags = 0
+        cab.extend_from_slice(&0u16.to_le_bytes());
+        cab.extend_from_slice(&0u16.to_le_bytes());
+
+        // CFFOLDER
+        cab.extend_from_slice(&70u32.to_le_bytes()); // coffCabStart
+        cab.extend_from_slice(&1u16.to_le_bytes()); // cCFData
+        cab.extend_from_slice(&0u16.to_le_bytes()); // typeCompress = 0 (None)
+
+        // CFFILE
+        cab.extend_from_slice(&11u32.to_le_bytes()); // cbFile = 11
+        cab.extend_from_slice(&0u32.to_le_bytes()); // uoffFolderStart = 0
+        cab.extend_from_slice(&0u16.to_le_bytes()); // iFolder = 0
+        cab.extend_from_slice(&0u16.to_le_bytes());
+        cab.extend_from_slice(&0u16.to_le_bytes());
+        cab.extend_from_slice(&0u16.to_le_bytes());
+        cab.extend_from_slice(b"test.txt\0");
+
+        while cab.len() < 70 {
+            cab.push(0);
+        }
+
+        // CFDATA
+        cab.extend_from_slice(&0u32.to_le_bytes()); // csum
+        cab.extend_from_slice(&11u16.to_le_bytes()); // cbData
+        cab.extend_from_slice(&11u16.to_le_bytes()); // cbUncomp
+        cab.extend_from_slice(b"hello world");
+
+        let files = msi::extract_cabinet_stream(&cab).expect("Extract uncompressed CAB");
+        assert_eq!(files.len(), 1);
+        assert_eq!(files[0].0, "test.txt");
+        assert_eq!(files[0].1, b"hello world");
+    }
+
+    #[test]
+    fn test_cabinet_extractor_mszip() {
+        use flate2::write::DeflateEncoder;
+        use flate2::Compression;
+        use std::io::Write;
+
+        let raw_content = b"FerroOS Native MSZIP Cabinet Decompression in Pure Rust";
+        let mut encoder = DeflateEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(raw_content).unwrap();
+        let compressed = encoder.finish().unwrap();
+
+        let mut mszip_chunk = Vec::new();
+        mszip_chunk.push(0x43); // 'C'
+        mszip_chunk.push(0x4B); // 'K'
+        mszip_chunk.extend_from_slice(&compressed);
+
+        let mut cab = Vec::new();
+        cab.extend_from_slice(b"MSCF");
+        cab.extend_from_slice(&[0u8; 4]);
+        cab.extend_from_slice(&500u32.to_le_bytes());
+        cab.extend_from_slice(&[0u8; 4]);
+        cab.extend_from_slice(&44u32.to_le_bytes()); // coffFiles
+        cab.extend_from_slice(&[0u8; 4]);
+        cab.push(3);
+        cab.push(1);
+        cab.extend_from_slice(&1u16.to_le_bytes()); // cFolders = 1
+        cab.extend_from_slice(&1u16.to_le_bytes()); // cFiles = 1
+        cab.extend_from_slice(&0u16.to_le_bytes()); // flags = 0
+        cab.extend_from_slice(&0u16.to_le_bytes());
+        cab.extend_from_slice(&0u16.to_le_bytes());
+
+        // CFFOLDER
+        cab.extend_from_slice(&70u32.to_le_bytes()); // coffCabStart
+        cab.extend_from_slice(&1u16.to_le_bytes()); // cCFData = 1
+        cab.extend_from_slice(&1u16.to_le_bytes()); // typeCompress = 1 (MSZIP)
+
+        // CFFILE
+        cab.extend_from_slice(&(raw_content.len() as u32).to_le_bytes());
+        cab.extend_from_slice(&0u32.to_le_bytes());
+        cab.extend_from_slice(&0u16.to_le_bytes());
+        cab.extend_from_slice(&0u16.to_le_bytes());
+        cab.extend_from_slice(&0u16.to_le_bytes());
+        cab.extend_from_slice(&0u16.to_le_bytes());
+        cab.extend_from_slice(b"payload.bin\0");
+
+        let coff_cab_start = cab.len() as u32;
+        cab[36..40].copy_from_slice(&coff_cab_start.to_le_bytes());
+
+        // CFDATA
+        cab.extend_from_slice(&0u32.to_le_bytes());
+        cab.extend_from_slice(&(mszip_chunk.len() as u16).to_le_bytes());
+        cab.extend_from_slice(&(raw_content.len() as u16).to_le_bytes());
+        cab.extend_from_slice(&mszip_chunk);
+
+        let files = msi::extract_cabinet_stream(&cab).expect("Extract MSZIP CAB");
+        assert_eq!(files.len(), 1);
+        assert_eq!(files[0].0, "payload.bin");
+        assert_eq!(files[0].1, raw_content);
+    }
+
+    #[test]
+    fn test_pe_inspector_synthetic_pe64() {
+        let mut pe_bytes = vec![0u8; 1024];
+        // DOS Header
+        pe_bytes[0] = b'M';
+        pe_bytes[1] = b'Z';
+        pe_bytes[0x3C] = 0x80; // e_lfanew at 0x80
+
+        // PE Header at 0x80
+        pe_bytes[0x80..0x84].copy_from_slice(b"PE\0\0");
+        // COFF Header (20 bytes): 0x84..0x98
+        pe_bytes[0x84..0x86].copy_from_slice(&0x8664u16.to_le_bytes()); // AMD64
+        pe_bytes[0x86..0x88].copy_from_slice(&1u16.to_le_bytes()); // 1 section
+        pe_bytes[0x94..0x96].copy_from_slice(&240u16.to_le_bytes()); // opt header size
+
+        // Optional Header at 0x98
+        pe_bytes[0x98..0x9A].copy_from_slice(&0x020Bu16.to_le_bytes()); // PE32+
+        pe_bytes[0x98 + 16..0x98 + 20].copy_from_slice(&0x1000u32.to_le_bytes()); // EntryPoint RVA
+        pe_bytes[0x98 + 24..0x98 + 32].copy_from_slice(&0x140000000u64.to_le_bytes()); // ImageBase
+        pe_bytes[0x98 + 32..0x98 + 36].copy_from_slice(&4096u32.to_le_bytes()); // SectionAlign
+        pe_bytes[0x98 + 36..0x98 + 40].copy_from_slice(&512u32.to_le_bytes()); // FileAlign
+        pe_bytes[0x98 + 56..0x98 + 60].copy_from_slice(&8192u32.to_le_bytes()); // SizeOfImage
+        pe_bytes[0x98 + 68..0x98 + 70].copy_from_slice(&3u16.to_le_bytes()); // WindowsCui
+
+        // Section Table at 0x98 + 240 = 0x188
+        let sec_off = 0x98 + 240;
+        pe_bytes[sec_off..sec_off + 8].copy_from_slice(b".text\0\0\0");
+        pe_bytes[sec_off + 8..sec_off + 12].copy_from_slice(&0x200u32.to_le_bytes()); // virt size
+        pe_bytes[sec_off + 12..sec_off + 16].copy_from_slice(&0x1000u32.to_le_bytes()); // virt addr
+        pe_bytes[sec_off + 16..sec_off + 20].copy_from_slice(&0x200u32.to_le_bytes()); // raw size
+        pe_bytes[sec_off + 20..sec_off + 24].copy_from_slice(&0x400u32.to_le_bytes()); // raw ptr
+
+        let inspector = pe::PeInspector::from_bytes(pe_bytes);
+        let analysis = inspector.analyze().expect("Valid PE32+ analysis");
+        assert_eq!(analysis.architecture, pe::PeArchitecture::Amd64);
+        assert!(analysis.is_64bit);
+        assert_eq!(analysis.subsystem, pe::PeSubsystem::WindowsCui);
+        assert_eq!(analysis.entry_point_rva, 0x1000);
+        assert_eq!(analysis.image_base, 0x140000000);
+        assert_eq!(analysis.sections.len(), 1);
+        assert_eq!(analysis.sections[0].name, ".text");
+    }
+
+    #[test]
+    fn test_pe_inspector_synthetic_pe32() {
+        let mut pe_bytes = vec![0u8; 1024];
+        // DOS Header
+        pe_bytes[0] = b'M';
+        pe_bytes[1] = b'Z';
+        pe_bytes[0x3C] = 0x80;
+
+        // PE Header at 0x80
+        pe_bytes[0x80..0x84].copy_from_slice(b"PE\0\0");
+        // COFF Header (20 bytes): 0x84..0x98
+        pe_bytes[0x84..0x86].copy_from_slice(&0x014Cu16.to_le_bytes()); // i386
+        pe_bytes[0x86..0x88].copy_from_slice(&1u16.to_le_bytes()); // 1 section
+        pe_bytes[0x94..0x96].copy_from_slice(&224u16.to_le_bytes()); // opt header size
+
+        // Optional Header at 0x98
+        pe_bytes[0x98..0x9A].copy_from_slice(&0x010Bu16.to_le_bytes()); // PE32
+        pe_bytes[0x98 + 16..0x98 + 20].copy_from_slice(&0x1000u32.to_le_bytes());
+        pe_bytes[0x98 + 28..0x98 + 32].copy_from_slice(&0x00400000u32.to_le_bytes()); // ImageBase
+        pe_bytes[0x98 + 68..0x98 + 70].copy_from_slice(&2u16.to_le_bytes()); // WindowsGui
+
+        // Section Table
+        let sec_off = 0x98 + 224;
+        pe_bytes[sec_off..sec_off + 8].copy_from_slice(b".rdata\0\0");
+        pe_bytes[sec_off + 8..sec_off + 12].copy_from_slice(&0x400u32.to_le_bytes());
+        pe_bytes[sec_off + 12..sec_off + 16].copy_from_slice(&0x1000u32.to_le_bytes());
+        pe_bytes[sec_off + 16..sec_off + 20].copy_from_slice(&0x400u32.to_le_bytes());
+        pe_bytes[sec_off + 20..sec_off + 24].copy_from_slice(&0x400u32.to_le_bytes());
+
+        let inspector = pe::PeInspector::from_bytes(pe_bytes);
+        let analysis = inspector.analyze().expect("Valid PE32 analysis");
+        assert_eq!(analysis.architecture, pe::PeArchitecture::I386);
+        assert!(!analysis.is_64bit);
+        assert_eq!(analysis.subsystem, pe::PeSubsystem::WindowsGui);
+        assert_eq!(analysis.image_base, 0x00400000);
+        assert_eq!(analysis.sections.len(), 1);
+        assert_eq!(analysis.sections[0].name, ".rdata");
     }
 }
