@@ -87,3 +87,17 @@ jobs:
 
       - name: Run 12-Scenario Security, Exploit Resilience & Chaos Suite
         run: python3 tools/test_e2e_security_and_chaos.py
+
+      - name: Run Windows PE & MSI Compatibility Suite
+        run: python3 tools/test_e2e_windows_compatibility.py
+
+      - name: Run $12 Server Challenge 50-50 Normalized Regression Suite
+        run: |
+          python3 tools/normalized_server.py &
+          SRV_PID=$!
+          sleep 2
+          curl -f -s http://127.0.0.1:9300/feed > /dev/null
+          curl -f -s http://127.0.0.1:9300/metrics > /dev/null
+          curl -f -s -X POST http://127.0.0.1:9300/posts/1/like > /dev/null
+          kill $SRV_PID || true
+          echo "✅ 50-50 Normalized Server verified cleanly in CI!"
