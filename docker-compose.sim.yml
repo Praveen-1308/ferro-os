@@ -1,0 +1,55 @@
+version: '3.8'
+
+networks:
+  sim_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+services:
+  ferro-server:
+    container_name: ferro-server
+    image: ferro-os-server:latest
+    privileged: true
+    cpus: 3.0
+    mem_limit: 4096m
+    memswap_limit: 4096m
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+      - "8088:8088"
+      - "5353:5353/udp"
+    networks:
+      sim_net:
+        ipv4_address: 172.28.0.2
+    volumes:
+      - ./tools/entrypoint-server.sh:/usr/local/bin/entrypoint-server.sh
+      - ./target/release/ferro-core:/usr/local/bin/ferro-core
+      - ./target/release/ferro-init:/usr/local/bin/ferro-init
+      - ./target/release/ferro-pkg:/usr/local/bin/rpk
+    restart: unless-stopped
+
+  traffic-simulator:
+    container_name: traffic-simulator
+    image: bench-ubuntu:latest
+    cpus: 1.0
+    mem_limit: 2048m
+    memswap_limit: 2048m
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    networks:
+      sim_net:
+        ipv4_address: 172.28.0.3
+    volumes:
+      - .:/work
+    working_dir: /work
+    depends_on:
+      - ferro-server
+    command: ["sleep", "infinity"]

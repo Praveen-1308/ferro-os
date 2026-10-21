@@ -16,8 +16,14 @@ python3 /usr/local/bin/ferro-server-suite.py &
 # 2. Start Native Rust High-Concurrency HTTP Server (Port 8088)
 /usr/local/bin/ferro-core serve 8088 /var/www &
 
-echo "--> [OK] FerroOS Microservices Active on Ports 8080 (API), 8081 (Cache), 8088 (Web)."
+# 3. Start Native Rust Shared-Memory DNS Caching Resolver (Port 5353)
+/usr/local/bin/ferro-core dns-cache start --port 5353 &
+
+echo "--> [OK] FerroOS Microservices Active on Ports 8080 (API), 8081 (Cache), 8088 (Web), 5353 (DNS)."
 echo "--> Ready for enterprise production workloads."
 
 # Keep container running with active server child processes
-wait -n
+while true; do
+    sleep 3600 &
+    wait $!
+done
