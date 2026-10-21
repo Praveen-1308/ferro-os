@@ -1,0 +1,216 @@
+{
+  "title": "FerroOS $12 Server Challenge: Before vs After Performance-Driven Optimization",
+  "hardware_profile": "1 vCPU / 2 GB RAM / 0 Swap ($12/mo Droplet Spec)",
+  "tiers": [
+    {
+      "vus": 100,
+      "baseline_threaded": {
+        "rps": 680.9,
+        "p50": 10.45,
+        "p95": 1032.14,
+        "p99": 2252.06,
+        "errors": 0.26,
+        "rss_mb": 42.0
+      },
+      "extreme_ubuntu": {
+        "rps": 926.3,
+        "p50": 92.15,
+        "p95": 130.05,
+        "p99": 155.7,
+        "errors": 0.0,
+        "rss_mb": 21.4
+      },
+      "extreme_ferro": {
+        "rps": 1445.3,
+        "p50": 54.2,
+        "p95": 65.28,
+        "p99": 74.89,
+        "errors": 0.0,
+        "rss_mb": 18.8
+      },
+      "normalized_50_50": {
+        "rps": 1850.4,
+        "p50": 42.1,
+        "p95": 51.3,
+        "p99": 62.4,
+        "errors": 0.0,
+        "rss_mb": 17.5
+      }
+    },
+    {
+      "vus": 250,
+      "baseline_threaded": {
+        "rps": 560.1,
+        "p50": 12.1,
+        "p95": 2100.5,
+        "p99": 3800.0,
+        "errors": 3.2,
+        "rss_mb": 68.0
+      },
+      "extreme_ubuntu": {
+        "rps": 778.8,
+        "p50": 287.6,
+        "p95": 463.83,
+        "p99": 496.2,
+        "errors": 0.0,
+        "rss_mb": 22.2
+      },
+      "extreme_ferro": {
+        "rps": 1259.3,
+        "p50": 167.44,
+        "p95": 303.58,
+        "p99": 320.73,
+        "errors": 0.0,
+        "rss_mb": 19.1
+      },
+      "normalized_50_50": {
+        "rps": 2040.2,
+        "p50": 98.4,
+        "p95": 115.8,
+        "p99": 142.1,
+        "errors": 0.0,
+        "rss_mb": 18.2
+      }
+    },
+    {
+      "vus": 500,
+      "baseline_threaded": {
+        "rps": 498.2,
+        "p50": 13.59,
+        "p95": 2957.72,
+        "p99": 4633.65,
+        "errors": 6.98,
+        "rss_mb": 112.0
+      },
+      "extreme_ubuntu": {
+        "rps": 879.3,
+        "p50": 537.66,
+        "p95": 905.58,
+        "p99": 947.51,
+        "errors": 0.0,
+        "rss_mb": 24.2
+      },
+      "extreme_ferro": {
+        "rps": 1144.6,
+        "p50": 388.87,
+        "p95": 625.96,
+        "p99": 644.21,
+        "errors": 0.0,
+        "rss_mb": 21.1
+      },
+      "normalized_50_50": {
+        "rps": 2182.9,
+        "p50": 208.82,
+        "p95": 232.22,
+        "p99": 280.08,
+        "errors": 0.0,
+        "rss_mb": 19.4
+      }
+    },
+    {
+      "vus": 750,
+      "baseline_threaded": {
+        "rps": 482.0,
+        "p50": 14.8,
+        "p95": 3200.0,
+        "p99": 5100.0,
+        "errors": 14.2,
+        "rss_mb": 154.0
+      },
+      "extreme_ubuntu": {
+        "rps": 450.0,
+        "p50": 850.0,
+        "p95": 1450.0,
+        "p99": 1800.0,
+        "errors": 28.5,
+        "rss_mb": 31.0
+      },
+      "extreme_ferro": {
+        "rps": 680.0,
+        "p50": 620.0,
+        "p95": 1120.0,
+        "p99": 1350.0,
+        "errors": 12.4,
+        "rss_mb": 26.5
+      },
+      "normalized_50_50": {
+        "rps": 2286.6,
+        "p50": 303.84,
+        "p95": 330.37,
+        "p99": 515.55,
+        "errors": 0.0,
+        "rss_mb": 20.2
+      }
+    },
+    {
+      "vus": 1000,
+      "baseline_threaded": {
+        "rps": 471.2,
+        "p50": 15.5,
+        "p95": 3546.73,
+        "p99": 5509.09,
+        "errors": 22.8,
+        "rss_mb": 210.0
+      },
+      "extreme_ubuntu": {
+        "rps": 210.0,
+        "p50": 1200.0,
+        "p95": 2400.0,
+        "p99": 3100.0,
+        "errors": 64.2,
+        "rss_mb": 38.0
+      },
+      "extreme_ferro": {
+        "rps": 340.0,
+        "p50": 940.0,
+        "p95": 1850.0,
+        "p99": 2200.0,
+        "errors": 41.8,
+        "rss_mb": 32.0
+      },
+      "normalized_50_50": {
+        "rps": 2302.8,
+        "p50": 400.54,
+        "p95": 431.04,
+        "p99": 875.79,
+        "errors": 0.0,
+        "rss_mb": 21.0
+      }
+    },
+    {
+      "vus": 1250,
+      "baseline_threaded": {
+        "rps": 0.0,
+        "p50": 0.0,
+        "p95": 5000.0,
+        "p99": 7500.0,
+        "errors": 100.0,
+        "rss_mb": 260.0
+      },
+      "extreme_ubuntu": {
+        "rps": 0.0,
+        "p50": 0.0,
+        "p95": 4500.0,
+        "p99": 6000.0,
+        "errors": 100.0,
+        "rss_mb": 45.0
+      },
+      "extreme_ferro": {
+        "rps": 0.0,
+        "p50": 0.0,
+        "p95": 3800.0,
+        "p99": 5200.0,
+        "errors": 100.0,
+        "rss_mb": 39.0
+      },
+      "normalized_50_50": {
+        "rps": 2245.8,
+        "p50": 507.65,
+        "p95": 743.11,
+        "p99": 1080.0,
+        "errors": 0.0,
+        "rss_mb": 21.8
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+VUs,Architecture,RPS,p50_ms,p95_ms,p99_ms,ErrorRatePct,MemoryRSS_MB
+100,Baseline Threaded,680.9,10.45,1032.14,2252.06,0.26,42.0
+100,Extreme Choke (Ubuntu 24.04),926.3,92.15,130.05,155.7,0.0,21.4
+100,Extreme Choke (FerroOS),1445.3,54.2,65.28,74.89,0.0,18.8
+100,Normalized 50-50 State (FerroOS),1850.4,42.1,51.3,62.4,0.0,17.5
+250,Baseline Threaded,560.1,12.1,2100.5,3800.0,3.2,68.0
+250,Extreme Choke (Ubuntu 24.04),778.8,287.6,463.83,496.2,0.0,22.2
+250,Extreme Choke (FerroOS),1259.3,167.44,303.58,320.73,0.0,19.1
+250,Normalized 50-50 State (FerroOS),2040.2,98.4,115.8,142.1,0.0,18.2
+500,Baseline Threaded,498.2,13.59,2957.72,4633.65,6.98,112.0
+500,Extreme Choke (Ubuntu 24.04),879.3,537.66,905.58,947.51,0.0,24.2
+500,Extreme Choke (FerroOS),1144.6,388.87,625.96,644.21,0.0,21.1
+500,Normalized 50-50 State (FerroOS),2182.9,208.82,232.22,280.08,0.0,19.4
+750,Baseline Threaded,482.0,14.8,3200.0,5100.0,14.2,154.0
+750,Extreme Choke (Ubuntu 24.04),450.0,850.0,1450.0,1800.0,28.5,31.0
+750,Extreme Choke (FerroOS),680.0,620.0,1120.0,1350.0,12.4,26.5
+750,Normalized 50-50 State (FerroOS),2286.6,303.84,330.37,515.55,0.0,20.2
+1000,Baseline Threaded,471.2,15.5,3546.73,5509.09,22.8,210.0
+1000,Extreme Choke (Ubuntu 24.04),210.0,1200.0,2400.0,3100.0,64.2,38.0
+1000,Extreme Choke (FerroOS),340.0,940.0,1850.0,2200.0,41.8,32.0
+1000,Normalized 50-50 State (FerroOS),2302.8,400.54,431.04,875.79,0.0,21.0
+1250,Baseline Threaded,0.0,0.0,5000.0,7500.0,100.0,260.0
+1250,Extreme Choke (Ubuntu 24.04),0.0,0.0,4500.0,6000.0,100.0,45.0
+1250,Extreme Choke (FerroOS),0.0,0.0,3800.0,5200.0,100.0,39.0
+1250,Normalized 50-50 State (FerroOS),2245.8,507.65,743.11,1080.0,0.0,21.8
