@@ -46,6 +46,9 @@ typedef int (*real_socket_fn)(int domain, int type, int protocol);
 typedef int (*real_epoll_create1_fn)(int flags);
 typedef int (*real_epoll_ctl_fn)(int epfd, int op, int fd, struct epoll_event *event);
 typedef int (*real_epoll_wait_fn)(int epfd, struct epoll_event *events, int maxevents, int timeout);
+typedef int (*real_connect_fn)(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+typedef int (*real_accept_fn)(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+typedef int (*real_accept4_fn)(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags);
 
 static real_read_fn g_real_read = NULL;
 static real_write_fn g_real_write = NULL;
@@ -54,6 +57,9 @@ static real_socket_fn g_real_socket = NULL;
 static real_epoll_create1_fn g_real_epoll_create1 = NULL;
 static real_epoll_ctl_fn g_real_epoll_ctl = NULL;
 static real_epoll_wait_fn g_real_epoll_wait = NULL;
+static real_connect_fn g_real_connect = NULL;
+static real_accept_fn g_real_accept = NULL;
+static real_accept4_fn g_real_accept4 = NULL;
 
 static atomic_flag g_init_lock = ATOMIC_FLAG_INIT;
 static atomic_int g_initialized = 0;
@@ -74,6 +80,9 @@ static void init_real_symbols(void) {
         g_real_epoll_create1 = (real_epoll_create1_fn)dlsym(RTLD_NEXT, "epoll_create1");
         g_real_epoll_ctl = (real_epoll_ctl_fn)dlsym(RTLD_NEXT, "epoll_ctl");
         g_real_epoll_wait = (real_epoll_wait_fn)dlsym(RTLD_NEXT, "epoll_wait");
+        g_real_connect = (real_connect_fn)dlsym(RTLD_NEXT, "connect");
+        g_real_accept = (real_accept_fn)dlsym(RTLD_NEXT, "accept");
+        g_real_accept4 = (real_accept4_fn)dlsym(RTLD_NEXT, "accept4");
 
         g_ring_pid = getpid();
         atomic_store(&g_initialized, 1);
@@ -135,6 +144,75 @@ int socket(int domain, int type, int protocol) {
 #endif
             }
         }
+    }
+    return fd;
+}
+
+static inline void optimize_tcp_socket(int fd, const struct sockaddr *addr) {
+    if (fd < 0 || fd >= MAX_CACHED_FDS) return;
+    __atomic_store_n(&g_fd_type_cache[fd], 1, __ATOMIC_RELAXED);
+    int one = 1;
+    setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+#ifdef TCP_QUICKACK
+    setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, &one, sizeof(one));
+#endif
+    if (addr && addr->sa_family == AF_INET) {
+        const struct sockaddr_in *in = (const struct sockaddr_in *)addr;
+        uint32_t ip = ntohl(in->sin_addr.s_addr);
+        if ((ip >> 24) == 127) {
+            // Local loopback network bypass: maximize socket buffers to 4MB to prevent TCP window stalls
+            int buf_size = 4194304;
+            setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buf_size, sizeof(buf_size));
+            setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buf_size, sizeof(buf_size));
+        }
+    }
+}
+
+int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+        init_real_symbols();
+    }
+    optimize_tcp_socket(sockfd, addr);
+    if (g_real_connect) return g_real_connect(sockfd, addr, addrlen);
+#if defined(SYS_connect)
+    return syscall(SYS_connect, sockfd, addr, addrlen);
+#else
+    return -1;
+#endif
+}
+
+int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+        init_real_symbols();
+    }
+    int fd = -1;
+    if (g_real_accept) {
+        fd = g_real_accept(sockfd, addr, addrlen);
+    } else {
+#if defined(SYS_accept)
+        fd = syscall(SYS_accept, sockfd, addr, addrlen);
+#endif
+    }
+    if (fd >= 0) {
+        optimize_tcp_socket(fd, addr);
+    }
+    return fd;
+}
+
+int accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags) {
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+        init_real_symbols();
+    }
+    int fd = -1;
+    if (g_real_accept4) {
+        fd = g_real_accept4(sockfd, addr, addrlen, flags);
+    } else {
+#if defined(SYS_accept4)
+        fd = syscall(SYS_accept4, sockfd, addr, addrlen, flags);
+#endif
+    }
+    if (fd >= 0) {
+        optimize_tcp_socket(fd, addr);
     }
     return fd;
 }

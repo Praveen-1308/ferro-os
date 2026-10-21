@@ -72,3 +72,6 @@ jobs:
 
       - name: Run Local Shared-Memory DNS Resolver Suite
         run: python3 tools/test_e2e_dns_cache.py
+
+      - name: Run eBPF & Socket Loopback Bypass 12-Scenario Suite
+        run: python3 tools/test_e2e_ebpf_socket_bypass.py

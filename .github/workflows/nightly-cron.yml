@@ -52,6 +52,10 @@ jobs:
           echo "Running Local Shared-Memory DNS Resolver benchmark..."
           python3 tools/test_e2e_dns_cache.py
           echo "- ✅ Local Shared-Memory DNS Resolver: PASS" >> $GITHUB_STEP_SUMMARY
+
+          echo "Running eBPF & Socket Loopback Bypass 12-scenario suite..."
+          python3 tools/test_e2e_ebpf_socket_bypass.py
+          echo "- ✅ eBPF & Socket Loopback Bypass Suite: PASS" >> $GITHUB_STEP_SUMMARY
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🏆 FerroOS Nightly Status: 100% HEALTHY" >> $GITHUB_STEP_SUMMARY
