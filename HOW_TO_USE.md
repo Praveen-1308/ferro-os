@@ -21,6 +21,10 @@ Welcome to the FerroOS practical playbook! This guide provides simple, copy-past
 > **💡 The Pitch:**  
 > *"If you want the ultimate base image for your next $12 server concurrency challenge, check out the FerroOS Dedicated Server OCI Container (`ferro-os-server:latest`). It runs 4 active microservices (including a native Rust HTTP server and shared-memory DNS cache) under < 30 MB of idle RAM, preloads mimalloc globally to eliminate allocator lock contention, and routes I/O through io_uring—all while giving you full glibc compatibility so python/C scripts run instantly without build errors. Drop it onto a 1 vCPU / 2 GB droplet and watch how it handles your heavy load tests!"*
 
+*Inspired by software engineer and YouTuber **Arjay McCandless** ([`@arjaythedev`](https://youtube.com/@arjay_the_dev)) and his popular **"Twelve Dollar Server Challenge"** ([`arjaythedev/twelve-dollar-server-challenge`](https://github.com/arjaythedev/twelve-dollar-server-challenge)), FerroOS provides a dedicated test harness reproducing the exact 1 vCPU / 2 GB RAM challenge rules.*
+
+📄 **Read the In-Depth Whitepaper**: [The $12 Server Concurrency Challenge Report](docs/reports/arjay_twelve_dollar_server_challenge.md)
+
 ### 🚀 1-Minute Launch
 Run the pre-configured server container under strict memory limits:
 
@@ -40,7 +44,15 @@ docker run -d \
   -p 8080:8080 \
   -p 8081:8081 \
   -p 8088:8088 \
+  -p 9123:9123 \
   ferro-os-server:latest
+```
+
+### 🧪 Run the Automated Arjay McCandless $12 Challenge Harness
+Evaluate SQLite performance across 5 API endpoints (`/users/:id`, `/users/:id/feed`, `/posts/:id`, `/posts/:id/like`, `/metrics`) under concurrent loads of 100 to 1,000 virtual users:
+```bash
+# Run the automated benchmark suite
+python3 tools/benchmark_twelve_dollar_challenge.py
 ```
 
 ### 🔍 Verify How Little RAM It Uses
