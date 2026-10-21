@@ -122,12 +122,17 @@ flowchart TD
 * Built-in crash detection and interactive Windows RE-style Boot Recovery Menu.
 
 ### 2. `ferro-core` (Multi-Call Core Utilities)
-A single compact Rust binary providing 32+ essential Unix commands:
+A single compact Rust binary providing 37+ essential Unix commands & kernel subsystems:
 * **Shell & Core**: `sh` (interactive prompt, pipes `cmd1 | cmd2`, redirects `>`, `$VAR` expansion), `ls`, `cd`, `pwd`, `cat`, `echo`, `chmod`, `rm`.
 * **Zero-Copy File Operations**: `cp` (utilizes `ioctl(FICLONE)` and `copy_file_range` for $O(1)$ Btrfs cloning), `mv` (cross-device `EXDEV` move with zero-copy fallback).
-* **GameMode Applet**: `ferro-core gamemode [status | on | off]`.
-* **DNS Caching Resolver**: `ferro-core dns-cache [start | query | bench]`.
-* **FD Store Client**: `ferro-core fdstore [list | store | get]`.
+* **GameMode Applet**: `ferro-core gamemode [status | on | off]` (Dynamic CPU governor and latency booster).
+* **DNS Caching Resolver**: `ferro-core dns-cache [start | query | bench]` (Local shared-memory zero-latency DNS).
+* **FD Store Client**: `ferro-core fdstore [list | store | get]` (Zero-downtime socket migration).
+* **eBPF Acceleration**: `ferro-core bpf [status | check]` (Kernel SOCKMAP socket loopback bypass).
+* **Custom CPU Scheduler**: `ferro-core sched [status | set <profile> | run | bench]` (Linux 6.12+ `sched_ext` engine).
+* **Gaming & Proton DBT**: `ferro-core game [status | probe | run | setup-steam | shortcut]` (Multi-arch binary launcher).
+* **Bare-Metal Installer**: `ferro-core install [layout | fstab | grub-cfg | apply]` (GPT & Btrfs subvolume manager).
+* **Instant Snapshot & Rollback**: `ferro-core snapshot [status | list | create | rollback | remove]` (Atomic $O(1)$ recovery points).
 * **System Metrics**: `ps`, `free`, `df`, `uptime`, `whoami`, `kill`, `fetch` (pure Rust HTTP client).
 
 ### 3. `ferro-pkg` (`rpk` v0.2.0 - Rust Package Keeper)
@@ -164,7 +169,7 @@ docker run -d -p 6080:6080 --memory=6g ferro-os-web:latest
 ```
 Open **`http://localhost:6080`** in any web browser to interact with the full KDE Plasma desktop!
 
-### Option 3: Run the Empirical Real-World Test Suites
+### Option 3: Run the Empirical Real-World Test Suites (96/96 Scenarios)
 ```bash
 # 1. Compile all Rust crates
 cargo test --workspace
@@ -180,6 +185,27 @@ python3 tools/test_e2e_fdstore_crash_recovery.py
 
 # 5. Run the Local Shared-Memory DNS Caching Resolver Benchmark
 python3 tools/test_e2e_dns_cache.py
+
+# 6. Run the eBPF & Socket Loopback Bypass Engine Suite
+python3 tools/test_e2e_ebpf_socket_bypass.py
+
+# 7. Run the 12-Scenario SchedExt & CPU Scheduler Suite
+python3 tools/test_e2e_sched_ext.py
+
+# 8. Run the Steam & Proton Multi-Architecture Gaming Layer Suite
+python3 tools/test_e2e_gaming_layer.py
+
+# 9. Run the Bare-Metal ISO & Btrfs Subvolume Installer Suite
+python3 tools/test_e2e_iso_and_btrfs_installer.py
+```
+
+### Option 4: Build Bare-Metal Bootable Hybrid ISOs (Desktop & Server)
+```bash
+# Generate Live Desktop ISO (UEFI + BIOS Hybrid with El Torito & GRUB)
+python3 tools/iso/build_ferro_iso.py --edition desktop --output build_out/ferro-os-desktop-live.iso
+
+# Generate Live Server Edition ISO
+python3 tools/iso/build_ferro_iso.py --edition server --output build_out/ferro-os-server-live.iso
 ```
 
 ---
@@ -208,11 +234,20 @@ ferro-os/
 │   ├── kde_plasma_desktop.png# KDE Plasma 5.27 screenshot
 │   └── desktop_graphics.png  # Mesa & Vulkan 3D graphics benchmark capture
 ├── tools/
-│   ├── libferro_io.c         # High-speed I/O interposition shim (io_uring v2.1)
-│   ├── test_e2e_all_file_scenarios.py  # 12-scenario real-world file I/O matrix
-│   ├── test_e2e_rpk_multiarch_secure.py# 12-scenario package keeper validation suite
-│   ├── test_e2e_fdstore_crash_recovery.py# Zero-downtime socket handover test
-│   └── test_e2e_dns_cache.py # Local DNS caching resolver benchmark
+│   ├── iso/
+│   │   └── build_ferro_iso.py    # Bare-metal UEFI & BIOS hybrid ISO generator
+│   ├── ebpf/
+│   │   ├── ferro_sched.bpf.c     # sched_ext Linux 6.12+ kernel scheduler
+│   │   └── sockmap_bypass.bpf.c  # eBPF SOCKMAP socket bypass program
+│   ├── libferro_io.c             # High-speed I/O interposition shim (io_uring v2.1)
+│   ├── test_e2e_all_file_scenarios.py      # 12-scenario real-world file I/O matrix
+│   ├── test_e2e_rpk_multiarch_secure.py    # 12-scenario package keeper validation suite
+│   ├── test_e2e_fdstore_crash_recovery.py  # Zero-downtime socket handover test
+│   ├── test_e2e_dns_cache.py               # Local DNS caching resolver benchmark
+│   ├── test_e2e_ebpf_socket_bypass.py      # 12-scenario eBPF socket bypass suite
+│   ├── test_e2e_sched_ext.py               # 12-scenario SchedExt scheduler suite
+│   ├── test_e2e_gaming_layer.py            # 12-scenario Steam & Proton gaming suite
+│   └── test_e2e_iso_and_btrfs_installer.py # 12-scenario Bare-Metal ISO & Btrfs suite
 ├── Dockerfile                # Desktop Edition container (KDE Plasma 5.27, Mesa, Vulkan)
 ├── Dockerfile.server         # Server Edition container (mimalloc, libferro_io, microservices)
 ├── CONTRIBUTING.md           # Developer guidelines & zero-mock testing philosophy
