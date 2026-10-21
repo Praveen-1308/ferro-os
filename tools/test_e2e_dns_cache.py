@@ -9,6 +9,7 @@ Tests:
 5. High-throughput 1,000-query benchmark & QPS measurement
 """
 
+import os
 import time
 import subprocess
 import sys
@@ -33,8 +34,8 @@ def main():
 
     ferro_bin = get_ferro_core()
 
-    # 1. Start DNS Caching Daemon in background
-    port = 5353
+    # 1. Start DNS Caching Daemon in background (port 15353 to avoid mDNS collision)
+    port = 15353
     print(f"\n[Step 1] Starting ferro-core dns-cache daemon on port {port}...")
     daemon = subprocess.Popen(
         [ferro_bin, "dns-cache", "start", "--port", str(port), "--upstream", "1.1.1.1:53"],
