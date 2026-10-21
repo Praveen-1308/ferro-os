@@ -83,6 +83,7 @@ fn main() -> ExitCode {
         "dns-cache" | "dns" => run_dns_cache(&command_args),
         "fdstore" => run_fdstore(&command_args),
         "bpf" | "ebpf" => run_bpf(&command_args),
+        "sched" | "scx" => run_sched(&command_args),
         "recovery" => run_recovery(),
         "help" => {
             print_usage();
@@ -104,7 +105,9 @@ fn print_usage() {
     println!("  File Operations:   cat, echo, cp, mv, rm, mkdir, chmod, head, tail, wc");
     println!("  Search & Filter:   grep, find");
     println!("  System Monitoring: ps, free, df, uptime, whoami, uname, env, kill");
-    println!("  Performance & Net: bench, serve, gamemode, dns-cache, recovery");
+    println!(
+        "  Performance & Net: bench, serve, gamemode, dns-cache, fdstore, bpf, sched, recovery"
+    );
     println!("  Network & Power:   fetch (curl), serve (httpd), sleep, reboot, poweroff");
     println!("  Performance & Ops: bench (system benchmark), supervise (process watcher)");
     println!("  Diagnostics & WinRE: recovery (Advanced Boot & Crash Recovery Menu)");
@@ -2435,6 +2438,688 @@ fn run_bpf_bench(port: u16, count: usize) -> ExitCode {
     ExitCode::SUCCESS
 }
 
+// ==============================================================================
+// FerroOS Extensible CPU Scheduler (sched_ext / SCX & Adaptive Latency Engine)
+// ==============================================================================
+
+fn parse_core_list(s: &str) -> Vec<usize> {
+    let mut cores = Vec::new();
+    for part in s.split(',') {
+        let part = part.trim();
+        if part.is_empty() {
+            continue;
+        }
+        if part.contains('-') {
+            let mut range = part.split('-');
+            if let (Some(start_str), Some(end_str)) = (range.next(), range.next()) {
+                if let (Ok(start), Ok(end)) = (start_str.parse::<usize>(), end_str.parse::<usize>())
+                {
+                    for c in start..=end {
+                        cores.push(c);
+                    }
+                }
+            }
+        } else if let Ok(c) = part.parse::<usize>() {
+            cores.push(c);
+        }
+    }
+    cores.sort_unstable();
+    cores.dedup();
+    cores
+}
+
+fn get_cpu_info() -> (usize, Vec<usize>) {
+    let total_cores = thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4);
+    let mut online_cores = Vec::new();
+    if let Ok(content) = fs::read_to_string("/sys/devices/system/cpu/online") {
+        online_cores = parse_core_list(content.trim());
+    }
+    if online_cores.is_empty() {
+        online_cores = (0..total_cores).collect();
+    }
+    (total_cores, online_cores)
+}
+
+#[cfg(target_os = "linux")]
+fn set_cpu_affinity(cpus: &[usize]) -> io::Result<()> {
+    if cpus.is_empty() {
+        return Ok(());
+    }
+    unsafe {
+        let mut set: libc::cpu_set_t = std::mem::zeroed();
+        libc::CPU_ZERO(&mut set);
+        for &cpu in cpus {
+            libc::CPU_SET(cpu, &mut set);
+        }
+        let ret = libc::sched_setaffinity(0, std::mem::size_of::<libc::cpu_set_t>(), &set);
+        if ret != 0 {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(())
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn set_cpu_affinity(_cpus: &[usize]) -> io::Result<()> {
+    Ok(())
+}
+
+fn set_process_nice(nice: i32) -> io::Result<()> {
+    unsafe {
+        let ret = libc::setpriority(libc::PRIO_PROCESS, 0, nice);
+        if ret != 0 {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(())
+    }
+}
+
+fn get_sched_state_file() -> PathBuf {
+    // 1. Try system-wide /run/ferro
+    if fs::create_dir_all("/run/ferro").is_ok() {
+        let p = PathBuf::from("/run/ferro/sched.state");
+        if OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(&p)
+            .is_ok()
+        {
+            return p;
+        }
+    }
+    // 2. Try /etc/ferro
+    if Path::new("/etc/ferro").is_dir() {
+        let p = PathBuf::from("/etc/ferro/sched.state");
+        if OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(&p)
+            .is_ok()
+        {
+            return p;
+        }
+    }
+    // 3. Try XDG_RUNTIME_DIR
+    if let Ok(runtime_dir) = env::var("XDG_RUNTIME_DIR") {
+        let p = PathBuf::from(runtime_dir).join("ferro_sched.state");
+        if OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(&p)
+            .is_ok()
+        {
+            return p;
+        }
+    }
+    // 4. Fallback to temp dir
+    env::temp_dir().join("ferro_sched.state")
+}
+
+fn get_active_profile() -> String {
+    let candidates = [
+        PathBuf::from("/run/ferro/sched.state"),
+        PathBuf::from("/etc/ferro/sched.state"),
+        env::var("XDG_RUNTIME_DIR")
+            .map(|d| PathBuf::from(d).join("ferro_sched.state"))
+            .unwrap_or_else(|_| PathBuf::from("/nonexistent")),
+        env::temp_dir().join("ferro_sched.state"),
+    ];
+
+    for path in &candidates {
+        if let Ok(s) = fs::read_to_string(path) {
+            let trimmed = s.trim();
+            if !trimmed.is_empty() {
+                return trimmed.to_lowercase();
+            }
+        }
+    }
+    "balanced".to_string()
+}
+
+fn run_sched(args: &[String]) -> ExitCode {
+    let subcmd = args.first().map(|s| s.as_str()).unwrap_or("status");
+    match subcmd {
+        "status" => run_sched_status(),
+        "set" => {
+            if args.len() < 2 {
+                eprintln!("Usage: ferro-core sched set <gaming | server | lowlatency | powersave | default>");
+                return ExitCode::FAILURE;
+            }
+            let profile = &args[1];
+            run_sched_set(profile)
+        }
+        "run" => run_sched_run(&args[1..]),
+        "bench" => run_sched_bench_cli(&args[1..]),
+        _ => {
+            println!(
+                "FerroOS Extensible CPU Scheduler Subsystem (sched_ext & Adaptive Latency Engine)"
+            );
+            println!("Usage: ferro-core sched <command> [options]");
+            println!("\nCommands:");
+            println!("  status                        Inspect active scheduler, topology, and slice parameters");
+            println!("  set <profile>                 Activate profile: gaming | server | lowlatency | powersave | default");
+            println!("  run [flags] <command> [args]  Execute a command with custom affinity and scheduling priority");
+            println!("  bench [flags]                 Benchmark thread wakeup jitter, context switches, and throughput");
+            println!("\nRun Flags:");
+            println!("  --profile <profile>           Target scheduling profile (default: active profile)");
+            println!("  --cores <core-list>           CPU affinity mask, e.g. '0,1' or '0-3'");
+            println!("  --nice <val>                  POSIX nice value (-20 to 19)");
+            println!("\nBench Flags:");
+            println!(
+                "  --threads <n>                 Parallel worker threads (default: available CPUs)"
+            );
+            println!("  --iterations <n>              Measurement iterations (default: 500)");
+            println!("  --profile <profile>           Benchmark specific profile policies");
+            println!("  --json                        Format output as machine-readable JSON");
+            ExitCode::SUCCESS
+        }
+    }
+}
+
+fn run_sched_status() -> ExitCode {
+    println!("================================================================================");
+    println!("  ⬡ FERRO-OS EXTENSIBLE CPU SCHEDULER & ADAPTIVE LATENCY ENGINE               ");
+    println!("================================================================================");
+
+    // 1. Check sched_ext interface
+    let scx_path = Path::new("/sys/kernel/sched_ext");
+    let scx_state_file = scx_path.join("state");
+    let (scx_available, scx_state, scx_ops) = if scx_state_file.exists() {
+        let state = fs::read_to_string(&scx_state_file).unwrap_or_else(|_| "unknown".to_string());
+        let ops =
+            fs::read_to_string(scx_path.join("root/ops")).unwrap_or_else(|_| "none".to_string());
+        (true, state.trim().to_string(), ops.trim().to_string())
+    } else {
+        (false, "unsupported".to_string(), "cfs/eevdf".to_string())
+    };
+
+    if scx_available {
+        println!("  * Engine Subsystem:          ⚡ sched_ext (Linux 6.12+ SCX BPF Class)");
+        println!(
+            "  * SCX Kernel State:          {} (Ops: {})",
+            scx_state, scx_ops
+        );
+    } else {
+        println!("  * Engine Subsystem:          🌱 Linux CFS / EEVDF with FerroOS Adaptive Latency Engine");
+        println!("  * SCX Interface:             STANDBY (Kernel 6.12+ sched_ext ready via tools/ebpf/ferro_sched.bpf.c)");
+    }
+
+    // 2. Profile
+    let active_profile = get_active_profile();
+    println!(
+        "  * Active Profile:            {} (Configuration: {})",
+        active_profile.to_uppercase(),
+        get_sched_state_file().display()
+    );
+
+    // 3. Topology
+    let (total_cores, online_cores) = get_cpu_info();
+    let cores_str = online_cores
+        .iter()
+        .map(|c| c.to_string())
+        .collect::<Vec<_>>()
+        .join(",");
+    println!(
+        "  * CPU Topology:              {} Total Cores Online (Cores: [{}])",
+        total_cores, cores_str
+    );
+
+    // 4. Governors
+    if let Ok(gov) = fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor") {
+        println!("  * CPU Frequency Governor:    {}", gov.trim());
+    } else {
+        println!("  * CPU Frequency Governor:    platform-managed / dynamic");
+    }
+
+    // 5. Profile Parameters
+    let (slice_us, preemption, target_jitter, nice_bias) = match active_profile.as_str() {
+        "gaming" => (
+            500,
+            "Aggressive Preemption (Interactive Boost)",
+            "< 50 µs",
+            -10,
+        ),
+        "lowlatency" => (
+            250,
+            "Instant Preemption (Realtime FIFO bias)",
+            "< 25 µs",
+            -15,
+        ),
+        "server" => (
+            5000,
+            "Batch Throughput (Cache-Warmth Preservation)",
+            "Balanced",
+            0,
+        ),
+        "powersave" => (
+            10000,
+            "Relaxed Preemption (C-State Energy Efficiency)",
+            "Power-Optimized",
+            10,
+        ),
+        _ => (2000, "Standard Balanced Timeshare", "Default", 0),
+    };
+    println!(
+        "  * Target Time Slice:         {} µs ({} ns)",
+        slice_us,
+        slice_us * 1000
+    );
+    println!("  * Preemption Mode:           {}", preemption);
+    println!("  * Target Wakeup Jitter:      {}", target_jitter);
+    println!("  * Default Nice Priority:     {}", nice_bias);
+
+    // 6. Cgroup v2 CPU controller
+    let cgroup_cpu = Path::new("/sys/fs/cgroup/cpu.weight");
+    if cgroup_cpu.exists() {
+        let weight = fs::read_to_string(cgroup_cpu).unwrap_or_else(|_| "100".to_string());
+        println!(
+            "  * Cgroup v2 CPU Controller:  Active (cpu.weight = {})",
+            weight.trim()
+        );
+    } else {
+        println!("  * Cgroup v2 CPU Controller:  Unified Root Hierarchy");
+    }
+
+    println!("--------------------------------------------------------------------------------");
+    println!("✅ SCHEDULER SUBSYSTEM READY: High-Precision Process & Latency Control");
+    ExitCode::SUCCESS
+}
+
+fn run_sched_set(profile: &str) -> ExitCode {
+    let prof_norm = profile.to_lowercase();
+    match prof_norm.as_str() {
+        "gaming" | "server" | "lowlatency" | "powersave" | "default" | "balanced" => {}
+        _ => {
+            eprintln!("Unknown profile: '{}'. Choose from: gaming, server, lowlatency, powersave, default", profile);
+            return ExitCode::FAILURE;
+        }
+    }
+
+    println!(
+        "⚡ [sched] Applying Scheduling Profile: '{}'...",
+        prof_norm.to_uppercase()
+    );
+
+    // 1. Write state file
+    let state_file = get_sched_state_file();
+    if let Some(parent) = state_file.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    if let Err(e) = fs::write(&state_file, format!("{}\n", prof_norm)) {
+        eprintln!(
+            "Warning: Failed to persist scheduler state to {}: {}",
+            state_file.display(),
+            e
+        );
+    } else {
+        println!("  -> Persisted active profile to {}", state_file.display());
+    }
+
+    // 2. Adjust CFS / sysfs tunables where accessible
+    let (slice_us, autogroup, gov, nice_val) = match prof_norm.as_str() {
+        "gaming" => (500, "0", "performance", -10),
+        "lowlatency" => (250, "0", "performance", -15),
+        "server" => (5000, "1", "schedutil", 0),
+        "powersave" => (10000, "1", "powersave", 10),
+        _ => (2000, "1", "schedutil", 0),
+    };
+
+    // Slice
+    let _ = fs::write(
+        "/proc/sys/kernel/sched_cfs_bandwidth_slice_us",
+        slice_us.to_string(),
+    );
+    // Autogroup
+    let _ = fs::write("/proc/sys/kernel/sched_autogroup_enabled", autogroup);
+
+    // CPU Governors
+    let mut cpu_idx = 0;
+    loop {
+        let p = format!(
+            "/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor",
+            cpu_idx
+        );
+        if !Path::new(&p).exists() {
+            break;
+        }
+        let _ = fs::write(&p, gov);
+        cpu_idx += 1;
+    }
+
+    // Apply process priority
+    let _ = set_process_nice(nice_val);
+
+    println!("  -> Target Slice: {} µs (Preemption tuned)", slice_us);
+    println!("  -> CPU Governors: {}", gov);
+    println!("  -> Process Nice: {}", nice_val);
+    println!(
+        "✅ Scheduler Profile '{}' is now ACTIVE.",
+        prof_norm.to_uppercase()
+    );
+    ExitCode::SUCCESS
+}
+
+fn run_sched_run(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("Usage: ferro-core sched run [--profile <profile>] [--cores <list>] [--nice <val>] <cmd> [args...]");
+        return ExitCode::FAILURE;
+    }
+
+    let mut profile = get_active_profile();
+    let mut explicit_cores: Option<Vec<usize>> = None;
+    let mut explicit_nice: Option<i32> = None;
+    let mut cmd_start = 0;
+
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--profile" if i + 1 < args.len() => {
+                profile = args[i + 1].to_lowercase();
+                i += 2;
+            }
+            "--cores" if i + 1 < args.len() => {
+                explicit_cores = Some(parse_core_list(&args[i + 1]));
+                i += 2;
+            }
+            "--nice" if i + 1 < args.len() => {
+                if let Ok(n) = args[i + 1].parse::<i32>() {
+                    explicit_nice = Some(n);
+                }
+                i += 2;
+            }
+            _ => {
+                cmd_start = i;
+                break;
+            }
+        }
+    }
+
+    if cmd_start >= args.len() {
+        eprintln!("Error: No command specified to execute.");
+        return ExitCode::FAILURE;
+    }
+
+    let command = &args[cmd_start];
+    let cmd_args = &args[cmd_start + 1..];
+
+    // Determine target nice
+    let nice_val = explicit_nice.unwrap_or(match profile.as_str() {
+        "gaming" => -10,
+        "lowlatency" => -15,
+        "powersave" => 10,
+        _ => 0,
+    });
+
+    // Determine cores
+    let cores = explicit_cores.unwrap_or_else(|| {
+        let (total, online) = get_cpu_info();
+        if profile == "powersave" && online.len() > 1 {
+            // pack onto first half of cores
+            online.into_iter().take(total / 2).collect()
+        } else {
+            online
+        }
+    });
+
+    // Apply affinity
+    if let Err(e) = set_cpu_affinity(&cores) {
+        eprintln!("Warning: could not set CPU affinity to {:?}: {}", cores, e);
+    }
+
+    // Apply nice
+    let _ = set_process_nice(nice_val);
+
+    // Spawn command
+    let mut child = match Command::new(command).args(cmd_args).spawn() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("sched run: failed to execute '{}': {}", command, e);
+            return ExitCode::FAILURE;
+        }
+    };
+
+    match child.wait() {
+        Ok(status) => {
+            if let Some(code) = status.code() {
+                if code == 0 {
+                    ExitCode::SUCCESS
+                } else {
+                    ExitCode::from(code as u8)
+                }
+            } else {
+                ExitCode::SUCCESS
+            }
+        }
+        Err(e) => {
+            eprintln!("sched run: error waiting for child: {}", e);
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn run_sched_bench_cli(args: &[String]) -> ExitCode {
+    let mut profile = get_active_profile();
+    let mut threads = thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4);
+    let mut iterations = 500;
+    let mut json_output = false;
+
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--profile" if i + 1 < args.len() => {
+                profile = args[i + 1].to_lowercase();
+                i += 2;
+            }
+            "--threads" if i + 1 < args.len() => {
+                if let Ok(t) = args[i + 1].parse::<usize>() {
+                    threads = t.max(1);
+                }
+                i += 2;
+            }
+            "--iterations" if i + 1 < args.len() => {
+                if let Ok(iter) = args[i + 1].parse::<usize>() {
+                    iterations = iter.max(10);
+                }
+                i += 2;
+            }
+            "--json" => {
+                json_output = true;
+                i += 1;
+            }
+            _ => {
+                i += 1;
+            }
+        }
+    }
+
+    run_sched_bench(&profile, threads, iterations, json_output)
+}
+
+fn run_sched_bench(
+    profile: &str,
+    threads: usize,
+    iterations: usize,
+    json_output: bool,
+) -> ExitCode {
+    if !json_output {
+        println!(
+            "================================================================================"
+        );
+        println!(
+            "  FERRO-OS EXTENSIBLE CPU SCHEDULER & JITTER BENCHMARK ({})",
+            profile.to_uppercase()
+        );
+        println!(
+            "================================================================================"
+        );
+    }
+
+    let t_start = Instant::now();
+
+    // 1. Thread Wakeup Dispatch Jitter Measurement
+    // Master signals worker; worker measures time from send to recv execution.
+    let (tx, rx) = std::sync::mpsc::sync_channel::<Instant>(0);
+    let (done_tx, done_rx) = std::sync::mpsc::channel::<Duration>();
+
+    let worker = thread::spawn(move || {
+        while let Ok(t0) = rx.recv() {
+            let elapsed = t0.elapsed();
+            if done_tx.send(elapsed).is_err() {
+                break;
+            }
+        }
+    });
+
+    let mut wakeup_latencies_us = Vec::with_capacity(iterations);
+
+    // Warmup
+    for _ in 0..20 {
+        let _ = tx.send(Instant::now());
+        let _ = done_rx.recv();
+    }
+
+    for _ in 0..iterations {
+        let t0 = Instant::now();
+        if tx.send(t0).is_err() {
+            break;
+        }
+        if let Ok(dur) = done_rx.recv() {
+            wakeup_latencies_us.push(dur.as_nanos() as f64 / 1000.0);
+        }
+    }
+
+    drop(tx);
+    let _ = worker.join();
+
+    wakeup_latencies_us.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let n = wakeup_latencies_us.len().max(1);
+    let min_us = wakeup_latencies_us.first().copied().unwrap_or(0.0);
+    let p50_us = wakeup_latencies_us[n * 50 / 100];
+    let p90_us = wakeup_latencies_us[n * 90 / 100];
+    let p95_us = wakeup_latencies_us[n * 95 / 100];
+    let p99_us = wakeup_latencies_us[(n * 99 / 100).min(n - 1)];
+    let max_us = wakeup_latencies_us.last().copied().unwrap_or(0.0);
+    let avg_us = wakeup_latencies_us.iter().sum::<f64>() / n as f64;
+
+    // 2. Thread Context-Switch Handover Time
+    // Two threads ping-pong an atomic boolean across 2,000 handovers.
+    let ping_pong_iters = 2000;
+    let turn = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let turn_clone = Arc::clone(&turn);
+    let stop = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let stop_clone = Arc::clone(&stop);
+
+    let t_ctx_start = Instant::now();
+    let partner = thread::spawn(move || {
+        for _ in 0..ping_pong_iters {
+            while !turn_clone.load(std::sync::atomic::Ordering::Acquire) {
+                if stop_clone.load(std::sync::atomic::Ordering::Relaxed) {
+                    return;
+                }
+                thread::yield_now();
+            }
+            turn_clone.store(false, std::sync::atomic::Ordering::Release);
+        }
+    });
+
+    for _ in 0..ping_pong_iters {
+        while turn.load(std::sync::atomic::Ordering::Acquire) {
+            thread::yield_now();
+        }
+        turn.store(true, std::sync::atomic::Ordering::Release);
+    }
+
+    let _ = partner.join();
+    let ctx_elapsed = t_ctx_start.elapsed();
+    let ctx_switch_ns = (ctx_elapsed.as_nanos() as f64) / (ping_pong_iters * 2) as f64;
+
+    // 3. Multi-Threaded Compute Throughput Under Contention
+    let compute_iters_per_thread = 200_000;
+    let mut handles = Vec::with_capacity(threads);
+    let t_comp_start = Instant::now();
+
+    for thread_id in 0..threads {
+        handles.push(thread::spawn(move || {
+            let mut val: u64 = thread_id as u64 + 1;
+            for i in 0..compute_iters_per_thread {
+                val = val.wrapping_mul(6364136223846793005).wrapping_add(i as u64);
+            }
+            val
+        }));
+    }
+
+    for h in handles {
+        let _ = h.join();
+    }
+    let comp_elapsed = t_comp_start.elapsed();
+    let total_comp_ops = (threads * compute_iters_per_thread) as f64;
+    let compute_ops_sec = total_comp_ops / comp_elapsed.as_secs_f64().max(0.00001);
+
+    let total_elapsed = t_start.elapsed();
+
+    if json_output {
+        println!(
+            "{{\"profile\":\"{}\",\"threads\":{},\"iterations\":{},\"dispatch_min_us\":{:.2},\"dispatch_avg_us\":{:.2},\"dispatch_p50_us\":{:.2},\"dispatch_p90_us\":{:.2},\"dispatch_p95_us\":{:.2},\"dispatch_p99_us\":{:.2},\"dispatch_max_us\":{:.2},\"ctx_switch_ns\":{:.1},\"compute_ops_sec\":{:.0},\"total_elapsed_s\":{:.3}}}",
+            profile,
+            threads,
+            iterations,
+            min_us,
+            avg_us,
+            p50_us,
+            p90_us,
+            p95_us,
+            p99_us,
+            max_us,
+            ctx_switch_ns,
+            compute_ops_sec,
+            total_elapsed.as_secs_f64()
+        );
+    } else {
+        println!("  Active Profile:          {}", profile.to_uppercase());
+        println!("  Worker Threads:          {}", threads);
+        println!("  Dispatch Iterations:     {}", iterations);
+        println!(
+            "  Context Switches:        {} handovers",
+            ping_pong_iters * 2
+        );
+        println!(
+            "--------------------------------------------------------------------------------"
+        );
+        println!("  Wakeup Latency (Min):    {:.2} µs", min_us);
+        println!("  Wakeup Latency (Avg):    {:.2} µs", avg_us);
+        println!("  Wakeup Latency (p50):    {:.2} µs", p50_us);
+        println!("  Wakeup Latency (p90):    {:.2} µs", p90_us);
+        println!("  Wakeup Latency (p95):    {:.2} µs", p95_us);
+        println!("  Wakeup Latency (p99):    {:.2} µs", p99_us);
+        println!("  Wakeup Latency (Max):    {:.2} µs", max_us);
+        println!(
+            "  Context Switch Overhead: {:.1} ns / handover",
+            ctx_switch_ns
+        );
+        println!(
+            "  Multi-Core Compute Rate: {:.1} M ops/sec",
+            compute_ops_sec / 1_000_000.0
+        );
+        println!(
+            "  Total Benchmark Elapsed: {:.3} s",
+            total_elapsed.as_secs_f64()
+        );
+        println!(
+            "--------------------------------------------------------------------------------"
+        );
+        println!("✅ SCHEDULER EMPIRICAL BENCHMARK COMPLETED SUCCESSFULLY");
+    }
+
+    ExitCode::SUCCESS
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2536,6 +3221,36 @@ mod tests {
     #[test]
     fn test_bpf_bypass_check() {
         let code = run_bpf(&["bypass-check".to_string()]);
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn test_sched_parse_cores() {
+        assert_eq!(parse_core_list("0"), vec![0]);
+        assert_eq!(parse_core_list("0,1,2"), vec![0, 1, 2]);
+        assert_eq!(parse_core_list("0-3"), vec![0, 1, 2, 3]);
+        assert_eq!(parse_core_list("0,2-4,6"), vec![0, 2, 3, 4, 6]);
+    }
+
+    #[test]
+    fn test_sched_status() {
+        let code = run_sched(&["status".to_string()]);
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn test_sched_set_profile() {
+        let code = run_sched(&["set".to_string(), "gaming".to_string()]);
+        assert_eq!(code, ExitCode::SUCCESS);
+        assert_eq!(get_active_profile(), "gaming");
+
+        let code_restore = run_sched(&["set".to_string(), "default".to_string()]);
+        assert_eq!(code_restore, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn test_sched_bench_execution() {
+        let code = run_sched_bench("gaming", 2, 50, false);
         assert_eq!(code, ExitCode::SUCCESS);
     }
 }

@@ -75,3 +75,6 @@ jobs:
 
       - name: Run eBPF & Socket Loopback Bypass 12-Scenario Suite
         run: python3 tools/test_e2e_ebpf_socket_bypass.py
+
+      - name: Run 12-Scenario SchedExt & CPU Scheduler Suite
+        run: python3 tools/test_e2e_sched_ext.py

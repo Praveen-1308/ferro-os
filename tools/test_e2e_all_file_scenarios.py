@@ -22,6 +22,7 @@ import stat
 import time
 import tarfile
 import hashlib
+import shutil
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
@@ -155,6 +156,12 @@ def main():
     print("\n[Scenario 06] Read-Only Restricted Source File (chmod 0400)")
     s6_src = f"{test_dir}/s6_readonly.key"
     s6_dst = f"{test_dir}/s6_readonly_dst.key"
+    if os.path.exists(s6_src):
+        os.chmod(s6_src, 0o600)
+        os.remove(s6_src)
+    if os.path.exists(s6_dst):
+        os.chmod(s6_dst, 0o600)
+        os.remove(s6_dst)
     with open(s6_src, "w") as f: f.write("PRIVATE_KEY_DATA_PROTECTED_FERRO_OS\n")
     os.chmod(s6_src, 0o400)
 
@@ -233,6 +240,10 @@ def main():
     print("\n[Scenario 10] Deep Directory Tree Recursive Copy (cp -r)")
     tree_src = f"{test_dir}/tree_src"
     tree_dst = f"{test_dir}/tree_dst"
+    if os.path.exists(tree_src):
+        shutil.rmtree(tree_src, ignore_errors=True)
+    if os.path.exists(tree_dst):
+        shutil.rmtree(tree_dst, ignore_errors=True)
     os.makedirs(f"{tree_src}/a/b/c", exist_ok=True)
     with open(f"{tree_src}/root.bin", "wb") as f: f.write(os.urandom(1024))
     with open(f"{tree_src}/a/sub.txt", "w") as f: f.write("sub file\n")
@@ -282,7 +293,7 @@ def main():
         data = os.urandom(8192)
         with open(src, "wb") as f: f.write(data)
         
-        r = subprocess.run(["ferro-core", "cp", src, dst], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        r = run_cmd(["ferro-core", "cp", src, dst])
         if r.returncode != 0 or os.path.getsize(dst) != 8192:
             return False
             
@@ -302,7 +313,6 @@ def main():
         all_passed = False
 
     # Cleanup
-    import shutil
     shutil.rmtree(test_dir, ignore_errors=True)
 
     print("\n================================================================================")
