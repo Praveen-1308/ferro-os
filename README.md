@@ -13,7 +13,7 @@
 [![Status: Open Experimental](https://img.shields.io/badge/Status-Open%20Experimental-blue.svg)](LICENSE)
 [![Benchmarks](https://img.shields.io/badge/Enterprise%20Benchmarks-12%2F12%20%231%20Sweep-brightgreen.svg)](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)
 
-**[🌐 Live Documentation Portal](https://praveen-1308.github.io/ferro-os/)** • **[📊 Interactive Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)** • **[🚀 Quick Start](#-quick-start)** • **[💬 Discussions](https://github.com/Praveen-1308/ferro-os/discussions)**
+**[🌐 Live Documentation Portal](https://praveen-1308.github.io/ferro-os/)** • **[📖 How to Use FerroOS Guide](HOW_TO_USE.md)** • **[📊 Interactive Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)** • **[🚀 Quick Start](#-quick-start)** • **[💬 Discussions](https://github.com/Praveen-1308/ferro-os/discussions)**
 
 ---
 
@@ -415,6 +415,8 @@ A single compact Rust binary providing 37+ essential Unix commands & kernel subs
 ---
 
 ## 🚀 Quick Start
+
+> 💡 **Looking for simple copy-paste recipes, droplet configurations, and custom playbooks? Check out our dedicated [How to Use FerroOS Guide](HOW_TO_USE.md)!**
 
 ### 1. Booting the Bare-Metal ISO / Live USB
 FerroOS provides a hybrid UEFI/BIOS ISO generator (`tools/iso/build_ferro_iso.py`) complete with an El Torito boot catalog and an EFI System Partition FAT stub:
