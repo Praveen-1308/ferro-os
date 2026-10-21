@@ -15,6 +15,8 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use tar::{Archive, Builder};
 
+pub mod msi;
+
 const DEFAULT_DB_PATH: &str = "/var/lib/rpk/db.json";
 
 // ==============================================================================
@@ -319,6 +321,8 @@ fn main() -> ExitCode {
             cmd_build(source_dir, output_path, arch.as_deref())
         }
         "game" => cmd_game(&filtered_args[1..]),
+        "msi-extract" | "msi" => cmd_msi_extract(&filtered_args[1..]),
+        "msi-info" => cmd_msi_info(&filtered_args[1..]),
         "help" | "--help" => {
             print_usage();
             ExitCode::SUCCESS
@@ -348,6 +352,9 @@ fn print_usage() {
     println!("  build <dir> <out.rpk> Build a package archive from a directory");
     println!("                        Options: --arch <arch>");
     println!("  game [subcmd]         Gaming layer: status, shortcut, list");
+    println!("  msi-extract <file>    Extract Windows .msi installer without Windows VM");
+    println!("                        Options: --target <dir>");
+    println!("  msi-info <file>       Inspect streams & embedded binaries inside an .msi");
 }
 
 // ==============================================================================
@@ -1089,6 +1096,87 @@ fn which_tool(name: &str) -> Option<PathBuf> {
 }
 
 // ==============================================================================
+// MSI Windows Installer Extraction & Inspection
+// ==============================================================================
+
+fn cmd_msi_info(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("rpk msi-info: usage: rpk msi-info <file.msi>");
+        return ExitCode::FAILURE;
+    }
+    let msi_path = Path::new(&args[0]);
+    match msi::MsiExtractor::open(msi_path) {
+        Ok(extractor) => {
+            let summary = extractor.inspect();
+            println!("📦 [MSI Package] '{}'", msi_path.display());
+            println!("   Total Structured Streams: {}", summary.total_streams);
+            println!("   Cabinet (.cab) Archives:  {}", summary.cabinet_streams.len());
+            for c in &summary.cabinet_streams {
+                println!("     • {}", c);
+            }
+            println!("   Executable Binaries (.exe): {}", summary.executable_binaries.len());
+            for e in &summary.executable_binaries {
+                println!("     • {}", e);
+            }
+            if let Some(ref name) = summary.target_app_name {
+                println!("   Detected Application Name: {}", name);
+            }
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("rpk msi-info: failed to parse MSI '{}': {}", msi_path.display(), e);
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn cmd_msi_extract(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("rpk msi-extract: usage: rpk msi-extract <file.msi> [--target <dir>]");
+        return ExitCode::FAILURE;
+    }
+    let msi_path = Path::new(&args[0]);
+    let mut target_dir = PathBuf::from("extracted_msi");
+    let mut i = 1;
+    while i < args.len() {
+        if (args[i] == "--target" || args[i] == "-t") && i + 1 < args.len() {
+            target_dir = PathBuf::from(&args[i + 1]);
+            i += 2;
+        } else {
+            i += 1;
+        }
+    }
+
+    match msi::MsiExtractor::open(msi_path) {
+        Ok(extractor) => {
+            println!("⚡ [rpk MSI] Parsing & Unpacking '{}' into '{}'...", msi_path.display(), target_dir.display());
+            match extractor.extract_all(&target_dir) {
+                Ok(report) => {
+                    println!("✅ Extraction completed in pure Rust (Zero Windows VM Overhead)!");
+                    println!("   Total Files Extracted: {}", report.extracted_files.len());
+                    println!("   Total Size Extracted:  {:.2} MB", report.total_bytes_extracted as f64 / 1_048_576.0);
+                    if let Some(ref exe) = report.main_executable {
+                        println!("   Main Executable:       {}", exe.display());
+                    }
+                    if let Some(ref shortcut) = report.desktop_shortcut {
+                        println!("   Desktop Shortcut:      {}", shortcut.display());
+                    }
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("rpk msi-extract: extraction error: {}", e);
+                    ExitCode::FAILURE
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("rpk msi-extract: failed to parse MSI '{}': {}", msi_path.display(), e);
+            ExitCode::FAILURE
+        }
+    }
+}
+
+// ==============================================================================
 // Unit Tests
 // ==============================================================================
 
@@ -1168,5 +1256,91 @@ mod tests {
     fn test_rpk_game_list() {
         let code = cmd_game(&["list".to_string()]);
         assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn test_msi_parser_synthetic_package() {
+        // Construct a synthetic 1536-byte OLE CFBF file with a PE executable stream
+        let mut ole_bytes = vec![0u8; 2048];
+        ole_bytes[0..8].copy_from_slice(&msi::OLE_MAGIC);
+        // Sector shift = 9 (512 bytes)
+        ole_bytes[30] = 9;
+        ole_bytes[31] = 0;
+        // Mini sector shift = 6 (64 bytes)
+        ole_bytes[32] = 6;
+        ole_bytes[33] = 0;
+        // Number of FAT sectors = 1
+        ole_bytes[44] = 1;
+        // First directory sector = 1
+        ole_bytes[48] = 1;
+        // DIFAT[0] points to sector 0 for FAT
+        ole_bytes[76] = 0;
+
+        // Sector 0 is FAT (offset 512..1024)
+        // FAT[0] = FAT sector (0xFFFFFFFD)
+        ole_bytes[512] = 0xFD;
+        ole_bytes[513] = 0xFF;
+        ole_bytes[514] = 0xFF;
+        ole_bytes[515] = 0xFF;
+        // FAT[1] = Directory sector (end of chain 0xFFFFFFFE)
+        ole_bytes[516] = 0xFE;
+        ole_bytes[517] = 0xFF;
+        ole_bytes[518] = 0xFF;
+        ole_bytes[519] = 0xFF;
+        // FAT[2] = Stream sector (end of chain 0xFFFFFFFE)
+        ole_bytes[520] = 0xFE;
+        ole_bytes[521] = 0xFF;
+        ole_bytes[522] = 0xFF;
+        ole_bytes[523] = 0xFF;
+
+        // Sector 1 is Directory (offset 1024..1536)
+        // Entry 0 is Root Storage (offset 1024..1152)
+        let root_entry = &mut ole_bytes[1024..1152];
+        let root_name: Vec<u8> = "Root Entry\0"
+            .encode_utf16()
+            .flat_map(|u| u.to_le_bytes())
+            .collect();
+        root_entry[0..root_name.len()].copy_from_slice(&root_name);
+        root_entry[64] = root_name.len() as u8;
+        root_entry[66] = 5; // Root Storage
+
+        // Entry 1 is Stream "App.exe" (offset 1152..1280)
+        let stream_entry = &mut ole_bytes[1152..1280];
+        let stream_name: Vec<u8> = "App.exe\0"
+            .encode_utf16()
+            .flat_map(|u| u.to_le_bytes())
+            .collect();
+        stream_entry[0..stream_name.len()].copy_from_slice(&stream_name);
+        stream_entry[64] = stream_name.len() as u8;
+        stream_entry[66] = 2; // Stream type
+        stream_entry[116] = 2; // Starting sector 2
+        // Size = 128 bytes
+        stream_entry[120] = 128;
+
+        // Sector 2 is Stream data (offset 1536..2048)
+        // Inject PE executable signature
+        ole_bytes[1536] = b'M';
+        ole_bytes[1537] = b'Z';
+        ole_bytes[1536 + 0x3C] = 0x40; // PE offset at 0x40 (64)
+        ole_bytes[1536 + 64] = b'P';
+        ole_bytes[1536 + 65] = b'E';
+        ole_bytes[1536 + 66] = 0;
+        ole_bytes[1536 + 67] = 0;
+
+        let extractor = msi::MsiExtractor::from_bytes(ole_bytes).expect("Valid synthetic MSI");
+        let summary = extractor.inspect();
+        assert!(summary.total_streams >= 1);
+        assert_eq!(summary.executable_binaries.len(), 1);
+        assert_eq!(summary.executable_binaries[0], "App.exe");
+
+        // Test extraction to temporary folder
+        let temp_dir = env::temp_dir().join("ferro_msi_extract_test");
+        let _ = fs::remove_dir_all(&temp_dir);
+        let report = extractor.extract_all(&temp_dir).expect("Successful extraction");
+        assert_eq!(report.extracted_files.len(), 1);
+        assert!(report.main_executable.is_some());
+        assert!(report.desktop_shortcut.is_some());
+
+        let _ = fs::remove_dir_all(&temp_dir);
     }
 }
