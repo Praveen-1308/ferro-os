@@ -9,4 +9,5 @@ rootfs/
 build_out/
 .DS_Store
 __pycache__/
+tools/k6
 *.pyc
