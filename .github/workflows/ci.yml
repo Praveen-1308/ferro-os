@@ -84,3 +84,6 @@ jobs:
 
       - name: Run 12-Scenario Bare-Metal ISO & Btrfs Installer Suite
         run: python3 tools/test_e2e_iso_and_btrfs_installer.py
+
+      - name: Run 12-Scenario Security, Exploit Resilience & Chaos Suite
+        run: python3 tools/test_e2e_security_and_chaos.py

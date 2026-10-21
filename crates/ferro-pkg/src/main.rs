@@ -618,6 +618,21 @@ fn cmd_install(
         if clean_path.is_empty() || clean_path == "." || clean_path == "./" {
             continue;
         }
+
+        // Security Hardening: Defend against Zip Slip & Path Traversal attacks
+        let has_traversal = Path::new(clean_path)
+            .components()
+            .any(|comp| matches!(comp, std::path::Component::ParentDir));
+
+        if has_traversal {
+            extraction_failed = true;
+            failure_reason = format!(
+                "Security Violation: Path traversal attempt detected in archive entry '{}'!",
+                path_str
+            );
+            break;
+        }
+
         let dest = root.join(clean_path);
 
         if let Some(parent) = dest.parent() {

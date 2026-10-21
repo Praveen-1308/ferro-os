@@ -169,7 +169,7 @@ docker run -d -p 6080:6080 --memory=6g ferro-os-web:latest
 ```
 Open **`http://localhost:6080`** in any web browser to interact with the full KDE Plasma desktop!
 
-### Option 3: Run the Empirical Real-World Test Suites (96/96 Scenarios)
+### Option 3: Run the Empirical Real-World Test Suites (108/108 Scenarios)
 ```bash
 # 1. Compile all Rust crates
 cargo test --workspace
@@ -197,6 +197,9 @@ python3 tools/test_e2e_gaming_layer.py
 
 # 9. Run the Bare-Metal ISO & Btrfs Subvolume Installer Suite
 python3 tools/test_e2e_iso_and_btrfs_installer.py
+
+# 10. Run the 12-Scenario Security, Exploit Resilience & Chaos Suite
+python3 tools/test_e2e_security_and_chaos.py
 ```
 
 ### Option 4: Build Bare-Metal Bootable Hybrid ISOs (Desktop & Server)
@@ -247,7 +250,8 @@ ferro-os/
 │   ├── test_e2e_ebpf_socket_bypass.py      # 12-scenario eBPF socket bypass suite
 │   ├── test_e2e_sched_ext.py               # 12-scenario SchedExt scheduler suite
 │   ├── test_e2e_gaming_layer.py            # 12-scenario Steam & Proton gaming suite
-│   └── test_e2e_iso_and_btrfs_installer.py # 12-scenario Bare-Metal ISO & Btrfs suite
+│   ├── test_e2e_iso_and_btrfs_installer.py # 12-scenario Bare-Metal ISO & Btrfs suite
+│   └── test_e2e_security_and_chaos.py      # 12-scenario security, fuzzing & chaos suite
 ├── Dockerfile                # Desktop Edition container (KDE Plasma 5.27, Mesa, Vulkan)
 ├── Dockerfile.server         # Server Edition container (mimalloc, libferro_io, microservices)
 ├── CONTRIBUTING.md           # Developer guidelines & zero-mock testing philosophy
