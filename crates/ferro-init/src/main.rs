@@ -59,6 +59,9 @@ mod linux_init {
         std::env::set_var("TERM", "linux");
         std::env::set_var("USER", "root");
 
+        // 2b. Elevate Process & Socket Limits (RLIMIT_NOFILE = 65,536)
+        elevate_system_limits();
+
         // 3. Create required runtime directories
         let _ = fs::create_dir_all("/root");
         let _ = fs::create_dir_all("/var/run");
@@ -639,6 +642,31 @@ mod linux_init {
         let c_name = CString::new(name).unwrap();
         unsafe {
             libc::sethostname(c_name.as_ptr(), name.len());
+        }
+    }
+
+    fn elevate_system_limits() {
+        #[cfg(unix)]
+        unsafe {
+            // Attempt to raise file descriptor limit to 65,536
+            let rlim = libc::rlimit {
+                rlim_cur: 65536,
+                rlim_max: 65536,
+            };
+            let res = libc::setrlimit(libc::RLIMIT_NOFILE, &rlim);
+            if res == 0 {
+                println!("[ferro-init] Process file descriptor limit elevated to 65,536 (RLIMIT_NOFILE).");
+            } else {
+                // In unprivileged containers, maximize soft limit up to hard limit
+                let mut current = libc::rlimit { rlim_cur: 0, rlim_max: 0 };
+                if libc::getrlimit(libc::RLIMIT_NOFILE, &mut current) == 0 {
+                    let elevated = libc::rlimit {
+                        rlim_cur: current.rlim_max,
+                        rlim_max: current.rlim_max,
+                    };
+                    let _ = libc::setrlimit(libc::RLIMIT_NOFILE, &elevated);
+                }
+            }
         }
     }
 
