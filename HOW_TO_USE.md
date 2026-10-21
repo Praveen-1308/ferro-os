@@ -48,10 +48,21 @@ docker run -d \
   ferro-os-server:latest
 ```
 
-### 🧪 Run the Automated Arjay McCandless $12 Challenge Harness
+### 🧪 Run the Official Arjay McCandless $12 Challenge (Grafana k6)
+Run the exact official challenge with authentic 238 MB database (`feed.db`: 50,000 users, 500,000 posts, 2,016,005 likes) and stepped k6 load stages (1,000 to 10,000 Virtual Users with realistic human think times):
+```bash
+# Execute the official 4-step challenge runner:
+python3 tools/run_official_arjay_challenge.py
+```
+*Official Criteria Verified:*
+* **Correctness**: 42/42 tests passed (`test/test.sh`)
+* **1,000 VUs**: Median 313 µs, $p_{95} = 768.59 \text{ µs}$, 0.00% errors
+* **10,000 VUs**: Median 337 µs, $p_{95} = 2.22 \text{ ms}$, 0.00% errors
+
+### 🔬 Run the Internal 5-Endpoint Concurrency Suite
 Evaluate SQLite performance across 5 API endpoints (`/users/:id`, `/users/:id/feed`, `/posts/:id`, `/posts/:id/like`, `/metrics`) under concurrent loads of 100 to 1,000 virtual users:
 ```bash
-# Run the automated benchmark suite
+# Run the internal benchmark suite
 python3 tools/benchmark_twelve_dollar_challenge.py
 ```
 

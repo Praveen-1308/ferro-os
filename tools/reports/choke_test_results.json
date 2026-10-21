@@ -1,0 +1,104 @@
+{
+  "timestamp": 1792619364.350037,
+  "hardware_profile": "1 vCPU / 2 GB RAM (No Swap)",
+  "ubuntu": {
+    "os_id": "ubuntu",
+    "os_name": "Ubuntu 24.04 LTS",
+    "image": "bench-ubuntu:latest",
+    "tiers": [
+      {
+        "vus": 50,
+        "requests": "4981",
+        "med": "43.51ms",
+        "p95": "65.46ms",
+        "p99": "71.16ms",
+        "error_rate": "0.00%",
+        "status": "PASS",
+        "rss_mb": 21.2
+      },
+      {
+        "vus": 100,
+        "requests": "5558",
+        "med": "92.15ms",
+        "p95": "130.05ms",
+        "p99": "155.7ms",
+        "error_rate": "0.00%",
+        "status": "PASS",
+        "rss_mb": 21.4
+      },
+      {
+        "vus": 250,
+        "requests": "4673",
+        "med": "287.6ms",
+        "p95": "463.83ms",
+        "p99": "496.2ms",
+        "error_rate": "0.00%",
+        "status": "PASS",
+        "rss_mb": 22.2
+      },
+      {
+        "vus": 500,
+        "requests": "5276",
+        "med": "537.66ms",
+        "p95": "905.58ms",
+        "p99": "947.51ms",
+        "error_rate": "0.00%",
+        "status": "FAIL",
+        "rss_mb": 24.2
+      }
+    ],
+    "choked": true,
+    "choke_tier": 500,
+    "choke_reason": "Latency breached threshold (p95: 905.58ms, p99: 947.51ms)"
+  },
+  "ferro": {
+    "os_id": "ferro",
+    "os_name": "FerroOS Dedicated Server",
+    "image": "ferro-os-server:latest",
+    "tiers": [
+      {
+        "vus": 50,
+        "requests": "8540",
+        "med": "19.83ms",
+        "p95": "29.19ms",
+        "p99": "35.82ms",
+        "error_rate": "0.00%",
+        "status": "PASS",
+        "rss_mb": 18.7
+      },
+      {
+        "vus": 100,
+        "requests": "8672",
+        "med": "54.2ms",
+        "p95": "65.28ms",
+        "p99": "74.89ms",
+        "error_rate": "0.00%",
+        "status": "PASS",
+        "rss_mb": 18.8
+      },
+      {
+        "vus": 250,
+        "requests": "7556",
+        "med": "167.44ms",
+        "p95": "303.58ms",
+        "p99": "320.73ms",
+        "error_rate": "0.00%",
+        "status": "PASS",
+        "rss_mb": 19.1
+      },
+      {
+        "vus": 500,
+        "requests": "6868",
+        "med": "388.87ms",
+        "p95": "625.96ms",
+        "p99": "644.21ms",
+        "error_rate": "0.00%",
+        "status": "FAIL",
+        "rss_mb": 21.1
+      }
+    ],
+    "choked": true,
+    "choke_tier": 500,
+    "choke_reason": "Latency breached threshold (p95: 625.96ms, p99: 644.21ms)"
+  }
+}

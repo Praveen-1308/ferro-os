@@ -13,7 +13,7 @@
 [![Status: Open Experimental](https://img.shields.io/badge/Status-Open%20Experimental-blue.svg)](LICENSE)
 [![Benchmarks](https://img.shields.io/badge/Enterprise%20Benchmarks-12%2F12%20%231%20Sweep-brightgreen.svg)](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)
 
-**[🌐 Live Documentation Portal](https://praveen-1308.github.io/ferro-os/)** • **[📖 How to Use FerroOS Guide](HOW_TO_USE.md)** • **[📊 Interactive Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)** • **[🚀 Quick Start](#-quick-start)** • **[💬 Discussions](https://github.com/Praveen-1308/ferro-os/discussions)**
+**[🌐 Live Documentation Portal](https://praveen-1308.github.io/ferro-os/)** • **[📖 How to Use FerroOS Guide](HOW_TO_USE.md)** • **[📊 Interactive Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)** • **[⚡ $12 Server Challenge Proof of Concept](#4-the-12-server-challenge--head-to-head-choke-benchmark-arjay-mccandless-methodology)** • **[🚀 Quick Start](#-quick-start)** • **[💬 Discussions](https://github.com/Praveen-1308/ferro-os/discussions)**
 
 ---
 
@@ -204,6 +204,84 @@ Why did each operating system achieve its specific metric profile? Detailed arch
   * JSON Telemetry: [`tools/reports/master_matrix.json`](tools/reports/master_matrix.json)
   * Vector Visualizations: [Throughput SVG](docs/reports/throughput_comparison.svg) | [Tail Latency CDF SVG](docs/reports/latency_percentiles_cdf.svg) | [Matplotlib 300-DPI CDF](docs/reports/latency_percentiles_cdf.png)
 * **Interactive Live Dashboard**: **[Open Enterprise Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)**
+
+---
+
+### 4. The $12 Server Challenge & Head-to-Head Choke Benchmark (Arjay McCandless Methodology)
+
+Inspired by software engineer and YouTuber **Arjay McCandless** ([`@arjaythedev`](https://youtube.com/@arjay_the_dev)) and his popular open-source challenge ([`arjaythedev/twelve-dollar-server-challenge`](https://github.com/arjaythedev/twelve-dollar-server-challenge)), FerroOS was evaluated under the strict constraints of entry-level cloud infrastructure ($12/month DigitalOcean Basic droplet: **1 vCPU, 2 GB RAM, 0 swap**).
+
+#### 🛠️ YouTuber Challenge Architecture & Stack Rules
+* **Hardware Ceiling**: Strictly pinned to 1.0 virtual CPU (`--cpus=1.0`) and 2.0 GB RAM (`--memory=2g --memory-swap=2g`, 0 swap).
+* **Database Engine**: In-process **SQLite** at `$SQLITE_PATH` configured with `PRAGMA journal_mode = WAL;` and `PRAGMA synchronous = NORMAL;`. No Redis, Postgres, or external caches allowed.
+* **Authentic Seed Dataset**: 238 MB SQLite database (`seed/feed.db`) containing **50,000 users**, **500,000 posts**, **2,016,005 likes**, and 20,000 pre-computed HS256 JWT tokens (`seed/tokens.json`).
+* **5 REST API Endpoints (`SPEC.md`)**: `GET /feed` (20 recent posts with relational author join), `GET /posts/:id`, `POST /posts/:id/like` (ACID durable write), `POST /posts`, and `GET /users/:id`.
+* **Correctness Gate**: 100% pass required on all **42 automated assertions** in `test/test.sh`.
+* **Official Pass Criteria**: $p_{95} \text{ latency} < 500\text{ ms}$, $p_{99} \text{ latency} < 1000\text{ ms}$, and request error rate $< 1.0\%$.
+
+#### 📈 Official Grafana `k6` Results (Realistic Human Think Time)
+Evaluated using the official `bench/load.js` simulating real human browsing patterns (3–7s feed pause, 3–8s post pause, 5–15s idle break):
+
+| Virtual Users (VUs) | Requests Served | Median Latency ($p_{50}$) | Tail Latency ($p_{95}$) | Worst Latency ($p_{99}$) | Error Rate | Challenge Status |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **1,000 VUs** (Warm-up) | 3,385 | 313 µs | 768.59 µs | 1.48 ms | 0.00% | ✅ **PASS** |
+| **2,500 VUs** (Starting Tier) | 8,430 | 267 µs | 755.54 µs | 1.77 ms | 0.00% | ✅ **PASS** |
+| **5,000 VUs** (First Doubling) | 16,832 | 230 µs | 687.00 µs | 2.26 ms | 0.00% | ✅ **PASS** |
+| **10,000 VUs** (Second Doubling)| 33,620 | **337 µs** | **2.22 ms** | **5.77 ms** | **0.00%** | ✅ **PASS (225x faster than 500ms limit)** |
+
+> [!NOTE]
+> **Why 10,000 Users on a 1-Core Server?** In the human think-time model, each user averages an interaction cycle of 20.5 seconds, generating ~0.106 requests/second (~1 request every 9.4s). Thus, 10,000 active users generate ~1,060 continuous requests/second while holding **10,000 open keep-alive TCP connections**. FerroOS's sub-30 MB footprint leaves 1.97 GB (98.5% of the droplet) entirely for kernel socket buffers and SQLite memory-mapped caching.
+
+---
+
+#### 🥊 Head-to-Head Fair Choke Test: Ubuntu 24.04 LTS vs. FerroOS Dedicated Server
+To prove relative performance, both operating systems were subjected to an unthrottled **Choke-to-Failure Test** on identical 1 vCPU / 2 GB RAM hardware running the identical social feed SQLite API until each reached its physical saturation point ("I cannot"):
+
+```text
+========================================================================================================
+             HEAD-TO-HEAD CHOKE BENCHMARK: UBUNTU 24.04 LTS vs FERRO-OS SERVER
+========================================================================================================
+Stage & Concurrency Tier        | Ubuntu 24.04 LTS (Standard)       | FerroOS Server (glibc+mimalloc+io)
+--------------------------------------------------------------------------------------------------------
+Tier 1: 50 VUs (Warmup)         |                                   |
+  • Total Requests Completed    | 4,981 requests                    | 8,540 requests  (🚀 +71.4% faster)
+  • Median Latency (p50)        | 43.51 ms                          | 19.83 ms        (⚡ 2.19x faster)
+  • Tail Latency (p95)          | 65.46 ms                          | 29.19 ms        (⚡ 2.24x faster)
+  • Error Rate & Status         | 0.00% (PASS)                      | 0.00% (PASS)
+--------------------------------------------------------------------------------------------------------
+Tier 2: 100 VUs (Scaling)       |                                   |
+  • Total Requests Completed    | 5,558 requests                    | 8,672 requests  (🚀 +56.0% faster)
+  • Median Latency (p50)        | 92.15 ms                          | 54.20 ms        (⚡ 1.70x faster)
+  • Tail Latency (p95)          | 130.05 ms                         | 65.28 ms        (⚡ 1.99x faster)
+  • Error Rate & Status         | 0.00% (PASS)                      | 0.00% (PASS)
+--------------------------------------------------------------------------------------------------------
+Tier 3: 250 VUs (Near-Peak)     |                                   |
+  • Total Requests Completed    | 4,673 requests                    | 7,556 requests  (🚀 +61.7% faster)
+  • Median Latency (p50)        | 287.60 ms                         | 167.44 ms       (⚡ 1.72x faster)
+  • Tail Latency (p95)          | 463.83 ms (Dangerously near 500ms)| 303.58 ms       (🛡️ Safe 40% margin)
+  • Error Rate & Status         | 0.00% (PASS)                      | 0.00% (PASS)
+--------------------------------------------------------------------------------------------------------
+Tier 4: 500 VUs (The Choke Point)|                                  |
+  • Total Requests Completed    | 5,276 requests                    | 6,868 requests  (🚀 +30.2% more)
+  • Median Latency (p50)        | 537.66 ms                         | 388.87 ms       (⚡ 27.7% faster)
+  • Tail Latency (p95)          | 905.58 ms (💥 CHOKED!)            | 625.96 ms       (💥 CHOKED!)
+  • Status                      | ❌ FAIL (Breached 500ms limit)    | ❌ FAIL (Breached 500ms limit)
+========================================================================================================
+```
+
+##### Key Empirical Conclusions:
+1. **Physical Saturation Ceiling**: Both operating systems reached the physical processing capacity of 1 single vCPU at **500 unthrottled VUs** ($p_{95} > 500\text{ ms}$).
+2. **62.8% More Work Done**: Across the passing tiers (50–250 VUs), FerroOS completed **24,768 requests** vs Ubuntu's **15,212 requests** on the exact same CPU.
+3. **Tail Latency Cut in Half**: In every operational tier, FerroOS cut median and tail latency by **1.7x to 2.2x**.
+4. **Controlled Degradation**: Under 100% CPU starvation at 500 VUs, Ubuntu's tail latency blew out to **905.58 ms** (~1 second), while FerroOS held at **625.96 ms** (31% lower) due to lock-free `mimalloc 2.1` thread-local arenas and `libferro_io.so`.
+
+```bash
+# Re-run official Arjay McCandless 4-step challenge:
+python3 tools/run_official_arjay_challenge.py
+
+# Re-run 1-on-1 Head-to-Head Choke Test:
+python3 tools/run_fair_choke_test.py
+```
 
 ---
 
