@@ -546,7 +546,7 @@ pub fn copy_file_zero_copy<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io
 
                         // 1. Try FICLONE (instant O(1) CoW reflink)
                         unsafe {
-                            if libc::ioctl(dst_fd, FICLONE, src_fd) == 0 {
+                            if libc::ioctl(dst_fd, FICLONE as _, src_fd) == 0 {
                                 return Ok(file_len);
                             }
                         }
@@ -3287,6 +3287,7 @@ pub enum BinaryFormat {
     ElfArm32,
     WindowsPe64,
     WindowsPe32,
+    WindowsPeArm64,
     Script(String),
     Unknown,
 }
@@ -3300,6 +3301,7 @@ impl BinaryFormat {
             BinaryFormat::ElfArm32 => "Linux ELF 32-bit (ARM 32-bit)",
             BinaryFormat::WindowsPe64 => "Windows PE 64-bit Executable (AMD64)",
             BinaryFormat::WindowsPe32 => "Windows PE 32-bit Executable (i386)",
+            BinaryFormat::WindowsPeArm64 => "Windows PE 64-bit Executable (ARM64 native)",
             BinaryFormat::Script(_) => "Executable Script",
             BinaryFormat::Unknown => "Unknown / Unrecognized Binary",
         }
@@ -3334,6 +3336,7 @@ pub fn detect_binary_format<P: AsRef<Path>>(path: P) -> io::Result<BinaryFormat>
             return Ok(match machine {
                 0x8664 => BinaryFormat::WindowsPe64,
                 0x014C => BinaryFormat::WindowsPe32,
+                0xAA64 => BinaryFormat::WindowsPeArm64,
                 _ => BinaryFormat::Unknown,
             });
         }
@@ -3350,6 +3353,12 @@ pub fn detect_binary_format<P: AsRef<Path>>(path: P) -> io::Result<BinaryFormat>
 }
 
 fn which_bin(name: &str) -> Option<PathBuf> {
+    if name.contains('/') {
+        let p = PathBuf::from(name);
+        if p.is_file() {
+            return Some(p);
+        }
+    }
     if let Ok(path_var) = env::var("PATH") {
         for dir in env::split_paths(&path_var) {
             let candidate = dir.join(name);
@@ -3361,6 +3370,7 @@ fn which_bin(name: &str) -> Option<PathBuf> {
     let standard = [
         format!("/usr/bin/{}", name),
         format!("/usr/local/bin/{}", name),
+        format!("/usr/lib/wine/{}", name),
         format!("/bin/{}", name),
         format!("/opt/bin/{}", name),
     ];
@@ -3980,18 +3990,75 @@ fn run_win_run(args: &[String]) -> ExitCode {
     let _ = fs::create_dir_all(&prefix);
 
     // 3. Build Runner Command
-    let mut cmd_builder = if host_arch == "aarch64" && which_bin("box64").is_some() {
-        let mut b = Command::new("box64");
-        b.arg("wine64");
-        b.arg(exe_path);
-        b
-    } else if let Some(wine) = which_bin("wine64").or_else(|| which_bin("wine")) {
-        let mut w = Command::new(wine);
-        w.arg(exe_path);
-        w
-    } else {
-        println!("  ℹ️ Wine compatibility layer not active on host. Attempting standard probe run...");
-        Command::new(exe_path)
+    let mut cmd_builder = match format {
+        BinaryFormat::WindowsPeArm64 => {
+            println!("  ⚡ Architecture: Native Windows ARM64 (PE32+) detected — executing via direct 64-bit Wine loader");
+            if let Some(wine64) = which_bin("wine64") {
+                let mut w = Command::new(wine64);
+                w.arg(exe_path);
+                w
+            } else if let Some(wine) = which_bin("wine") {
+                let mut w = Command::new(wine);
+                w.arg(exe_path);
+                w
+            } else {
+                Command::new(exe_path)
+            }
+        }
+        BinaryFormat::WindowsPe64 => {
+            if host_arch == "aarch64" && which_bin("box64").is_some() {
+                println!("  🚀 Translation Bridge: Box64 dynarec engaged for x86_64 PE on ARM64 host");
+                let mut b = Command::new("box64");
+                b.arg("wine64");
+                b.arg(exe_path);
+                b
+            } else if let Some(wine64) = which_bin("wine64").or_else(|| which_bin("wine")) {
+                let mut w = Command::new(wine64);
+                w.arg(exe_path);
+                w
+            } else {
+                println!("  ℹ️ Wine compatibility layer not active on host. Attempting standard probe run...");
+                Command::new(exe_path)
+            }
+        }
+        BinaryFormat::WindowsPe32 => {
+            if host_arch == "aarch64" {
+                if which_bin("box86").is_some() {
+                    println!("  🚀 Translation Bridge: Box86 dynarec engaged for 32-bit x86 PE (resolving 0x7ffe0000 memory layout)");
+                    let mut b = Command::new("box86");
+                    b.arg("wine");
+                    b.arg(exe_path);
+                    b
+                } else {
+                    eprintln!("  ⚠️ Notice: 32-bit x86 Windows binary detected on an ARM64 host without Box86.");
+                    eprintln!("     Standard QEMU user-mode emulation may encounter the 0x7ffe0000 memory address collision.");
+                    eprintln!("     Box86 bridge or native 64-bit/ARM64 binary is recommended.");
+                    if let Some(wine) = which_bin("wine").or_else(|| which_bin("wine64")) {
+                        let mut w = Command::new(wine);
+                        w.arg(exe_path);
+                        w
+                    } else {
+                        Command::new(exe_path)
+                    }
+                }
+            } else if let Some(wine) = which_bin("wine").or_else(|| which_bin("wine64")) {
+                let mut w = Command::new(wine);
+                w.arg(exe_path);
+                w
+            } else {
+                Command::new(exe_path)
+            }
+        }
+        _ => {
+            if let Some(wine) = which_bin("wine64").or_else(|| which_bin("wine")) {
+                let mut w = Command::new(wine);
+                w.arg(exe_path);
+                w
+            } else {
+                println!("  ℹ️ Wine compatibility layer not active on host. Attempting standard probe run...");
+                Command::new(exe_path)
+            }
+        }
     };
 
     // 4. Configure Low-Latency & High-Throughput Environment
@@ -4067,10 +4134,12 @@ fn run_win_status() -> ExitCode {
     let has_wine64 = which_bin("wine64").is_some();
     let has_wine = which_bin("wine").is_some();
     let has_box64 = which_bin("box64").is_some();
+    let has_box86 = which_bin("box86").is_some();
     let has_fex = which_bin("FEXInterpreter").is_some();
 
     println!("   Wine / Proton 64-bit:       {}", if has_wine64 { "READY (/usr/bin/wine64)" } else if has_wine { "READY (/usr/bin/wine)" } else { "ABSENT (Install via rpk install wine-ferro)" });
     println!("   Box64 x86_64 Dynarec:       {}", if has_box64 { "ACTIVE" } else { "NOT INSTALLED" });
+    println!("   Box86 32-bit Dynarec:       {}", if has_box86 { "ACTIVE" } else { "NOT INSTALLED (0x7ffe0000 bridge)" });
     println!("   FEX-Emu Translation Bridge: {}", if has_fex { "ACTIVE" } else { "NOT INSTALLED" });
 
     // Memory Bridge
