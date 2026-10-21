@@ -125,8 +125,19 @@ def main():
     out_cdf = "docs/reports/latency_percentiles_cdf.svg"
 
     generate_svg_bars(data["platforms"], out_bars)
-    generate_svg_cdf(out_cdf)
-    print("✅ Vector charts generated successfully.")
+    
+    # Try generating high-fidelity Matplotlib CDF curves if uv/matplotlib is available
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    mpl_script = os.path.join(script_dir, "generate_matplotlib_cdf.py")
+    if os.path.exists(mpl_script):
+        import subprocess
+        res = subprocess.run(["uv", "run", "--with", "matplotlib", "--with", "numpy", "python3", mpl_script])
+        if res.returncode != 0:
+            print("  Falling back to direct SVG CDF generator...")
+            generate_svg_cdf(out_cdf)
+    else:
+        generate_svg_cdf(out_cdf)
+    print("✅ All charts generated successfully.")
 
 if __name__ == "__main__":
     main()

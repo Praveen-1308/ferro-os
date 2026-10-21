@@ -174,7 +174,7 @@ Why did each operating system achieve its specific metric profile? Detailed arch
 * **Raw Data Artifacts**:
   * CSV Metrics: [`tools/reports/master_matrix.csv`](tools/reports/master_matrix.csv)
   * JSON Telemetry: [`tools/reports/master_matrix.json`](tools/reports/master_matrix.json)
-  * Vector Visualizations: [Throughput SVG](docs/reports/throughput_comparison.svg) | [Tail Latency CDF SVG](docs/reports/latency_percentiles_cdf.svg)
+  * Vector Visualizations: [Throughput SVG](docs/reports/throughput_comparison.svg) | [Tail Latency CDF SVG](docs/reports/latency_percentiles_cdf.svg) | [Matplotlib 300-DPI CDF](docs/reports/latency_percentiles_cdf.png)
 * **Interactive Live Dashboard**: **[Open Enterprise Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)**
 
 ---
@@ -422,12 +422,14 @@ ferro-os/
 │   ├── reports/
 │   │   ├── os_root_reasoning.md # In-depth architectural analysis across all 15 OSes
 │   │   ├── throughput_comparison.svg # Vector throughput comparative chart
-│   │   └── latency_percentiles_cdf.svg # Vector latency percentile distribution chart
+│   │   ├── latency_percentiles_cdf.svg # Vector latency percentile distribution chart
+│   │   └── latency_percentiles_cdf.png # Matplotlib 300-DPI publication chart
 │   ├── kde_plasma_desktop.png# KDE Plasma 5.27 screenshot
 │   └── desktop_graphics.png  # Mesa & Vulkan 3D graphics benchmark capture
 ├── tools/
 │   ├── devastating_chaos_matrix.py # 15-OS automated containerized devastation suite
 │   ├── reports/
+│   │   ├── generate_matplotlib_cdf.py # High-precision Matplotlib CDF latency generator
 │   │   ├── visualize_results.py    # Proportional outcome distribution bar renderer
 │   │   ├── generate_charts.py      # Standalone SVG chart and CDF generator
 │   │   ├── master_matrix.csv       # Machine-readable master metrics CSV

@@ -321,15 +321,61 @@
       </a>
     </div>
 
-    <!-- Charts -->
-    <div class="chart-section">
+    <!-- Multi-Metric Empirical Charts Grid -->
+    <div class="chart-section" style="grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));">
       <div class="chart-card">
-        <h2>HTTP Microservice Throughput (Req/Sec Across 15 OSes)</h2>
-        <canvas id="httpChart" height="250"></canvas>
+        <h2>HTTP Microservice Max Throughput (Req/Sec Across 15 OSes)</h2>
+        <canvas id="httpChart" height="230"></canvas>
       </div>
       <div class="chart-card">
         <h2>Tail Latency p99 (Milliseconds — Lower is Better)</h2>
-        <canvas id="latChart" height="250"></canvas>
+        <canvas id="latChart" height="230"></canvas>
+      </div>
+      <div class="chart-card">
+        <h2>Local DNS Resolution Concurrency (16,000 Workers QPS)</h2>
+        <canvas id="dnsChart" height="230"></canvas>
+      </div>
+      <div class="chart-card">
+        <h2>Chaos & Starvation Resilience Score (% Pass Rate)</h2>
+        <canvas id="chaosChart" height="230"></canvas>
+      </div>
+    </div>
+
+    <!-- Matplotlib CDF Latency Curves Showcase -->
+    <div class="table-container" style="padding: 26px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 style="margin-bottom: 4px; display: flex; align-items: center; gap: 10px;">
+            <span>📈 Matplotlib Empirical CDF Latency & HDR Blowout Analysis</span>
+            <span style="font-size: 11px; background: rgba(56, 189, 248, 0.15); color: var(--primary); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.3);">Matplotlib 3.11 • High-Precision Log Scale</span>
+          </h2>
+          <p style="color: var(--text-secondary); font-size: 13px;">
+            Continuous Cumulative Distribution Function \(P(\text{Latency} \le x)\) and High Dynamic Range (HDR) percentile containment across all 15 operating systems under 500 to 16,000 concurrency.
+          </p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <a href="reports/latency_percentiles_cdf.svg" target="_blank" rel="noopener" class="btn-reasoning" style="padding: 7px 14px; font-size: 12px;">
+            🔍 Open Vector SVG ↗
+          </a>
+          <a href="reports/latency_percentiles_cdf.png" download="latency_percentiles_cdf.png" class="btn-reasoning" style="padding: 7px 14px; font-size: 12px; background: rgba(52, 211, 153, 0.15); border-color: rgba(52, 211, 153, 0.35); color: var(--success);">
+            ⭳ Download 300-DPI PNG
+          </a>
+        </div>
+      </div>
+
+      <div style="background: #070a13; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px; text-align: center; overflow: hidden; margin-bottom: 18px;">
+        <img src="reports/latency_percentiles_cdf.svg" alt="Matplotlib Empirical Latency Cumulative Distribution Function (CDF) and HDR Blowout across 15 OSes" style="width: 100%; max-height: 520px; object-fit: contain; border-radius: 8px;" />
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 13px; color: var(--text-secondary);">
+        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 14px;">
+          <strong style="color: #38bdf8; display: block; margin-bottom: 4px;">Subplot A: Cumulative Distribution Function (CDF)</strong>
+          Measures the probability that a transaction completes within \(x\) milliseconds. Lightweight runtimes (FerroOS, Alpine 3.24, Void) achieve 99% containment before 20ms. In contrast, standard Ubuntu and Debian curves shift significantly rightward under 50,000 asynchronous bursts.
+        </div>
+        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 14px;">
+          <strong style="color: #38bdf8; display: block; margin-bottom: 4px;">Subplot B: High Dynamic Range (HDR) Tail Escalation</strong>
+          Tracks exponential tail latency blowouts from \(p_{50}\) through \(p_{99.99}\). Ubuntu 24.04 breaches the 250ms SLA boundary at \(p_{90}\) and reaches 1,875ms at \(p_{99}\) due to single-mutex socket accept lock serialization.
+        </div>
       </div>
     </div>
 
@@ -562,8 +608,25 @@ const p99Data = [
   29.4, 43.8, 10.5
 ];
 
-const ctxHttp = document.getElementById('httpChart').getContext('2d');
-new Chart(ctxHttp, {
+const dnsData = [
+  62100.0, 63400.0, 55200.0, 60800.0, 42000.0, 43500.0,
+  45000.0, 46200.0, 44200.0, 44500.0, 52800.0, 50600.0,
+  54100.0, 45800.0, 88461.8
+];
+
+const chaosData = [
+  80.0, 80.0, 85.0, 80.0, 70.0, 70.0,
+  80.0, 80.0, 80.0, 80.0, 90.0, 85.0,
+  85.0, 80.0, 100.0
+];
+
+const commonScales = {
+  x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+  y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+};
+
+// 1. HTTP Throughput
+new Chart(document.getElementById('httpChart').getContext('2d'), {
   type: 'bar',
   data: {
     labels: labels,
@@ -576,15 +639,12 @@ new Chart(ctxHttp, {
   options: {
     responsive: true,
     plugins: { legend: { display: false } },
-    scales: {
-      x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
-      y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-    }
+    scales: commonScales
   }
 });
 
-const ctxLat = document.getElementById('latChart').getContext('2d');
-new Chart(ctxLat, {
+// 2. Tail Latency p99
+new Chart(document.getElementById('latChart').getContext('2d'), {
   type: 'bar',
   data: {
     labels: labels,
@@ -597,9 +657,45 @@ new Chart(ctxLat, {
   options: {
     responsive: true,
     plugins: { legend: { display: false } },
+    scales: commonScales
+  }
+});
+
+// 3. DNS Concurrency QPS
+new Chart(document.getElementById('dnsChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'DNS QPS (16k workers)',
+      data: dnsData,
+      backgroundColor: labels.map(l => l.includes('FerroOS') ? '#38bdf8' : '#a78bfa')
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: commonScales
+  }
+});
+
+// 4. Chaos Resilience Score
+new Chart(document.getElementById('chaosChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Resilience Score (%)',
+      data: chaosData,
+      backgroundColor: labels.map(l => l === 100 ? '#34d399' : (l >= 85 ? '#38bdf8' : (l >= 80 ? '#fbbf24' : '#fb923c')))
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
     scales: {
-      x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
-      y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      ...commonScales,
+      y: { min: 50, max: 105, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
     }
   }
 });
