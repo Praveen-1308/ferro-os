@@ -14,25 +14,28 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <limits.h>
+#if defined(__linux__)
+#include <sys/auxv.h>
+#endif
 
 /*
- * libferro_io.so - High-Performance POSIX I/O Interposition Shim v2.1
+ * libferro_io.so - High-Performance POSIX I/O Interposition Shim v2.2 (Hardened)
  *
- * Production Invariants & Optimizations:
- *  1. 64 KB VFS Page-Cache Fast-Path:
- *     - Transfers < 65536 bytes bypass all interception immediately in ~2 nanoseconds.
- *  2. Lock-Free In-Memory File Descriptor Type Cache:
+ * Security & Defensive Invariants:
+ *  1. AT_SECURE & SUID Safety:
+ *     - If running in privileged/setuid context or AT_SECURE mode, disables all
+ *       unsafe manipulations and passes straight through to libc/syscalls.
+ *  2. Integer Overflow & Size Boundary Protection:
+ *     - Clamps size_t counts exceeding SSIZE_MAX and returns EINVAL per POSIX standard.
+ *  3. Dynamic Lock-Free FD Cache Thrash Protection:
  *     - Array of 65,536 slots: 0=unknown, 1=bypass (socket/pipe/TTY), 2=regular file.
- *     - Calls fstat() at most ONCE per file descriptor lifecycle.
- *  3. Socket & Epoll Pure Bypass + TCP_NODELAY:
- *     - Automatically enables TCP_NODELAY and TCP_QUICKACK on TCP stream sockets.
- *     - Completely eliminates Nagle delayed-ACK stalls in Redis, NATS, and microservices.
- *  4. Database Random Page Read-Ahead Thrash Prevention:
- *     - Automatically issues posix_fadvise(POSIX_FADV_RANDOM) on regular files
- *       to prevent kernel 128KB readahead pollution on SQLite/PostgreSQL B-tree walks.
- *  5. Fork Safety & Hooked close():
- *     - pthread_atfork handler cleans up inherited state across fork() boundaries.
- *     - Invalidate cache entry when file descriptors are closed and recycled.
+ *     - Handles descriptor recycling safely by intercepting close(), dup2(), and dup3().
+ *     - Descriptors >= 65,536 automatically safe-bypass the cache table without out-of-bounds indexing.
+ *  4. Fork & Thread Safety:
+ *     - pthread_atfork handlers ensure clean mutex and state reset across fork boundaries.
+ *  5. Local Socket Acceleration:
+ *     - Automatically enables TCP_NODELAY and TCP_QUICKACK on non-secure TCP streams.
  */
 
 #define MAX_CACHED_FDS 65536
@@ -42,6 +45,8 @@ static uint8_t g_fd_type_cache[MAX_CACHED_FDS];
 typedef ssize_t (*real_read_fn)(int fd, void *buf, size_t count);
 typedef ssize_t (*real_write_fn)(int fd, const void *buf, size_t count);
 typedef int (*real_close_fn)(int fd);
+typedef int (*real_dup2_fn)(int oldfd, int newfd);
+typedef int (*real_dup3_fn)(int oldfd, int newfd, int flags);
 typedef int (*real_socket_fn)(int domain, int type, int protocol);
 typedef int (*real_epoll_create1_fn)(int flags);
 typedef int (*real_epoll_ctl_fn)(int epfd, int op, int fd, struct epoll_event *event);
@@ -53,6 +58,8 @@ typedef int (*real_accept4_fn)(int sockfd, struct sockaddr *addr, socklen_t *add
 static real_read_fn g_real_read = NULL;
 static real_write_fn g_real_write = NULL;
 static real_close_fn g_real_close = NULL;
+static real_dup2_fn g_real_dup2 = NULL;
+static real_dup3_fn g_real_dup3 = NULL;
 static real_socket_fn g_real_socket = NULL;
 static real_epoll_create1_fn g_real_epoll_create1 = NULL;
 static real_epoll_ctl_fn g_real_epoll_ctl = NULL;
@@ -61,21 +68,39 @@ static real_connect_fn g_real_connect = NULL;
 static real_accept_fn g_real_accept = NULL;
 static real_accept4_fn g_real_accept4 = NULL;
 
-static atomic_flag g_init_lock = ATOMIC_FLAG_INIT;
+static pthread_mutex_t g_init_mutex = PTHREAD_MUTEX_INITIALIZER;
 static atomic_int g_initialized = 0;
 static pid_t g_ring_pid = 0;
+static int g_is_secure = -1;
+
+static inline int is_secure_execution(void) {
+    if (__builtin_expect(g_is_secure >= 0, 1)) return g_is_secure;
+#if defined(AT_SECURE)
+    unsigned long aux = getauxval(AT_SECURE);
+    if (aux != 0) {
+        g_is_secure = 1;
+        return 1;
+    }
+#endif
+    if (getuid() != geteuid() || getgid() != getegid()) {
+        g_is_secure = 1;
+        return 1;
+    }
+    g_is_secure = 0;
+    return 0;
+}
 
 static void init_real_symbols(void) {
     if (atomic_load(&g_initialized) && g_ring_pid == getpid()) return;
 
-    while (atomic_flag_test_and_set(&g_init_lock)) {
-        // Spin until lock acquired
-    }
+    pthread_mutex_lock(&g_init_mutex);
 
     if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
         g_real_read = (real_read_fn)dlsym(RTLD_NEXT, "read");
         g_real_write = (real_write_fn)dlsym(RTLD_NEXT, "write");
         g_real_close = (real_close_fn)dlsym(RTLD_NEXT, "close");
+        g_real_dup2 = (real_dup2_fn)dlsym(RTLD_NEXT, "dup2");
+        g_real_dup3 = (real_dup3_fn)dlsym(RTLD_NEXT, "dup3");
         g_real_socket = (real_socket_fn)dlsym(RTLD_NEXT, "socket");
         g_real_epoll_create1 = (real_epoll_create1_fn)dlsym(RTLD_NEXT, "epoll_create1");
         g_real_epoll_ctl = (real_epoll_ctl_fn)dlsym(RTLD_NEXT, "epoll_ctl");
@@ -88,17 +113,26 @@ static void init_real_symbols(void) {
         atomic_store(&g_initialized, 1);
     }
 
-    atomic_flag_clear(&g_init_lock);
+    pthread_mutex_unlock(&g_init_mutex);
 }
 
-// Fork safety handler
-static void reinit_uring_child(void) {
+// Fork safety handlers
+static void atfork_prepare(void) {
+    pthread_mutex_lock(&g_init_mutex);
+}
+
+static void atfork_parent(void) {
+    pthread_mutex_unlock(&g_init_mutex);
+}
+
+static void atfork_child(void) {
+    pthread_mutex_init(&g_init_mutex, NULL);
     g_ring_pid = getpid();
     for (int i = 0; i < MAX_CACHED_FDS; i++) {
         g_fd_type_cache[i] = 0;
     }
     atomic_store(&g_initialized, 0);
-    atomic_flag_clear(&g_init_lock);
+    g_is_secure = -1;
     init_real_symbols();
 }
 
@@ -106,7 +140,7 @@ static inline int is_uring_eligible_fd(int fd, size_t count) {
     // Invariant 1: Transfers < 64 KB bypass io_uring immediately
     if (count < 65536) return 0;
 
-    // Standard streams and out-of-range FDs always bypass
+    // Standard streams and out-of-range FDs always bypass safely
     if (fd <= 2 || fd >= MAX_CACHED_FDS) return 0;
 
     uint8_t cached = __atomic_load_n(&g_fd_type_cache[fd], __ATOMIC_RELAXED);
@@ -135,7 +169,7 @@ int socket(int domain, int type, int protocol) {
     int fd = g_real_socket ? g_real_socket(domain, type, protocol) : syscall(SYS_socket, domain, type, protocol);
     if (fd >= 0 && fd < MAX_CACHED_FDS) {
         __atomic_store_n(&g_fd_type_cache[fd], 1, __ATOMIC_RELAXED);
-        if (domain == AF_INET || domain == AF_INET6) {
+        if (!is_secure_execution() && (domain == AF_INET || domain == AF_INET6)) {
             if ((type & SOCK_STREAM) != 0) {
                 int one = 1;
                 setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
@@ -148,15 +182,17 @@ int socket(int domain, int type, int protocol) {
     return fd;
 }
 
-static inline void optimize_tcp_socket(int fd, const struct sockaddr *addr) {
+static inline void optimize_tcp_socket(int fd, const struct sockaddr *addr, socklen_t addrlen) {
     if (fd < 0 || fd >= MAX_CACHED_FDS) return;
     __atomic_store_n(&g_fd_type_cache[fd], 1, __ATOMIC_RELAXED);
+    if (is_secure_execution()) return;
+
     int one = 1;
     setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
 #ifdef TCP_QUICKACK
     setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, &one, sizeof(one));
 #endif
-    if (addr && addr->sa_family == AF_INET) {
+    if (addr && addrlen >= sizeof(struct sockaddr_in) && addr->sa_family == AF_INET) {
         const struct sockaddr_in *in = (const struct sockaddr_in *)addr;
         uint32_t ip = ntohl(in->sin_addr.s_addr);
         if ((ip >> 24) == 127) {
@@ -172,7 +208,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
         init_real_symbols();
     }
-    optimize_tcp_socket(sockfd, addr);
+    optimize_tcp_socket(sockfd, addr, addrlen);
     if (g_real_connect) return g_real_connect(sockfd, addr, addrlen);
 #if defined(SYS_connect)
     return syscall(SYS_connect, sockfd, addr, addrlen);
@@ -194,7 +230,7 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 #endif
     }
     if (fd >= 0) {
-        optimize_tcp_socket(fd, addr);
+        optimize_tcp_socket(fd, addr, addrlen ? *addrlen : 0);
     }
     return fd;
 }
@@ -212,7 +248,7 @@ int accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags) {
 #endif
     }
     if (fd >= 0) {
-        optimize_tcp_socket(fd, addr);
+        optimize_tcp_socket(fd, addr, addrlen ? *addrlen : 0);
     }
     return fd;
 }
@@ -229,12 +265,58 @@ int close(int fd) {
     return g_real_close(fd);
 }
 
+// Hook dup2 and dup3 to prevent stale FD cache entries
+int dup2(int oldfd, int newfd) {
+    if (newfd >= 0 && newfd < MAX_CACHED_FDS) {
+        __atomic_store_n(&g_fd_type_cache[newfd], 0, __ATOMIC_RELAXED);
+    }
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+        init_real_symbols();
+    }
+    if (g_real_dup2) return g_real_dup2(oldfd, newfd);
+#if defined(SYS_dup2)
+    return syscall(SYS_dup2, oldfd, newfd);
+#elif defined(SYS_dup3)
+    return syscall(SYS_dup3, oldfd, newfd, 0);
+#else
+    return -1;
+#endif
+}
+
+int dup3(int oldfd, int newfd, int flags) {
+    if (newfd >= 0 && newfd < MAX_CACHED_FDS) {
+        __atomic_store_n(&g_fd_type_cache[newfd], 0, __ATOMIC_RELAXED);
+    }
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+        init_real_symbols();
+    }
+#if defined(SYS_dup3)
+    return g_real_dup3 ? g_real_dup3(oldfd, newfd, flags) : syscall(SYS_dup3, oldfd, newfd, flags);
+#else
+    return -1;
+#endif
+}
+
 __attribute__((constructor))
 static void ferro_io_init(void) {
-    pthread_atfork(NULL, NULL, reinit_uring_child);
+    pthread_atfork(atfork_prepare, atfork_parent, atfork_child);
 }
 
 ssize_t read(int fd, void *buf, size_t count) {
+    // Integer overflow protection per POSIX SSIZE_MAX standard
+    if (__builtin_expect(count > SSIZE_MAX, 0)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (is_secure_execution()) {
+        if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+            init_real_symbols();
+            if (!g_real_read) return syscall(SYS_read, fd, buf, count);
+        }
+        return g_real_read(fd, buf, count);
+    }
+
     // Fast-path: Small reads < 64KB bypass io_uring and fstat checks entirely
     if (__builtin_expect(count < 65536, 1)) {
         if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
@@ -257,6 +339,20 @@ ssize_t read(int fd, void *buf, size_t count) {
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
+    // Integer overflow protection per POSIX SSIZE_MAX standard
+    if (__builtin_expect(count > SSIZE_MAX, 0)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (is_secure_execution()) {
+        if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+            init_real_symbols();
+            if (!g_real_write) return syscall(SYS_write, fd, buf, count);
+        }
+        return g_real_write(fd, buf, count);
+    }
+
     // Fast-path: Small writes < 64KB bypass io_uring and fstat checks entirely
     if (__builtin_expect(count < 65536, 1)) {
         if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {

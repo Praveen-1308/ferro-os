@@ -1571,17 +1571,51 @@ struct DnsCacheEntry {
 }
 
 fn parse_dns_qname(buf: &[u8], offset: usize) -> Option<(String, usize)> {
+    if offset >= buf.len() {
+        return None;
+    }
     let mut domain = String::new();
     let mut idx = offset;
+    let mut hops = 0;
+    const MAX_HOPS: usize = 8;
+    let mut visited = [false; 4096];
+    let mut next_idx = None;
+
     while idx < buf.len() {
+        if idx >= 4096 || visited[idx] {
+            // Cyclic pointer or infinite loop detected! Drop in O(1)
+            return None;
+        }
+        visited[idx] = true;
+
         let len = buf[idx] as usize;
         if len == 0 {
             idx += 1;
             break;
         }
         if len & 0xc0 == 0xc0 {
-            idx += 2;
-            break;
+            // RFC 1035 DNS compression pointer
+            if idx + 1 >= buf.len() {
+                return None;
+            }
+            hops += 1;
+            if hops > MAX_HOPS {
+                return None;
+            }
+            let ptr_offset = (((len & 0x3f) << 8) | (buf[idx + 1] as usize)) as usize;
+            if ptr_offset >= buf.len() || ptr_offset == idx {
+                // Out-of-bounds or self-referential loop! Drop
+                return None;
+            }
+            if next_idx.is_none() {
+                next_idx = Some(idx + 2);
+            }
+            idx = ptr_offset;
+            continue;
+        }
+        if len > 63 {
+            // RFC 1035 max label length is 63 bytes
+            return None;
         }
         idx += 1;
         if idx + len > buf.len() {
@@ -1590,10 +1624,15 @@ fn parse_dns_qname(buf: &[u8], offset: usize) -> Option<(String, usize)> {
         if !domain.is_empty() {
             domain.push('.');
         }
+        if domain.len() + len > 255 {
+            // RFC 1035 max domain length is 255 bytes
+            return None;
+        }
         domain.push_str(&String::from_utf8_lossy(&buf[idx..idx + len]).to_lowercase());
         idx += len;
     }
-    Some((domain, idx))
+    let final_idx = next_idx.unwrap_or(idx);
+    Some((domain, final_idx))
 }
 
 fn build_a_response(id: u16, raw_question: &[u8], ip: [u8; 4]) -> Vec<u8> {
@@ -1728,12 +1767,13 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                     Err(_) => continue,
                 };
 
-                if amt < 12 {
+                // Defensive boundary check: Drop truncated headers (< 12 bytes) or oversized packets (> 4096 bytes) in O(1)
+                if amt < 12 || amt > 4096 {
                     continue;
                 }
 
                 let id = u16::from_be_bytes([buf[0], buf[1]]);
-                let parsed = parse_dns_qname(&buf, 12);
+                let parsed = parse_dns_qname(&buf[..amt], 12);
                 let (domain, q_end) = match parsed {
                     Some(d) => {
                         let q_end = std::cmp::min(d.1 + 4, amt); // include QTYPE + QCLASS
@@ -4307,6 +4347,38 @@ mod tests {
         let resp = build_a_response(0x1234, &wire, [142, 250, 190, 46]);
         assert_eq!(resp[0..2], [0x12, 0x34]);
         assert_eq!(resp[2..4], [0x81, 0x80]); // standard response
+    }
+
+    #[test]
+    fn test_dns_fuzzing_defenses() {
+        // 1. Cyclic compression pointer loop (self-referential)
+        let cyclic_wire = [0xc0, 0x00];
+        assert!(parse_dns_qname(&cyclic_wire, 0).is_none());
+
+        // 2. Cyclic loop between two pointers (offset 0 -> 2, offset 2 -> 0)
+        let mutual_cyclic = [0xc0, 0x02, 0xc0, 0x00];
+        assert!(parse_dns_qname(&mutual_cyclic, 0).is_none());
+
+        // 3. Out-of-bounds pointer (points to offset 999 in a 2-byte packet)
+        let oob_wire = [0xc0, 0xff];
+        assert!(parse_dns_qname(&oob_wire, 0).is_none());
+
+        // 4. Oversized label length (> 63 bytes)
+        let mut huge_label = vec![64u8];
+        huge_label.extend_from_slice(&[b'a'; 64]);
+        huge_label.push(0x00);
+        assert!(parse_dns_qname(&huge_label, 0).is_none());
+
+        // 5. Valid compression pointer to earlier label:
+        // offset 0: \x03com\x00
+        // offset 5: \x03api\xc0\x00 -> "api.com"
+        let compressed_wire = [
+            0x03, b'c', b'o', b'm', 0x00,
+            0x03, b'a', b'p', b'i', 0xc0, 0x00
+        ];
+        let (resolved, end) = parse_dns_qname(&compressed_wire, 5).unwrap();
+        assert_eq!(resolved, "api.com");
+        assert_eq!(end, 11);
     }
 
     #[test]

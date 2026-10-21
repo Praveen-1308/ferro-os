@@ -553,7 +553,15 @@ fn cmd_install(
 
     let host_arch = get_host_arch();
 
-    // 3. Extract Entries with Transactional Tracking
+    // 3. Extract Entries with Transactional Tracking & Defensive Security Hardening
+    let archive_file_size = fs::metadata(&archive_path).map(|m| m.len()).unwrap_or(1024 * 1024);
+    // Decompression bomb ceiling: 500 MB max or 100x compression ratio
+    let max_allowed_uncompressed_bytes: u64 = std::cmp::max(
+        500 * 1024 * 1024,
+        archive_file_size.saturating_mul(100),
+    );
+    let mut total_uncompressed_bytes: u64 = 0;
+
     let mut extraction_failed = false;
     let mut failure_reason = String::new();
 
@@ -619,21 +627,128 @@ fn cmd_install(
             continue;
         }
 
-        // Security Hardening: Defend against Zip Slip & Path Traversal attacks
-        let has_traversal = Path::new(clean_path)
-            .components()
-            .any(|comp| matches!(comp, std::path::Component::ParentDir));
-
-        if has_traversal {
+        // 1. Decompression Bomb Check
+        let entry_size = entry.header().size().unwrap_or(0);
+        if total_uncompressed_bytes.saturating_add(entry_size) > max_allowed_uncompressed_bytes {
             extraction_failed = true;
             failure_reason = format!(
-                "Security Violation: Path traversal attempt detected in archive entry '{}'!",
+                "Security Violation: Decompression bomb detected! Archive size ({} bytes) exceeds safety ceiling ({} bytes, max 100:1 ratio)",
+                total_uncompressed_bytes.saturating_add(entry_size),
+                max_allowed_uncompressed_bytes
+            );
+            break;
+        }
+        total_uncompressed_bytes += entry_size;
+
+        // 2. Zip-Slip & Path Traversal Defense
+        let path_norm = Path::new(clean_path);
+        let has_traversal = path_norm
+            .components()
+            .any(|comp| matches!(comp, std::path::Component::ParentDir | std::path::Component::RootDir | std::path::Component::Prefix(_)));
+
+        if has_traversal || clean_path.contains("..") {
+            extraction_failed = true;
+            failure_reason = format!(
+                "Security Violation: Path traversal / Zip-Slip attempt detected in archive entry '{}'!",
                 path_str
             );
             break;
         }
 
         let dest = root.join(clean_path);
+
+        // 3. Symlink & Hardlink Escape Checks
+        let entry_type = entry.header().entry_type();
+        if entry_type.is_symlink() {
+            if let Ok(Some(link_target)) = entry.link_name() {
+                let link_target_str = link_target.to_string_lossy();
+                // Check for absolute symlink escape
+                if link_target.is_absolute() || link_target_str.starts_with('/') {
+                    extraction_failed = true;
+                    failure_reason = format!(
+                        "Security Violation: Absolute symlink escape detected in '{}' -> '{}'!",
+                        path_str, link_target_str
+                    );
+                    break;
+                }
+                // Check for recursive symlink loop or self-reference
+                if link_target == path_norm || link_target == Path::new(path_norm.file_name().unwrap_or_default()) {
+                    extraction_failed = true;
+                    failure_reason = format!(
+                        "Security Violation: Recursive symlink loop detected in '{}' -> '{}'!",
+                        path_str, link_target_str
+                    );
+                    break;
+                }
+                // Check for relative traversal out of root
+                let full_target = dest.parent().unwrap_or(&dest).join(&link_target);
+                let mut normalized = std::path::PathBuf::new();
+                for comp in full_target.components() {
+                    match comp {
+                        std::path::Component::ParentDir => { normalized.pop(); }
+                        std::path::Component::Normal(c) => normalized.push(c),
+                        std::path::Component::RootDir => normalized.push("/"),
+                        _ => {}
+                    }
+                }
+                if !normalized.starts_with(&root) {
+                    extraction_failed = true;
+                    failure_reason = format!(
+                        "Security Violation: Relative symlink escape detected in '{}' -> '{}'!",
+                        path_str, link_target_str
+                    );
+                    break;
+                }
+            }
+        } else if entry_type.is_hard_link() {
+            if let Ok(Some(link_target)) = entry.link_name() {
+                let link_target_str = link_target.to_string_lossy();
+                let clean_target = link_target_str.trim_start_matches('/');
+                if link_target.is_absolute() || clean_target.contains("..") {
+                    extraction_failed = true;
+                    failure_reason = format!(
+                        "Security Violation: Hardlink traversal detected in '{}' -> '{}'!",
+                        path_str, link_target_str
+                    );
+                    break;
+                }
+                // Must link to a file already unpacked inside this transaction
+                if !installed_files.iter().any(|f| f == clean_target) {
+                    extraction_failed = true;
+                    failure_reason = format!(
+                        "Security Violation: Hardlink to external/untracked file detected in '{}' -> '{}'!",
+                        path_str, link_target_str
+                    );
+                    break;
+                }
+            }
+        }
+
+        // 4. Verify no parent directory component is an external symlink
+        let mut cur = root.to_path_buf();
+        for comp in path_norm.parent().unwrap_or(Path::new("")).components() {
+            if let std::path::Component::Normal(part) = comp {
+                cur.push(part);
+                if let Ok(m) = fs::symlink_metadata(&cur) {
+                    if m.file_type().is_symlink() {
+                        if let Ok(target) = fs::read_link(&cur) {
+                            let resolved = if target.is_absolute() { target } else { cur.parent().unwrap().join(target) };
+                            if !resolved.starts_with(&root) {
+                                extraction_failed = true;
+                                failure_reason = format!(
+                                    "Security Violation: Symlink directory traversal attack detected at '{}'!",
+                                    cur.display()
+                                );
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if extraction_failed {
+            break;
+        }
 
         if let Some(parent) = dest.parent() {
             let _ = fs::create_dir_all(parent);

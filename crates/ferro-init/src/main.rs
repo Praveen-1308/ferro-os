@@ -741,7 +741,39 @@ mod linux_init {
     }
 }
 
+fn elevate_system_limits() {
+    #[cfg(unix)]
+    unsafe {
+        let mut current: libc::rlimit = std::mem::zeroed();
+        if libc::getrlimit(libc::RLIMIT_NOFILE, &mut current) == 0 {
+            let target = std::cmp::min(current.rlim_max, 524288);
+            let rlim = libc::rlimit {
+                rlim_cur: target,
+                rlim_max: current.rlim_max,
+            };
+            let _ = libc::setrlimit(libc::RLIMIT_NOFILE, &rlim);
+        }
+    }
+}
+
 fn main() -> ExitCode {
+    elevate_system_limits();
+
+    if std::env::args().any(|a| a == "--fdstore-only" || a == "fdstore") {
+        println!("[ferro-init] Running standalone FD Store daemon...");
+        let srv = fdstore::FdStoreServer::new();
+        match srv.start() {
+            Ok(handle) => {
+                let _ = handle.join();
+                return ExitCode::SUCCESS;
+            }
+            Err(e) => {
+                eprintln!("[ferro-init] Failed to start FD Store: {}", e);
+                return ExitCode::FAILURE;
+            }
+        }
+    }
+
     #[cfg(target_os = "linux")]
     {
         if let Err(e) = linux_init::run() {

@@ -15,6 +15,30 @@ use std::thread;
 
 pub const DEFAULT_SOCKET_PATH: &str = "/run/ferro/fdstore.sock";
 pub const FALLBACK_SOCKET_PATH: &str = "/tmp/ferro_fdstore.sock";
+pub const MAX_STORED_FDS: usize = 512;
+
+#[cfg(target_os = "linux")]
+fn check_peer_authorization(sock_fd: libc::c_int) -> bool {
+    unsafe {
+        let mut ucred: libc::ucred = std::mem::zeroed();
+        let mut len = std::mem::size_of::<libc::ucred>() as libc::socklen_t;
+        if libc::getsockopt(
+            sock_fd,
+            libc::SOL_SOCKET,
+            libc::SO_PEERCRED,
+            &mut ucred as *mut _ as *mut libc::c_void,
+            &mut len,
+        ) == 0 {
+            return ucred.uid == 0;
+        }
+    }
+    false
+}
+
+#[cfg(not(target_os = "linux"))]
+fn check_peer_authorization(_sock_fd: libc::c_int) -> bool {
+    true
+}
 
 pub unsafe fn send_fd(sock: libc::c_int, fd_to_send: libc::c_int, text: &str) -> io::Result<()> {
     let mut iov = libc::iovec {
@@ -105,6 +129,11 @@ impl FdStoreServer {
 
         let _ = fs::remove_file(sock_path);
         let listener = UnixListener::bind(sock_path)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = fs::set_permissions(sock_path, fs::Permissions::from_mode(0o600));
+        }
         println!("[ferro-init] FD Store listener active on {}", sock_path);
 
         let store_clone = Arc::clone(&self.store);
@@ -135,12 +164,27 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
         };
 
         if n == 0 {
+            if let Some(fd) = recvd_fd {
+                libc::close(fd);
+            }
+            return;
+        }
+
+        // Access Control Verification: Only root (UID 0) allowed to interact with PID 1 FD Store
+        if !check_peer_authorization(raw_sock) {
+            let _ = send_fd(raw_sock, -1, "ERROR PERMISSION_DENIED: Root UID 0 required\n");
+            if let Some(fd) = recvd_fd {
+                libc::close(fd);
+            }
             return;
         }
 
         let msg = String::from_utf8_lossy(&buf[..n]).trim().to_string();
         let parts: Vec<&str> = msg.split_whitespace().collect();
         if parts.is_empty() {
+            if let Some(fd) = recvd_fd {
+                libc::close(fd);
+            }
             return;
         }
 
@@ -148,8 +192,22 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
             "STORE" => {
                 if parts.len() >= 2 {
                     let name = parts[1].to_string();
+                    if name.is_empty() || name.len() > 64 || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.') {
+                        let _ = send_fd(raw_sock, -1, "ERROR Invalid service name\n");
+                        if let Some(fd) = recvd_fd {
+                            libc::close(fd);
+                        }
+                        return;
+                    }
+
                     if let Some(fd) = recvd_fd {
                         let mut map = store.lock().unwrap();
+                        if map.len() >= MAX_STORED_FDS && !map.contains_key(&name) {
+                            let _ = send_fd(raw_sock, -1, "ERROR FD Store Capacity Exceeded (max 1024)\n");
+                            libc::close(fd);
+                            return;
+                        }
+
                         if let Some(old_fd) = map.insert(name.clone(), fd) {
                             libc::close(old_fd);
                         }
@@ -162,9 +220,17 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
                     } else {
                         let _ = send_fd(raw_sock, -1, "ERROR No FD passed in SCM_RIGHTS\n");
                     }
+                } else {
+                    let _ = send_fd(raw_sock, -1, "ERROR Missing service name\n");
+                    if let Some(fd) = recvd_fd {
+                        libc::close(fd);
+                    }
                 }
             }
             "GET" => {
+                if let Some(fd) = recvd_fd {
+                    libc::close(fd);
+                }
                 if parts.len() >= 2 {
                     let name = parts[1];
                     let map = store.lock().unwrap();
@@ -181,6 +247,9 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
                 }
             }
             "LIST" => {
+                if let Some(fd) = recvd_fd {
+                    libc::close(fd);
+                }
                 let map = store.lock().unwrap();
                 let mut list = String::new();
                 for (k, v) in map.iter() {
@@ -192,6 +261,9 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
                 let _ = send_fd(raw_sock, -1, &list);
             }
             "REMOVE" => {
+                if let Some(fd) = recvd_fd {
+                    libc::close(fd);
+                }
                 if parts.len() >= 2 {
                     let name = parts[1];
                     let mut map = store.lock().unwrap();
@@ -206,6 +278,9 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
                 }
             }
             _ => {
+                if let Some(fd) = recvd_fd {
+                    libc::close(fd);
+                }
                 let _ = send_fd(raw_sock, -1, "ERROR Unknown Command\n");
             }
         }
