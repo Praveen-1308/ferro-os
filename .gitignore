@@ -1,4 +1,5 @@
 /target
+/target_*
 **/*.rs.bk
 *.iso
 *.img
