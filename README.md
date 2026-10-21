@@ -285,6 +285,27 @@ python3 tools/run_fair_choke_test.py
 
 ---
 
+### 📑 Master Testing & Documentation Index
+
+Below is the master index of all core architectural specifications, benchmarking suites, and operational runbooks for FerroOS:
+
+#### 🏛️ Architectural Design Documents
+* **[Memory Architecture & Allocators](docs/arch/memory.md)**: Global interposition of `mimalloc 2.1`, thread-local lock-free arenas vs `ptmalloc3` and `musl` spinlocks, atomic exchange queues, and SQLite lookaside memory pools.
+* **[Kernel & Scheduler Bypass](docs/arch/scheduler.md)**: Linux 6.12+ `sched_ext` extensible scheduling framework, 500 µs deterministic preemption quantum, real-time GameMode, and sub-50 µs wakeup jitter under 100% CPU burn.
+* **[Asynchronous I/O Subsystem](docs/arch/io_subsystem.md)**: Transparent POSIX I/O interposition via `libferro_io.so`, kernel-polling `io_uring` ring buffers (`IORING_SETUP_SQPOLL`), 4KB fast bypass, `SO_REUSEPORT` socket sharding, and Btrfs zero-copy extent reflinks.
+
+#### ⚡ Stress & Devastation Test Suites
+* **[Chaos Devastation Engine](tools/devastating_chaos_matrix.py)**: Multi-vector resource-exhaustion harness evaluating thundering herd accepts (50k clients), 128-thread allocator contention, 500k inode starvation, and CPU burn jitter.
+* **[Automated 15-OS Matrix Driver](scripts/run_15os_matrix.sh)**: Unified Docker orchestration suite evaluating cross-distribution durability across 15 operating systems under strict `--memory=4g --cpus=2` constraints.
+* **[Tail-Latency & CDF Analyzer](tools/reports/generate_charts.py)**: Microsecond-resolution latency distribution generator exporting publication-ready SVG and Matplotlib CDF charts.
+
+#### 🛠️ Operational Runbooks
+* **[Local Devastation Reproduction Runbook](docs/runbooks/chaos_testing.md)**: Step-by-step procedures for systems engineers to trigger, inspect, and verify starvation vectors locally.
+* **[CI/CD Benchmarking Pipeline Runbook](docs/runbooks/ci_benchmarks.md)**: Automated runner configuration, performance regression gating thresholds ($p_{99} \le 15\text{ ms}$, Throughput $\ge 35,000\text{ req/s}$), and GitHub telemetry publishing.
+* **[Production Triage & Incident Playbook](docs/runbooks/incident_triage.md)**: Live diagnostic procedures and escalation matrices for CPU soft-locks, memory pressure/OOM avoidance, socket listen backlog drops, and SQLite WAL write contention.
+
+---
+
 ## 📂 Core Userland Component Footprint
 
 All core system daemons and utilities are written in pure Rust and compiled with Fat Link-Time Optimization (`lto = "fat"`), single compilation units (`codegen-units = 1`), and stripped symbols:
