@@ -234,5 +234,5 @@ We welcome contributions from developers across the globe! Please review:
 
 ## 📜 License
 
-FerroOS is open-source software licensed under the **[MIT License](LICENSE)**.  
-Copyright (c) 2026 **Praveen Kumar Gorle**.
+FerroOS is open-source software which is still in experimental stages
+
