@@ -56,7 +56,10 @@ jobs:
           python-version: "3.11"
 
       - name: Compile Release Binaries
-        run: cargo build --release --workspace
+        run: |
+          cargo build --release --workspace
+          echo "$GITHUB_WORKSPACE/target/release" >> $GITHUB_PATH
+          sudo cp target/release/ferro-* /usr/local/bin/ || true
 
       - name: Run 12-Scenario File I/O Matrix Suite
         run: python3 tools/test_e2e_all_file_scenarios.py

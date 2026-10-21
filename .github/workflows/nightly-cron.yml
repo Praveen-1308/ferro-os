@@ -28,7 +28,10 @@ jobs:
           cargo audit || true
 
       - name: Compile Release Workspace
-        run: cargo build --release --workspace
+        run: |
+          cargo build --release --workspace
+          echo "$GITHUB_WORKSPACE/target/release" >> $GITHUB_PATH
+          sudo cp target/release/ferro-* /usr/local/bin/ || true
 
       - name: Execute Full Suite of 4 Empirical Regression Matrices
         run: |

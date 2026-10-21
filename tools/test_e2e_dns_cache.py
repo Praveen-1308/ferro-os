@@ -13,16 +13,31 @@ import time
 import subprocess
 import sys
 
+def get_ferro_core():
+    candidates = [
+        "target/release/ferro-core",
+        "target/debug/ferro-core",
+        "/usr/local/bin/ferro-core",
+        "/bin/ferro-core",
+        "ferro-core",
+    ]
+    for c in candidates:
+        if os.path.isfile(c) and os.access(c, os.X_OK):
+            return os.path.abspath(c)
+    return "ferro-core"
+
 def main():
     print("================================================================================")
     print("      FERRO-OS LOCAL SHARED-MEMORY DNS RESOLVER E2E VALIDATION SUITE           ")
     print("================================================================================")
 
+    ferro_bin = get_ferro_core()
+
     # 1. Start DNS Caching Daemon in background
     port = 5353
     print(f"\n[Step 1] Starting ferro-core dns-cache daemon on port {port}...")
     daemon = subprocess.Popen(
-        ["ferro-core", "dns-cache", "start", "--port", str(port), "--upstream", "1.1.1.1:53"],
+        [ferro_bin, "dns-cache", "start", "--port", str(port), "--upstream", "1.1.1.1:53"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
@@ -39,23 +54,23 @@ def main():
         # 2. Query /etc/hosts mapped entry
         print("\n[Step 2] Testing /etc/hosts In-Memory SHM Host Resolution (localhost)...")
         # Warmup query
-        subprocess.run(["ferro-core", "dns-cache", "query", "localhost", "--port", str(port)], capture_output=True, text=True)
-        res1 = subprocess.run(["ferro-core", "dns-cache", "query", "localhost", "--port", str(port)], capture_output=True, text=True)
+        subprocess.run([ferro_bin, "dns-cache", "query", "localhost", "--port", str(port)], capture_output=True, text=True)
+        res1 = subprocess.run([ferro_bin, "dns-cache", "query", "localhost", "--port", str(port)], capture_output=True, text=True)
         print(res1.stdout)
 
         # 3. Query Upstream & Cache Ingestion (google.com)
         print("\n[Step 3] Testing Upstream Query & Cache Ingestion (google.com)...")
-        res2 = subprocess.run(["ferro-core", "dns-cache", "query", "google.com", "--port", str(port)], capture_output=True, text=True)
+        res2 = subprocess.run([ferro_bin, "dns-cache", "query", "google.com", "--port", str(port)], capture_output=True, text=True)
         print(res2.stdout)
 
         # 4. Query Repeated Domain -> Cache Hit
         print("\n[Step 4] Testing Cache Hit Timing on Cached Entry (google.com)...")
-        res3 = subprocess.run(["ferro-core", "dns-cache", "query", "google.com", "--port", str(port)], capture_output=True, text=True)
+        res3 = subprocess.run([ferro_bin, "dns-cache", "query", "google.com", "--port", str(port)], capture_output=True, text=True)
         print(res3.stdout)
 
         # 5. Run 1,000 Query Throughput Benchmark
         print("\n[Step 5] Executing 1,000-Query In-Memory Benchmark against Local Resolver...")
-        res4 = subprocess.run(["ferro-core", "dns-cache", "bench", "localhost", "1000", "--port", str(port)], capture_output=True, text=True)
+        res4 = subprocess.run([ferro_bin, "dns-cache", "bench", "localhost", "1000", "--port", str(port)], capture_output=True, text=True)
         print(res4.stdout)
 
         if "RESOLUTION VERIFIED" in res4.stdout or "ULTRA-FAST RESOLUTION" in res4.stdout:

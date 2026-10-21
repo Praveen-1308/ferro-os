@@ -35,7 +35,22 @@ def sha256_file(path):
             h.update(chunk)
     return h.hexdigest()
 
+def get_ferro_core():
+    candidates = [
+        "target/release/ferro-core",
+        "target/debug/ferro-core",
+        "/usr/local/bin/ferro-core",
+        "/bin/ferro-core",
+        "ferro-core",
+    ]
+    for c in candidates:
+        if os.path.isfile(c) and os.access(c, os.X_OK):
+            return os.path.abspath(c)
+    return "ferro-core"
+
 def run_cmd(cmd):
+    if cmd and cmd[0] == "ferro-core":
+        cmd = [get_ferro_core()] + cmd[1:]
     return subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 def main():
