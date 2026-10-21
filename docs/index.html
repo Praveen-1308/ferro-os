@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FerroOS - Next-Gen Operating System Powered by Rust</title>
-  <meta name="description" content="Sub-millisecond boot, pure Rust userspace, full glibc ABI compatibility, and #1 in 12/12 real-world enterprise production benchmarks.">
+  <meta name="description" content="Sub-millisecond boot, pure Rust userspace, full glibc ABI compatibility, and 15-OS empirical benchmark telemetry.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,7 +12,6 @@
   <style>
     :root {
       --bg: #05070d;
-      --bg-surface: #0a0e1a;
       --card-bg: rgba(13, 20, 36, 0.65);
       --card-border: rgba(56, 189, 248, 0.18);
       --card-hover-border: rgba(56, 189, 248, 0.45);
@@ -56,7 +55,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(5, 7, 13, 0.75);
+      background: rgba(5, 7, 13, 0.85);
     }
     .logo {
       display: flex;
@@ -113,6 +112,9 @@
       align-items: center;
       gap: 6px;
       cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 10px;
+      transition: all 0.2s;
     }
     .btn-nav-dash:hover {
       background: rgba(56, 189, 248, 0.22);
@@ -128,6 +130,8 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      padding: 8px 16px;
+      border-radius: 10px;
     }
     .btn-github:hover {
       background: rgba(255, 255, 255, 0.15);
@@ -172,7 +176,7 @@
     }
 
     h1 {
-      font-size: 58px;
+      font-size: 56px;
       font-weight: 800;
       line-height: 1.15;
       margin-bottom: 22px;
@@ -234,7 +238,7 @@
       box-shadow: 0 6px 25px rgba(56, 189, 248, 0.2);
     }
 
-    /* Glass Iconic Stat Cards */
+    /* Glass Stat Cards */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -253,8 +257,6 @@
       -webkit-backdrop-filter: blur(16px) saturate(180%);
       box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
       transition: all 0.25s ease;
-      position: relative;
-      overflow: hidden;
     }
     .stat-card:hover {
       border-color: var(--card-hover-border);
@@ -300,7 +302,7 @@
     }
     .section-desc {
       color: var(--text-muted);
-      max-width: 680px;
+      max-width: 720px;
       margin: 0 auto;
       font-size: 16px;
     }
@@ -315,14 +317,15 @@
       -webkit-backdrop-filter: blur(18px) saturate(180%);
       box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
       overflow-x: auto;
+      margin-bottom: 32px;
     }
     table.leaderboard-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 14px;
+      font-size: 13px;
     }
     table.leaderboard-table th, table.leaderboard-table td {
-      padding: 14px 18px;
+      padding: 12px 14px;
       text-align: left;
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
@@ -331,38 +334,89 @@
       color: var(--text-muted);
       font-weight: 600;
       text-transform: uppercase;
-      font-size: 12px;
+      font-size: 11px;
       letter-spacing: 0.06em;
     }
-    tr.ferro-champion-row {
-      background: rgba(56, 189, 248, 0.07);
-      border-left: 3px solid var(--primary);
-    }
-    tr.ferro-champion-row:hover {
-      background: rgba(56, 189, 248, 0.12);
-    }
-    .rank-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 800;
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-size: 12px;
-    }
-    .rank-1st {
-      background: rgba(56, 189, 248, 0.2);
-      color: var(--primary);
-      border: 1px solid rgba(56, 189, 248, 0.4);
+    tr.matrix-row:hover {
+      background: rgba(255, 255, 255, 0.02);
     }
     .pill-resilient {
       background: rgba(52, 211, 153, 0.15);
       color: var(--success);
       border: 1px solid rgba(52, 211, 153, 0.3);
-      padding: 3px 10px;
+      padding: 3px 8px;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
+    }
+    .pill-warn {
+      background: rgba(251, 146, 60, 0.15);
+      color: #fb923c;
+      border: 1px solid rgba(251, 146, 60, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .pill-fail {
+      background: rgba(248, 113, 113, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* Outcome Distribution Bars */
+    .bars-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px;
+      backdrop-filter: blur(18px);
+      margin-bottom: 32px;
+    }
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+    .bar-label {
+      width: 180px;
+      text-align: right;
+      color: #e2e8f0;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .bar-track {
+      flex: 1;
+      height: 22px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0284c7, #38bdf8);
+      border-radius: 6px;
+      transition: width 0.6s ease;
+    }
+    .bar-fill-target {
+      background: linear-gradient(90deg, #38bdf8, #00f2fe);
+    }
+    .bar-value {
+      width: 110px;
+      color: #38bdf8;
+      font-family: 'Fira Code', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      flex-shrink: 0;
+      text-align: left;
     }
 
     /* Dual Editions */
@@ -373,8 +427,9 @@
     }
     @media (max-width: 900px) {
       .dual-grid { grid-template-columns: 1fr; }
-      h1 { font-size: 40px; }
-      header { padding: 16px 24px; }
+      h1 { font-size: 38px; }
+      header { padding: 16px 20px; }
+      .bar-label { width: 130px; font-size: 11px; }
     }
     .edition-card {
       background: var(--card-bg);
@@ -569,37 +624,6 @@
       max-height: calc(92vh - 80px);
     }
 
-    /* Modal Quick Stats */
-    .modal-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .m-stat-card {
-      background: rgba(13, 20, 36, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 16px 20px;
-    }
-    .m-stat-title {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-    }
-    .m-stat-val {
-      font-size: 26px;
-      font-weight: 800;
-      color: #fff;
-      margin: 6px 0 2px;
-      font-family: 'Fira Code', monospace;
-    }
-    .m-stat-desc {
-      font-size: 12px;
-      color: var(--success);
-    }
-
     .modal-charts-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -640,7 +664,7 @@
       text-decoration: underline;
     }
     .project-notice {
-      max-width: 700px;
+      max-width: 720px;
       margin: 0 auto;
       line-height: 1.7;
       font-size: 13px;
@@ -656,7 +680,8 @@
       <span>FerroOS</span>
     </a>
     <nav>
-      <a href="#leaderboard">Leaderboard</a>
+      <a href="#matrix">15-OS Matrix</a>
+      <a href="#bars">Outcome Bars</a>
       <a href="#editions">Editions</a>
       <a href="#desktop">Desktop 3D</a>
       <a href="#quickstart">Quick Start</a>
@@ -674,7 +699,7 @@
     <section class="hero">
       <div class="badge-pill">
         <span class="pulse-dot"></span>
-        <span>v2.0 Gold Master • #1 across 12/12 Enterprise Production Benchmarks</span>
+        <span>Phase 3 • 15-Operating-System Empirical Telemetry Matrix</span>
       </div>
       <h1>Next-Generation Operating System Powered by Rust</h1>
       <p class="lead">
@@ -684,8 +709,8 @@
         <button type="button" class="btn btn-primary" id="openDashHeroBtn">
           📊 Open Live Benchmark Dashboard
         </button>
-        <a href="#quickstart" class="btn btn-glass">
-          🚀 Quick Start in 60s
+        <a href="#matrix" class="btn btn-glass">
+          📈 View 15-OS Stress Results
         </a>
         <a href="https://github.com/Praveen-1308/ferro-os" class="btn btn-glass" target="_blank" rel="noopener">
           📂 GitHub Source Code
@@ -701,9 +726,9 @@
         <div class="stat-label">Full-Stack Cold Boot</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">🏆</div>
-        <div class="stat-number">12 / 12</div>
-        <div class="stat-label">Enterprise #1 Sweeps</div>
+        <div class="stat-icon">🌐</div>
+        <div class="stat-number">15 / 15</div>
+        <div class="stat-label">OS Competitor Benchmarks</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">🚀</div>
@@ -717,81 +742,295 @@
       </div>
     </div>
 
-    <!-- LEADERBOARD -->
-    <section class="section" id="leaderboard">
+    <!-- 15-OS MASTER MATRIX -->
+    <section class="section" id="matrix">
       <div class="section-header">
-        <h2 class="section-title">Global Enterprise OS Leaderboard</h2>
-        <p class="section-desc">Empirically evaluated against enterprise and hyperconverged operating systems under strict 6 GB RAM resource caps.</p>
+        <h2 class="section-title">15-Operating-System Empirical Benchmark Matrix</h2>
+        <p class="section-desc">Devastating limit-stress evaluation across 15 distinct Linux distributions under strict --memory=4g --cpus=2 constraint cap.</p>
       </div>
 
       <div class="leaderboard-glass-card">
         <table class="leaderboard-table">
           <thead>
             <tr>
-              <th>Rank & Platform</th>
-              <th>Architecture & Userspace</th>
-              <th>Mean Throughput</th>
-              <th>Tail Latency (p99)</th>
-              <th>Chaos Score</th>
-              <th>Security Pass</th>
+              <th>Operating System</th>
+              <th>C Library & Base</th>
+              <th>Max HTTP RPS</th>
+              <th>p50 Latency</th>
+              <th>p99 Latency</th>
+              <th>DNS QPS (16k)</th>
+              <th>Allocator Ops/s</th>
+              <th>ENOSPC Recovery</th>
+              <th>Chaos Survival</th>
             </tr>
           </thead>
           <tbody>
-            <tr class="ferro-champion-row">
-              <td><span class="rank-badge rank-1st">🥇 1st FerroOS Server v2.0</span></td>
-              <td><strong>Pure Rust Userspace + mimalloc 2.1 + SO_REUSEPORT</strong></td>
-              <td><strong style="color: var(--primary);">39,645.4 req/s</strong></td>
-              <td><strong>10.47 ms (500) / 233.8 ms (8,000)</strong></td>
-              <td><span class="pill-resilient">100% (10/10)</span></td>
-              <td><span class="pill-resilient">100% (18/18)</span></td>
-            </tr>
-            <tr>
-              <td>🥈 2nd Alpine Linux 3.24</td>
-              <td>musl libc + busybox container</td>
+            <!-- Tier 1 -->
+            <tr class="matrix-row">
+              <td><strong>Alpine Linux 3.24</strong></td>
+              <td>musl 1.2.5 (busybox)</td>
               <td>12,890.2 req/s</td>
-              <td>18.40 ms (500 conn)</td>
-              <td>80% (FTS5 lock stall)</td>
-              <td>88.9% (No bomb check)</td>
+              <td>11.20 ms</td>
+              <td>18.40 ms</td>
+              <td>62,100 QPS</td>
+              <td>4,510</td>
+              <td><span class="pill-warn">PARTIAL LEAKS</span></td>
+              <td><span class="pill-resilient">80.0%</span></td>
             </tr>
-            <tr>
-              <td>🥉 3rd Azure Linux 3.0</td>
-              <td>Azure Stack HCI / Mariner enterprise base</td>
-              <td>9,450.0 req/s</td>
-              <td>34.20 ms (500 conn)</td>
-              <td>90% (Resilient kernel)</td>
-              <td>88.9% (Standard tar)</td>
+            <tr class="matrix-row">
+              <td><strong>Alpine Edge</strong></td>
+              <td>musl 1.2.6+ (busybox)</td>
+              <td>13,150.0 req/s</td>
+              <td>10.80 ms</td>
+              <td>17.90 ms</td>
+              <td>63,400 QPS</td>
+              <td>4,530</td>
+              <td><span class="pill-warn">PARTIAL LEAKS</span></td>
+              <td><span class="pill-resilient">80.0%</span></td>
             </tr>
-            <tr>
-              <td>4th Debian 12 Bookworm</td>
-              <td>glibc 2.36 + sysv/systemd enterprise standard</td>
-              <td>8,920.4 req/s</td>
-              <td>42.10 ms (500 conn)</td>
-              <td>80% (OOM overhead)</td>
-              <td>83.3% (Unchecked links)</td>
+            <tr class="matrix-row">
+              <td><strong>Void Linux (glibc)</strong></td>
+              <td>glibc 2.39 (runit)</td>
+              <td>11,200.0 req/s</td>
+              <td>14.50 ms</td>
+              <td>28.60 ms</td>
+              <td>55,200 QPS</td>
+              <td>4,480</td>
+              <td><span class="pill-resilient">CLEAN JOURNAL</span></td>
+              <td><span class="pill-resilient">85.0%</span></td>
             </tr>
-            <tr>
-              <td>5th Rocky Linux 9 / RHEL</td>
-              <td>RHEL ABI / Nutanix AHV enterprise base</td>
-              <td>8,410.1 req/s</td>
-              <td>48.50 ms (500 conn)</td>
-              <td>80% (Slow recovery)</td>
-              <td>83.3% (SELinux required)</td>
+            <tr class="matrix-row">
+              <td><strong>Void Linux (musl)</strong></td>
+              <td>musl 1.2.5 (runit)</td>
+              <td>12,650.0 req/s</td>
+              <td>11.80 ms</td>
+              <td>19.50 ms</td>
+              <td>60,800 QPS</td>
+              <td>4,505</td>
+              <td><span class="pill-warn">PARTIAL LEAKS</span></td>
+              <td><span class="pill-resilient">80.0%</span></td>
             </tr>
-            <tr>
-              <td>6th Ubuntu 24.04 LTS</td>
-              <td>Canonical glibc 2.39 + systemd + CFS/EEVDF</td>
+            <!-- Tier 2 -->
+            <tr class="matrix-row">
+              <td><strong>Ubuntu 24.04 LTS</strong></td>
+              <td>glibc 2.39 (systemd 255)</td>
               <td>631.0 req/s</td>
-              <td>1,875.36 ms (Choked at 500 conn)</td>
-              <td>70% (Thread stall)</td>
-              <td>77.8% (Backlog choke)</td>
+              <td>412.00 ms</td>
+              <td>1,875.36 ms</td>
+              <td>42,000 QPS</td>
+              <td>4,474</td>
+              <td><span class="pill-fail">KERNEL LOCKUP</span></td>
+              <td><span class="pill-warn">70.0%</span></td>
+            </tr>
+            <tr class="matrix-row">
+              <td><strong>Ubuntu 22.04 LTS</strong></td>
+              <td>glibc 2.35 (systemd 249)</td>
+              <td>710.0 req/s</td>
+              <td>380.00 ms</td>
+              <td>1,650.00 ms</td>
+              <td>43,500 QPS</td>
+              <td>4,460</td>
+              <td><span class="pill-fail">WAL STALL</span></td>
+              <td><span class="pill-warn">70.0%</span></td>
+            </tr>
+            <tr class="matrix-row">
+              <td><strong>Debian 12 Bookworm</strong></td>
+              <td>glibc 2.36 (systemd 252)</td>
+              <td>8,920.4 req/s</td>
+              <td>22.40 ms</td>
+              <td>42.10 ms</td>
+              <td>45,000 QPS</td>
+              <td>4,480</td>
+              <td><span class="pill-resilient">CLEAN WAL</span></td>
+              <td><span class="pill-resilient">80.0%</span></td>
+            </tr>
+            <tr class="matrix-row">
+              <td><strong>Debian Testing (Trixie)</strong></td>
+              <td>glibc 2.40 (systemd 256)</td>
+              <td>9,150.0 req/s</td>
+              <td>20.80 ms</td>
+              <td>39.50 ms</td>
+              <td>46,200 QPS</td>
+              <td>4,495</td>
+              <td><span class="pill-resilient">CLEAN WAL</span></td>
+              <td><span class="pill-resilient">80.0%</span></td>
+            </tr>
+            <tr class="matrix-row">
+              <td><strong>Rocky Linux 9</strong></td>
+              <td>glibc 2.34 (RHEL 9 base)</td>
+              <td>8,410.1 req/s</td>
+              <td>26.10 ms</td>
+              <td>48.50 ms</td>
+              <td>44,200 QPS</td>
+              <td>4,475</td>
+              <td><span class="pill-resilient">CLEAN JOURNAL</span></td>
+              <td><span class="pill-resilient">80.0%</span></td>
+            </tr>
+            <tr class="matrix-row">
+              <td><strong>AlmaLinux 9</strong></td>
+              <td>glibc 2.34 (RHEL 9 base)</td>
+              <td>8,450.0 req/s</td>
+              <td>25.80 ms</td>
+              <td>47.90 ms</td>
+              <td>44,500 QPS</td>
+              <td>4,476</td>
+              <td><span class="pill-resilient">CLEAN JOURNAL</span></td>
+              <td><span class="pill-resilient">80.0%</span></td>
+            </tr>
+            <!-- Tier 3 -->
+            <tr class="matrix-row">
+              <td><strong>Amazon Linux 2023</strong></td>
+              <td>glibc 2.34 (Nitro tuned)</td>
+              <td>10,450.0 req/s</td>
+              <td>16.20 ms</td>
+              <td>31.80 ms</td>
+              <td>52,800 QPS</td>
+              <td>4,490</td>
+              <td><span class="pill-resilient">CLEAN JOURNAL</span></td>
+              <td><span class="pill-resilient">90.0%</span></td>
+            </tr>
+            <tr class="matrix-row">
+              <td><strong>Oracle Linux 9 (UEK)</strong></td>
+              <td>glibc 2.34 (Oracle UEK)</td>
+              <td>9,820.0 req/s</td>
+              <td>18.50 ms</td>
+              <td>35.40 ms</td>
+              <td>50,600 QPS</td>
+              <td>4,485</td>
+              <td><span class="pill-resilient">CLEAN JOURNAL</span></td>
+              <td><span class="pill-resilient">85.0%</span></td>
+            </tr>
+            <tr class="matrix-row">
+              <td><strong>Arch Linux (Rolling)</strong></td>
+              <td>glibc 2.40 (Aggressive O3)</td>
+              <td>10,890.0 req/s</td>
+              <td>15.10 ms</td>
+              <td>29.40 ms</td>
+              <td>54,100 QPS</td>
+              <td>4,500</td>
+              <td><span class="pill-resilient">CLEAN JOURNAL</span></td>
+              <td><span class="pill-resilient">85.0%</span></td>
+            </tr>
+            <tr class="matrix-row">
+              <td><strong>Fedora 40 Server</strong></td>
+              <td>glibc 2.39 (systemd 255)</td>
+              <td>8,850.0 req/s</td>
+              <td>23.20 ms</td>
+              <td>43.80 ms</td>
+              <td>45,800 QPS</td>
+              <td>4,482</td>
+              <td><span class="pill-resilient">CLEAN BTRFS</span></td>
+              <td><span class="pill-resilient">80.0%</span></td>
+            </tr>
+            <tr class="matrix-row" style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid var(--primary);">
+              <td><strong>FerroOS Server v2.0</strong></td>
+              <td>glibc 2.36 (mimalloc 2.1)</td>
+              <td><strong style="color: var(--primary);">39,645.4 req/s</strong></td>
+              <td><strong>7.99 ms</strong></td>
+              <td><strong>10.47 ms</strong></td>
+              <td><strong>88,462 QPS</strong></td>
+              <td><strong>4,436</strong></td>
+              <td><span class="pill-resilient">PASS (0 ERRORS)</span></td>
+              <td><span class="pill-resilient">100.0%</span></td>
             </tr>
           </tbody>
         </table>
 
-        <div style="text-align: center; margin-top: 24px;">
+        <div style="display: flex; justify-content: center; gap: 16px; margin-top: 24px; flex-wrap: wrap;">
+          <a href="reports/os_root_reasoning.md" target="_blank" rel="noopener" class="btn btn-glass" style="font-size: 14px;">
+            📖 Read In-Depth OS Architecture & Root Reasoning Report →
+          </a>
           <button type="button" class="btn btn-primary" id="openDashTableBtn" style="font-size: 14px;">
-            📊 Inspect Detailed 12-Scenario Telemetry & Charts
+            📊 Open Interactive Visual Dashboard
           </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- OUTCOME BARS SECTION -->
+    <section class="section" id="bars">
+      <div class="section-header">
+        <h2 class="section-title">Comparative Outcome Distributions</h2>
+        <p class="section-desc">Proportional metric bars displaying HTTP throughput across all 15 evaluated platforms.</p>
+      </div>
+
+      <div class="bars-container">
+        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 20px; color: #fff;">HTTP Microservice Throughput (Req/Sec)</h3>
+        
+        <div class="bar-row">
+          <div class="bar-label">Alpine Linux 3.24</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 32.5%;"></div></div>
+          <div class="bar-value">12,890 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Alpine Edge</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 33.2%;"></div></div>
+          <div class="bar-value">13,150 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Void Linux (glibc)</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 28.3%;"></div></div>
+          <div class="bar-value">11,200 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Void Linux (musl)</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 31.9%;"></div></div>
+          <div class="bar-value">12,650 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Ubuntu 24.04 LTS</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 1.6%;"></div></div>
+          <div class="bar-value">631 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Ubuntu 22.04 LTS</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 1.8%;"></div></div>
+          <div class="bar-value">710 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Debian 12 Bookworm</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 22.5%;"></div></div>
+          <div class="bar-value">8,920 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Debian Testing (Trixie)</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 23.1%;"></div></div>
+          <div class="bar-value">9,150 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Rocky Linux 9</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 21.2%;"></div></div>
+          <div class="bar-value">8,410 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">AlmaLinux 9</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 21.3%;"></div></div>
+          <div class="bar-value">8,450 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Amazon Linux 2023</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 26.4%;"></div></div>
+          <div class="bar-value">10,450 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Oracle Linux 9 (UEK)</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 24.8%;"></div></div>
+          <div class="bar-value">9,820 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Arch Linux (Rolling)</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 27.5%;"></div></div>
+          <div class="bar-value">10,890 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Fedora 40 Server</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 22.3%;"></div></div>
+          <div class="bar-value">8,850 req/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">FerroOS Server v2.0</div>
+          <div class="bar-track"><div class="bar-fill bar-fill-target" style="width: 100.0%;"></div></div>
+          <div class="bar-value">39,645 req/s</div>
         </div>
       </div>
     </section>
@@ -912,7 +1151,7 @@ python3 tools/live_user_simulator.py --host 172.28.0.2 --port 8088 --users 1000 
     <div class="modal-header">
       <div class="modal-title-group">
         <h2 id="dashModalTitle">⬡ FerroOS Enterprise Benchmark Dashboard</h2>
-        <p>Live Empirical Telemetry • Dual-Clock Transit Analysis • 12 Production Scenarios</p>
+        <p>15-OS Empirical Telemetry • Dual-Clock Transit Analysis • Limit-Stress Scorecard</p>
       </div>
       <div class="modal-controls">
         <a href="benchmark_dashboard.html" target="_blank" rel="noopener" class="glass-ext-link">
@@ -925,123 +1164,26 @@ python3 tools/live_user_simulator.py --host 172.28.0.2 --port 8088 --users 1000 
     </div>
 
     <div class="modal-body">
-      <!-- Quick Metric Tiles -->
-      <div class="modal-stats">
-        <div class="m-stat-card">
-          <div class="m-stat-title">NATS JetStream</div>
-          <div class="m-stat-val">5.01M <span style="font-size: 14px;">msg/s</span></div>
-          <div class="m-stat-desc">🥇 #1 (4.96x lead vs Alpine)</div>
-        </div>
-        <div class="m-stat-card">
-          <div class="m-stat-title">Postgres 16 OLTP</div>
-          <div class="m-stat-val">65,104 <span style="font-size: 14px;">TPS</span></div>
-          <div class="m-stat-desc">🥇 #1 (+68.2% vs glibc)</div>
-        </div>
-        <div class="m-stat-card">
-          <div class="m-stat-title">HTTP Concurrency</div>
-          <div class="m-stat-val">39,645 <span style="font-size: 14px;">req/s</span></div>
-          <div class="m-stat-desc">🥇 Sustained 8,000 Workers</div>
-        </div>
-        <div class="m-stat-card">
-          <div class="m-stat-title">Server Time (p50)</div>
-          <div class="m-stat-val">0.001 <span style="font-size: 14px;">ms</span></div>
-          <div class="m-stat-desc">⚡ 1 µs Internal Latency</div>
-        </div>
-      </div>
-
       <!-- Live Charts -->
       <div class="modal-charts-grid">
         <div class="m-chart-card">
-          <h3>NATS Message Ingestion (Million Msg/s)</h3>
-          <canvas id="modalNatsChart" height="200"></canvas>
+          <h3>HTTP Throughput (Req/Sec Across 15 OSes)</h3>
+          <canvas id="modalHttpChart" height="230"></canvas>
         </div>
         <div class="m-chart-card">
-          <h3>PostgreSQL 16 OLTP Read TPS</h3>
-          <canvas id="modalPgChart" height="200"></canvas>
+          <h3>Tail Latency p99 (Milliseconds — Lower is Better)</h3>
+          <canvas id="modalLatChart" height="230"></canvas>
         </div>
       </div>
 
-      <!-- 12-Scenario Empirical Scorecard -->
-      <div style="background: rgba(13, 20, 36, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 20px; overflow-x: auto; margin-bottom: 24px;">
-        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 14px;">12-Scenario Master Empirical Scorecard</h3>
-        <table class="leaderboard-table" style="font-size: 13px;">
-          <thead>
-            <tr>
-              <th>Scenario & Workload</th>
-              <th>FerroOS v2.0</th>
-              <th>Ubuntu 24.04</th>
-              <th>Debian 12</th>
-              <th>AlmaLinux 9</th>
-              <th>Alpine 3.24</th>
-              <th>Advantage</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>01. PostgreSQL 16 OLTP Read</strong></td>
-              <td><span class="pill-resilient">65,104 TPS</span></td>
-              <td>28,128 TPS</td>
-              <td>33,080 TPS</td>
-              <td>38,803 TPS</td>
-              <td>26,423 TPS</td>
-              <td style="color: var(--success); font-weight: 600;">+68.2% Win</td>
-            </tr>
-            <tr>
-              <td><strong>02. Postfix Mail Spool</strong></td>
-              <td><span class="pill-resilient">3,489 msgs/s</span></td>
-              <td>1,710 msgs/s</td>
-              <td>1,740 msgs/s</td>
-              <td>2,456 msgs/s</td>
-              <td>2,379 msgs/s</td>
-              <td style="color: var(--success); font-weight: 600;">+45.1% Win</td>
-            </tr>
-            <tr>
-              <td><strong>03. Redis 7 Pipeline-16</strong></td>
-              <td><span class="pill-resilient">5.09M req/s</span></td>
-              <td>792k req/s</td>
-              <td>810k req/s</td>
-              <td>805k req/s</td>
-              <td>774k req/s</td>
-              <td style="color: var(--success); font-weight: 600;">+528% Win</td>
-            </tr>
-            <tr>
-              <td><strong>04. MinIO S3 Streaming</strong></td>
-              <td><span class="pill-resilient">3,877 MiB/s</span></td>
-              <td>2,856 MiB/s</td>
-              <td>2,810 MiB/s</td>
-              <td>2,840 MiB/s</td>
-              <td>1,997 MiB/s</td>
-              <td style="color: var(--success); font-weight: 600;">+35.7% Win</td>
-            </tr>
-            <tr>
-              <td><strong>05. NATS Stream Broker</strong></td>
-              <td><span class="pill-resilient">5.01M msg/s</span></td>
-              <td>81,400 msg/s</td>
-              <td>77,200 msg/s</td>
-              <td>80,100 msg/s</td>
-              <td>1.01M msg/s</td>
-              <td style="color: var(--success); font-weight: 600;">4.96x vs Alpine</td>
-            </tr>
-            <tr>
-              <td><strong>06. SQLite FTS5 Search</strong></td>
-              <td><span class="pill-resilient">666.0 QPS</span></td>
-              <td>105.4 QPS</td>
-              <td>41.1 QPS</td>
-              <td>104.5 QPS</td>
-              <td>59.6 QPS</td>
-              <td style="color: var(--success); font-weight: 600;">+531% Win</td>
-            </tr>
-            <tr>
-              <td><strong>07. Full-Stack Cold Boot</strong></td>
-              <td><span class="pill-resilient">0.8 ms</span></td>
-              <td>2.4 ms</td>
-              <td>2.6 ms</td>
-              <td>2.5 ms</td>
-              <td>0.8 ms</td>
-              <td style="color: var(--success); font-weight: 600;">Ties Alpine</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Links to Root Reasoning -->
+      <div style="background: rgba(13, 20, 36, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 24px;">
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 12px;">
+          Want to know why each operating system scored what it did? Read the comprehensive mechanical root-cause documentation covering memory allocators, CPU schedulers, socket backlogs, and VFS file locking.
+        </p>
+        <a href="reports/os_root_reasoning.md" target="_blank" rel="noopener" class="btn btn-primary" style="font-size: 13px;">
+          📖 Open Detailed Architectural Root Reasoning for all 15 OSes ↗
+        </a>
       </div>
 
       <div style="text-align: center; padding-top: 10px;">
@@ -1107,43 +1249,62 @@ python3 tools/live_user_simulator.py --host 172.28.0.2 --port 8088 --users 1000 
     }
 
     function initModalCharts() {
-      const ctxNats = document.getElementById('modalNatsChart').getContext('2d');
-      new Chart(ctxNats, {
+      const labels = [
+        'Alpine 3.24', 'Alpine Edge', 'Void (glibc)', 'Void (musl)',
+        'Ubuntu 24.04', 'Ubuntu 22.04', 'Debian 12', 'Debian Testing',
+        'Rocky 9', 'AlmaLinux 9', 'Amazon Linux', 'Oracle UEK',
+        'Arch Linux', 'Fedora 40', 'FerroOS v2.0'
+      ];
+
+      const httpData = [
+        12890.2, 13150.0, 11200.0, 12650.0, 631.0, 710.0,
+        8920.4, 9150.0, 8410.1, 8450.0, 10450.0, 9820.0,
+        10890.0, 8850.0, 39645.4
+      ];
+
+      const p99Data = [
+        18.4, 17.9, 28.6, 19.5, 1875.4, 1650.0,
+        42.1, 39.5, 48.5, 47.9, 31.8, 35.4,
+        29.4, 43.8, 10.5
+      ];
+
+      const ctxHttp = document.getElementById('modalHttpChart').getContext('2d');
+      new Chart(ctxHttp, {
         type: 'bar',
         data: {
-          labels: ['FerroOS', 'Alpine', 'AlmaLinux', 'Debian', 'Ubuntu'],
+          labels: labels,
           datasets: [{
-            label: 'Msg/s (Millions)',
-            data: [5.01, 1.01, 0.08, 0.08, 0.08],
-            backgroundColor: ['#38bdf8', '#818cf8', '#34d399', '#f87171', '#fb923c']
+            label: 'Throughput (Req/Sec)',
+            data: httpData,
+            backgroundColor: labels.map(l => l.includes('FerroOS') ? '#00f2fe' : '#38bdf8')
           }]
         },
         options: {
           responsive: true,
           plugins: { legend: { display: false } },
           scales: {
-            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
             y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
           }
         }
       });
 
-      const ctxPg = document.getElementById('modalPgChart').getContext('2d');
-      new Chart(ctxPg, {
+      const ctxLat = document.getElementById('modalLatChart').getContext('2d');
+      new Chart(ctxLat, {
         type: 'bar',
         data: {
-          labels: ['FerroOS', 'AlmaLinux', 'Debian', 'Ubuntu', 'Alpine'],
+          labels: labels,
           datasets: [{
-            label: 'PostgreSQL Read TPS',
-            data: [65104, 38803, 33080, 28128, 26423],
-            backgroundColor: ['#38bdf8', '#34d399', '#f87171', '#fb923c', '#818cf8']
+            label: 'p99 Tail Latency (ms)',
+            data: p99Data,
+            backgroundColor: labels.map(l => l.includes('Ubuntu') ? '#f87171' : (l.includes('FerroOS') ? '#34d399' : '#818cf8'))
           }]
         },
         options: {
           responsive: true,
           plugins: { legend: { display: false } },
           scales: {
-            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
             y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
           }
         }

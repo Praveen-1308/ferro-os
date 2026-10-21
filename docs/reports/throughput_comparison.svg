@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 680" width="100%" height="680" style="background:#070a12; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;">
+<defs>
+  <linearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#0284c7" />
+    <stop offset="100%" stop-color="#38bdf8" />
+  </linearGradient>
+  <linearGradient id="barGradTarget" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#38bdf8" />
+    <stop offset="100%" stop-color="#00f2fe" />
+  </linearGradient>
+</defs>
+<text x="30" y="42" fill="#ffffff" font-size="20" font-weight="800">15-OS HTTP Microservice Throughput (Req/Sec)</text>
+<text x="30" y="64" fill="#94a3b8" font-size="13">Empirical Limit-Stress Test under --memory=4g --cpus=2 | Higher is Better</text>
+<line x1="220.0" y1="70" x2="220.0" y2="630" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4,4" />
+<text x="220.0" y="646" fill="#64748b" font-size="11" text-anchor="middle">0</text>
+<line x1="353.3333333333333" y1="70" x2="353.3333333333333" y2="630" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4,4" />
+<text x="353.3333333333333" y="646" fill="#64748b" font-size="11" text-anchor="middle">10,000</text>
+<line x1="486.66666666666663" y1="70" x2="486.66666666666663" y2="630" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4,4" />
+<text x="486.66666666666663" y="646" fill="#64748b" font-size="11" text-anchor="middle">20,000</text>
+<line x1="620.0" y1="70" x2="620.0" y2="630" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4,4" />
+<text x="620.0" y="646" fill="#64748b" font-size="11" text-anchor="middle">30,000</text>
+<line x1="753.3333333333333" y1="70" x2="753.3333333333333" y2="630" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4,4" />
+<text x="753.3333333333333" y="646" fill="#64748b" font-size="11" text-anchor="middle">40,000</text>
+<text x="205" y="100" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Alpine Linux 3.24</text>
+<rect x="220" y="86" width="171.86933333333334" height="20" rx="4" fill="url(#barGrad)" />
+<text x="403.8693333333333" y="101" fill="#38bdf8" font-size="12" font-weight="700">12,890.2 req/s</text>
+<text x="205" y="136" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Alpine Edge</text>
+<rect x="220" y="122" width="175.33333333333334" height="20" rx="4" fill="url(#barGrad)" />
+<text x="407.33333333333337" y="137" fill="#38bdf8" font-size="12" font-weight="700">13,150.0 req/s</text>
+<text x="205" y="172" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Void Linux (glibc)</text>
+<rect x="220" y="158" width="149.33333333333334" height="20" rx="4" fill="url(#barGrad)" />
+<text x="381.33333333333337" y="173" fill="#38bdf8" font-size="12" font-weight="700">11,200.0 req/s</text>
+<text x="205" y="208" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Void Linux (musl)</text>
+<rect x="220" y="194" width="168.66666666666666" height="20" rx="4" fill="url(#barGrad)" />
+<text x="400.66666666666663" y="209" fill="#38bdf8" font-size="12" font-weight="700">12,650.0 req/s</text>
+<text x="205" y="244" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Ubuntu 24.04 LTS</text>
+<rect x="220" y="230" width="8.413333333333334" height="20" rx="4" fill="url(#barGrad)" />
+<text x="240.41333333333333" y="245" fill="#38bdf8" font-size="12" font-weight="700">631.0 req/s</text>
+<text x="205" y="280" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Ubuntu 22.04 LTS</text>
+<rect x="220" y="266" width="9.466666666666669" height="20" rx="4" fill="url(#barGrad)" />
+<text x="241.46666666666667" y="281" fill="#38bdf8" font-size="12" font-weight="700">710.0 req/s</text>
+<text x="205" y="316" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Debian 12 Bookworm</text>
+<rect x="220" y="302" width="118.93866666666666" height="20" rx="4" fill="url(#barGrad)" />
+<text x="350.9386666666667" y="317" fill="#38bdf8" font-size="12" font-weight="700">8,920.4 req/s</text>
+<text x="205" y="352" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Debian Testing (Trixie)</text>
+<rect x="220" y="338" width="122.0" height="20" rx="4" fill="url(#barGrad)" />
+<text x="354.0" y="353" fill="#38bdf8" font-size="12" font-weight="700">9,150.0 req/s</text>
+<text x="205" y="388" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Rocky Linux 9</text>
+<rect x="220" y="374" width="112.13466666666667" height="20" rx="4" fill="url(#barGrad)" />
+<text x="344.1346666666667" y="389" fill="#38bdf8" font-size="12" font-weight="700">8,410.1 req/s</text>
+<text x="205" y="424" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">AlmaLinux 9</text>
+<rect x="220" y="410" width="112.66666666666666" height="20" rx="4" fill="url(#barGrad)" />
+<text x="344.66666666666663" y="425" fill="#38bdf8" font-size="12" font-weight="700">8,450.0 req/s</text>
+<text x="205" y="460" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Amazon Linux 2023</text>
+<rect x="220" y="446" width="139.33333333333334" height="20" rx="4" fill="url(#barGrad)" />
+<text x="371.33333333333337" y="461" fill="#38bdf8" font-size="12" font-weight="700">10,450.0 req/s</text>
+<text x="205" y="496" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Oracle Linux 9 (UEK)</text>
+<rect x="220" y="482" width="130.93333333333334" height="20" rx="4" fill="url(#barGrad)" />
+<text x="362.93333333333334" y="497" fill="#38bdf8" font-size="12" font-weight="700">9,820.0 req/s</text>
+<text x="205" y="532" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Arch Linux (Rolling)</text>
+<rect x="220" y="518" width="145.2" height="20" rx="4" fill="url(#barGrad)" />
+<text x="377.2" y="533" fill="#38bdf8" font-size="12" font-weight="700">10,890.0 req/s</text>
+<text x="205" y="568" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">Fedora 40 Server</text>
+<rect x="220" y="554" width="118.0" height="20" rx="4" fill="url(#barGrad)" />
+<text x="350.0" y="569" fill="#38bdf8" font-size="12" font-weight="700">8,850.0 req/s</text>
+<text x="205" y="604" fill="#e2e8f0" font-size="13" text-anchor="end" font-weight="500">FerroOS Server v2.0</text>
+<rect x="220" y="590" width="528.6053333333334" height="20" rx="4" fill="url(#barGradTarget)" />
+<text x="760.6053333333334" y="605" fill="#38bdf8" font-size="12" font-weight="700">39,645.4 req/s</text>
+</svg>

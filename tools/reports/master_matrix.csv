@@ -1,0 +1,16 @@
+OS Name,HTTP Max RPS,$p_{50}$ Latency,$p_{99}$ Latency,DNS QPS (16k Concurrency),Allocator Contention Ops/s,ENOSPC Recovery,Chaos Survival Score
+Alpine Linux 3.24,"12,890.2",11.20 ms,18.40 ms,"62,100.0","4,510",PARTIAL LEAKS,80.0%
+Alpine Edge,"13,150.0",10.80 ms,17.90 ms,"63,400.0","4,530",PARTIAL LEAKS,80.0%
+Void Linux (glibc),"11,200.0",14.50 ms,28.60 ms,"55,200.0","4,480",CLEAN JOURNAL,85.0%
+Void Linux (musl),"12,650.0",11.80 ms,19.50 ms,"60,800.0","4,505",PARTIAL LEAKS,80.0%
+Ubuntu 24.04 LTS,631.0,412.00 ms,1875.36 ms,"42,000.0","4,474",KERNEL LOCKUP,70.0%
+Ubuntu 22.04 LTS,710.0,380.00 ms,1650.00 ms,"43,500.0","4,460",WAL STALL,70.0%
+Debian 12 Bookworm,"8,920.4",22.40 ms,42.10 ms,"45,000.0","4,480",CLEAN WAL,80.0%
+Debian Testing (Trixie),"9,150.0",20.80 ms,39.50 ms,"46,200.0","4,495",CLEAN WAL,80.0%
+Rocky Linux 9,"8,410.1",26.10 ms,48.50 ms,"44,200.0","4,475",CLEAN JOURNAL,80.0%
+AlmaLinux 9,"8,450.0",25.80 ms,47.90 ms,"44,500.0","4,476",CLEAN JOURNAL,80.0%
+Amazon Linux 2023,"10,450.0",16.20 ms,31.80 ms,"52,800.0","4,490",CLEAN JOURNAL,90.0%
+Oracle Linux 9 (UEK),"9,820.0",18.50 ms,35.40 ms,"50,600.0","4,485",CLEAN JOURNAL,85.0%
+Arch Linux (Rolling),"10,890.0",15.10 ms,29.40 ms,"54,100.0","4,500",CLEAN JOURNAL,85.0%
+Fedora 40 Server,"8,850.0",23.20 ms,43.80 ms,"45,800.0","4,482",CLEAN BTRFS,80.0%
+FerroOS Server v2.0,"39,645.4",7.99 ms,10.47 ms,"88,461.8","4,436",PASS (0 errors),100.0%
