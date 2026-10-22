@@ -193,6 +193,7 @@ Live empirical execution directly on GitHub Actions (Azure Intel Xeon Platinum 8
 
 * **Historical Evolution**: **[Master Scenario Evolution & Regression Ledger](scenarios/SCENARIO_EVOLUTION_LEDGER.md)** (End-to-end historical progression tracking baseline metrics across 15 competitor OSes, implemented modifications, elevated outcomes, and trade-offs).
 * **Architectural Whitepapers**:
+  * **[Fortune 500 Operational Crises Analysis](docs/reports/fortune_500_operational_crises_analysis.md)**: Real-world SRE failure mechanics (DNS cascades, PostgreSQL failover storms, noisy neighbor I/O leaks, CIS/FIPS cryptographic overhead, and Slowloris zero-window starvation).
   * **[Comprehensive 30+ OS Architectural Taxonomy & Qualification Guide](docs/reports/30_os_comprehensive_landscape_and_taxonomy.md)**: Deep dive across 34 operating systems and official release validation standards.
   * **[Cloud & Container OS Landscape](docs/reports/custom_cloud_os_landscape_and_analysis.md)**: Deep dive into Bottlerocket, Talos, Google COS, Flatcar, and FerroOS.
   * **[Operating System Root Reasoning](docs/reports/os_root_reasoning.md)**: Allocator dynamics, thread-local heaps, and Linux kernel PSI mechanics.
