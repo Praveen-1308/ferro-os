@@ -4,7 +4,7 @@
 > **Strict Analysis-First Policy**: All discovered scenarios are marked `[QUEUED_FOR_ANALYSIS]`.
 > Operating system code changes will **only** be made after architectural analysis and test design.
 
-**Total Scenarios Tracked**: 23 | **Last Updated**: 2026-10-22 09:19:15 UTC
+**Total Scenarios Tracked**: 23 | **Last Updated**: 2026-10-22 12:19:45 UTC
 
 ---
 
@@ -23,7 +23,7 @@
 | `SCENARIO-011-HIGH-CARDINALITY-METRICS` | **Time-Series Telemetry & Metric Ingestion (High-Cardinality TSDB)** | VFS / Storage / Locking | 🟢 `ANALYZED_AND_BASELINE_TESTED` | `Batch metric flushes every 250ms; tune double-delta timestamp compression.` |
 | `SCENARIO-012-HYPER-DENSITY-CHAOS` | **Multi-Tenant Hyper-Density Chaos Test (5 Concurrent Micro-Services)** | Scheduler / CPU / CFS | 🟢 `ANALYZED_AND_BASELINE_TESTED` | `Cgroup v2 memory.high soft throttling with memory.max hard limits.` |
 | `SCENARIO-013-TWELVE-DOLLAR-CONSTRAINED-CHOKE` | **The $12 Cloud Droplet Concurrency Choke (1 vCPU, 2 GB RAM, 0 Swap)** | Scheduler / CPU / CFS | 🟢 `ANALYZED_ZERO_CODE_CHANGES_NEEDED` | `Zero OS Code Modifications Needed (Architectural Invariance Verified). Bounded userspace queue (32 in-flight) for unthrottled bursts.` |
-| `SCENARIO-014-PORT-EXHAUSTION-TIME-WAIT` | **Ephemeral Port Exhaustion & TIME_WAIT Socket Saturation** | Network / TCP Stack | 🟢 `ANALYZED_ZERO_CODE_CHANGES_NEEDED` | `Enable net.ipv4.tcp_tw_reuse = 1 and expand ip_local_port_range = 10240 65535.` |
+| `SCENARIO-014-PORT-EXHAUSTION-TIME-WAIT` | **Ephemeral Port Exhaustion & TIME_WAIT Socket Saturation** | Network / TCP Stack | ⏳ `EMPIRICALLY_ANALYZED` | `Enable net.ipv4.tcp_tw_reuse = 1 and expand ip_local_port_range = 10240 65535.` |
 | `SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE` | **Linux Dirty Page Writeback Freeze (Flusher Stall)** | VFS / Storage / Locking | ⏳ `EMPIRICALLY_ANALYZED` | `Tune vm.dirty_background_ratio = 5 and vm.dirty_ratio = 10 to smooth out writeback bursts.` |
 | `SCENARIO-016-CFS-BANDWIDTH-QUOTA-THROTTLING` | **CFS Bandwidth Quota Micro-Throttling (Kubernetes / Cgroups)** | Scheduler / CPU / CFS | ⏳ `EMPIRICALLY_ANALYZED` | `Tune cpu.cfs_period_us to 10,000 µs (10ms) or remove artificial CPU quotas on single vCPU instances.` |
 | `SCENARIO-017-THUNDERING-HERD-CACHE-STAMPEDE` | **Thundering Herd Cache Stampede (Dogpiling on Redis Key Expiry)** | Concurrency / Threading | ⏳ `EMPIRICALLY_ANALYZED` | `Implement singleflight promise coalescing in userspace; jittered TTLs.` |
@@ -144,7 +144,7 @@
 
 ### SCENARIO-014-PORT-EXHAUSTION-TIME-WAIT: Ephemeral Port Exhaustion & TIME_WAIT Socket Saturation
 - **Category**: `Network / TCP Stack`
-- **Current Status**: `ANALYZED_ZERO_CODE_CHANGES_NEEDED`
+- **Current Status**: `EMPIRICALLY_ANALYZED`
 - **Cloud Problem Description**: Microservices opening short-lived outbound TCP connections to databases or APIs exhaust the local ephemeral port range (ip_local_port_range, ~28,000 ports) due to sockets lingering in TIME_WAIT for 60 seconds.
 - **Observed Symptoms & Impact**: Cannot assign requested address (EADDRNOTAVAIL); outbound API requests stall completely; services fail health checks.
 - **FerroOS Architectural Hypothesis**: FerroOS socket recycling and SO_REUSEPORT connection pooling can reclaim closed TCP control blocks in < 100 µs.

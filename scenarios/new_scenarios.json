@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-22T08:18:57.493238+00:00",
+  "last_updated": "2026-10-22T12:19:45.642479+00:00",
   "description": "Master Catalog of Cloud Server Failure Scenarios, Edge Cases, and Performance Bottlenecks for FerroOS Testing and Resilience Evaluation.",
   "workflow_policy": "Strict Analysis-First Protocol: All discovered scenarios are marked [QUEUED_FOR_ANALYSIS]. No OS kernel or userspace code modifications may be made until the scenario is empirically analyzed.",
   "scenarios": [
@@ -169,16 +169,16 @@
       "symptoms_and_impact": "Cannot assign requested address (EADDRNOTAVAIL); outbound API requests stall completely; services fail health checks.",
       "ferro_os_hypothesis": "FerroOS socket recycling and SO_REUSEPORT connection pooling can reclaim closed TCP control blocks in < 100 \u00b5s.",
       "minimal_elevation_knob": "Enable net.ipv4.tcp_tw_reuse = 1 and expand ip_local_port_range = 10240 65535.",
-      "analysis_status": "ANALYZED_ZERO_CODE_CHANGES_NEEDED",
+      "analysis_status": "EMPIRICALLY_ANALYZED",
       "added_at": "2026-10-22T06:48:38.836762Z",
       "empirical_telemetry": {
-        "churn_completed": 1000,
-        "conns_sec": 11200.05,
-        "p50_ms": 0.08,
-        "p95_ms": 0.117,
-        "p99_ms": 0.19,
-        "eaddrnotavail_occurred": false,
-        "status": "ANALYZED_ZERO_CODE_CHANGES_NEEDED"
+        "success": 500,
+        "errors": 0,
+        "conns_sec": 9915.552591789581,
+        "p50_ms": 0.09099999442696571,
+        "p95_ms": 0.15862495638430119,
+        "p99_ms": 0.3233329625800252,
+        "status": "EMPIRICALLY_ANALYZED"
       }
     },
     {
@@ -193,11 +193,11 @@
       "analysis_status": "EMPIRICALLY_ANALYZED",
       "added_at": "2026-10-22T06:48:38.836779Z",
       "empirical_telemetry": {
-        "p50_write_ms": 0.14195905532687902,
-        "p95_write_ms": 0.9604169754311442,
-        "max_write_ms": 1.81275000795722,
-        "fsync_stall_ms": 1.2785419821739197,
-        "throughput_mb_s": 3462.0636891063286,
+        "p50_write_ms": 0.10800000745803118,
+        "p95_write_ms": 0.902624917216599,
+        "max_write_ms": 2.5623750407248735,
+        "fsync_stall_ms": 1.1371669825166464,
+        "throughput_mb_s": 4188.070525828539,
         "status": "EMPIRICALLY_ANALYZED"
       }
     },
@@ -213,9 +213,9 @@
       "analysis_status": "EMPIRICALLY_ANALYZED",
       "added_at": "2026-10-22T06:48:38.836784Z",
       "empirical_telemetry": {
-        "p50_jitter_ms": 1.2654579570516944,
-        "p95_jitter_ms": 1.2746249651536345,
-        "p99_jitter_ms": 1.275624972768128,
+        "p50_jitter_ms": 1.265499982982874,
+        "p95_jitter_ms": 1.2732920097187161,
+        "p99_jitter_ms": 1.297082994133234,
         "status": "EMPIRICALLY_ANALYZED"
       }
     },
@@ -232,9 +232,9 @@
       "added_at": "2026-10-22T06:48:38.836787Z",
       "empirical_telemetry": {
         "redundant_queries": 50,
-        "p50_ms": 14.281790936365724,
-        "p95_ms": 72.81012507155538,
-        "total_stampede_time_ms": 104.25262502394617,
+        "p50_ms": 8.907833020202816,
+        "p95_ms": 46.44729208666831,
+        "total_stampede_time_ms": 71.19225000496954,
         "status": "EMPIRICALLY_ANALYZED"
       }
     },
@@ -253,8 +253,8 @@
         "accepted": 10,
         "dropped": 70,
         "drop_rate_pct": 87.5,
-        "p50_ms": 73.94904107786715,
-        "p95_ms": 74.75379202514887,
+        "p50_ms": 62.15720798354596,
+        "p95_ms": 62.902458012104034,
         "status": "EMPIRICALLY_ANALYZED"
       }
     },
@@ -289,9 +289,9 @@
       "analysis_status": "EMPIRICALLY_ANALYZED",
       "added_at": "2026-10-22T06:48:38.836795Z",
       "empirical_telemetry": {
-        "p50_ms": 0.055999960750341415,
-        "p95_ms": 0.0649159774184227,
-        "p99_ms": 0.07275003008544445,
+        "p50_ms": 0.04612491466104984,
+        "p95_ms": 0.04666706081479788,
+        "p99_ms": 0.05983305163681507,
         "status": "EMPIRICALLY_ANALYZED"
       }
     },
@@ -354,7 +354,7 @@
       "empirical_telemetry": {
         "bytes_sent": 319020,
         "stalled": true,
-        "stall_time_ms": 0.05937507376074791,
+        "stall_time_ms": 0.06383296567946672,
         "status": "EMPIRICALLY_ANALYZED"
       }
     }
