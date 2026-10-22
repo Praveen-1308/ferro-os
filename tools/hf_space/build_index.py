@@ -10,8 +10,11 @@ import json
 import os
 
 def build():
-    # 1. Load Benchmarks
-    with open('scenarios/evolution_matrix.json', 'r', encoding='utf-8') as f:
+    # 1. Load All 23 Scenarios & 15 OS Fleet
+    data_path = 'tools/hf_space/data.json'
+    if not os.path.exists(data_path):
+        data_path = 'scenarios/evolution_matrix.json'
+    with open(data_path, 'r', encoding='utf-8') as f:
         matrix = json.load(f)
 
     # 2. Load Incident Radar
