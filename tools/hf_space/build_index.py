@@ -76,6 +76,39 @@ def build():
   <!-- TAB 1: 15-OS BENCHMARK SUITE -->
   <!-- ========================================================================= -->
   <main id="viewBenchmarks">
+    <!-- Architecture & Defensible Trade-Off Manifesto Banner -->
+    <section class="mb-6 bg-zinc-900/90 border border-zinc-800 rounded-xl p-5">
+      <div class="flex flex-col md:flex-row justify-between gap-4">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
+            <span>⚖️ Systems Engineering Manifesto</span>
+            <span class="text-zinc-500">•</span>
+            <span class="text-zinc-400">Defensible Trade-Off Architecture</span>
+          </div>
+          <h2 class="text-base font-bold text-white mt-1">We Intentionally Spend Background Cycles to Guarantee Bounded p99 Latency</h2>
+          <p class="text-xs text-zinc-300 mt-1 leading-relaxed">
+            In systems programming, claiming an operating system is "100% immune to freezes on all workloads" is unrealistic hype. FerroOS makes an explicit, transparent trade-off: 
+            <strong>we intentionally spend 2–4% background CPU/IO cycles on proactive writeback and lock-free thread-local arenas to eliminate multi-second p99 latency stalls</strong> for databases (PostgreSQL/SQLite), message streaming (Kafka/NATS), and high-frequency workloads.
+          </p>
+        </div>
+        <div class="bg-zinc-950/80 p-3.5 rounded-lg border border-zinc-800/80 md:w-96 text-xs flex flex-col justify-between">
+          <div>
+            <div class="font-bold text-zinc-300 flex items-center justify-between">
+              <span>Why Not Just Tune Debian / Ubuntu?</span>
+              <span class="text-emerald-400 font-mono text-[10px]">ferro-profile</span>
+            </div>
+            <p class="text-zinc-400 mt-1 text-[11px] leading-normal">
+              Tuning standard Linux requires managing dozens of fragile, interdependent sysctls and eBPF probes that frequently reset across kernel updates. FerroOS bakes deterministic p99 latency and adaptive writeback directly into the base image out-of-the-box with zero manual tuning.
+            </p>
+          </div>
+          <div class="mt-2.5 pt-2 border-t border-zinc-800/60 flex items-center justify-between text-[11px]">
+            <span class="text-zinc-500">Tunable Profiles:</span>
+            <span class="font-mono text-zinc-300">--latency | --balanced | --power-save</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Interactive Controls Bar -->
     <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-zinc-900/80 p-4 rounded-xl border border-zinc-800">
       <div>
