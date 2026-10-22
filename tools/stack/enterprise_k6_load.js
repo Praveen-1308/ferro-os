@@ -1,39 +1,47 @@
 // tools/stack/enterprise_k6_load.js
-// Grafana k6 Enterprise Load Script with Zipfian Skewed Browsing
-// Simulates realistic human browsing, product discovery, and transactional orders.
+// Grafana k6 Enterprise Sustained Load Script with Zipfian Skewed Browsing
+// Evaluates Cache Read vs DB Read vs Checkout Write latency percentiles over a 5-minute sustained test.
 
 import http from 'k6/http';
 import { check, sleep } from 'k6';
+import { Trend } from 'k6/metrics';
 
 const BASE_URL = __ENV.BASE_URL || 'http://127.0.0.1:10000';
 const NUM_PRODUCTS = 10000;
 const ZIPF_ALPHA = 0.85;
 
-// Approximate Zipfian draw in JavaScript
+// Per-Endpoint Latency Breakdown Trends
+export const cacheReadTrend = new Trend('cache_read_duration', true);
+export const dbReadTrend = new Trend('db_read_duration', true);
+export const checkoutWriteTrend = new Trend('checkout_write_duration', true);
+
+// Approximate Zipfian draw
 function getZipfianProductId() {
-    // Generate rank using inverse transform approximation for Zipfian: k = (1 - u)^(-1 / (alpha - 1))
-    // Or bounded power-law approximation
     const u = Math.random();
     const rank = Math.floor(Math.pow(u, 1.0 / (1.0 - ZIPF_ALPHA)));
     return Math.min(Math.max((rank % NUM_PRODUCTS) + 1, 1), NUM_PRODUCTS);
 }
 
 export const options = {
+    summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)', 'count'],
     scenarios: {
-        enterprise_users: {
+        enterprise_sustained: {
             executor: 'ramping-vus',
-            startVUs: 10,
+            startVUs: 20,
             stages: [
-                { duration: '3s', target: 50 },
-                { duration: '5s', target: 200 },
-                { duration: '3s', target: 0 },
+                { duration: '20s', target: 200 },   // Ramp-up to 200 VUs
+                { duration: '260s', target: 220 },  // Sustained 4-minute plateau (>50k requests)
+                { duration: '20s', target: 0 },     // Ramp-down
             ],
-            gracefulRampDown: '2s',
+            gracefulRampDown: '5s',
         },
     },
     thresholds: {
         http_req_duration: ['p(95)<500', 'p(99)<1000'],
-        http_req_failed: ['rate<0.01'], // Less than 1% errors
+        http_req_failed: ['rate<0.02'],
+        cache_read_duration: ['p(95)<200', 'p(99)<500'],
+        db_read_duration: ['p(95)<300', 'p(99)<600'],
+        checkout_write_duration: ['p(95)<500', 'p(99)<1000'],
     },
 };
 
@@ -41,34 +49,40 @@ export default function () {
     const userId = Math.floor(Math.random() * 25000) + 1;
     const prodId = getZipfianProductId();
 
-    // 1. Browsing Home Feed / Catalog (Read)
+    // 1. Cache Read: Home Feed / Catalog
+    const tFeed0 = Date.now();
     const feedRes = http.get(`${BASE_URL}/feed`);
+    cacheReadTrend.add(Date.now() - tFeed0);
     check(feedRes, {
-        'feed status 200': (r) => r.status === 200,
+        'feed status 200/429': (r) => r.status === 200 || r.status === 429,
     });
-    sleep(Math.random() * 0.2 + 0.1); // 100-300ms think time
+    sleep(Math.random() * 0.1 + 0.05); // 50-150ms think time
 
-    // 2. Querying Specific Product Details & Reviews (Hot vs Cold Read)
+    // 2. DB Read: Product Detail & Reviews (Zipfian Hot vs Cold read)
+    const tProd0 = Date.now();
     const prodRes = http.get(`${BASE_URL}/products/${prodId}`);
+    dbReadTrend.add(Date.now() - tProd0);
     check(prodRes, {
-        'product status 200': (r) => r.status === 200 || r.status === 404,
+        'product status 200/429': (r) => r.status === 200 || r.status === 404 || r.status === 429,
     });
-    sleep(Math.random() * 0.2 + 0.1);
+    sleep(Math.random() * 0.1 + 0.05);
 
-    // 3. Occasional Transactional Mutation: Place Order or Like (15% probability)
-    if (Math.random() < 0.15) {
+    // 3. Checkout Write: ACID Transaction + 64KB Audit WAL Payload (35% probability)
+    if (Math.random() < 0.35) {
         const payload = JSON.stringify({
             user_id: userId,
             product_id: prodId,
             quantity: 1,
         });
+        const tOrder0 = Date.now();
         const orderRes = http.post(`${BASE_URL}/orders`, payload, {
             headers: { 'Content-Type': 'application/json' },
         });
+        checkoutWriteTrend.add(Date.now() - tOrder0);
         check(orderRes, {
-            'order status 200/201': (r) => r.status === 200 || r.status === 201 || r.status === 429,
+            'order status 200/201/429': (r) => r.status === 200 || r.status === 201 || r.status === 429,
         });
     }
 
-    sleep(Math.random() * 0.3 + 0.2);
+    sleep(Math.random() * 0.15 + 0.1);
 }

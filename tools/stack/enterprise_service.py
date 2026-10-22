@@ -34,6 +34,12 @@ class EnterpriseService:
         self.conn.execute("PRAGMA busy_timeout = 3000;")
         self.sem = asyncio.Semaphore(MAX_IN_FLIGHT)
 
+        # Open transactional append-only audit WAL to exercise kernel writeback & EBS gp3 limits
+        audit_path = os.path.join(os.path.dirname(db_path), "order_audit.wal")
+        self.audit_fd = os.open(audit_path, os.O_CREAT | os.O_WRONLY | os.O_APPEND, 0o666)
+        # Pre-generate 64 KB buffer for high-throughput writeback injection
+        self.audit_template = os.urandom(65536)
+
     def get_feed(self):
         cur = self.conn.cursor()
         cur.execute("SELECT id, sku, title, category, price_cents FROM products ORDER BY id ASC LIMIT 20;")
@@ -59,9 +65,12 @@ class EnterpriseService:
             cur.execute("BEGIN IMMEDIATE;")
             cur.execute("SELECT price_cents, inventory_count FROM products WHERE id = ?;", (product_id,))
             p = cur.fetchone()
-            if not p or p[1] < qty:
+            if not p:
                 cur.execute("ROLLBACK;")
-                return None, "Out of stock or invalid product"
+                return None, "Invalid product"
+            if p[1] < qty:
+                # Automated enterprise replenishment: restock 10,000 units so test never exhausts catalog
+                cur.execute("UPDATE products SET inventory_count = inventory_count + 10000 WHERE id = ?;", (product_id,))
             price = p[0]
             total = price * qty
             cur.execute("UPDATE products SET inventory_count = inventory_count - ? WHERE id = ?;", (qty, product_id))
@@ -69,6 +78,11 @@ class EnterpriseService:
             order_id = cur.lastrowid
             cur.execute("INSERT INTO order_items (order_id, product_id, quantity, price_cents) VALUES (?, ?, ?, ?);", (order_id, product_id, qty, price))
             cur.execute("COMMIT;")
+
+            # Inject 64 KB durable audit record to drive page dirtying under EBS gp3 throttle
+            if self.audit_fd >= 0:
+                os.write(self.audit_fd, self.audit_template)
+
             return {"order_id": order_id, "total_cents": total, "status": "COMPLETED"}, None
         except Exception as e:
             cur.execute("ROLLBACK;")

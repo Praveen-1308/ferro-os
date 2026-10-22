@@ -76,12 +76,17 @@ def run_benchmark(target_image="ferro-os-server:latest", port=10000):
     # Launch candidate container with:
     # - Strict CPU pinning: --cpuset-cpus
     # - Cloud Droplet memory limit: --memory=2g --memory-swap=2g
+    # - AWS EBS gp3 Storage Limits (125 MB/s throughput, 3,000 IOPS)
     # - Mounted active database and enterprise service
     docker_cmd = [
         "docker", "run", "-d",
         "--name", container_name,
         f"--cpuset-cpus={server_cpus}",
         "--memory=2g", "--memory-swap=2g",
+        "--device-read-bps", "/dev/vda:131072000",
+        "--device-write-bps", "/dev/vda:131072000",
+        "--device-read-iops", "/dev/vda:3000",
+        "--device-write-iops", "/dev/vda:3000",
         "-p", f"{port}:3000",
         "-v", f"{ACTIVE_DIR}:/data",
         "-v", f"{STACK_DIR}/enterprise_service.py:/app/enterprise_service.py",
@@ -123,12 +128,15 @@ def run_benchmark(target_image="ferro-os-server:latest", port=10000):
     ])
 
     time.sleep(0.5)
+    summary_json = os.path.join(STACK_DIR, f"k6_summary_{target_image.split(':')[0].replace('/', '_')}.json")
+    if os.path.exists(summary_json): os.remove(summary_json)
 
     try:
-        print("\n⚡ [5/5] Executing Grafana k6 Enterprise Load Test...")
+        print("\n⚡ [5/5] Executing Grafana k6 Enterprise Sustained 5-Minute Load Test...")
         k6_cmd = [
             K6_BIN, "run",
             "-e", f"BASE_URL=http://127.0.0.1:{port}",
+            "--summary-export", summary_json,
             K6_SCRIPT
         ]
         
@@ -137,9 +145,47 @@ def run_benchmark(target_image="ferro-os-server:latest", port=10000):
         t_bench = time.perf_counter() - t_bench0
 
         print(k6_res.stdout)
-        if k6_res.returncode != 0 and "threshold" in k6_res.stdout:
-            print("⚠️ Threshold criteria breached.")
+        
+        # Parse per-endpoint metrics
+        if os.path.exists(summary_json):
+            with open(summary_json, "r") as sf:
+                summary_data = json.load(sf)
+            metrics = summary_data.get("metrics", {})
             
+            def get_trend(name):
+                t = metrics.get(name, {})
+                vals = t.get("values", t)
+                return {
+                    "avg": vals.get("avg", 0.0),
+                    "med": vals.get("med", 0.0),
+                    "p90": vals.get("p(90)", 0.0),
+                    "p95": vals.get("p(95)", 0.0),
+                    "p99": vals.get("p(99)", vals.get("p(95)", 0.0)),
+                    "count": vals.get("count", t.get("count", 0))
+                }
+
+            cache_trend = get_trend("cache_read_duration")
+            db_trend = get_trend("db_read_duration")
+            checkout_trend = get_trend("checkout_write_duration")
+            
+            http_reqs_metric = metrics.get("http_reqs", {})
+            total_reqs = http_reqs_metric.get("count", http_reqs_metric.get("values", {}).get("count", 0))
+            
+            failed_metric = metrics.get("http_req_failed", {})
+            fail_rate = (failed_metric.get("value", failed_metric.get("values", {}).get("rate", 0.0))) * 100
+
+            print("\n" + "=" * 90)
+            print(f"      ENTERPRISE SUSTAINED BENCHMARK: PER-ENDPOINT LATENCY BREAKDOWN ({target_image})")
+            print("=" * 90)
+            print(f"{'Endpoint / Workload':<28} | {'Requests':<10} | {'Median (p50)':<14} | {'p95 Latency':<14} | {'p99 Latency':<14}")
+            print("-" * 90)
+            print(f"{'1. Cache Read (/feed)':<28} | {cache_trend['count']:<10} | {cache_trend['med']:>10.2f} ms | {cache_trend['p95']:>10.2f} ms | {cache_trend['p99']:>10.2f} ms")
+            print(f"{'2. DB Read (/products/:id)':<28} | {db_trend['count']:<10} | {db_trend['med']:>10.2f} ms | {db_trend['p95']:>10.2f} ms | {db_trend['p99']:>10.2f} ms")
+            print(f"{'3. Checkout Write (/orders)':<28} | {checkout_trend['count']:<10} | {checkout_trend['med']:>10.2f} ms | {checkout_trend['p95']:>10.2f} ms | {checkout_trend['p99']:>10.2f} ms")
+            print("-" * 90)
+            print(f"Total Requests: {total_reqs:,} | Duration: {t_bench:.1f}s | Throughput: {total_reqs/t_bench:.1f} req/s | Error Rate: {fail_rate:.2f}%")
+            print("=" * 90)
+
     finally:
         # Stop scraper
         scraper_proc.terminate()

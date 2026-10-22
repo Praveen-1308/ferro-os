@@ -147,7 +147,7 @@ def run_scraper(output_csv: str, interval_ms: int = 500, container: str = None, 
         csv_file.close()
         print(f"📡 [Observability] Completed Scraper: {sample_count} samples collected in {round(time.perf_counter() - t_start, 2)}s.")
 
-def analyze_telemetry(csv_path: str):
+def analyze_telemetry(csv_path: str, bucket_size_s: float = 15.0):
     if not os.path.exists(csv_path):
         print(f"File not found: {csv_path}")
         return
@@ -164,16 +164,39 @@ def analyze_telemetry(csv_path: str):
     max_psi_io = max(float(r["psi_io_some_avg10"]) for r in reader)
     max_psi_cpu = max(float(r["psi_cpu_some_avg10"]) for r in reader)
 
-    print("\n" + "=" * 80)
+    print("\n" + "=" * 90)
     print("      KERNEL OBSERVABILITY & PRESSURE STALL (PSI) AUDIT REPORT        ")
-    print("=" * 80)
+    print("=" * 90)
     print(f"  • Total Samples:           {len(reader)}")
     print(f"  • Peak Dirty Memory:       {max_dirty_mb:.2f} MB")
     print(f"  • Peak Active Writeback:   {max_wb_mb:.2f} MB")
     print(f"  • Max I/O Pressure (PSI):  {max_psi_io:.2f}% stall")
     print(f"  • Max CPU Pressure (PSI):  {max_psi_cpu:.2f}% stall")
+    print("-" * 90)
+
+    # 1. Time-Series Window Aggregation
+    print(f"\n📈 Time-Series Kernel Telemetry ({bucket_size_s:.0f}s Windows):")
+    print(f"{'Time Window':<14} | {'Dirty Mem (Avg)':<16} | {'Writeback (Avg)':<16} | {'PSI I/O (Max)':<14} | {'PSI CPU (Max)':<14}")
     print("-" * 80)
 
+    total_duration = float(reader[-1]["seconds_elapsed"]) if reader else 0.0
+    num_buckets = max(1, int(total_duration // bucket_size_s) + 1)
+
+    for b in range(num_buckets):
+        t_start = b * bucket_size_s
+        t_end = t_start + bucket_size_s
+        b_samples = [r for r in reader if t_start <= float(r["seconds_elapsed"]) < t_end]
+        if not b_samples: continue
+
+        avg_dirty = sum(float(r["dirty_memory_mb"]) for r in b_samples) / len(b_samples)
+        avg_wb = sum(float(r["writeback_memory_mb"]) for r in b_samples) / len(b_samples)
+        max_b_io = max(float(r["psi_io_some_avg10"]) for r in b_samples)
+        max_b_cpu = max(float(r["psi_cpu_some_avg10"]) for r in b_samples)
+
+        window_label = f"{int(t_start)}s - {int(t_end)}s"
+        print(f"{window_label:<14} | {avg_dirty:>12.2f} MB | {avg_wb:>12.2f} MB | {max_b_io:>12.2f}% | {max_b_cpu:>12.2f}%")
+
+    print("-" * 80)
     # Detect stall correlation
     stall_events = [r for r in reader if float(r["psi_io_some_avg10"]) > 0.0 or float(r["dirty_memory_mb"]) > 50.0]
     if stall_events:
@@ -182,7 +205,7 @@ def analyze_telemetry(csv_path: str):
             print(f"  [@ {ev['seconds_elapsed']}s] Dirty: {ev['dirty_memory_mb']} MB | Writeback: {ev['writeback_memory_mb']} MB | PSI I/O: {ev['psi_io_some_avg10']}%")
     else:
         print("🟢 Clean Run: Zero I/O Pressure Stalls or Uncontrolled Page Backlogs detected.")
-    print("=" * 80)
+    print("=" * 90)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Kernel Telemetry Scraper")
