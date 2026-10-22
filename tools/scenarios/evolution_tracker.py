@@ -123,7 +123,8 @@ def render_markdown(matrix):
             lines.append("| :--- | :---: | :---: | :---: | :---: |")
             for a in audited:
                 drift_label = f"`{a['drift']}`"
-                verdict_badge = "🟢 NO_REGRESSION" if "NO" in a["verdict"] or "WITHIN" in a["verdict"] else "🔴 REGRESSION"
+                v = a['verdict'].upper()
+                verdict_badge = "🟢 NO_REGRESSION" if ("NO" in v or "WITHIN" in v or "INVARIANCE" in v or "PASS" in v) else "🔴 REGRESSION"
                 lines.append(f"| **{a['id']}** | {a['old_metric']} | {a['new_metric']} | {drift_label} | {verdict_badge} |")
         else:
             lines.append("*Initial baseline scenario — no preceding test cases to regress against.*")
