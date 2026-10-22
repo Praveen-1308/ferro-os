@@ -1,0 +1,80 @@
+{
+  "SCENARIO-014": {
+    "success": 500,
+    "errors": 0,
+    "conns_sec": 10382.43705854031,
+    "p50_ms": 0.10129099246114492,
+    "p95_ms": 0.1276250695809722,
+    "p99_ms": 0.16404094640165567,
+    "status": "EMPIRICALLY_ANALYZED"
+  },
+  "SCENARIO-015": {
+    "p50_write_ms": 0.14195905532687902,
+    "p95_write_ms": 0.9604169754311442,
+    "max_write_ms": 1.81275000795722,
+    "fsync_stall_ms": 1.2785419821739197,
+    "throughput_mb_s": 3462.0636891063286,
+    "status": "EMPIRICALLY_ANALYZED"
+  },
+  "SCENARIO-016": {
+    "p50_jitter_ms": 1.2654579570516944,
+    "p95_jitter_ms": 1.2746249651536345,
+    "p99_jitter_ms": 1.275624972768128,
+    "status": "EMPIRICALLY_ANALYZED"
+  },
+  "SCENARIO-017": {
+    "redundant_queries": 50,
+    "p50_ms": 14.281790936365724,
+    "p95_ms": 72.81012507155538,
+    "total_stampede_time_ms": 104.25262502394617,
+    "status": "EMPIRICALLY_ANALYZED"
+  },
+  "SCENARIO-018": {
+    "accepted": 10,
+    "dropped": 70,
+    "drop_rate_pct": 87.5,
+    "p50_ms": 73.94904107786715,
+    "p95_ms": 74.75379202514887,
+    "status": "EMPIRICALLY_ANALYZED"
+  },
+  "SCENARIO-019": {
+    "standard_victim": "CRITICAL DATABASE (CATASTROPHIC)",
+    "ferro_victim": "ROGUE LEAK WORKER (PROTECTED DB)",
+    "score_db_standard": 170.8984375,
+    "score_db_ferro": 0.0,
+    "status": "EMPIRICALLY_ANALYZED"
+  },
+  "SCENARIO-020": {
+    "p50_ms": 0.055999960750341415,
+    "p95_ms": 0.0649159774184227,
+    "p99_ms": 0.07275003008544445,
+    "status": "EMPIRICALLY_ANALYZED"
+  },
+  "SCENARIO-021": {
+    "passive_checkpoint": [
+      0,
+      7,
+      7
+    ],
+    "truncate_checkpoint": [
+      1,
+      7,
+      7
+    ],
+    "wal_size_before": 28872,
+    "wal_size_after": 28872,
+    "status": "EMPIRICALLY_ANALYZED"
+  },
+  "SCENARIO-022": {
+    "total_opened": 124,
+    "emfile_hit": true,
+    "recovered": true,
+    "status": "EMPIRICALLY_ANALYZED"
+  },
+  "SCENARIO-023": {
+    "bytes_sent": 319020,
+    "stalled": true,
+    "stall_time_ms": 0.05937507376074791,
+    "status": "EMPIRICALLY_ANALYZED"
+  }
+}

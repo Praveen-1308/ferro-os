@@ -4,7 +4,7 @@
 > **Strict Analysis-First Policy**: All discovered scenarios are marked `[QUEUED_FOR_ANALYSIS]`.
 > Operating system code changes will **only** be made after architectural analysis and test design.
 
-**Total Scenarios Tracked**: 23 | **Last Updated**: 2026-10-22 07:58:13 UTC
+**Total Scenarios Tracked**: 23 | **Last Updated**: 2026-10-22 08:18:57 UTC
 
 ---
 
@@ -23,16 +23,16 @@
 | `SCENARIO-011-HIGH-CARDINALITY-METRICS` | **Time-Series Telemetry & Metric Ingestion (High-Cardinality TSDB)** | VFS / Storage / Locking | 🟢 `ANALYZED_AND_BASELINE_TESTED` | `Batch metric flushes every 250ms; tune double-delta timestamp compression.` |
 | `SCENARIO-012-HYPER-DENSITY-CHAOS` | **Multi-Tenant Hyper-Density Chaos Test (5 Concurrent Micro-Services)** | Scheduler / CPU / CFS | 🟢 `ANALYZED_AND_BASELINE_TESTED` | `Cgroup v2 memory.high soft throttling with memory.max hard limits.` |
 | `SCENARIO-013-TWELVE-DOLLAR-CONSTRAINED-CHOKE` | **The $12 Cloud Droplet Concurrency Choke (1 vCPU, 2 GB RAM, 0 Swap)** | Scheduler / CPU / CFS | 🟢 `ANALYZED_AND_STANDARDIZED` | `Tune CFS / sched_ext preemption slice to 2,500 µs; bound request queue to 32.` |
-| `SCENARIO-014-PORT-EXHAUSTION-TIME-WAIT` | **Ephemeral Port Exhaustion & TIME_WAIT Socket Saturation** | Network / TCP Stack | ⏳ `QUEUED_FOR_ANALYSIS` | `Enable net.ipv4.tcp_tw_reuse = 1 and expand ip_local_port_range = 10240 65535.` |
-| `SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE` | **Linux Dirty Page Writeback Freeze (Flusher Stall)** | VFS / Storage / Locking | ⏳ `QUEUED_FOR_ANALYSIS` | `Tune vm.dirty_background_ratio = 5 and vm.dirty_ratio = 10 to smooth out writeback bursts.` |
-| `SCENARIO-016-CFS-BANDWIDTH-QUOTA-THROTTLING` | **CFS Bandwidth Quota Micro-Throttling (Kubernetes / Cgroups)** | Scheduler / CPU / CFS | ⏳ `QUEUED_FOR_ANALYSIS` | `Tune cpu.cfs_period_us to 10,000 µs (10ms) or remove artificial CPU quotas on single vCPU instances.` |
-| `SCENARIO-017-THUNDERING-HERD-CACHE-STAMPEDE` | **Thundering Herd Cache Stampede (Dogpiling on Redis Key Expiry)** | Concurrency / Threading | ⏳ `QUEUED_FOR_ANALYSIS` | `Implement singleflight promise coalescing in userspace; jittered TTLs.` |
-| `SCENARIO-018-SYN-BACKLOG-BURST-OVERFLOW` | **TCP SYN Backlog Saturation under Ingress Micro-Bursts** | Network / TCP Stack | ⏳ `QUEUED_FOR_ANALYSIS` | `Set net.core.somaxconn = 65535 and net.ipv4.tcp_max_syn_backlog = 65535.` |
-| `SCENARIO-019-OOM-KILLER-PRIORITY-INVERSION` | **Linux OOM Killer Priority Inversion (Critical Database Killed)** | Memory / Cgroup / Allocation | ⏳ `QUEUED_FOR_ANALYSIS` | `Set /proc/$PID/oom_score_adj = -1000 for database daemon; set strict memory.max on worker cgroups.` |
-| `SCENARIO-020-EPOLL-EDGE-TRIGGER-STARVATION` | **epoll Edge-Triggered Socket Event Starvation (Head-of-Line)** | Network / TCP Stack | ⏳ `QUEUED_FOR_ANALYSIS` | `Enforce maximum byte/packet read budget per socket per epoll_wait cycle (e.g., 64 KB).` |
-| `SCENARIO-021-SQLITE-WAL-CHECKPOINT-STALL` | **SQLite WAL Checkpoint Lock Stall on Continuous Reader Workload** | VFS / Storage / Locking | ⏳ `QUEUED_FOR_ANALYSIS` | `Run periodic PRAGMA wal_checkpoint(TRUNCATE) on dedicated maintenance connection; bound reader transaction lifespans.` |
-| `SCENARIO-022-FILE-DESCRIPTOR-EMFILE-COLLAPSE` | **File Descriptor Exhaustion (EMFILE Cascading Service Collapse)** | Kernel / Syscall / VFS | ⏳ `QUEUED_FOR_ANALYSIS` | `Increase nofile ulimit to 1048576; implement reserve dummy FD trick to cleanly close over-limit connections.` |
-| `SCENARIO-023-TCP-ZERO-WINDOW-DEADLOCK` | **TCP Zero-Window Probe Deadlock under Slow Consumer Attack** | Network / TCP Stack | ⏳ `QUEUED_FOR_ANALYSIS` | `Configure tcp_retries2 = 5 and enforce application-level response write timeouts.` |
+| `SCENARIO-014-PORT-EXHAUSTION-TIME-WAIT` | **Ephemeral Port Exhaustion & TIME_WAIT Socket Saturation** | Network / TCP Stack | ⏳ `EMPIRICALLY_ANALYZED` | `Enable net.ipv4.tcp_tw_reuse = 1 and expand ip_local_port_range = 10240 65535.` |
+| `SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE` | **Linux Dirty Page Writeback Freeze (Flusher Stall)** | VFS / Storage / Locking | ⏳ `EMPIRICALLY_ANALYZED` | `Tune vm.dirty_background_ratio = 5 and vm.dirty_ratio = 10 to smooth out writeback bursts.` |
+| `SCENARIO-016-CFS-BANDWIDTH-QUOTA-THROTTLING` | **CFS Bandwidth Quota Micro-Throttling (Kubernetes / Cgroups)** | Scheduler / CPU / CFS | ⏳ `EMPIRICALLY_ANALYZED` | `Tune cpu.cfs_period_us to 10,000 µs (10ms) or remove artificial CPU quotas on single vCPU instances.` |
+| `SCENARIO-017-THUNDERING-HERD-CACHE-STAMPEDE` | **Thundering Herd Cache Stampede (Dogpiling on Redis Key Expiry)** | Concurrency / Threading | ⏳ `EMPIRICALLY_ANALYZED` | `Implement singleflight promise coalescing in userspace; jittered TTLs.` |
+| `SCENARIO-018-SYN-BACKLOG-BURST-OVERFLOW` | **TCP SYN Backlog Saturation under Ingress Micro-Bursts** | Network / TCP Stack | ⏳ `EMPIRICALLY_ANALYZED` | `Set net.core.somaxconn = 65535 and net.ipv4.tcp_max_syn_backlog = 65535.` |
+| `SCENARIO-019-OOM-KILLER-PRIORITY-INVERSION` | **Linux OOM Killer Priority Inversion (Critical Database Killed)** | Memory / Cgroup / Allocation | ⏳ `EMPIRICALLY_ANALYZED` | `Set /proc/$PID/oom_score_adj = -1000 for database daemon; set strict memory.max on worker cgroups.` |
+| `SCENARIO-020-EPOLL-EDGE-TRIGGER-STARVATION` | **epoll Edge-Triggered Socket Event Starvation (Head-of-Line)** | Network / TCP Stack | ⏳ `EMPIRICALLY_ANALYZED` | `Enforce maximum byte/packet read budget per socket per epoll_wait cycle (e.g., 64 KB).` |
+| `SCENARIO-021-SQLITE-WAL-CHECKPOINT-STALL` | **SQLite WAL Checkpoint Lock Stall on Continuous Reader Workload** | VFS / Storage / Locking | ⏳ `EMPIRICALLY_ANALYZED` | `Run periodic PRAGMA wal_checkpoint(TRUNCATE) on dedicated maintenance connection; bound reader transaction lifespans.` |
+| `SCENARIO-022-FILE-DESCRIPTOR-EMFILE-COLLAPSE` | **File Descriptor Exhaustion (EMFILE Cascading Service Collapse)** | Kernel / Syscall / VFS | ⏳ `EMPIRICALLY_ANALYZED` | `Increase nofile ulimit to 1048576; implement reserve dummy FD trick to cleanly close over-limit connections.` |
+| `SCENARIO-023-TCP-ZERO-WINDOW-DEADLOCK` | **TCP Zero-Window Probe Deadlock under Slow Consumer Attack** | Network / TCP Stack | ⏳ `EMPIRICALLY_ANALYZED` | `Configure tcp_retries2 = 5 and enforce application-level response write timeouts.` |
 
 ---
 
@@ -144,7 +144,7 @@
 
 ### SCENARIO-014-PORT-EXHAUSTION-TIME-WAIT: Ephemeral Port Exhaustion & TIME_WAIT Socket Saturation
 - **Category**: `Network / TCP Stack`
-- **Current Status**: `QUEUED_FOR_ANALYSIS`
+- **Current Status**: `EMPIRICALLY_ANALYZED`
 - **Cloud Problem Description**: Microservices opening short-lived outbound TCP connections to databases or APIs exhaust the local ephemeral port range (ip_local_port_range, ~28,000 ports) due to sockets lingering in TIME_WAIT for 60 seconds.
 - **Observed Symptoms & Impact**: Cannot assign requested address (EADDRNOTAVAIL); outbound API requests stall completely; services fail health checks.
 - **FerroOS Architectural Hypothesis**: FerroOS socket recycling and SO_REUSEPORT connection pooling can reclaim closed TCP control blocks in < 100 µs.
@@ -152,7 +152,7 @@
 
 ### SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE: Linux Dirty Page Writeback Freeze (Flusher Stall)
 - **Category**: `VFS / Storage / Locking`
-- **Current Status**: `QUEUED_FOR_ANALYSIS`
+- **Current Status**: `EMPIRICALLY_ANALYZED`
 - **Cloud Problem Description**: Rapid sequential disk writes fill the Linux page cache up to vm.dirty_ratio (typically 20% of RAM). When the threshold is reached, all subsequent write() syscalls synchronously block while kernel flusher threads flush dirty pages to slow cloud block storage.
 - **Observed Symptoms & Impact**: Entire application freezes for 2–15 seconds; p99 latency spikes into seconds; cloud watchdog kills the process.
 - **FerroOS Architectural Hypothesis**: libferro_io async ring I/O with direct I/O (O_DIRECT) bypasses the page cache dirty threshold entirely.
@@ -160,7 +160,7 @@
 
 ### SCENARIO-016-CFS-BANDWIDTH-QUOTA-THROTTLING: CFS Bandwidth Quota Micro-Throttling (Kubernetes / Cgroups)
 - **Category**: `Scheduler / CPU / CFS`
-- **Current Status**: `QUEUED_FOR_ANALYSIS`
+- **Current Status**: `EMPIRICALLY_ANALYZED`
 - **Cloud Problem Description**: Even when overall CPU utilization is below 50%, bursty multi-threaded applications exhaust their CFS quota (cpu.cfs_quota_us) early in the 100ms period, causing the Linux scheduler to freeze all threads until the next period begins.
 - **Observed Symptoms & Impact**: Unexpected 100ms latency spikes on API responses despite low average CPU usage; 504 Gateway Timeouts.
 - **FerroOS Architectural Hypothesis**: FerroOS sched_ext balanced quantum (2,000–5,000 µs) prevents premature quota exhaustion on single-core containers.
@@ -168,7 +168,7 @@
 
 ### SCENARIO-017-THUNDERING-HERD-CACHE-STAMPEDE: Thundering Herd Cache Stampede (Dogpiling on Redis Key Expiry)
 - **Category**: `Concurrency / Threading`
-- **Current Status**: `QUEUED_FOR_ANALYSIS`
+- **Current Status**: `EMPIRICALLY_ANALYZED`
 - **Cloud Problem Description**: When a hot cached key expires under 10,000 concurrent requests, all incoming requests simultaneously miss the cache and issue redundant heavy queries to the backend database.
 - **Observed Symptoms & Impact**: Database CPU spikes to 100%; connection pool exhaustion; cascading database crash across all web nodes.
 - **FerroOS Architectural Hypothesis**: In-process lock-free single-flight mutex pattern or XFetch probabilistic early expiration in FerroOS middleware shields the database.
@@ -176,7 +176,7 @@
 
 ### SCENARIO-018-SYN-BACKLOG-BURST-OVERFLOW: TCP SYN Backlog Saturation under Ingress Micro-Bursts
 - **Category**: `Network / TCP Stack`
-- **Current Status**: `QUEUED_FOR_ANALYSIS`
+- **Current Status**: `EMPIRICALLY_ANALYZED`
 - **Cloud Problem Description**: Sudden arrival of hundreds of TCP handshakes in a few milliseconds overflows the kernel TCP listen backlog (tcp_max_syn_backlog and somaxconn), causing the kernel to drop incoming SYN packets without sending RST.
 - **Observed Symptoms & Impact**: Clients experience 1-second or 3-second TCP SYN retransmission delays; connection setup appears hung.
 - **FerroOS Architectural Hypothesis**: Zero-drop lock-free SYN cookies and multi-queue SO_REUSEPORT sharding in FerroOS sustain 100,000+ handshakes/sec.
@@ -184,7 +184,7 @@
 
 ### SCENARIO-019-OOM-KILLER-PRIORITY-INVERSION: Linux OOM Killer Priority Inversion (Critical Database Killed)
 - **Category**: `Memory / Cgroup / Allocation`
-- **Current Status**: `QUEUED_FOR_ANALYSIS`
+- **Current Status**: `EMPIRICALLY_ANALYZED`
 - **Cloud Problem Description**: A rogue worker script leaks memory, but because the primary database process (PostgreSQL / SQLite / MySQL) holds more RSS, the Linux kernel calculates a higher oom_score for the database and terminates the database instead of the rogue process.
 - **Observed Symptoms & Impact**: Catastrophic database termination; data corruption during uncommitted transactions; extended downtime.
 - **FerroOS Architectural Hypothesis**: ferro-init's proactive cgroup memory accounting isolates runaway workers before global kernel OOM fires.
@@ -192,7 +192,7 @@
 
 ### SCENARIO-020-EPOLL-EDGE-TRIGGER-STARVATION: epoll Edge-Triggered Socket Event Starvation (Head-of-Line)
 - **Category**: `Network / TCP Stack`
-- **Current Status**: `QUEUED_FOR_ANALYSIS`
+- **Current Status**: `EMPIRICALLY_ANALYZED`
 - **Cloud Problem Description**: In an EPOLLET event loop, a busy connection streaming megabytes of data keeps reading in a loop until EAGAIN, starving hundreds of other pending client connections on the same event loop.
 - **Observed Symptoms & Impact**: Sub-millisecond p50 latency but extreme p99 tail latency blowouts (> 2,000ms); client connection timeouts.
 - **FerroOS Architectural Hypothesis**: Bounded event dispatch quantum with fair cooperative round-robin scheduling in libferro_io prevents loop monopolization.
@@ -200,7 +200,7 @@
 
 ### SCENARIO-021-SQLITE-WAL-CHECKPOINT-STALL: SQLite WAL Checkpoint Lock Stall on Continuous Reader Workload
 - **Category**: `VFS / Storage / Locking`
-- **Current Status**: `QUEUED_FOR_ANALYSIS`
+- **Current Status**: `EMPIRICALLY_ANALYZED`
 - **Cloud Problem Description**: When active read queries continuously hold read locks on older WAL snapshots, SQLite passive checkpointing (wal_checkpoint) cannot advance. The WAL file grows unbounded to multiple gigabytes, causing queries to scan huge WAL files.
 - **Observed Symptoms & Impact**: Read query latency degrades 10x to 100x; disk space exhaustion; final forced checkpoint freezes the database.
 - **FerroOS Architectural Hypothesis**: FerroOS transaction time-slicing and bounded concurrency prevent overlapping read lock cascades.
@@ -208,7 +208,7 @@
 
 ### SCENARIO-022-FILE-DESCRIPTOR-EMFILE-COLLAPSE: File Descriptor Exhaustion (EMFILE Cascading Service Collapse)
 - **Category**: `Kernel / Syscall / VFS`
-- **Current Status**: `QUEUED_FOR_ANALYSIS`
+- **Current Status**: `EMPIRICALLY_ANALYZED`
 - **Cloud Problem Description**: An application leaks socket or file handles under connection surges. Once the process hits its ulimit -n limit, subsequent accept() or open() calls fail with EMFILE.
 - **Observed Symptoms & Impact**: accept() returns EMFILE; epoll immediately re-triggers (CPU spins at 100%); service completely freezes.
 - **FerroOS Architectural Hypothesis**: Pre-allocated reserve file descriptor pattern in FerroOS allows graceful socket closure and immediate rejection.
@@ -216,7 +216,7 @@
 
 ### SCENARIO-023-TCP-ZERO-WINDOW-DEADLOCK: TCP Zero-Window Probe Deadlock under Slow Consumer Attack
 - **Category**: `Network / TCP Stack`
-- **Current Status**: `QUEUED_FOR_ANALYSIS`
+- **Current Status**: `EMPIRICALLY_ANALYZED`
 - **Cloud Problem Description**: Malicious or slow clients advertise a TCP Receive Window of 0 bytes. The server buffers responses in kernel socket buffers (SO_SNDBUF) and repeatedly sends zero-window probes without closing the connection.
 - **Observed Symptoms & Impact**: Kernel socket buffer memory exhaustion; thousands of idle connections tie up worker threads.
 - **FerroOS Architectural Hypothesis**: Zero-window timeout enforcement and zero-copy user-space buffer caps drop uncooperative consumers in < 5s.

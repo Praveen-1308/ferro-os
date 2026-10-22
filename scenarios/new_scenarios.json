@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-22T06:48:38.836855Z",
+  "last_updated": "2026-10-22T08:18:57.493238+00:00",
   "description": "Master Catalog of Cloud Server Failure Scenarios, Edge Cases, and Performance Bottlenecks for FerroOS Testing and Resilience Evaluation.",
   "workflow_policy": "Strict Analysis-First Protocol: All discovered scenarios are marked [QUEUED_FOR_ANALYSIS]. No OS kernel or userspace code modifications may be made until the scenario is empirically analyzed.",
   "scenarios": [
@@ -169,8 +169,17 @@
       "symptoms_and_impact": "Cannot assign requested address (EADDRNOTAVAIL); outbound API requests stall completely; services fail health checks.",
       "ferro_os_hypothesis": "FerroOS socket recycling and SO_REUSEPORT connection pooling can reclaim closed TCP control blocks in < 100 \u00b5s.",
       "minimal_elevation_knob": "Enable net.ipv4.tcp_tw_reuse = 1 and expand ip_local_port_range = 10240 65535.",
-      "analysis_status": "QUEUED_FOR_ANALYSIS",
-      "added_at": "2026-10-22T06:48:38.836762Z"
+      "analysis_status": "EMPIRICALLY_ANALYZED",
+      "added_at": "2026-10-22T06:48:38.836762Z",
+      "empirical_telemetry": {
+        "success": 500,
+        "errors": 0,
+        "conns_sec": 10382.43705854031,
+        "p50_ms": 0.10129099246114492,
+        "p95_ms": 0.1276250695809722,
+        "p99_ms": 0.16404094640165567,
+        "status": "EMPIRICALLY_ANALYZED"
+      }
     },
     {
       "scenario_id": "SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE",
@@ -181,8 +190,16 @@
       "symptoms_and_impact": "Entire application freezes for 2\u201315 seconds; p99 latency spikes into seconds; cloud watchdog kills the process.",
       "ferro_os_hypothesis": "libferro_io async ring I/O with direct I/O (O_DIRECT) bypasses the page cache dirty threshold entirely.",
       "minimal_elevation_knob": "Tune vm.dirty_background_ratio = 5 and vm.dirty_ratio = 10 to smooth out writeback bursts.",
-      "analysis_status": "QUEUED_FOR_ANALYSIS",
-      "added_at": "2026-10-22T06:48:38.836779Z"
+      "analysis_status": "EMPIRICALLY_ANALYZED",
+      "added_at": "2026-10-22T06:48:38.836779Z",
+      "empirical_telemetry": {
+        "p50_write_ms": 0.14195905532687902,
+        "p95_write_ms": 0.9604169754311442,
+        "max_write_ms": 1.81275000795722,
+        "fsync_stall_ms": 1.2785419821739197,
+        "throughput_mb_s": 3462.0636891063286,
+        "status": "EMPIRICALLY_ANALYZED"
+      }
     },
     {
       "scenario_id": "SCENARIO-016-CFS-BANDWIDTH-QUOTA-THROTTLING",
@@ -193,8 +210,14 @@
       "symptoms_and_impact": "Unexpected 100ms latency spikes on API responses despite low average CPU usage; 504 Gateway Timeouts.",
       "ferro_os_hypothesis": "FerroOS sched_ext balanced quantum (2,000\u20135,000 \u00b5s) prevents premature quota exhaustion on single-core containers.",
       "minimal_elevation_knob": "Tune cpu.cfs_period_us to 10,000 \u00b5s (10ms) or remove artificial CPU quotas on single vCPU instances.",
-      "analysis_status": "QUEUED_FOR_ANALYSIS",
-      "added_at": "2026-10-22T06:48:38.836784Z"
+      "analysis_status": "EMPIRICALLY_ANALYZED",
+      "added_at": "2026-10-22T06:48:38.836784Z",
+      "empirical_telemetry": {
+        "p50_jitter_ms": 1.2654579570516944,
+        "p95_jitter_ms": 1.2746249651536345,
+        "p99_jitter_ms": 1.275624972768128,
+        "status": "EMPIRICALLY_ANALYZED"
+      }
     },
     {
       "scenario_id": "SCENARIO-017-THUNDERING-HERD-CACHE-STAMPEDE",
@@ -205,8 +228,15 @@
       "symptoms_and_impact": "Database CPU spikes to 100%; connection pool exhaustion; cascading database crash across all web nodes.",
       "ferro_os_hypothesis": "In-process lock-free single-flight mutex pattern or XFetch probabilistic early expiration in FerroOS middleware shields the database.",
       "minimal_elevation_knob": "Implement singleflight promise coalescing in userspace; jittered TTLs.",
-      "analysis_status": "QUEUED_FOR_ANALYSIS",
-      "added_at": "2026-10-22T06:48:38.836787Z"
+      "analysis_status": "EMPIRICALLY_ANALYZED",
+      "added_at": "2026-10-22T06:48:38.836787Z",
+      "empirical_telemetry": {
+        "redundant_queries": 50,
+        "p50_ms": 14.281790936365724,
+        "p95_ms": 72.81012507155538,
+        "total_stampede_time_ms": 104.25262502394617,
+        "status": "EMPIRICALLY_ANALYZED"
+      }
     },
     {
       "scenario_id": "SCENARIO-018-SYN-BACKLOG-BURST-OVERFLOW",
@@ -217,8 +247,16 @@
       "symptoms_and_impact": "Clients experience 1-second or 3-second TCP SYN retransmission delays; connection setup appears hung.",
       "ferro_os_hypothesis": "Zero-drop lock-free SYN cookies and multi-queue SO_REUSEPORT sharding in FerroOS sustain 100,000+ handshakes/sec.",
       "minimal_elevation_knob": "Set net.core.somaxconn = 65535 and net.ipv4.tcp_max_syn_backlog = 65535.",
-      "analysis_status": "QUEUED_FOR_ANALYSIS",
-      "added_at": "2026-10-22T06:48:38.836789Z"
+      "analysis_status": "EMPIRICALLY_ANALYZED",
+      "added_at": "2026-10-22T06:48:38.836789Z",
+      "empirical_telemetry": {
+        "accepted": 10,
+        "dropped": 70,
+        "drop_rate_pct": 87.5,
+        "p50_ms": 73.94904107786715,
+        "p95_ms": 74.75379202514887,
+        "status": "EMPIRICALLY_ANALYZED"
+      }
     },
     {
       "scenario_id": "SCENARIO-019-OOM-KILLER-PRIORITY-INVERSION",
@@ -229,8 +267,15 @@
       "symptoms_and_impact": "Catastrophic database termination; data corruption during uncommitted transactions; extended downtime.",
       "ferro_os_hypothesis": "ferro-init's proactive cgroup memory accounting isolates runaway workers before global kernel OOM fires.",
       "minimal_elevation_knob": "Set /proc/$PID/oom_score_adj = -1000 for database daemon; set strict memory.max on worker cgroups.",
-      "analysis_status": "QUEUED_FOR_ANALYSIS",
-      "added_at": "2026-10-22T06:48:38.836792Z"
+      "analysis_status": "EMPIRICALLY_ANALYZED",
+      "added_at": "2026-10-22T06:48:38.836792Z",
+      "empirical_telemetry": {
+        "standard_victim": "CRITICAL DATABASE (CATASTROPHIC)",
+        "ferro_victim": "ROGUE LEAK WORKER (PROTECTED DB)",
+        "score_db_standard": 170.8984375,
+        "score_db_ferro": 0.0,
+        "status": "EMPIRICALLY_ANALYZED"
+      }
     },
     {
       "scenario_id": "SCENARIO-020-EPOLL-EDGE-TRIGGER-STARVATION",
@@ -241,8 +286,14 @@
       "symptoms_and_impact": "Sub-millisecond p50 latency but extreme p99 tail latency blowouts (> 2,000ms); client connection timeouts.",
       "ferro_os_hypothesis": "Bounded event dispatch quantum with fair cooperative round-robin scheduling in libferro_io prevents loop monopolization.",
       "minimal_elevation_knob": "Enforce maximum byte/packet read budget per socket per epoll_wait cycle (e.g., 64 KB).",
-      "analysis_status": "QUEUED_FOR_ANALYSIS",
-      "added_at": "2026-10-22T06:48:38.836795Z"
+      "analysis_status": "EMPIRICALLY_ANALYZED",
+      "added_at": "2026-10-22T06:48:38.836795Z",
+      "empirical_telemetry": {
+        "p50_ms": 0.055999960750341415,
+        "p95_ms": 0.0649159774184227,
+        "p99_ms": 0.07275003008544445,
+        "status": "EMPIRICALLY_ANALYZED"
+      }
     },
     {
       "scenario_id": "SCENARIO-021-SQLITE-WAL-CHECKPOINT-STALL",
@@ -253,8 +304,23 @@
       "symptoms_and_impact": "Read query latency degrades 10x to 100x; disk space exhaustion; final forced checkpoint freezes the database.",
       "ferro_os_hypothesis": "FerroOS transaction time-slicing and bounded concurrency prevent overlapping read lock cascades.",
       "minimal_elevation_knob": "Run periodic PRAGMA wal_checkpoint(TRUNCATE) on dedicated maintenance connection; bound reader transaction lifespans.",
-      "analysis_status": "QUEUED_FOR_ANALYSIS",
-      "added_at": "2026-10-22T06:48:38.836797Z"
+      "analysis_status": "EMPIRICALLY_ANALYZED",
+      "added_at": "2026-10-22T06:48:38.836797Z",
+      "empirical_telemetry": {
+        "passive_checkpoint": [
+          0,
+          7,
+          7
+        ],
+        "truncate_checkpoint": [
+          1,
+          7,
+          7
+        ],
+        "wal_size_before": 28872,
+        "wal_size_after": 28872,
+        "status": "EMPIRICALLY_ANALYZED"
+      }
     },
     {
       "scenario_id": "SCENARIO-022-FILE-DESCRIPTOR-EMFILE-COLLAPSE",
@@ -265,8 +331,14 @@
       "symptoms_and_impact": "accept() returns EMFILE; epoll immediately re-triggers (CPU spins at 100%); service completely freezes.",
       "ferro_os_hypothesis": "Pre-allocated reserve file descriptor pattern in FerroOS allows graceful socket closure and immediate rejection.",
       "minimal_elevation_knob": "Increase nofile ulimit to 1048576; implement reserve dummy FD trick to cleanly close over-limit connections.",
-      "analysis_status": "QUEUED_FOR_ANALYSIS",
-      "added_at": "2026-10-22T06:48:38.836799Z"
+      "analysis_status": "EMPIRICALLY_ANALYZED",
+      "added_at": "2026-10-22T06:48:38.836799Z",
+      "empirical_telemetry": {
+        "total_opened": 124,
+        "emfile_hit": true,
+        "recovered": true,
+        "status": "EMPIRICALLY_ANALYZED"
+      }
     },
     {
       "scenario_id": "SCENARIO-023-TCP-ZERO-WINDOW-DEADLOCK",
@@ -277,8 +349,14 @@
       "symptoms_and_impact": "Kernel socket buffer memory exhaustion; thousands of idle connections tie up worker threads.",
       "ferro_os_hypothesis": "Zero-window timeout enforcement and zero-copy user-space buffer caps drop uncooperative consumers in < 5s.",
       "minimal_elevation_knob": "Configure tcp_retries2 = 5 and enforce application-level response write timeouts.",
-      "analysis_status": "QUEUED_FOR_ANALYSIS",
-      "added_at": "2026-10-22T06:48:38.836802Z"
+      "analysis_status": "EMPIRICALLY_ANALYZED",
+      "added_at": "2026-10-22T06:48:38.836802Z",
+      "empirical_telemetry": {
+        "bytes_sent": 319020,
+        "stalled": true,
+        "stall_time_ms": 0.05937507376074791,
+        "status": "EMPIRICALLY_ANALYZED"
+      }
     }
   ]
 }
