@@ -409,7 +409,7 @@ def generate_markdown_report(scenarios, md_path):
         f.write("| ID | Title | Category | Status | Minimal Elevation Knob |\n")
         f.write("| :--- | :--- | :--- | :---: | :--- |\n")
         for s in scenarios:
-            status_icon = "🟢" if s["analysis_status"] in ["ANALYZED_AND_BASELINE_TESTED", "ANALYZED_AND_STANDARDIZED"] else "⏳"
+            status_icon = "🟢" if s["analysis_status"] in ["ANALYZED_AND_BASELINE_TESTED", "ANALYZED_AND_STANDARDIZED", "ANALYZED_ZERO_CODE_CHANGES_NEEDED"] else "⏳"
             f.write(f"| `{s['scenario_id']}` | **{s['title']}** | {s['category']} | {status_icon} `{s['analysis_status']}` | `{s['minimal_elevation_knob']}` |\n")
         
         f.write("\n---\n\n")

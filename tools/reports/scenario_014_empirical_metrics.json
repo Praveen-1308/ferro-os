@@ -1,0 +1,9 @@
+{
+  "scenario_id": "SCENARIO-014",
+  "churn_completed": 1000,
+  "churn_rate_conns_sec": 11200.058233444677,
+  "p50_ms": 0.07950002327561378,
+  "p95_ms": 0.11745805386453867,
+  "p99_ms": 0.18974998965859413,
+  "eaddrnotavail_occurred": false
+}

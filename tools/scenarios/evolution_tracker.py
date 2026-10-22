@@ -29,6 +29,18 @@ def load_matrix():
     with open(EVOLUTION_JSON, "r", encoding="utf-8") as f:
         return json.load(f)
 
+def extract_metric(res):
+    for key in ["tps", "rps", "conns_sec", "accepted", "max_vus", "checkpoint_stall_ms", "db_oom_score"]:
+        if key in res:
+            val = res[key]
+            if key == "conns_sec" and isinstance(val, (int, float)):
+                return f"{val:,.1f} conns/s"
+            return str(val)
+    for k, v in res.items():
+        if k not in ["p50_ms", "p95_ms", "p99_ms", "status"]:
+            return str(v)
+    return "-"
+
 def render_markdown(matrix):
     lines = []
     lines.append("# 🧬 FerroOS Multi-OS Scenario Evolution & Regression Ledger\n")
@@ -71,7 +83,7 @@ def render_markdown(matrix):
         lines.append("| Operating System | Primary Benchmark Metric | Median Latency ($p_{50}$) | Tail Latency ($p_{99}$) | Operational Status |")
         lines.append("| :--- | :---: | :---: | :---: | :---: |")
         for os_name, res in s["before_changes"]["results"].items():
-            metric_val = res.get("tps") or res.get("rps") or res.get("accepted") or res.get("max_vus") or res.get("checkpoint_stall_ms") or res.get("db_oom_score")
+            metric_val = extract_metric(res)
             p50 = f"{res.get('p50_ms')} ms" if "p50_ms" in res else "-"
             p99 = f"{res.get('p99_ms')} ms" if "p99_ms" in res else (f"{res.get('p95_ms')} ms (p95)" if "p95_ms" in res else "-")
             status = res.get("status", "BASELINE")
@@ -95,7 +107,7 @@ def render_markdown(matrix):
         lines.append("| Operating System | Primary Benchmark Metric | Median Latency ($p_{50}$) | Tail Latency ($p_{99}$) | Outcome Delta |")
         lines.append("| :--- | :---: | :---: | :---: | :---: |")
         for os_name, res in s["after_changes"]["results"].items():
-            metric_val = res.get("tps") or res.get("rps") or res.get("accepted") or res.get("max_vus") or res.get("checkpoint_stall_ms") or res.get("db_oom_score")
+            metric_val = extract_metric(res)
             p50 = f"{res.get('p50_ms')} ms" if "p50_ms" in res else "-"
             p99 = f"{res.get('p99_ms')} ms" if "p99_ms" in res else (f"{res.get('p95_ms')} ms (p95)" if "p95_ms" in res else "-")
             status = res.get("status", "OPTIMIZED")

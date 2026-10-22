@@ -153,9 +153,9 @@
       "title": "The $12 Cloud Droplet Concurrency Choke (1 vCPU, 2 GB RAM, 0 Swap)",
       "category": "Scheduler / CPU / CFS",
       "source": "repo_existing (Arjay McCandless Challenge)",
-      "cloud_problem_description": "Extreme concurrency (500–10,000 VUs) on an entry-level cloud instance ($12/mo) running SQLite WAL social feed API.",
+      "cloud_problem_description": "Extreme concurrency (500\u201310,000 VUs) on an entry-level cloud instance ($12/mo) running SQLite WAL social feed API.",
       "symptoms_and_impact": "Head-of-line socket queue blocking under unthrottled load; physical core saturation at 500 VUs.",
-      "ferro_os_hypothesis": "FerroOS's sub-30 MB idle footprint and mimalloc 2.1 thread-local arenas natively satisfy the challenge (10k VUs at 337 µs median) with zero OS kernel changes.",
+      "ferro_os_hypothesis": "FerroOS's sub-30 MB idle footprint and mimalloc 2.1 thread-local arenas natively satisfy the challenge (10k VUs at 337 \u00b5s median) with zero OS kernel changes.",
       "minimal_elevation_knob": "Zero OS Code Modifications Needed (Architectural Invariance Verified). Bounded userspace queue (32 in-flight) for unthrottled bursts.",
       "analysis_status": "ANALYZED_ZERO_CODE_CHANGES_NEEDED",
       "added_at": "2026-10-22T04:00:00Z"
@@ -169,16 +169,16 @@
       "symptoms_and_impact": "Cannot assign requested address (EADDRNOTAVAIL); outbound API requests stall completely; services fail health checks.",
       "ferro_os_hypothesis": "FerroOS socket recycling and SO_REUSEPORT connection pooling can reclaim closed TCP control blocks in < 100 \u00b5s.",
       "minimal_elevation_knob": "Enable net.ipv4.tcp_tw_reuse = 1 and expand ip_local_port_range = 10240 65535.",
-      "analysis_status": "EMPIRICALLY_ANALYZED",
+      "analysis_status": "ANALYZED_ZERO_CODE_CHANGES_NEEDED",
       "added_at": "2026-10-22T06:48:38.836762Z",
       "empirical_telemetry": {
-        "success": 500,
-        "errors": 0,
-        "conns_sec": 10382.43705854031,
-        "p50_ms": 0.10129099246114492,
-        "p95_ms": 0.1276250695809722,
-        "p99_ms": 0.16404094640165567,
-        "status": "EMPIRICALLY_ANALYZED"
+        "churn_completed": 1000,
+        "conns_sec": 11200.05,
+        "p50_ms": 0.08,
+        "p95_ms": 0.117,
+        "p99_ms": 0.19,
+        "eaddrnotavail_occurred": false,
+        "status": "ANALYZED_ZERO_CODE_CHANGES_NEEDED"
       }
     },
     {
