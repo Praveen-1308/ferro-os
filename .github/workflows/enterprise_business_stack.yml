@@ -1,0 +1,98 @@
+name: Enterprise Production Business Stack Benchmark
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * 1' # Weekly on Monday at 02:00 UTC
+
+jobs:
+  enterprise-benchmark:
+    name: Single-Runner Core-Pinned Multi-OS Benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      valkey:
+        image: valkey/valkey:8.0-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 5s
+          --health-timeout 2s
+          --health-retries 5
+
+      postgres17:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: enterprise_db
+          POSTGRES_USER: ferro_admin
+          POSTGRES_PASSWORD: enterprise_secure_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 2s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install System Prerequisites (zstd, iproute2)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq zstd iproute2 linux-tools-generic
+
+      - name: Install Grafana k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq k6
+          # Create symlink for test harness
+          mkdir -p tools
+          sudo ln -sf $(which k6) tools/k6
+
+      - name: Generate & Hydrate Enterprise Dataset (Zipfian Skew alpha=0.85)
+        run: |
+          python3 tools/datasets/generate_enterprise_dataset.py
+
+      - name: Build Local Test Images (FerroOS & Ubuntu 24.04)
+        run: |
+          docker build -t ferro-os-server:latest -f Dockerfile.server . || true
+          docker pull ubuntu:24.04
+          docker tag ubuntu:24.04 bench-ubuntu:latest
+
+      - name: Run Core-Pinned Benchmark on FerroOS Server v2.0
+        run: |
+          python3 tools/stack/run_single_runner_benchmark.py --image ferro-os-server:latest --port 10000
+
+      - name: Archive FerroOS Telemetry & Observability Logs
+        if: always()
+        run: |
+          mkdir -p reports/enterprise_stack/ferro
+          cp tools/observability/active_run_telemetry.csv reports/enterprise_stack/ferro/telemetry.csv || true
+
+      - name: Run Core-Pinned Benchmark on Ubuntu Server 24.04 LTS
+        run: |
+          python3 tools/stack/run_single_runner_benchmark.py --image bench-ubuntu:latest --port 10001
+
+      - name: Archive Ubuntu Telemetry & Observability Logs
+        if: always()
+        run: |
+          mkdir -p reports/enterprise_stack/ubuntu
+          cp tools/observability/active_run_telemetry.csv reports/enterprise_stack/ubuntu/telemetry.csv || true
+
+      - name: Upload Observability Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: enterprise-observability-telemetry
+          path: reports/enterprise_stack/

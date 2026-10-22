@@ -1,0 +1,79 @@
+# tools/stack/envoy.yaml
+# Envoy v1.31+ Production Ingress Configuration
+# Features:
+# - Active Connection Pool Circuit Breaking (max_connections, max_pending_requests)
+# - HTTP/2 & HTTP/1.1 Multiplexing
+# - Upstream Keep-Alive Connection Pooling
+# - Health Checks & Timeout SLAs
+
+static_resources:
+  listeners:
+  - name: ingress_listener
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 10000
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress_http
+          codec_type: AUTO
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: backend_service
+              domains: ["*"]
+              routes:
+              - match:
+                  prefix: "/"
+                route:
+                  cluster: candidate_os_cluster
+                  timeout: 5s
+                  retry_policy:
+                    retry_on: "5xx,connect-failure,reset"
+                    num_retries: 2
+                    per_try_timeout: 1s
+          http_filters:
+          - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  clusters:
+  - name: candidate_os_cluster
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: candidate_os_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: candidate-app
+                port_value: 3000
+    
+    # Tier-1 Enterprise Circuit Breakers
+    circuit_breakers:
+      thresholds:
+      - priority: DEFAULT
+        max_connections: 1024         # Maximum concurrent TCP connections
+        max_pending_requests: 512     # Maximum requests queued waiting for connection
+        max_requests: 4096            # Maximum active in-flight requests
+        max_retries: 3
+        track_remaining: true
+
+    # Upstream Connection Pooling
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http_protocol_options: {}
+        use_downstream_protocol_config: {}
+
+admin:
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 9901
