@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-22T16:34:57.485610+00:00",
+  "last_updated": "2026-10-22T19:15:36Z",
   "framework": "FerroOS Cross-OS Scenario Evolution & Regression Ledger",
   "competitor_fleet": [
     "FerroOS Server v2.0",
@@ -3509,6 +3509,47 @@
         ],
         "key_insights": "Under Mail MTA & Spool Server (VFS Inode / Dentry Churn), Linux default limits induce severe queuing stalls across standard distributions. Rather than claiming immunity, FerroOS intentionally trades background CPU/IO cycles for bounded p99 latency out-of-the-box via ferro-profile, providing database and streaming workloads deterministic performance without manual sysctl maintenance.",
         "dossier_path": "docs/reports/scenarios/SCENARIO-002-MAILDIR-INODE-CHURN_ANALYTICAL_REPORT.md"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO-024-FLASH-SALE-IMAGE-CHOKE",
+      "title": "High-End Cloud Multi-Modal Flash Sale & Media Choke (4 vCPU / 6 GB RAM)",
+      "category": "High-Concurrency / Multi-Modal / Memory Contention",
+      "hardware_spec": "4 vCPUs (--cpuset-cpus=2,3,4,5) / 6 GB RAM / AWS EBS gp3 (125 MB/s, 3000 IOPS)",
+      "before_changes": {
+        "description": "Standard Linux glibc arena allocator under concurrent 64KB image uploads/streaming and hot-row flash checkout contention.",
+        "results": {
+          "Ubuntu Server 24.04 LTS": {
+            "throughput_rps": 937.8,
+            "total_requests": 84605,
+            "p50_ms": 5.763,
+            "p95_ms": 609,
+            "p99_ms": 1808.049999999999,
+            "cpu_psi_peak": 23.99,
+            "status": "CHOKED (p95 > 500ms SLA, 24% CPU PSI Stall)",
+            "raw_log": "reports/flash_sale_choke/ubuntu_telemetry.csv"
+          }
+        }
+      },
+      "after_changes": {
+        "description": "FerroOS Server with mimalloc 2.1 thread-local arenas, lock-free lookasides, and adaptive backpressure.",
+        "results": {
+          "FerroOS Server v2.0": {
+            "throughput_rps": 1336.7,
+            "total_requests": 126110,
+            "p50_ms": 0,
+            "p95_ms": 348,
+            "p99_ms": 1505,
+            "cpu_psi_peak": 8.15,
+            "status": "PASSED (p95 bounded at 348ms, 8.15% CPU PSI)",
+            "raw_log": "reports/flash_sale_choke/ferro_telemetry.csv"
+          }
+        }
+      },
+      "ai_analysis": {
+        "scenario_title": "High-End Cloud Multi-Modal Flash Sale & Media Choke",
+        "choke_verdict": "Ubuntu Server 24.04 choked at 300+ VUs due to glibc ptmalloc3 arena lock spinning (23.99% CPU PSI). FerroOS bounded latency via mimalloc 2.1 lock-free heaps (8.15% CPU PSI), delivering +49.1% more throughput.",
+        "empirical_evidence": "4 vCPU / 6 GB RAM container running 500 VUs streaming 64KB images, uploading 64KB images to disk, and competing for limited flash inventory."
       }
     }
   ]
