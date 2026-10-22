@@ -1,8 +1,8 @@
 FROM ferro-os-server:latest
 USER 0
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     rt-tests \
     fio \
     sysbench \
     && rm -rf /var/lib/apt/lists/*
-USER ferro

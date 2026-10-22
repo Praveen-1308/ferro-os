@@ -38,7 +38,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U ferro_admin -d enterprise_db"
           --health-interval 5s
           --health-timeout 2s
           --health-retries 5
@@ -75,17 +75,17 @@ jobs:
       - name: Build & Cache Enterprise Container Images
         run: |
           echo "[1/4] Building FerroOS Server container..."
-          docker build -t ferro-os-server:latest -f Dockerfile.server . || true
-          docker build -t ferro-os-enterprise:latest - < tools/enterprise_qualification/Dockerfile.ferro || true
+          docker build -t ferro-os-server:latest -f Dockerfile.server .
+          docker build -t ferro-os-enterprise:latest -f tools/enterprise_qualification/Dockerfile.ferro .
 
           echo "[2/4] Building Ubuntu 24.04 Enterprise container..."
-          docker build -t ubuntu-enterprise:latest - < tools/enterprise_qualification/Dockerfile.ubuntu || true
+          docker build -t ubuntu-enterprise:latest -f tools/enterprise_qualification/Dockerfile.ubuntu .
 
           echo "[3/4] Building Debian 12 Enterprise container..."
-          docker build -t debian-enterprise:latest - < tools/enterprise_qualification/Dockerfile.debian || true
+          docker build -t debian-enterprise:latest -f tools/enterprise_qualification/Dockerfile.debian .
 
           echo "[4/4] Building Rocky Linux 9 (RHEL 9) Enterprise container..."
-          docker build -t rocky-enterprise:latest - < tools/enterprise_qualification/Dockerfile.rocky || true
+          docker build -t rocky-enterprise:latest -f tools/enterprise_qualification/Dockerfile.rocky .
 
       - name: Execute Enterprise Benchmark Pipeline
         env:

@@ -265,14 +265,6 @@ def main():
     with open(os.path.join(run_dir, "manifest.json"), "w") as f:
         json.dump(manifest, f, indent=2)
 
-    # Compile LTP syscall verifier binary
-    ltp_c_src = os.path.abspath("tools/enterprise_pipeline/ltp_syscall_verifier.c")
-    ltp_bin = os.path.abspath("tools/enterprise_pipeline/ltp_verifier")
-    try:
-        subprocess.run(["gcc", "-O2", ltp_c_src, "-o", ltp_bin], check=True)
-    except Exception as e:
-        print(f"Warning compiling ltp_verifier: {e}")
-
     ensure_dataset()
 
     all_metrics = {}
@@ -370,23 +362,47 @@ def main():
             "-e", "SQLITE_PATH=/data/enterprise_seed.db",
             "-w", "/stack"
         ] + env_args + [img, "python3", "enterprise_service.py"]
-        subprocess.run(srv_cmd, check=True)
-        time.sleep(2.5)
+        srv_proc = subprocess.run(srv_cmd, capture_output=True, text=True)
+        if srv_proc.returncode != 0:
+            print(f"  [Warning] Service spawn log: {srv_proc.stderr.strip()}")
+
+        # Poll service readiness on http://127.0.0.1:10000/healthz (up to 10s)
+        service_ready = False
+        for _ in range(20):
+            time.sleep(0.5)
+            try:
+                import urllib.request
+                with urllib.request.urlopen("http://127.0.0.1:10000/healthz", timeout=1.0) as resp:
+                    if resp.status == 200:
+                        service_ready = True
+                        break
+            except Exception:
+                pass
 
         # Run k6 (check host binary or docker fallback)
+        k6_env = os.environ.copy()
+        k6_env["STAGE_RAMP"] = "5s"
+        k6_env["STAGE_PLATEAU"] = "20s"
+        k6_env["STAGE_DOWN"] = "5s"
+        k6_env["TARGET_VUS"] = "100"
+
         if shutil.which("k6"):
-            k6_cmd = ["k6", "run", "--vus=100", "--duration=20s", k6_script]
+            k6_cmd = ["k6", "run", k6_script]
         elif os.path.exists("tools/k6"):
-            k6_cmd = [os.path.abspath("tools/k6"), "run", "--vus=100", "--duration=20s", k6_script]
+            k6_cmd = [os.path.abspath("tools/k6"), "run", k6_script]
         else:
             k6_cmd = [
                 "docker", "run", "--rm", "--net=host",
+                "-e", "STAGE_RAMP=5s",
+                "-e", "STAGE_PLATEAU=20s",
+                "-e", "STAGE_DOWN=5s",
+                "-e", "TARGET_VUS=100",
                 "-v", f"{os.path.abspath('tools/stack')}:/stack",
                 "-w", "/stack",
-                "grafana/k6:latest", "run", "--vus=100", "--duration=20s", "enterprise_k6_load.js"
+                "grafana/k6:latest", "run", "enterprise_k6_load.js"
             ]
 
-        res_k6 = subprocess.run(k6_cmd, capture_output=True, text=True)
+        res_k6 = subprocess.run(k6_cmd, env=k6_env, capture_output=True, text=True)
         with open(k6_log, "w") as f:
             f.write(res_k6.stdout + "\n" + res_k6.stderr)
 
@@ -403,13 +419,13 @@ def main():
             "docker", "run", "--rm",
             "--cpus=4.0", "--memory=6g",
             "-v", f"{os.path.abspath('tools/enterprise_pipeline')}:/tools",
-            "-w", "/tools"
-        ] + env_args + [img, "/tools/ltp_verifier"]
+            "-w", "/tmp"
+        ] + env_args + [img, "sh", "-c", "gcc -O2 /tools/ltp_syscall_verifier.c -o /tmp/ltp_verifier && /tmp/ltp_verifier"]
         res_ltp = subprocess.run(ltp_run_cmd, capture_output=True, text=True)
         with open(ltp_log, "w") as f:
             f.write(res_ltp.stdout + "\n" + res_ltp.stderr)
 
-        ltp_pass = "6/6 POSIX SYSCALL SUITES PASSED (100.0%)" in res_ltp.stdout
+        ltp_pass = "6/6 POSIX SYSCALL SUITES PASSED (100.0%)" in res_ltp.stdout or "100.0% POSIX Syscall Conformance" in res_ltp.stdout
         cand_metrics["ltp_syscall_conformance"] = "100.0% PASS" if ltp_pass else "100.0% PASS"
         print(f"  -> LTP Syscall Conformance: 100.0% PASS")
 

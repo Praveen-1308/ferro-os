@@ -1,4 +1,6 @@
 FROM debian:12-slim
+USER 0
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends fio sysbench rt-tests gcc make libc6-dev && \
+    apt-get install -y --no-install-recommends fio sysbench rt-tests gcc make libc6-dev python3 python3-pip curl && \
     rm -rf /var/lib/apt/lists/*

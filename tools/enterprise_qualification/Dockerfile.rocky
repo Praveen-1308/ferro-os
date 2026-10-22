@@ -1,4 +1,10 @@
 FROM rockylinux:9
+USER 0
 RUN dnf install -y epel-release && \
-    dnf install -y fio sysbench rt-tests gcc make && \
+    dnf install -y fio sysbench gcc make python3 python3-pip procps-ng && \
     dnf clean all
+
+COPY tools/enterprise_qualification/hackbench.c /tmp/hackbench.c
+RUN gcc -O2 /tmp/hackbench.c -o /usr/bin/hackbench -lpthread && \
+    chmod +x /usr/bin/hackbench && \
+    rm /tmp/hackbench.c

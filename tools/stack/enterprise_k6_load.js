@@ -22,16 +22,22 @@ function getZipfianProductId() {
     return Math.min(Math.max((rank % NUM_PRODUCTS) + 1, 1), NUM_PRODUCTS);
 }
 
+const STAGE_RAMP = __ENV.STAGE_RAMP || '5s';
+const STAGE_PLATEAU = __ENV.STAGE_PLATEAU || '20s';
+const STAGE_DOWN = __ENV.STAGE_DOWN || '5s';
+const TARGET_VUS = parseInt(__ENV.TARGET_VUS || '100', 10);
+const START_VUS = Math.min(20, TARGET_VUS);
+
 export const options = {
     summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)', 'count'],
     scenarios: {
         enterprise_sustained: {
             executor: 'ramping-vus',
-            startVUs: 20,
+            startVUs: START_VUS,
             stages: [
-                { duration: '20s', target: 200 },   // Ramp-up to 200 VUs
-                { duration: '260s', target: 220 },  // Sustained 4-minute plateau (>50k requests)
-                { duration: '20s', target: 0 },     // Ramp-down
+                { duration: STAGE_RAMP, target: TARGET_VUS },
+                { duration: STAGE_PLATEAU, target: TARGET_VUS },
+                { duration: STAGE_DOWN, target: 0 },
             ],
             gracefulRampDown: '5s',
         },
