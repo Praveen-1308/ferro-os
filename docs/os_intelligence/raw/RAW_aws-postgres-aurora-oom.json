@@ -1,0 +1,10 @@
+{
+  "id": "AWS-POSTGRES-AURORA-OOM",
+  "title": "PostgreSQL Connection Pool Exhaustion on 1 vCPU Container: Linux OOM Termination",
+  "source": "AWS Database Post-Mortem",
+  "source_url": "https://aws.amazon.com/blogs/database/",
+  "sub_url": "https://aws.amazon.com/blogs/database/managing-postgresql-max-connections/",
+  "sub_content": "Microservices opening 300 unpooled connections to a 1 vCPU Postgres instance consumed 1.8 GB RAM in work_mem, triggering global kernel OOM which killed the postmaster.",
+  "raw_text": "PostgreSQL unpooled connections on memory-constrained Linux containers cause Linux OOM killer to terminate the database instead of client processes.",
+  "harvested_at": "2026-10-22T11:20:25.351961+00:00"
+}

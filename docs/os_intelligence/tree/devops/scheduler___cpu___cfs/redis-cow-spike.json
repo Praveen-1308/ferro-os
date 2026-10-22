@@ -1,0 +1,5 @@
+{
+  "raw_file": "docs/os_intelligence/raw/RAW_redis-cow-spike.json",
+  "id": "REDIS-COW-SPIKE",
+  "title": "Redis BGSAVE Fork Stall on High-Throughput Write Workload: 4-Second Tail Latency"
+}

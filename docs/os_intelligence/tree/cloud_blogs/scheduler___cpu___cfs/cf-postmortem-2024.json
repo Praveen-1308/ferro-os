@@ -1,0 +1,5 @@
+{
+  "raw_file": "docs/os_intelligence/raw/RAW_cf-postmortem-2024.json",
+  "id": "CF-POSTMORTEM-2024",
+  "title": "Cloudflare Edge Proxy Outage: Epoll Event Queue Saturation Under TLS Churn"
+}

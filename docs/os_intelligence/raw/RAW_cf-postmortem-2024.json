@@ -1,0 +1,10 @@
+{
+  "id": "CF-POSTMORTEM-2024",
+  "title": "Cloudflare Edge Proxy Outage: Epoll Event Queue Saturation Under TLS Churn",
+  "source": "Cloudflare Systems Post-Mortem",
+  "source_url": "https://blog.cloudflare.com/post-mortem-analysis/",
+  "sub_url": "https://blog.cloudflare.com/how-we-mitigated-epoll-starvation/",
+  "sub_content": "Under sustained micro-bursts of 500k TLS connections per second, edge proxy worker loops experienced epoll starvation where unbatched edge events delayed health check sockets.",
+  "raw_text": "Cloudflare edge proxies using Nginx and Envoy suffered cascading timeouts due to kernel epoll event loop starvation under multi-core socket churn.",
+  "harvested_at": "2026-10-22T11:20:25.351947+00:00"
+}

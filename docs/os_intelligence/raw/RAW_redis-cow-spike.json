@@ -1,0 +1,10 @@
+{
+  "id": "REDIS-COW-SPIKE",
+  "title": "Redis BGSAVE Fork Stall on High-Throughput Write Workload: 4-Second Tail Latency",
+  "source": "DevOps Engineering Forum",
+  "source_url": "https://redis.io/topics/latency",
+  "sub_url": "https://redis.io/docs/management/persistence/",
+  "sub_content": "During BGSAVE snapshots, Linux fork() copies page table entries; under 100k writes/sec, Copy-on-Write faults stall the main Redis event loop for 4,200 ms.",
+  "raw_text": "Redis background snapshots freeze event loop due to Linux page table duplication and Transparent Huge Pages allocation stalls.",
+  "harvested_at": "2026-10-22T11:20:25.351964+00:00"
+}

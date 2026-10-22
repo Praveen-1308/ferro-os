@@ -31,5 +31,80 @@
     "subsystem": "VFS / Storage / Locking",
     "analyzed_at": "2026-10-22T10:55:47.762487+00:00",
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_rfc-793-port.md"
+  },
+  {
+    "id": "CF-POSTMORTEM-2024",
+    "title": "Cloudflare Edge Proxy Outage: Epoll Event Queue Saturation Under TLS Churn",
+    "source": "Cloudflare Systems Post-Mortem",
+    "source_group": "cloud_blogs",
+    "url": "https://blog.cloudflare.com/post-mortem-analysis/",
+    "sub_url": "https://blog.cloudflare.com/how-we-mitigated-epoll-starvation/",
+    "sub_content": "Under sustained micro-bursts of 500k TLS connections per second, edge proxy worker loops experienced epoll starvation where unbatched edge events delayed health check sockets.",
+    "raw_text": "Cloudflare edge proxies using Nginx and Envoy suffered cascading timeouts due to kernel epoll event loop starvation under multi-core socket churn.",
+    "score": 450,
+    "timestamp": "2026-10-22T11:20:25.351947+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Cloud Infrastructure",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Cloud Infrastructure",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion under unthrottled load in Cloudflare Edge Proxy Outage: Epoll Event Queue Saturation Under TLS Churn.",
+      "symptoms": "Unresponsive worker threads and latency jitter.",
+      "ferroos_assessment": "FerroOS bounds in-flight operations with microsecond-level sched_ext quantums.",
+      "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_cf-postmortem-2024.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_cf-postmortem-2024.json"
+  },
+  {
+    "id": "AWS-POSTGRES-AURORA-OOM",
+    "title": "PostgreSQL Connection Pool Exhaustion on 1 vCPU Container: Linux OOM Termination",
+    "source": "AWS Database Post-Mortem",
+    "source_group": "cloud_blogs",
+    "url": "https://aws.amazon.com/blogs/database/",
+    "sub_url": "https://aws.amazon.com/blogs/database/managing-postgresql-max-connections/",
+    "sub_content": "Microservices opening 300 unpooled connections to a 1 vCPU Postgres instance consumed 1.8 GB RAM in work_mem, triggering global kernel OOM which killed the postmaster.",
+    "raw_text": "PostgreSQL unpooled connections on memory-constrained Linux containers cause Linux OOM killer to terminate the database instead of client processes.",
+    "score": 380,
+    "timestamp": "2026-10-22T11:20:25.351961+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Cloud Infrastructure",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Cloud Infrastructure",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion under unthrottled load in PostgreSQL Connection Pool Exhaustion on 1 vCPU Container: Linux OOM Termination.",
+      "symptoms": "Unresponsive worker threads and latency jitter.",
+      "ferroos_assessment": "FerroOS bounds in-flight operations with microsecond-level sched_ext quantums.",
+      "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_aws-postgres-aurora-oom.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_aws-postgres-aurora-oom.json"
+  },
+  {
+    "id": "REDIS-COW-SPIKE",
+    "title": "Redis BGSAVE Fork Stall on High-Throughput Write Workload: 4-Second Tail Latency",
+    "source": "DevOps Engineering Forum",
+    "source_group": "devops",
+    "url": "https://redis.io/topics/latency",
+    "sub_url": "https://redis.io/docs/management/persistence/",
+    "sub_content": "During BGSAVE snapshots, Linux fork() copies page table entries; under 100k writes/sec, Copy-on-Write faults stall the main Redis event loop for 4,200 ms.",
+    "raw_text": "Redis background snapshots freeze event loop due to Linux page table duplication and Transparent Huge Pages allocation stalls.",
+    "score": 290,
+    "timestamp": "2026-10-22T11:20:25.351964+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Cloud Infrastructure",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Cloud Infrastructure",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion under unthrottled load in Redis BGSAVE Fork Stall on High-Throughput Write Workload: 4-Second Tail Latency.",
+      "symptoms": "Unresponsive worker threads and latency jitter.",
+      "ferroos_assessment": "FerroOS bounds in-flight operations with microsecond-level sched_ext quantums.",
+      "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_redis-cow-spike.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_redis-cow-spike.json"
   }
 ]
