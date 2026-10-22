@@ -1,0 +1,166 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /home/runner/work/ferro-os/ferro-os/tools/stack/enterprise_k6_load.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 100 max VUs, 35s max duration (incl. graceful stop):
+              * enterprise_sustained: Up to 100 looping VUs for 30s over 3 stages (gracefulRampDown: 5s, gracefulStop: 30s)
+
+
+running (01.0s), 035/100 VUs, 54 complete and 0 interrupted iterations
+enterprise_sustained   [   3% ] 035/100 VUs  01.0s/30.0s
+
+running (02.0s), 051/100 VUs, 157 complete and 0 interrupted iterations
+enterprise_sustained   [   7% ] 051/100 VUs  02.0s/30.0s
+
+running (03.0s), 067/100 VUs, 299 complete and 0 interrupted iterations
+enterprise_sustained   [  10% ] 067/100 VUs  03.0s/30.0s
+
+running (04.0s), 083/100 VUs, 496 complete and 0 interrupted iterations
+enterprise_sustained   [  13% ] 083/100 VUs  04.0s/30.0s
+
+running (05.0s), 099/100 VUs, 726 complete and 0 interrupted iterations
+enterprise_sustained   [  17% ] 099/100 VUs  05.0s/30.0s
+
+running (06.0s), 100/100 VUs, 992 complete and 0 interrupted iterations
+enterprise_sustained   [  20% ] 100/100 VUs  06.0s/30.0s
+
+running (07.0s), 100/100 VUs, 1256 complete and 0 interrupted iterations
+enterprise_sustained   [  23% ] 100/100 VUs  07.0s/30.0s
+
+running (08.0s), 100/100 VUs, 1517 complete and 0 interrupted iterations
+enterprise_sustained   [  27% ] 100/100 VUs  08.0s/30.0s
+
+running (09.0s), 100/100 VUs, 1791 complete and 0 interrupted iterations
+enterprise_sustained   [  30% ] 100/100 VUs  09.0s/30.0s
+
+running (10.0s), 100/100 VUs, 2045 complete and 0 interrupted iterations
+enterprise_sustained   [  33% ] 100/100 VUs  10.0s/30.0s
+
+running (11.0s), 100/100 VUs, 2312 complete and 0 interrupted iterations
+enterprise_sustained   [  37% ] 100/100 VUs  11.0s/30.0s
+
+running (12.0s), 100/100 VUs, 2581 complete and 0 interrupted iterations
+enterprise_sustained   [  40% ] 100/100 VUs  12.0s/30.0s
+
+running (13.0s), 100/100 VUs, 2844 complete and 0 interrupted iterations
+enterprise_sustained   [  43% ] 100/100 VUs  13.0s/30.0s
+
+running (14.0s), 100/100 VUs, 3119 complete and 0 interrupted iterations
+enterprise_sustained   [  47% ] 100/100 VUs  14.0s/30.0s
+
+running (15.0s), 100/100 VUs, 3379 complete and 0 interrupted iterations
+enterprise_sustained   [  50% ] 100/100 VUs  15.0s/30.0s
+
+running (16.0s), 100/100 VUs, 3638 complete and 0 interrupted iterations
+enterprise_sustained   [  53% ] 100/100 VUs  16.0s/30.0s
+
+running (17.0s), 100/100 VUs, 3910 complete and 0 interrupted iterations
+enterprise_sustained   [  57% ] 100/100 VUs  17.0s/30.0s
+
+running (18.0s), 100/100 VUs, 4168 complete and 0 interrupted iterations
+enterprise_sustained   [  60% ] 100/100 VUs  18.0s/30.0s
+
+running (19.0s), 100/100 VUs, 4432 complete and 0 interrupted iterations
+enterprise_sustained   [  63% ] 100/100 VUs  19.0s/30.0s
+
+running (20.0s), 100/100 VUs, 4698 complete and 0 interrupted iterations
+enterprise_sustained   [  67% ] 100/100 VUs  20.0s/30.0s
+
+running (21.0s), 100/100 VUs, 4960 complete and 0 interrupted iterations
+enterprise_sustained   [  70% ] 100/100 VUs  21.0s/30.0s
+
+running (22.0s), 100/100 VUs, 5225 complete and 0 interrupted iterations
+enterprise_sustained   [  73% ] 100/100 VUs  22.0s/30.0s
+
+running (23.0s), 100/100 VUs, 5487 complete and 0 interrupted iterations
+enterprise_sustained   [  77% ] 100/100 VUs  23.0s/30.0s
+
+running (24.0s), 100/100 VUs, 5750 complete and 0 interrupted iterations
+enterprise_sustained   [  80% ] 100/100 VUs  24.0s/30.0s
+
+running (25.0s), 100/100 VUs, 6018 complete and 0 interrupted iterations
+enterprise_sustained   [  83% ] 100/100 VUs  25.0s/30.0s
+
+running (26.0s), 083/100 VUs, 6273 complete and 0 interrupted iterations
+enterprise_sustained   [  87% ] 083/100 VUs  26.0s/30.0s
+
+running (27.0s), 064/100 VUs, 6474 complete and 0 interrupted iterations
+enterprise_sustained   [  90% ] 064/100 VUs  27.0s/30.0s
+
+running (28.0s), 045/100 VUs, 6634 complete and 0 interrupted iterations
+enterprise_sustained   [  93% ] 045/100 VUs  28.0s/30.0s
+
+running (29.0s), 027/100 VUs, 6730 complete and 0 interrupted iterations
+enterprise_sustained   [  97% ] 027/100 VUs  29.0s/30.0s
+
+running (30.0s), 005/100 VUs, 6784 complete and 0 interrupted iterations
+enterprise_sustained   [ 100% ] 005/100 VUs  30.0s/30.0s
+
+
+  █ THRESHOLDS 
+
+    cache_read_duration
+    ✓ 'p(95)<200' p(95)=1ms
+    ✓ 'p(99)<500' p(99)=5ms
+
+    checkout_write_duration
+    ✓ 'p(95)<500' p(95)=1ms
+    ✓ 'p(99)<1000' p(99)=10.44ms
+
+    db_read_duration
+    ✓ 'p(95)<300' p(95)=1ms
+    ✓ 'p(99)<600' p(99)=3ms
+
+    http_req_duration
+    ✓ 'p(95)<500' p(95)=728.9µs
+    ✓ 'p(99)<1000' p(99)=4.08ms
+
+    http_req_failed
+    ✓ 'rate<0.02' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 15935   526.509981/s
+    checks_succeeded...: 100.00% 15935 out of 15935
+    checks_failed......: 0.00%   0 out of 15935
+
+    ✓ feed status 200/429
+    ✓ product status 200/429
+    ✓ order status 200/201/429
+
+    CUSTOM
+    cache_read_duration............: avg=681.69µs min=0s       med=1ms      max=20ms     p(90)=1ms      p(95)=1ms      p(99)=5ms     count=6789 
+    checkout_write_duration........: avg=872.71µs min=0s       med=1ms      max=22ms     p(90)=1ms      p(95)=1ms      p(99)=10.44ms count=2357 
+    db_read_duration...............: avg=640.88µs min=0s       med=1ms      max=21ms     p(90)=1ms      p(95)=1ms      p(99)=3ms     count=6789 
+
+    HTTP
+    http_req_duration..............: avg=525.44µs min=151.83µs med=352.48µs max=21.41ms  p(90)=609.06µs p(95)=728.9µs  p(99)=4.08ms  count=15935
+      { expected_response:true }...: avg=525.44µs min=151.83µs med=352.48µs max=21.41ms  p(90)=609.06µs p(95)=728.9µs  p(99)=4.08ms  count=15935
+    http_req_failed................: 0.00%  0 out of 15935
+    http_reqs......................: 15935  526.509981/s
+
+    EXECUTION
+    iteration_duration.............: avg=378.28ms min=213.35ms med=378.28ms max=543.28ms p(90)=456.17ms p(95)=475.99ms p(99)=507.9ms count=6789 
+    iterations.....................: 6789   224.31605/s
+    vus............................: 5      min=5          max=100
+    vus_max........................: 100    min=100        max=100
+
+    NETWORK
+    data_received..................: 29 MB  949 kB/s
+    data_sent......................: 1.5 MB 49 kB/s
+
+
+
+
+running (30.3s), 000/100 VUs, 6789 complete and 0 interrupted iterations
+enterprise_sustained ✓ [ 100% ] 000/100 VUs  30s
+

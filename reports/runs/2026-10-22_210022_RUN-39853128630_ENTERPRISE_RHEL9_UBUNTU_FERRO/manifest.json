@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-10-22_210022",
+  "run_id": "39853128630",
+  "git_commit": "e90dd7bff349ca4307ceb7bdde9b4e148a88350e",
+  "host_environment": {
+    "kernel": "6.17.0-1022-azure",
+    "cpu_model": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "total_ram_gb": 15.61
+  },
+  "cgroup_constraints": {
+    "memory_max": "6GB",
+    "cpuset_cpus": "0,1,2,3"
+  },
+  "audited_limits": {
+    "ulimit_n": 65536,
+    "nf_conntrack_max": 1048576,
+    "tcp_rmem": "4096\t131072\t33554432"
+  }
+}

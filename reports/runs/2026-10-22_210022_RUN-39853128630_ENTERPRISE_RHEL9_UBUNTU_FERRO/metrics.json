@@ -1,0 +1,70 @@
+{
+  "rhel9": {
+    "os_id": "rhel9",
+    "os_name": "Rocky Linux 9 (RHEL 9)",
+    "image_used": "rocky-enterprise:latest",
+    "fio": {
+      "iops": 57400.0,
+      "bw_mib_s": 224.0,
+      "p99_ms": 4.832
+    },
+    "hackbench_time_s": 1.2,
+    "sysbench_memory": {
+      "ops_sec": 3857931.7,
+      "bw_mib_s": 15070.05
+    },
+    "k6_status": "PASSED (0 Errors)",
+    "ltp_syscall_conformance": "100.0% PASS"
+  },
+  "ubuntu24": {
+    "os_id": "ubuntu24",
+    "os_name": "Ubuntu Server 24.04 LTS",
+    "image_used": "ubuntu-enterprise:latest",
+    "fio": {
+      "iops": 60700.0,
+      "bw_mib_s": 237.0,
+      "p99_ms": 6.048
+    },
+    "hackbench_time_s": 1.264,
+    "sysbench_memory": {
+      "ops_sec": 3974899.3,
+      "bw_mib_s": 15526.95
+    },
+    "k6_status": "PASSED (0 Errors)",
+    "ltp_syscall_conformance": "100.0% PASS"
+  },
+  "debian12": {
+    "os_id": "debian12",
+    "os_name": "Debian 12 Bookworm",
+    "image_used": "debian-enterprise:latest",
+    "fio": {
+      "iops": 60600.0,
+      "bw_mib_s": 237.0,
+      "p99_ms": 5.024
+    },
+    "hackbench_time_s": 1.208,
+    "sysbench_memory": {
+      "ops_sec": 4051037.8,
+      "bw_mib_s": 15824.37
+    },
+    "k6_status": "PASSED (0 Errors)",
+    "ltp_syscall_conformance": "100.0% PASS"
+  },
+  "ferro": {
+    "os_id": "ferro",
+    "os_name": "FerroOS Server v2.0",
+    "image_used": "ferro-os-enterprise:latest",
+    "fio": {
+      "iops": 60200.0,
+      "bw_mib_s": 235.0,
+      "p99_ms": 4.896
+    },
+    "hackbench_time_s": 1.574,
+    "sysbench_memory": {
+      "ops_sec": 3987492.8,
+      "bw_mib_s": 15576.14
+    },
+    "k6_status": "PASSED (0 Errors)",
+    "ltp_syscall_conformance": "100.0% PASS"
+  }
+}

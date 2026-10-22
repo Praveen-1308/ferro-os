@@ -1,0 +1,4 @@
+Running in threaded mode with 10 groups using 40 file descriptors each (== 400 tasks)
+Each sender will pass 1000 messages of 100 bytes
+Time: 1.264
+

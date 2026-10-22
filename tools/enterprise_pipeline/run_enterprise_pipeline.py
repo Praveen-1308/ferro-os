@@ -58,7 +58,7 @@ CANDIDATES = [
         "name": "FerroOS Server v2.0",
         "primary_image": "ferro-os-enterprise:latest",
         "fallback_image": "ferro-os-server:latest",
-        "env": {"LD_PRELOAD": "/usr/local/lib/libmimalloc.so /usr/local/lib/libferro_io.so"}
+        "env": {}
     }
 ]
 

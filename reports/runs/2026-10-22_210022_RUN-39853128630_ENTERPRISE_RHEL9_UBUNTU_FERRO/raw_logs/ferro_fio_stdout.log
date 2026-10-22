@@ -1,0 +1,35 @@
+randwrite: (g=0): rw=randwrite, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=psync, iodepth=1
+...
+fio-3.33
+Starting 4 processes
+randwrite: Laying out IO file (1 file / 64MiB)
+randwrite: Laying out IO file (1 file / 64MiB)
+randwrite: Laying out IO file (1 file / 64MiB)
+randwrite: Laying out IO file (1 file / 64MiB)
+
+randwrite: (groupid=0, jobs=4): err= 0: pid=12: Thu Oct 22 21:02:52 2026
+  write: IOPS=60.2k, BW=235MiB/s (247MB/s)(2496MiB/10610msec); 0 zone resets
+    clat (nsec): min=1254, max=303787, avg=2134.53, stdev=2647.56
+     lat (nsec): min=1291, max=303853, avg=2177.70, stdev=2660.43
+    clat percentiles (nsec):
+     |  1.00th=[  1464],  5.00th=[  1592], 10.00th=[  1656], 20.00th=[  1720],
+     | 30.00th=[  1768], 40.00th=[  1816], 50.00th=[  1864], 60.00th=[  1928],
+     | 70.00th=[  2008], 80.00th=[  2256], 90.00th=[  2672], 95.00th=[  2928],
+     | 99.00th=[  4896], 99.50th=[  6432], 99.90th=[ 21120], 99.95th=[ 36096],
+     | 99.99th=[144384]
+   bw (  KiB/s): min=262376, max=524288, per=100.00%, avg=487349.53, stdev=24350.59, samples=42
+   iops        : min=65594, max=131072, avg=121837.38, stdev=6087.65, samples=42
+  lat (usec)   : 2=68.70%, 4=27.86%, 10=3.16%, 20=0.19%, 50=0.06%
+  lat (usec)   : 100=0.01%, 250=0.02%, 500=0.01%
+  cpu          : usr=0.54%, sys=4.95%, ctx=1396, majf=0, minf=37
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=0,638980,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+  WRITE: bw=235MiB/s (247MB/s), 235MiB/s-235MiB/s (247MB/s-247MB/s), io=2496MiB (2617MB), run=10610-10610msec
+
+ERROR: ld.so: object '/usr/local/lib/libmimalloc.so' from LD_PRELOAD cannot be preloaded (cannot open shared object file): ignored.
+ERROR: ld.so: object '/usr/local/lib/libferro_io.so' from LD_PRELOAD cannot be preloaded (cannot open shared object file): ignored.
