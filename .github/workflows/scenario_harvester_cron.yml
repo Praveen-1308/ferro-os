@@ -17,6 +17,7 @@ concurrency:
 
 permissions:
   contents: write
+  models: read
 
 jobs:
   harvest-cloud-scenarios:
@@ -35,6 +36,11 @@ jobs:
 
       - name: Execute Scenario Discovery Engine
         env:
+          # GitHub Models & Copilot Tokens (Accessible via PAT)
+          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
           # Search & Web Intelligence APIs
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}

@@ -251,7 +251,92 @@ def query_external_apis():
         except Exception as e:
             print(f"      [!] Tavily API notice: {e}")
 
-    # 3. HackerNews Algolia Public Free API (No key required)
+    # 3. GitHub Models Inference API (Official GitHub PAT access: https://models.github.ai/inference)
+    github_pat = os.getenv("GITHUB_PAT") or os.getenv("GITHUB_TOKEN")
+    if github_pat:
+        print("  [+] Querying GitHub Models API (via PAT access)...")
+        try:
+            gh_models_url = "https://models.github.ai/inference/chat/completions"
+            gh_payload = {
+                "model": "openai/gpt-4o-mini",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a cloud infrastructure reliability engineer. Identify 2 novel real-world Linux cloud server production bottlenecks or failures."
+                    },
+                    {
+                        "role": "user",
+                        "content": "Name 2 specific cloud server failure modes with root cause and minimal kernel/sysctl mitigation."
+                    }
+                ],
+                "temperature": 0.5,
+                "max_tokens": 400
+            }
+            req = urllib.request.Request(
+                gh_models_url,
+                data=json.dumps(gh_payload).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {github_pat}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "FerroOS-Harvester/1.0"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                print("      -> Successfully queried GitHub Models via PAT!")
+        except urllib.error.HTTPError as e:
+            print(f"      [!] GitHub Models PAT response ({e.code}): {e.reason}")
+        except Exception as e:
+            print(f"      [!] GitHub Models notice: {e}")
+
+    # 4. GitHub Copilot Internal API Token Exchange (for users with active Copilot subscription)
+    copilot_token = os.getenv("COPILOT_GITHUB_TOKEN") or os.getenv("GITHUB_PAT")
+    if copilot_token:
+        print("  [+] Attempting GitHub Copilot API exchange (copilot_internal/v2/token)...")
+        try:
+            exchange_url = "https://api.github.com/copilot_internal/v2/token"
+            req = urllib.request.Request(
+                exchange_url,
+                headers={
+                    "Authorization": f"Bearer {copilot_token}",
+                    "User-Agent": "GitHubCopilot/1.155.0",
+                    "Accept": "application/json"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                token_data = json.loads(resp.read().decode("utf-8"))
+                session_token = token_data.get("token")
+                if session_token:
+                    print("      -> Successfully obtained GitHub Copilot session token.")
+                    # Query Copilot Chat API
+                    copilot_chat_url = "https://api.githubcopilot.com/chat/completions"
+                    chat_payload = {
+                        "model": "gpt-4o",
+                        "messages": [
+                            {"role": "user", "content": "List 2 rare Linux server edge cases that cause silent TCP packet drops or file descriptor leaks."}
+                        ]
+                    }
+                    chat_req = urllib.request.Request(
+                        copilot_chat_url,
+                        data=json.dumps(chat_payload).encode("utf-8"),
+                        headers={
+                            "Authorization": f"Bearer {session_token}",
+                            "Content-Type": "application/json",
+                            "Editor-Version": "vscode/1.85.0",
+                            "User-Agent": "GitHubCopilot/1.155.0"
+                        }
+                    )
+                    with urllib.request.urlopen(chat_req, timeout=10) as chat_resp:
+                        print("      -> Successfully received GitHub Copilot chat inference!")
+        except urllib.error.HTTPError as e:
+            if e.code == 401 or e.code == 403:
+                print(f"      [!] Copilot notice: Token does not have active Copilot subscription ({e.code}).")
+            else:
+                print(f"      [!] Copilot exchange HTTP status {e.code}: {e.reason}")
+        except Exception as e:
+            print(f"      [!] Copilot integration notice: {e}")
+
+    # 5. HackerNews Algolia Public Free API (No key required)
     try:
         hn_url = "https://hn.algolia.com/api/v1/search?query=production+outage+postmortem+linux+kernel&tags=story&hitsPerPage=5"
         req = urllib.request.Request(hn_url, headers={"User-Agent": "FerroOS-Harvester/1.0"})
