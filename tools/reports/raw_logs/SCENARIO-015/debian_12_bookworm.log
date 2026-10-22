@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015
+OS: Debian 12 Bookworm (Image: debian:12-slim)
+Timestamp: 2026-10-22T16:29:02.982157+00:00
+Exit Code: 0
+Elapsed Time: 247.12 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 1967.31, "p50_ms": 0.343, "p95_ms": 0.472, "p99_ms": 0.763, "max_ms": 0.763, "fsync_stall_ms": 9.688}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 1967.31 MB/s
+p50: 0.343 ms | p95: 0.472 ms | p99: 0.763 ms | max: 0.763 ms
+fsync_stall: 9.688 ms
+

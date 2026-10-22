@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-001-BASELINE
+OS: Alpine Linux 3.24 (Image: alpine:latest)
+Timestamp: 2026-10-22T16:33:28.030174+00:00
+Exit Code: 0
+Elapsed Time: 4281.70 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 618.13, "p50_ms": 1.571, "p95_ms": 2.200, "p99_ms": 2.779, "max_ms": 17.358, "mode": "delete"}
+
+
+--- STDERR ---
+=== BENCH_SQLITE_OLTP [delete] COMPLETE ===
+Transactions: 2500 | Throughput: 618.13 TPS
+Latency - p50: 1.571 ms | p95: 2.200 ms | p99: 2.779 ms | max: 17.358 ms
+

@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE
+OS: Amazon Linux 2023 (Image: amazonlinux:2023)
+Timestamp: 2026-10-22T16:30:22.164786+00:00
+Exit Code: 0
+Elapsed Time: 273.87 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 1112.34, "p50_ms": 0.397, "p95_ms": 2.252, "p99_ms": 3.132, "max_ms": 3.132, "fsync_stall_ms": 23.462}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 1112.34 MB/s
+p50: 0.397 ms | p95: 2.252 ms | p99: 3.132 ms | max: 3.132 ms
+fsync_stall: 23.462 ms
+

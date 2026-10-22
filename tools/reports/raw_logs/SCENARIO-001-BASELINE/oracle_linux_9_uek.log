@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-001-BASELINE
+OS: Oracle Linux 9 (UEK) (Image: oraclelinux:9)
+Timestamp: 2026-10-22T16:34:10.582539+00:00
+Exit Code: 0
+Elapsed Time: 3691.96 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 718.01, "p50_ms": 1.342, "p95_ms": 1.834, "p99_ms": 2.170, "max_ms": 6.315, "mode": "delete"}
+
+
+--- STDERR ---
+=== BENCH_SQLITE_OLTP [delete] COMPLETE ===
+Transactions: 2500 | Throughput: 718.01 TPS
+Latency - p50: 1.342 ms | p95: 1.834 ms | p99: 2.170 ms | max: 6.315 ms
+

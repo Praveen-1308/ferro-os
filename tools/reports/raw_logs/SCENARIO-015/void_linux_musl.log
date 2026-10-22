@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015
+OS: Void Linux (musl) (Image: ghcr.io/void-linux/void-musl:latest)
+Timestamp: 2026-10-22T16:29:03.813046+00:00
+Exit Code: 0
+Elapsed Time: 287.46 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 1001.64, "p50_ms": 0.497, "p95_ms": 1.269, "p99_ms": 5.102, "max_ms": 5.102, "fsync_stall_ms": 25.818}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 1001.64 MB/s
+p50: 0.497 ms | p95: 1.269 ms | p99: 5.102 ms | max: 5.102 ms
+fsync_stall: 25.818 ms
+

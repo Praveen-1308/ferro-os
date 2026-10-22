@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-002-MAILDIR-INODE-CHURN
+OS: Debian 12 Bookworm (Image: debian:12-slim)
+Timestamp: 2026-10-22T16:30:30.782604+00:00
+Exit Code: 0
+Elapsed Time: 344.60 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 53544.64, "p50_ms": 0.023, "p95_ms": 0.046, "p99_ms": 0.334, "max_ms": 0.444}
+
+
+--- STDERR ---
+=== BENCH_MAILDIR COMPLETE ===
+Files: 2000 (6000 total VFS ops) | Throughput: 53544.64 ops/sec
+Create Latency - p50: 0.023 ms | p95: 0.046 ms | p99: 0.334 ms | max: 0.444 ms
+

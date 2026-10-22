@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE
+OS: Debian 12 Bookworm (Image: debian:12-slim)
+Timestamp: 2026-10-22T16:30:20.582830+00:00
+Exit Code: 0
+Elapsed Time: 298.42 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 837.94, "p50_ms": 0.491, "p95_ms": 2.338, "p99_ms": 4.383, "max_ms": 4.383, "fsync_stall_ms": 24.908}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 837.94 MB/s
+p50: 0.491 ms | p95: 2.338 ms | p99: 4.383 ms | max: 4.383 ms
+fsync_stall: 24.908 ms
+

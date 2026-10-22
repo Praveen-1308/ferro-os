@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-001-BASELINE
+OS: AlmaLinux 9 (Image: almalinux:9)
+Timestamp: 2026-10-22T16:34:03.134149+00:00
+Exit Code: 0
+Elapsed Time: 3671.66 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 722.60, "p50_ms": 1.314, "p95_ms": 1.832, "p99_ms": 2.383, "max_ms": 14.844, "mode": "delete"}
+
+
+--- STDERR ---
+=== BENCH_SQLITE_OLTP [delete] COMPLETE ===
+Transactions: 2500 | Throughput: 722.60 TPS
+Latency - p50: 1.314 ms | p95: 1.832 ms | p99: 2.383 ms | max: 14.844 ms
+

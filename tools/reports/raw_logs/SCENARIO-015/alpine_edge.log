@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015
+OS: Alpine Edge (Image: alpine:edge)
+Timestamp: 2026-10-22T16:29:02.195872+00:00
+Exit Code: 0
+Elapsed Time: 284.08 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 1333.75, "p50_ms": 0.335, "p95_ms": 0.787, "p99_ms": 1.135, "max_ms": 1.135, "fsync_stall_ms": 21.981}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 1333.75 MB/s
+p50: 0.335 ms | p95: 0.787 ms | p99: 1.135 ms | max: 1.135 ms
+fsync_stall: 21.981 ms
+

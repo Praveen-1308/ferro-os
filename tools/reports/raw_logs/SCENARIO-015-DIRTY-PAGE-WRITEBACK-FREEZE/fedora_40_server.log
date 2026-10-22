@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE
+OS: Fedora 40 Server (Image: fedora:40)
+Timestamp: 2026-10-22T16:30:23.051655+00:00
+Exit Code: 0
+Elapsed Time: 269.33 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 1644.19, "p50_ms": 0.215, "p95_ms": 0.364, "p99_ms": 0.430, "max_ms": 0.430, "fsync_stall_ms": 23.614}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 1644.19 MB/s
+p50: 0.215 ms | p95: 0.364 ms | p99: 0.430 ms | max: 0.430 ms
+fsync_stall: 23.614 ms
+

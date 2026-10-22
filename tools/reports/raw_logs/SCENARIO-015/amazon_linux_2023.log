@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015
+OS: Amazon Linux 2023 (Image: amazonlinux:2023)
+Timestamp: 2026-10-22T16:29:04.567191+00:00
+Exit Code: 0
+Elapsed Time: 233.23 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 2737.92, "p50_ms": 0.206, "p95_ms": 0.261, "p99_ms": 0.382, "max_ms": 0.382, "fsync_stall_ms": 9.521}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 2737.92 MB/s
+p50: 0.206 ms | p95: 0.261 ms | p99: 0.382 ms | max: 0.382 ms
+fsync_stall: 9.521 ms
+

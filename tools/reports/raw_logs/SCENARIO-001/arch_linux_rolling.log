@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-001
+OS: Arch Linux (Rolling) (Image: agners/archlinuxarm:latest)
+Timestamp: 2026-10-22T16:33:07.199921+00:00
+Exit Code: 0
+Elapsed Time: 253.92 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 48266.94, "p50_ms": 0.011, "p95_ms": 0.016, "p99_ms": 0.035, "max_ms": 3.097, "mode": "wal"}
+
+
+--- STDERR ---
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+=== BENCH_SQLITE_OLTP [wal] COMPLETE ===
+Transactions: 2500 | Throughput: 48266.94 TPS
+Latency - p50: 0.011 ms | p95: 0.016 ms | p99: 0.035 ms | max: 3.097 ms
+

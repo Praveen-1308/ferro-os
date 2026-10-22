@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-001-BASELINE
+OS: FerroOS Server v2.0 (Image: ferro-os-server:latest)
+Timestamp: 2026-10-22T16:33:23.747888+00:00
+Exit Code: 0
+Elapsed Time: 4449.14 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 591.91, "p50_ms": 1.647, "p95_ms": 2.365, "p99_ms": 2.906, "max_ms": 6.003, "mode": "delete"}
+
+
+--- STDERR ---
+=== BENCH_SQLITE_OLTP [delete] COMPLETE ===
+Transactions: 2500 | Throughput: 591.91 TPS
+Latency - p50: 1.647 ms | p95: 2.365 ms | p99: 2.906 ms | max: 6.003 ms
+

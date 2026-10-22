@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015
+OS: FerroOS Server v2.0 (Image: ferro-os-server:latest)
+Timestamp: 2026-10-22T16:29:01.553777+00:00
+Exit Code: 0
+Elapsed Time: 448.82 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 520.31, "p50_ms": 1.298, "p95_ms": 3.423, "p99_ms": 5.434, "max_ms": 5.434, "fsync_stall_ms": 25.070}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 520.31 MB/s
+p50: 1.298 ms | p95: 3.423 ms | p99: 5.434 ms | max: 5.434 ms
+fsync_stall: 25.070 ms
+

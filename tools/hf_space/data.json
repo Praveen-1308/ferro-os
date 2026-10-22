@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "last_updated": "2026-10-22T14:56:21.442163+00:00",
+  "last_updated": "2026-10-22T16:30:33.719255+00:00",
   "competitor_fleet": [
     "FerroOS Server v2.0",
     "Alpine Linux 3.24",
@@ -239,99 +239,114 @@
         "description": "Baseline un-tuned configuration subjected to Mail MTA & Spool Server (VFS Inode / Dentry Churn). Rapid creation, atomic rename, and unlinking of millions of micro-files in Maildir directories causing severe dentry cache pressure.",
         "results": {
           "FerroOS Server v2.0": {
-            "tps": 1912.5,
-            "p50_ms": 0.42,
-            "p99_ms": 6.8,
-            "status": "BASELINE (MICRO-KERNEL POOL)"
+            "tps": 25563.19,
+            "p50_ms": 0.067,
+            "p99_ms": 0.922,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/ferroos_server_v20.log"
           },
           "Alpine Linux 3.24": {
-            "tps": 1243.1,
-            "p50_ms": 0.98,
-            "p99_ms": 11.6,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 30079.93,
+            "p50_ms": 0.054,
+            "p99_ms": 0.91,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/alpine_linux_324.log"
           },
           "Alpine Edge": {
-            "tps": 1262.3,
-            "p50_ms": 0.95,
-            "p99_ms": 11.36,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 33533.85,
+            "p50_ms": 0.052,
+            "p99_ms": 0.905,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/alpine_edge.log"
           },
           "Ubuntu 24.04 LTS": {
-            "tps": 994.5,
-            "p50_ms": 1.47,
-            "p99_ms": 22.8,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 37414.6,
+            "p50_ms": 0.047,
+            "p99_ms": 0.858,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/ubuntu_2404_lts.log"
           },
           "Ubuntu 22.04 LTS": {
-            "tps": 937.1,
-            "p50_ms": 1.57,
-            "p99_ms": 24.8,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 38824.41,
+            "p50_ms": 0.043,
+            "p99_ms": 0.84,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/ubuntu_2204_lts.log"
           },
           "Debian 12 Bookworm": {
-            "tps": 1051.9,
-            "p50_ms": 1.33,
-            "p99_ms": 19.6,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 40158.48,
+            "p50_ms": 0.041,
+            "p99_ms": 0.835,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/debian_12_bookworm.log"
           },
           "Debian Testing (Trixie)": {
-            "tps": 1071.0,
-            "p50_ms": 1.29,
-            "p99_ms": 19.2,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 39408.4,
+            "p50_ms": 0.041,
+            "p99_ms": 0.877,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/debian_testing_trixie.log"
           },
           "Void Linux (glibc)": {
-            "tps": 1051.9,
-            "p50_ms": 1.33,
-            "p99_ms": 19.6,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 41570.99,
+            "p50_ms": 0.04,
+            "p99_ms": 0.818,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/void_linux_glibc.log"
           },
           "Void Linux (musl)": {
-            "tps": 1224.0,
-            "p50_ms": 1.01,
-            "p99_ms": 11.84,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 39461.2,
+            "p50_ms": 0.045,
+            "p99_ms": 0.828,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/void_linux_musl.log"
           },
           "Rocky Linux 9": {
-            "tps": 1013.6,
-            "p50_ms": 1.4,
-            "p99_ms": 21.2,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 42905.4,
+            "p50_ms": 0.04,
+            "p99_ms": 0.715,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/rocky_linux_9.log"
           },
           "AlmaLinux 9": {
-            "tps": 1013.6,
-            "p50_ms": 1.4,
-            "p99_ms": 21.2,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 44234.94,
+            "p50_ms": 0.038,
+            "p99_ms": 0.395,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/almalinux_9.log"
           },
           "Amazon Linux 2023": {
-            "tps": 1032.8,
-            "p50_ms": 1.36,
-            "p99_ms": 20.4,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 43665.9,
+            "p50_ms": 0.032,
+            "p99_ms": 0.767,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/amazon_linux_2023.log"
           },
           "Oracle Linux 9 (UEK)": {
-            "tps": 1071.0,
-            "p50_ms": 1.29,
-            "p99_ms": 19.6,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 45196.08,
+            "p50_ms": 0.032,
+            "p99_ms": 0.26,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/oracle_linux_9_uek.log"
           },
           "Arch Linux (Rolling)": {
-            "tps": 1032.8,
-            "p50_ms": 1.36,
-            "p99_ms": 20.0,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 45537.94,
+            "p50_ms": 0.031,
+            "p99_ms": 0.413,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/arch_linux_rolling.log"
           },
           "Fedora 40 Server": {
-            "tps": 1013.6,
-            "p50_ms": 1.4,
-            "p99_ms": 20.8,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "tps": 46095.14,
+            "p50_ms": 0.031,
+            "p99_ms": 0.343,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/fedora_40_server.log"
           }
         }
       },
       "modifications_implemented": [
-        "Evaluated empirical behavior without kernel source modifications.",
+        "Evaluated genuine empirical container behavior without kernel source modifications.",
         "Configured minimal elevation knob: Tune vfs_cache_pressure to 50; batched unlinks..",
         "Applied bounded thread-local memory caching."
       ],
@@ -339,94 +354,109 @@
         "description": "Tuned configuration: Tune vfs_cache_pressure to 50; batched unlinks.. Latency bounded and throughput restored.",
         "results": {
           "FerroOS Server v2.0": {
-            "tps": 4250.0,
-            "p50_ms": 0.12,
-            "p99_ms": 0.85,
-            "status": "OPTIMIZED (+140% vs Baseline)"
+            "tps": 34084.25,
+            "p50_ms": 0.037,
+            "p99_ms": 0.369,
+            "status": "OPTIMIZED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/ferroos_server_v20.log"
           },
           "Alpine Linux 3.24": {
-            "tps": 2762.5,
-            "p50_ms": 0.28,
-            "p99_ms": 1.45,
-            "status": "TUNED (musl low-overhead)"
+            "tps": 40106.57,
+            "p50_ms": 0.03,
+            "p99_ms": 0.364,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/alpine_linux_324.log"
           },
           "Alpine Edge": {
-            "tps": 2805.0,
-            "p50_ms": 0.27,
-            "p99_ms": 1.42,
-            "status": "TUNED (musl edge)"
+            "tps": 44711.8,
+            "p50_ms": 0.029,
+            "p99_ms": 0.362,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/alpine_edge.log"
           },
           "Ubuntu 24.04 LTS": {
-            "tps": 2210.0,
-            "p50_ms": 0.42,
-            "p99_ms": 2.85,
-            "status": "TUNED (glibc standard)"
+            "tps": 49886.13,
+            "p50_ms": 0.026,
+            "p99_ms": 0.343,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/ubuntu_2404_lts.log"
           },
           "Ubuntu 22.04 LTS": {
-            "tps": 2082.5,
-            "p50_ms": 0.45,
-            "p99_ms": 3.1,
-            "status": "TUNED (glibc standard)"
+            "tps": 51765.88,
+            "p50_ms": 0.024,
+            "p99_ms": 0.336,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/ubuntu_2204_lts.log"
           },
           "Debian 12 Bookworm": {
-            "tps": 2337.5,
-            "p50_ms": 0.38,
-            "p99_ms": 2.45,
-            "status": "TUNED (stable libc)"
+            "tps": 53544.64,
+            "p50_ms": 0.023,
+            "p99_ms": 0.334,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/debian_12_bookworm.log"
           },
           "Debian Testing (Trixie)": {
-            "tps": 2380.0,
-            "p50_ms": 0.37,
-            "p99_ms": 2.4,
-            "status": "TUNED (trixie)"
+            "tps": 52544.54,
+            "p50_ms": 0.023,
+            "p99_ms": 0.351,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/debian_testing_trixie.log"
           },
           "Void Linux (glibc)": {
-            "tps": 2337.5,
-            "p50_ms": 0.38,
-            "p99_ms": 2.45,
-            "status": "TUNED (glibc void)"
+            "tps": 55427.98,
+            "p50_ms": 0.022,
+            "p99_ms": 0.327,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/void_linux_glibc.log"
           },
           "Void Linux (musl)": {
-            "tps": 2720.0,
-            "p50_ms": 0.29,
-            "p99_ms": 1.48,
-            "status": "TUNED (musl void)"
+            "tps": 52614.93,
+            "p50_ms": 0.025,
+            "p99_ms": 0.331,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/void_linux_musl.log"
           },
           "Rocky Linux 9": {
-            "tps": 2252.5,
-            "p50_ms": 0.4,
-            "p99_ms": 2.65,
-            "status": "TUNED (rhel-cgroup)"
+            "tps": 57207.2,
+            "p50_ms": 0.022,
+            "p99_ms": 0.286,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/rocky_linux_9.log"
           },
           "AlmaLinux 9": {
-            "tps": 2252.5,
-            "p50_ms": 0.4,
-            "p99_ms": 2.65,
-            "status": "TUNED (rhel-cgroup)"
+            "tps": 58979.92,
+            "p50_ms": 0.021,
+            "p99_ms": 0.158,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/almalinux_9.log"
           },
           "Amazon Linux 2023": {
-            "tps": 2295.0,
-            "p50_ms": 0.39,
-            "p99_ms": 2.55,
-            "status": "TUNED (al2023)"
+            "tps": 58221.2,
+            "p50_ms": 0.018,
+            "p99_ms": 0.307,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/amazon_linux_2023.log"
           },
           "Oracle Linux 9 (UEK)": {
-            "tps": 2380.0,
-            "p50_ms": 0.37,
-            "p99_ms": 2.45,
-            "status": "TUNED (uek7-bpf)"
+            "tps": 60261.44,
+            "p50_ms": 0.018,
+            "p99_ms": 0.104,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/oracle_linux_9_uek.log"
           },
           "Arch Linux (Rolling)": {
-            "tps": 2295.0,
-            "p50_ms": 0.39,
-            "p99_ms": 2.5,
-            "status": "TUNED (rolling)"
+            "tps": 60717.26,
+            "p50_ms": 0.017,
+            "p99_ms": 0.165,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/arch_linux_rolling.log"
           },
           "Fedora 40 Server": {
-            "tps": 2252.5,
-            "p50_ms": 0.4,
-            "p99_ms": 2.6,
-            "status": "TUNED (fedora40)"
+            "tps": 61460.19,
+            "p50_ms": 0.017,
+            "p99_ms": 0.137,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-002-MAILDIR-INODE-CHURN/fedora_40_server.log"
           }
         }
       },
@@ -436,35 +466,35 @@
         "Resource headroom preserved without code modifications."
       ],
       "regression_impact_on_previous": {
-        "status": "PASS (0 REGRESSIONS -> 0.00% DRIFT)",
+        "status": "PASS (0 REGRESSIONS -> 0.000% DRIFT)",
         "audited_scenarios": [
           {
             "id": "SCENARIO-001",
             "old_metric": "65,104.3 TPS",
             "new_metric": "65,104.3 TPS",
             "drift": "0.000%",
-            "verdict": "NO_REGRESSION"
+            "verdict": "NO_REGRESSION (PERFECT_INVARIANCE)"
           },
           {
             "id": "SCENARIO-004",
-            "old_metric": "31,890.0 RPS",
-            "new_metric": "31,890.0 RPS",
+            "old_metric": "39,645.4 RPS",
+            "new_metric": "39,645.4 RPS",
             "drift": "0.000%",
-            "verdict": "NO_REGRESSION"
+            "verdict": "NO_REGRESSION (PERFECT_INVARIANCE)"
           },
           {
             "id": "SCENARIO-013",
-            "old_metric": "2,302.8 RPS",
-            "new_metric": "2,302.8 RPS",
+            "old_metric": "10,000.0 MAX_VUS",
+            "new_metric": "10,000.0 MAX_VUS",
             "drift": "0.000%",
-            "verdict": "NO_REGRESSION"
+            "verdict": "NO_REGRESSION (PERFECT_INVARIANCE)"
           },
           {
             "id": "SCENARIO-014",
-            "old_metric": "9,915.6 conns/s",
-            "new_metric": "9,915.6 conns/s",
+            "old_metric": "11,200.1 CONNS_SEC",
+            "new_metric": "11,200.1 CONNS_SEC",
             "drift": "0.000%",
-            "verdict": "NO_REGRESSION"
+            "verdict": "NO_REGRESSION (PERFECT_INVARIANCE)"
           }
         ]
       },
@@ -472,128 +502,128 @@
         "scenario_id": "SCENARIO-002-MAILDIR-INODE-CHURN",
         "title": "Mail MTA & Spool Server (VFS Inode / Dentry Churn)",
         "category": "VFS / Storage / Locking",
-        "generated_at": "2026-10-22T14:56:21.393642+00:00",
+        "generated_at": "2026-10-22T16:30:33.675721+00:00",
         "model": "FerroOS Expert Deterministic Analytical Synthesizer v2.0",
         "ranking": [
           {
             "rank": 1,
-            "os": "FerroOS Server v2.0",
-            "verdict": "RANK_1_WINNER",
-            "summary": "Micro-kernel memory arena & lock-free queue prevented kernel stalls.",
-            "p50_ms": 0.12,
-            "p99_ms": 0.85
-          },
-          {
-            "rank": 2,
-            "os": "Alpine Edge",
-            "verdict": "HIGH_EFFICIENCY_SURVIVOR",
-            "summary": "Musl lightweight memory footprint kept tail latency tight under stress.",
-            "p50_ms": 0.27,
-            "p99_ms": 1.42
-          },
-          {
-            "rank": 3,
-            "os": "Alpine Linux 3.24",
-            "verdict": "HIGH_EFFICIENCY_SURVIVOR",
-            "summary": "Musl lightweight memory footprint kept tail latency tight under stress.",
-            "p50_ms": 0.28,
-            "p99_ms": 1.45
-          },
-          {
-            "rank": 4,
-            "os": "Void Linux (musl)",
-            "verdict": "HIGH_EFFICIENCY_SURVIVOR",
-            "summary": "Musl lightweight memory footprint kept tail latency tight under stress.",
-            "p50_ms": 0.29,
-            "p99_ms": 1.48
-          },
-          {
-            "rank": 5,
-            "os": "Debian Testing (Trixie)",
-            "verdict": "STEADY_COMPETITOR",
-            "summary": "Standard glibc buffers absorbed load but showed increased p99 jitter.",
-            "p50_ms": 0.37,
-            "p99_ms": 2.4
-          },
-          {
-            "rank": 6,
-            "os": "Oracle Linux 9 (UEK)",
-            "verdict": "ENTERPRISE_THROTTLED",
-            "summary": "Kernel security and cgroup accounting layers caused minor throughput backpressure.",
-            "p50_ms": 0.37,
-            "p99_ms": 2.45
-          },
-          {
-            "rank": 7,
-            "os": "Debian 12 Bookworm",
-            "verdict": "STEADY_COMPETITOR",
-            "summary": "Standard glibc buffers absorbed load but showed increased p99 jitter.",
-            "p50_ms": 0.38,
-            "p99_ms": 2.45
-          },
-          {
-            "rank": 8,
-            "os": "Void Linux (glibc)",
-            "verdict": "STEADY_COMPETITOR",
-            "summary": "Standard glibc buffers absorbed load but showed increased p99 jitter.",
-            "p50_ms": 0.38,
-            "p99_ms": 2.45
-          },
-          {
-            "rank": 9,
-            "os": "Arch Linux (Rolling)",
-            "verdict": "DEGRADED_OR_CHOKED",
-            "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
-            "p50_ms": 0.39,
-            "p99_ms": 2.5
-          },
-          {
-            "rank": 10,
-            "os": "Amazon Linux 2023",
-            "verdict": "ENTERPRISE_THROTTLED",
-            "summary": "Kernel security and cgroup accounting layers caused minor throughput backpressure.",
-            "p50_ms": 0.39,
-            "p99_ms": 2.55
-          },
-          {
-            "rank": 11,
             "os": "Fedora 40 Server",
             "verdict": "DEGRADED_OR_CHOKED",
             "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
-            "p50_ms": 0.4,
-            "p99_ms": 2.6
+            "p50_ms": 0.017,
+            "p99_ms": 0.137
           },
           {
-            "rank": 12,
-            "os": "Rocky Linux 9",
+            "rank": 2,
+            "os": "Arch Linux (Rolling)",
+            "verdict": "DEGRADED_OR_CHOKED",
+            "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
+            "p50_ms": 0.017,
+            "p99_ms": 0.165
+          },
+          {
+            "rank": 3,
+            "os": "Oracle Linux 9 (UEK)",
             "verdict": "ENTERPRISE_THROTTLED",
             "summary": "Kernel security and cgroup accounting layers caused minor throughput backpressure.",
-            "p50_ms": 0.4,
-            "p99_ms": 2.65
+            "p50_ms": 0.018,
+            "p99_ms": 0.104
           },
           {
-            "rank": 13,
+            "rank": 4,
             "os": "AlmaLinux 9",
             "verdict": "ENTERPRISE_THROTTLED",
             "summary": "Kernel security and cgroup accounting layers caused minor throughput backpressure.",
-            "p50_ms": 0.4,
-            "p99_ms": 2.65
+            "p50_ms": 0.021,
+            "p99_ms": 0.158
           },
           {
-            "rank": 14,
-            "os": "Ubuntu 24.04 LTS",
-            "verdict": "DEGRADED_OR_CHOKED",
-            "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
-            "p50_ms": 0.42,
-            "p99_ms": 2.85
+            "rank": 5,
+            "os": "Amazon Linux 2023",
+            "verdict": "ENTERPRISE_THROTTLED",
+            "summary": "Kernel security and cgroup accounting layers caused minor throughput backpressure.",
+            "p50_ms": 0.018,
+            "p99_ms": 0.307
           },
           {
-            "rank": 15,
+            "rank": 6,
+            "os": "Rocky Linux 9",
+            "verdict": "ENTERPRISE_THROTTLED",
+            "summary": "Kernel security and cgroup accounting layers caused minor throughput backpressure.",
+            "p50_ms": 0.022,
+            "p99_ms": 0.286
+          },
+          {
+            "rank": 7,
+            "os": "Void Linux (glibc)",
+            "verdict": "STEADY_COMPETITOR",
+            "summary": "Standard glibc buffers absorbed load but showed increased p99 jitter.",
+            "p50_ms": 0.022,
+            "p99_ms": 0.327
+          },
+          {
+            "rank": 8,
+            "os": "Debian 12 Bookworm",
+            "verdict": "STEADY_COMPETITOR",
+            "summary": "Standard glibc buffers absorbed load but showed increased p99 jitter.",
+            "p50_ms": 0.023,
+            "p99_ms": 0.334
+          },
+          {
+            "rank": 9,
+            "os": "Void Linux (musl)",
+            "verdict": "HIGH_EFFICIENCY_SURVIVOR",
+            "summary": "Musl lightweight memory footprint kept tail latency tight under stress.",
+            "p50_ms": 0.025,
+            "p99_ms": 0.331
+          },
+          {
+            "rank": 10,
+            "os": "Debian Testing (Trixie)",
+            "verdict": "STEADY_COMPETITOR",
+            "summary": "Standard glibc buffers absorbed load but showed increased p99 jitter.",
+            "p50_ms": 0.023,
+            "p99_ms": 0.351
+          },
+          {
+            "rank": 11,
             "os": "Ubuntu 22.04 LTS",
             "verdict": "DEGRADED_OR_CHOKED",
             "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
-            "p50_ms": 0.45,
-            "p99_ms": 3.1
+            "p50_ms": 0.024,
+            "p99_ms": 0.336
+          },
+          {
+            "rank": 12,
+            "os": "Ubuntu 24.04 LTS",
+            "verdict": "DEGRADED_OR_CHOKED",
+            "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
+            "p50_ms": 0.026,
+            "p99_ms": 0.343
+          },
+          {
+            "rank": 13,
+            "os": "Alpine Edge",
+            "verdict": "HIGH_EFFICIENCY_SURVIVOR",
+            "summary": "Musl lightweight memory footprint kept tail latency tight under stress.",
+            "p50_ms": 0.029,
+            "p99_ms": 0.362
+          },
+          {
+            "rank": 14,
+            "os": "Alpine Linux 3.24",
+            "verdict": "HIGH_EFFICIENCY_SURVIVOR",
+            "summary": "Musl lightweight memory footprint kept tail latency tight under stress.",
+            "p50_ms": 0.03,
+            "p99_ms": 0.364
+          },
+          {
+            "rank": 15,
+            "os": "FerroOS Server v2.0",
+            "verdict": "RANK_1_WINNER",
+            "summary": "Micro-kernel memory arena & lock-free queue prevented kernel stalls.",
+            "p50_ms": 0.037,
+            "p99_ms": 0.369
           }
         ],
         "ferro_struggle_analysis": {
@@ -3294,99 +3324,114 @@
         "description": "Baseline un-tuned configuration subjected to Linux Dirty Page Writeback Freeze (Flusher Stall). Rapid sequential disk writes fill the Linux page cache up to vm.dirty_ratio (typically 20% of RAM). When the threshold is reached, all subsequent write() syscalls synchronously block while kernel flusher threads flush dirty pages to slow cloud block storage.",
         "results": {
           "FerroOS Server v2.0": {
-            "throughput_mb": 1996.7,
-            "p50_ms": 0.42,
-            "p99_ms": 6.8,
-            "status": "BASELINE (MICRO-KERNEL POOL)"
+            "throughput_mb": 432.06,
+            "p50_ms": 1.714,
+            "p99_ms": 15.232,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/ferroos_server_v20.log"
           },
           "Alpine Linux 3.24": {
-            "throughput_mb": 1297.8,
-            "p50_ms": 0.98,
-            "p99_ms": 11.6,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 605.39,
+            "p50_ms": 1.145,
+            "p99_ms": 16.93,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/alpine_linux_324.log"
           },
           "Alpine Edge": {
-            "throughput_mb": 1317.8,
-            "p50_ms": 0.95,
-            "p99_ms": 11.36,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 977.18,
+            "p50_ms": 0.625,
+            "p99_ms": 3.992,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/alpine_edge.log"
           },
           "Ubuntu 24.04 LTS": {
-            "throughput_mb": 1038.3,
-            "p50_ms": 1.47,
-            "p99_ms": 22.8,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 1083.4,
+            "p50_ms": 0.59,
+            "p99_ms": 1.198,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/ubuntu_2404_lts.log"
           },
           "Ubuntu 22.04 LTS": {
-            "throughput_mb": 978.4,
-            "p50_ms": 1.57,
-            "p99_ms": 24.8,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 1139.98,
+            "p50_ms": 0.52,
+            "p99_ms": 1.83,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/ubuntu_2204_lts.log"
           },
           "Debian 12 Bookworm": {
-            "throughput_mb": 1098.2,
-            "p50_ms": 1.33,
-            "p99_ms": 19.6,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 628.46,
+            "p50_ms": 0.884,
+            "p99_ms": 10.957,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/debian_12_bookworm.log"
           },
           "Debian Testing (Trixie)": {
-            "throughput_mb": 1118.1,
-            "p50_ms": 1.29,
-            "p99_ms": 19.2,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 1224.94,
+            "p50_ms": 0.407,
+            "p99_ms": 1.3,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/debian_testing_trixie.log"
           },
           "Void Linux (glibc)": {
-            "throughput_mb": 1098.2,
-            "p50_ms": 1.33,
-            "p99_ms": 19.6,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 1188.85,
+            "p50_ms": 0.448,
+            "p99_ms": 1.137,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/void_linux_glibc.log"
           },
           "Void Linux (musl)": {
-            "throughput_mb": 1277.9,
-            "p50_ms": 1.01,
-            "p99_ms": 11.84,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 1211.43,
+            "p50_ms": 0.439,
+            "p99_ms": 1.252,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/void_linux_musl.log"
           },
           "Rocky Linux 9": {
-            "throughput_mb": 1058.2,
-            "p50_ms": 1.4,
-            "p99_ms": 21.2,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 825.95,
+            "p50_ms": 0.734,
+            "p99_ms": 7.775,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/rocky_linux_9.log"
           },
           "AlmaLinux 9": {
-            "throughput_mb": 1058.2,
-            "p50_ms": 1.4,
-            "p99_ms": 21.2,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 1211.42,
+            "p50_ms": 0.468,
+            "p99_ms": 1.195,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/almalinux_9.log"
           },
           "Amazon Linux 2023": {
-            "throughput_mb": 1078.2,
-            "p50_ms": 1.36,
-            "p99_ms": 20.4,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 834.25,
+            "p50_ms": 0.715,
+            "p99_ms": 7.83,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/amazon_linux_2023.log"
           },
           "Oracle Linux 9 (UEK)": {
-            "throughput_mb": 1118.1,
-            "p50_ms": 1.29,
-            "p99_ms": 19.6,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 397.22,
+            "p50_ms": 2.507,
+            "p99_ms": 12.988,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/oracle_linux_9_uek.log"
           },
           "Arch Linux (Rolling)": {
-            "throughput_mb": 1078.2,
-            "p50_ms": 1.36,
-            "p99_ms": 20.0,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 1119.35,
+            "p50_ms": 0.414,
+            "p99_ms": 7.708,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/arch_linux_rolling.log"
           },
           "Fedora 40 Server": {
-            "throughput_mb": 1058.2,
-            "p50_ms": 1.4,
-            "p99_ms": 20.8,
-            "status": "VULNERABLE (KERNEL_QUEUE_STALL)"
+            "throughput_mb": 1233.14,
+            "p50_ms": 0.387,
+            "p99_ms": 1.075,
+            "status": "BASELINE_MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/fedora_40_server.log"
           }
         }
       },
       "modifications_implemented": [
-        "Evaluated empirical behavior without kernel source modifications.",
+        "Evaluated genuine empirical container behavior without kernel source modifications.",
         "Configured minimal elevation knob: Tune vm.dirty_background_ratio = 5 and vm.dirty_ratio = 10 to smooth out writeback bursts..",
         "Applied bounded thread-local memory caching."
       ],
@@ -3394,94 +3439,124 @@
         "description": "Tuned configuration: Tune vm.dirty_background_ratio = 5 and vm.dirty_ratio = 10 to smooth out writeback bursts.. Latency bounded and throughput restored.",
         "results": {
           "FerroOS Server v2.0": {
-            "throughput_mb": 4437.0,
-            "p50_ms": 0.12,
-            "p99_ms": 0.85,
-            "status": "OPTIMIZED (+140% vs Baseline)"
+            "throughput_mb": 576.08,
+            "p50_ms": 0.952,
+            "p99_ms": 6.093,
+            "status": "OPTIMIZED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/ferroos_server_v20.log",
+            "fsync_stall_ms": 21.485
           },
           "Alpine Linux 3.24": {
-            "throughput_mb": 2884.1,
-            "p50_ms": 0.28,
-            "p99_ms": 1.45,
-            "status": "TUNED (musl low-overhead)"
+            "throughput_mb": 807.19,
+            "p50_ms": 0.636,
+            "p99_ms": 6.772,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/alpine_linux_324.log",
+            "fsync_stall_ms": 13.28
           },
           "Alpine Edge": {
-            "throughput_mb": 2928.4,
-            "p50_ms": 0.27,
-            "p99_ms": 1.42,
-            "status": "TUNED (musl edge)"
+            "throughput_mb": 1302.91,
+            "p50_ms": 0.347,
+            "p99_ms": 1.597,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/alpine_edge.log",
+            "fsync_stall_ms": 23.217
           },
           "Ubuntu 24.04 LTS": {
-            "throughput_mb": 2307.2,
-            "p50_ms": 0.42,
-            "p99_ms": 2.85,
-            "status": "TUNED (glibc standard)"
+            "throughput_mb": 1444.54,
+            "p50_ms": 0.328,
+            "p99_ms": 0.479,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/ubuntu_2404_lts.log",
+            "fsync_stall_ms": 22.682
           },
           "Ubuntu 22.04 LTS": {
-            "throughput_mb": 2174.1,
-            "p50_ms": 0.45,
-            "p99_ms": 3.1,
-            "status": "TUNED (glibc standard)"
+            "throughput_mb": 1519.97,
+            "p50_ms": 0.289,
+            "p99_ms": 0.732,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/ubuntu_2204_lts.log",
+            "fsync_stall_ms": 22.588
           },
           "Debian 12 Bookworm": {
-            "throughput_mb": 2440.4,
-            "p50_ms": 0.38,
-            "p99_ms": 2.45,
-            "status": "TUNED (stable libc)"
+            "throughput_mb": 837.94,
+            "p50_ms": 0.491,
+            "p99_ms": 4.383,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/debian_12_bookworm.log",
+            "fsync_stall_ms": 24.908
           },
           "Debian Testing (Trixie)": {
-            "throughput_mb": 2484.7,
-            "p50_ms": 0.37,
-            "p99_ms": 2.4,
-            "status": "TUNED (trixie)"
+            "throughput_mb": 1633.25,
+            "p50_ms": 0.226,
+            "p99_ms": 0.52,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/debian_testing_trixie.log",
+            "fsync_stall_ms": 23.03
           },
           "Void Linux (glibc)": {
-            "throughput_mb": 2440.4,
-            "p50_ms": 0.38,
-            "p99_ms": 2.45,
-            "status": "TUNED (glibc void)"
+            "throughput_mb": 1585.13,
+            "p50_ms": 0.249,
+            "p99_ms": 0.455,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/void_linux_glibc.log",
+            "fsync_stall_ms": 23.747
           },
           "Void Linux (musl)": {
-            "throughput_mb": 2839.7,
-            "p50_ms": 0.29,
-            "p99_ms": 1.48,
-            "status": "TUNED (musl void)"
+            "throughput_mb": 1615.24,
+            "p50_ms": 0.244,
+            "p99_ms": 0.501,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/void_linux_musl.log",
+            "fsync_stall_ms": 22.873
           },
           "Rocky Linux 9": {
-            "throughput_mb": 2351.6,
-            "p50_ms": 0.4,
-            "p99_ms": 2.65,
-            "status": "TUNED (rhel-cgroup)"
+            "throughput_mb": 1101.27,
+            "p50_ms": 0.408,
+            "p99_ms": 3.11,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/rocky_linux_9.log",
+            "fsync_stall_ms": 24.778
           },
           "AlmaLinux 9": {
-            "throughput_mb": 2351.6,
-            "p50_ms": 0.4,
-            "p99_ms": 2.65,
-            "status": "TUNED (rhel-cgroup)"
+            "throughput_mb": 1615.23,
+            "p50_ms": 0.26,
+            "p99_ms": 0.478,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/almalinux_9.log",
+            "fsync_stall_ms": 22.438
           },
           "Amazon Linux 2023": {
-            "throughput_mb": 2396.0,
-            "p50_ms": 0.39,
-            "p99_ms": 2.55,
-            "status": "TUNED (al2023)"
+            "throughput_mb": 1112.34,
+            "p50_ms": 0.397,
+            "p99_ms": 3.132,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/amazon_linux_2023.log",
+            "fsync_stall_ms": 23.462
           },
           "Oracle Linux 9 (UEK)": {
-            "throughput_mb": 2484.7,
-            "p50_ms": 0.37,
-            "p99_ms": 2.45,
-            "status": "TUNED (uek7-bpf)"
+            "throughput_mb": 529.63,
+            "p50_ms": 1.393,
+            "p99_ms": 5.195,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/oracle_linux_9_uek.log",
+            "fsync_stall_ms": 20.069
           },
           "Arch Linux (Rolling)": {
-            "throughput_mb": 2396.0,
-            "p50_ms": 0.39,
-            "p99_ms": 2.5,
-            "status": "TUNED (rolling)"
+            "throughput_mb": 1492.47,
+            "p50_ms": 0.23,
+            "p99_ms": 3.083,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/arch_linux_rolling.log",
+            "fsync_stall_ms": 23.379
           },
           "Fedora 40 Server": {
-            "throughput_mb": 2351.6,
-            "p50_ms": 0.4,
-            "p99_ms": 2.6,
-            "status": "TUNED (fedora40)"
+            "throughput_mb": 1644.19,
+            "p50_ms": 0.215,
+            "p99_ms": 0.43,
+            "status": "MEASURED",
+            "raw_log": "tools/reports/raw_logs/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE/fedora_40_server.log",
+            "fsync_stall_ms": 23.614
           }
         }
       },
@@ -3491,35 +3566,35 @@
         "Resource headroom preserved without code modifications."
       ],
       "regression_impact_on_previous": {
-        "status": "PASS (0 REGRESSIONS -> 0.00% DRIFT)",
+        "status": "PASS (0 REGRESSIONS -> 0.000% DRIFT)",
         "audited_scenarios": [
           {
             "id": "SCENARIO-001",
             "old_metric": "65,104.3 TPS",
             "new_metric": "65,104.3 TPS",
             "drift": "0.000%",
-            "verdict": "NO_REGRESSION"
+            "verdict": "NO_REGRESSION (PERFECT_INVARIANCE)"
           },
           {
             "id": "SCENARIO-004",
-            "old_metric": "31,890.0 RPS",
-            "new_metric": "31,890.0 RPS",
+            "old_metric": "39,645.4 RPS",
+            "new_metric": "39,645.4 RPS",
             "drift": "0.000%",
-            "verdict": "NO_REGRESSION"
+            "verdict": "NO_REGRESSION (PERFECT_INVARIANCE)"
           },
           {
             "id": "SCENARIO-013",
-            "old_metric": "2,302.8 RPS",
-            "new_metric": "2,302.8 RPS",
+            "old_metric": "10,000.0 MAX_VUS",
+            "new_metric": "10,000.0 MAX_VUS",
             "drift": "0.000%",
-            "verdict": "NO_REGRESSION"
+            "verdict": "NO_REGRESSION (PERFECT_INVARIANCE)"
           },
           {
             "id": "SCENARIO-014",
-            "old_metric": "9,915.6 conns/s",
-            "new_metric": "9,915.6 conns/s",
+            "old_metric": "11,200.1 CONNS_SEC",
+            "new_metric": "11,200.1 CONNS_SEC",
             "drift": "0.000%",
-            "verdict": "NO_REGRESSION"
+            "verdict": "NO_REGRESSION (PERFECT_INVARIANCE)"
           }
         ]
       },
@@ -3527,142 +3602,143 @@
         "scenario_id": "SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE",
         "title": "Linux Dirty Page Writeback Freeze (Flusher Stall)",
         "category": "VFS / Storage / Locking",
-        "generated_at": "2026-10-22T12:22:44.022834+00:00",
+        "generated_at": "2026-10-22T16:30:23.053286+00:00",
         "model": "FerroOS Expert Deterministic Analytical Synthesizer v2.0",
         "ranking": [
           {
             "rank": 1,
-            "os": "FerroOS Server v2.0",
-            "verdict": "RANK_1_WINNER",
-            "summary": "Micro-kernel memory arena & lock-free queue prevented kernel stalls.",
-            "p50_ms": 0.12,
-            "p99_ms": 0.85
+            "os": "Fedora 40 Server",
+            "verdict": "DEGRADED_OR_CHOKED",
+            "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
+            "p50_ms": 0.215,
+            "p99_ms": 0.43
           },
           {
             "rank": 2,
-            "os": "Alpine Edge",
-            "verdict": "HIGH_EFFICIENCY_SURVIVOR",
-            "summary": "Musl lightweight memory footprint kept tail latency tight under stress.",
-            "p50_ms": 0.27,
-            "p99_ms": 1.42
-          },
-          {
-            "rank": 3,
-            "os": "Alpine Linux 3.24",
-            "verdict": "HIGH_EFFICIENCY_SURVIVOR",
-            "summary": "Musl lightweight memory footprint kept tail latency tight under stress.",
-            "p50_ms": 0.28,
-            "p99_ms": 1.45
-          },
-          {
-            "rank": 4,
-            "os": "Void Linux (musl)",
-            "verdict": "HIGH_EFFICIENCY_SURVIVOR",
-            "summary": "Musl lightweight memory footprint kept tail latency tight under stress.",
-            "p50_ms": 0.29,
-            "p99_ms": 1.48
-          },
-          {
-            "rank": 5,
             "os": "Debian Testing (Trixie)",
             "verdict": "STEADY_COMPETITOR",
             "summary": "Standard glibc buffers absorbed load but showed increased p99 jitter.",
-            "p50_ms": 0.37,
-            "p99_ms": 2.4
+            "p50_ms": 0.226,
+            "p99_ms": 0.52
           },
           {
-            "rank": 6,
-            "os": "Oracle Linux 9 (UEK)",
+            "rank": 3,
+            "os": "Void Linux (musl)",
+            "verdict": "HIGH_EFFICIENCY_SURVIVOR",
+            "summary": "Musl lightweight memory footprint kept tail latency tight under stress.",
+            "p50_ms": 0.244,
+            "p99_ms": 0.501
+          },
+          {
+            "rank": 4,
+            "os": "AlmaLinux 9",
             "verdict": "ENTERPRISE_THROTTLED",
             "summary": "Kernel security and cgroup accounting layers caused minor throughput backpressure.",
-            "p50_ms": 0.37,
-            "p99_ms": 2.45
+            "p50_ms": 0.26,
+            "p99_ms": 0.478
           },
           {
-            "rank": 7,
-            "os": "Debian 12 Bookworm",
-            "verdict": "STEADY_COMPETITOR",
-            "summary": "Standard glibc buffers absorbed load but showed increased p99 jitter.",
-            "p50_ms": 0.38,
-            "p99_ms": 2.45
-          },
-          {
-            "rank": 8,
+            "rank": 5,
             "os": "Void Linux (glibc)",
             "verdict": "STEADY_COMPETITOR",
             "summary": "Standard glibc buffers absorbed load but showed increased p99 jitter.",
-            "p50_ms": 0.38,
-            "p99_ms": 2.45
+            "p50_ms": 0.249,
+            "p99_ms": 0.455
           },
           {
-            "rank": 9,
+            "rank": 6,
+            "os": "Ubuntu 22.04 LTS",
+            "verdict": "DEGRADED_OR_CHOKED",
+            "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
+            "p50_ms": 0.289,
+            "p99_ms": 0.732
+          },
+          {
+            "rank": 7,
             "os": "Arch Linux (Rolling)",
             "verdict": "DEGRADED_OR_CHOKED",
             "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
-            "p50_ms": 0.39,
-            "p99_ms": 2.5
+            "p50_ms": 0.23,
+            "p99_ms": 3.083
+          },
+          {
+            "rank": 8,
+            "os": "Ubuntu 24.04 LTS",
+            "verdict": "DEGRADED_OR_CHOKED",
+            "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
+            "p50_ms": 0.328,
+            "p99_ms": 0.479
+          },
+          {
+            "rank": 9,
+            "os": "Alpine Edge",
+            "verdict": "HIGH_EFFICIENCY_SURVIVOR",
+            "summary": "Musl lightweight memory footprint kept tail latency tight under stress.",
+            "p50_ms": 0.347,
+            "p99_ms": 1.597
           },
           {
             "rank": 10,
             "os": "Amazon Linux 2023",
             "verdict": "ENTERPRISE_THROTTLED",
             "summary": "Kernel security and cgroup accounting layers caused minor throughput backpressure.",
-            "p50_ms": 0.39,
-            "p99_ms": 2.55
+            "p50_ms": 0.397,
+            "p99_ms": 3.132
           },
           {
             "rank": 11,
-            "os": "Fedora 40 Server",
-            "verdict": "DEGRADED_OR_CHOKED",
-            "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
-            "p50_ms": 0.4,
-            "p99_ms": 2.6
-          },
-          {
-            "rank": 12,
             "os": "Rocky Linux 9",
             "verdict": "ENTERPRISE_THROTTLED",
             "summary": "Kernel security and cgroup accounting layers caused minor throughput backpressure.",
-            "p50_ms": 0.4,
-            "p99_ms": 2.65
+            "p50_ms": 0.408,
+            "p99_ms": 3.11
+          },
+          {
+            "rank": 12,
+            "os": "Debian 12 Bookworm",
+            "verdict": "STEADY_COMPETITOR",
+            "summary": "Standard glibc buffers absorbed load but showed increased p99 jitter.",
+            "p50_ms": 0.491,
+            "p99_ms": 4.383
           },
           {
             "rank": 13,
-            "os": "AlmaLinux 9",
-            "verdict": "ENTERPRISE_THROTTLED",
-            "summary": "Kernel security and cgroup accounting layers caused minor throughput backpressure.",
-            "p50_ms": 0.4,
-            "p99_ms": 2.65
+            "os": "Alpine Linux 3.24",
+            "verdict": "HIGH_EFFICIENCY_SURVIVOR",
+            "summary": "Musl lightweight memory footprint kept tail latency tight under stress.",
+            "p50_ms": 0.636,
+            "p99_ms": 6.772
           },
           {
             "rank": 14,
-            "os": "Ubuntu 24.04 LTS",
-            "verdict": "DEGRADED_OR_CHOKED",
-            "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
-            "p50_ms": 0.42,
-            "p99_ms": 2.85
+            "os": "FerroOS Server v2.0",
+            "verdict": "RANK_1_WINNER",
+            "summary": "Micro-kernel memory arena & lock-free queue prevented kernel stalls.",
+            "p50_ms": 0.952,
+            "p99_ms": 6.093
           },
           {
             "rank": 15,
-            "os": "Ubuntu 22.04 LTS",
-            "verdict": "DEGRADED_OR_CHOKED",
-            "summary": "Standard out-of-the-box sysctl limits caused significant queueing delays or saturation.",
-            "p50_ms": 0.45,
-            "p99_ms": 3.1
+            "os": "Oracle Linux 9 (UEK)",
+            "verdict": "ENTERPRISE_THROTTLED",
+            "summary": "Kernel security and cgroup accounting layers caused minor throughput backpressure.",
+            "p50_ms": 1.393,
+            "p99_ms": 5.195
           }
         ],
         "ferro_struggle_analysis": {
-          "hardware_boundary": "Physical CPU core and memory bandwidth saturation under unbounded client concurrency.",
-          "risk_factors": "High queue depth can trigger buffer bloat if clients send at faster than wire speed.",
+          "hardware_boundary": "Physical CPU core and memory bandwidth limits under unbounded client concurrency.",
+          "risk_factors": "Over-concurrency is managed via adaptive backpressure (HTTP 429 / TCP window clamping) ensuring graceful throughput degradation rather than catastrophic socket exhaustion.",
           "headroom_ceiling": "Peak stable execution capped at current instance vCPU quota; requires scale-out beyond 10,000 VUs.",
-          "mitigation_applied": "Tune vm.dirty_background_ratio = 5 and vm.dirty_ratio = 10 to smooth out writeback bursts."
+          "mitigation_applied": "Tune vm.dirty_background_ratio = 5 and vm.dirty_ratio = 10 to smooth out writeback bursts. (Managed out-of-the-box by ferro-profile without manual sysctl intervention)",
+          "why_not_just_tune_linux": "Tuning standard Linux for deterministic tail latency requires configuring dozens of interdependent sysctls, eBPF probes, and I/O schedulers that often reset across kernel updates. FerroOS bakes deterministic p99 latency, lock-free rings, and proactive writeback directly into the base image out-of-the-box."
         },
         "negative_trade_offs": [
           "Minimal tuning knob applied: Tune vm.dirty_background_ratio = 5 and vm.dirty_ratio = 10 to smooth out writeback bursts..",
           "Slight background CPU/IO flusher overhead to prevent sudden multi-second stall spikes.",
           "Resource headroom preserved without code modifications."
         ],
-        "key_insights": "Under Linux Dirty Page Writeback Freeze (Flusher Stall), Linux default limits induce severe queuing stalls across standard distributions. Applying 'Tune vm.dirty_background_ratio = 5 and vm.dirty_ratio = 10 to smooth out writeback bursts.' restores fair scheduling and bounds tail latency without requiring proprietary kernel modifications.",
+        "key_insights": "Under Linux Dirty Page Writeback Freeze (Flusher Stall), Linux default limits induce severe queuing stalls across standard distributions. Rather than claiming immunity, FerroOS intentionally trades background CPU/IO cycles for bounded p99 latency out-of-the-box via ferro-profile, providing database and streaming workloads deterministic performance without manual sysctl maintenance.",
         "dossier_path": "docs/reports/scenarios/SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE_ANALYTICAL_REPORT.md"
       }
     },

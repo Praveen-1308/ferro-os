@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-002-MAILDIR-INODE-CHURN
+OS: Alpine Linux 3.24 (Image: alpine:latest)
+Timestamp: 2026-10-22T16:30:29.456138+00:00
+Exit Code: 0
+Elapsed Time: 383.43 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 40106.57, "p50_ms": 0.030, "p95_ms": 0.080, "p99_ms": 0.364, "max_ms": 1.465}
+
+
+--- STDERR ---
+=== BENCH_MAILDIR COMPLETE ===
+Files: 2000 (6000 total VFS ops) | Throughput: 40106.57 ops/sec
+Create Latency - p50: 0.030 ms | p95: 0.080 ms | p99: 0.364 ms | max: 1.465 ms
+

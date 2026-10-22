@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-002-MAILDIR-INODE-CHURN
+OS: FerroOS Server v2.0 (Image: ferro-os-server:latest)
+Timestamp: 2026-10-22T16:30:29.071519+00:00
+Exit Code: 0
+Elapsed Time: 451.93 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 34084.25, "p50_ms": 0.037, "p95_ms": 0.124, "p99_ms": 0.369, "max_ms": 0.762}
+
+
+--- STDERR ---
+=== BENCH_MAILDIR COMPLETE ===
+Files: 2000 (6000 total VFS ops) | Throughput: 34084.25 ops/sec
+Create Latency - p50: 0.037 ms | p95: 0.124 ms | p99: 0.369 ms | max: 0.762 ms
+

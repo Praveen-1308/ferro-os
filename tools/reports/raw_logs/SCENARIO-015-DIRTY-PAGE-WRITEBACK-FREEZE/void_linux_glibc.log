@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE
+OS: Void Linux (glibc) (Image: ghcr.io/void-linux/void-glibc:latest)
+Timestamp: 2026-10-22T16:30:21.105197+00:00
+Exit Code: 0
+Elapsed Time: 255.95 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 1585.13, "p50_ms": 0.249, "p95_ms": 0.379, "p99_ms": 0.455, "max_ms": 0.455, "fsync_stall_ms": 23.747}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 1585.13 MB/s
+p50: 0.249 ms | p95: 0.379 ms | p99: 0.455 ms | max: 0.455 ms
+fsync_stall: 23.747 ms
+

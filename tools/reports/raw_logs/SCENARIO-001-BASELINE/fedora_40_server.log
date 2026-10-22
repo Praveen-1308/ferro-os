@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-001-BASELINE
+OS: Fedora 40 Server (Image: fedora:40)
+Timestamp: 2026-10-22T16:34:18.238650+00:00
+Exit Code: 0
+Elapsed Time: 3802.47 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 700.15, "p50_ms": 1.347, "p95_ms": 2.072, "p99_ms": 3.067, "max_ms": 6.275, "mode": "delete"}
+
+
+--- STDERR ---
+=== BENCH_SQLITE_OLTP [delete] COMPLETE ===
+Transactions: 2500 | Throughput: 700.15 TPS
+Latency - p50: 1.347 ms | p95: 2.072 ms | p99: 3.067 ms | max: 6.275 ms
+

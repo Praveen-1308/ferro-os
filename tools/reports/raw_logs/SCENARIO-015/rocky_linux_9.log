@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015
+OS: Rocky Linux 9 (Image: rockylinux:9-minimal)
+Timestamp: 2026-10-22T16:29:04.079171+00:00
+Exit Code: 0
+Elapsed Time: 265.76 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 1758.68, "p50_ms": 0.233, "p95_ms": 0.324, "p99_ms": 0.560, "max_ms": 0.560, "fsync_stall_ms": 20.646}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 1758.68 MB/s
+p50: 0.233 ms | p95: 0.324 ms | p99: 0.560 ms | max: 0.560 ms
+fsync_stall: 20.646 ms
+

@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-001-BASELINE
+OS: Amazon Linux 2023 (Image: amazonlinux:2023)
+Timestamp: 2026-10-22T16:34:06.889990+00:00
+Exit Code: 0
+Elapsed Time: 3755.38 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 706.49, "p50_ms": 1.365, "p95_ms": 1.849, "p99_ms": 2.356, "max_ms": 12.123, "mode": "delete"}
+
+
+--- STDERR ---
+=== BENCH_SQLITE_OLTP [delete] COMPLETE ===
+Transactions: 2500 | Throughput: 706.49 TPS
+Latency - p50: 1.365 ms | p95: 1.849 ms | p99: 2.356 ms | max: 12.123 ms
+

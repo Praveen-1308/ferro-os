@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015
+OS: Alpine Linux 3.24 (Image: alpine:latest)
+Timestamp: 2026-10-22T16:29:01.911403+00:00
+Exit Code: 0
+Elapsed Time: 356.64 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 595.10, "p50_ms": 0.958, "p95_ms": 3.597, "p99_ms": 9.915, "max_ms": 9.915, "fsync_stall_ms": 25.138}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 595.10 MB/s
+p50: 0.958 ms | p95: 3.597 ms | p99: 9.915 ms | max: 9.915 ms
+fsync_stall: 25.138 ms
+

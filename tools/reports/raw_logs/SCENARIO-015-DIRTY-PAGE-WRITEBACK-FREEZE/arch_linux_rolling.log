@@ -1,0 +1,18 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE
+OS: Arch Linux (Rolling) (Image: agners/archlinuxarm:latest)
+Timestamp: 2026-10-22T16:30:22.781889+00:00
+Exit Code: 0
+Elapsed Time: 271.20 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 1492.47, "p50_ms": 0.230, "p95_ms": 0.430, "p99_ms": 3.083, "max_ms": 3.083, "fsync_stall_ms": 23.379}
+
+
+--- STDERR ---
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 1492.47 MB/s
+p50: 0.230 ms | p95: 0.430 ms | p99: 3.083 ms | max: 3.083 ms
+fsync_stall: 23.379 ms
+

@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-001-BASELINE
+OS: Void Linux (musl) (Image: ghcr.io/void-linux/void-musl:latest)
+Timestamp: 2026-10-22T16:33:55.687464+00:00
+Exit Code: 0
+Elapsed Time: 3975.18 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 664.74, "p50_ms": 1.432, "p95_ms": 2.096, "p99_ms": 2.922, "max_ms": 14.601, "mode": "delete"}
+
+
+--- STDERR ---
+=== BENCH_SQLITE_OLTP [delete] COMPLETE ===
+Transactions: 2500 | Throughput: 664.74 TPS
+Latency - p50: 1.432 ms | p95: 2.096 ms | p99: 2.922 ms | max: 14.601 ms
+

@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-001-BASELINE
+OS: Ubuntu 22.04 LTS (Image: ubuntu:22.04)
+Timestamp: 2026-10-22T16:33:40.134007+00:00
+Exit Code: 0
+Elapsed Time: 4004.95 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 656.46, "p50_ms": 1.496, "p95_ms": 2.079, "p99_ms": 2.597, "max_ms": 6.937, "mode": "delete"}
+
+
+--- STDERR ---
+=== BENCH_SQLITE_OLTP [delete] COMPLETE ===
+Transactions: 2500 | Throughput: 656.46 TPS
+Latency - p50: 1.496 ms | p95: 2.079 ms | p99: 2.597 ms | max: 6.937 ms
+

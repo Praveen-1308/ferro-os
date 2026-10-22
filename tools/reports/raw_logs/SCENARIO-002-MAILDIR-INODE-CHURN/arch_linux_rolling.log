@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-002-MAILDIR-INODE-CHURN
+OS: Arch Linux (Rolling) (Image: agners/archlinuxarm:latest)
+Timestamp: 2026-10-22T16:30:33.361349+00:00
+Exit Code: 0
+Elapsed Time: 317.38 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 60717.26, "p50_ms": 0.017, "p95_ms": 0.037, "p99_ms": 0.165, "max_ms": 0.632}
+
+
+--- STDERR ---
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+=== BENCH_MAILDIR COMPLETE ===
+Files: 2000 (6000 total VFS ops) | Throughput: 60717.26 ops/sec
+Create Latency - p50: 0.017 ms | p95: 0.037 ms | p99: 0.165 ms | max: 0.632 ms
+

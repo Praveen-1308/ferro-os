@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-001-BASELINE
+OS: Debian 12 Bookworm (Image: debian:12-slim)
+Timestamp: 2026-10-22T16:33:44.187378+00:00
+Exit Code: 0
+Elapsed Time: 4053.02 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 650.20, "p50_ms": 1.484, "p95_ms": 2.127, "p99_ms": 2.904, "max_ms": 9.929, "mode": "delete"}
+
+
+--- STDERR ---
+=== BENCH_SQLITE_OLTP [delete] COMPLETE ===
+Transactions: 2500 | Throughput: 650.20 TPS
+Latency - p50: 1.484 ms | p95: 2.127 ms | p99: 2.904 ms | max: 9.929 ms
+

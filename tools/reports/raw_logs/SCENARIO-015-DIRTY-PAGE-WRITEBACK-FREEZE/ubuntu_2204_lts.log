@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE
+OS: Ubuntu 22.04 LTS (Image: ubuntu:22.04)
+Timestamp: 2026-10-22T16:30:20.284016+00:00
+Exit Code: 0
+Elapsed Time: 244.48 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 1519.97, "p50_ms": 0.289, "p95_ms": 0.378, "p99_ms": 0.732, "max_ms": 0.732, "fsync_stall_ms": 22.588}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 1519.97 MB/s
+p50: 0.289 ms | p95: 0.378 ms | p99: 0.732 ms | max: 0.732 ms
+fsync_stall: 22.588 ms
+

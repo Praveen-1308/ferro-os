@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015
+OS: Ubuntu 22.04 LTS (Image: ubuntu:22.04)
+Timestamp: 2026-10-22T16:29:02.734273+00:00
+Exit Code: 0
+Elapsed Time: 266.24 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 1461.14, "p50_ms": 0.333, "p95_ms": 0.453, "p99_ms": 0.499, "max_ms": 0.499, "fsync_stall_ms": 22.111}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 1461.14 MB/s
+p50: 0.333 ms | p95: 0.453 ms | p99: 0.499 ms | max: 0.499 ms
+fsync_stall: 22.111 ms
+

@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE
+OS: Oracle Linux 9 (UEK) (Image: oraclelinux:9)
+Timestamp: 2026-10-22T16:30:22.510253+00:00
+Exit Code: 0
+Elapsed Time: 345.00 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 529.63, "p50_ms": 1.393, "p95_ms": 3.837, "p99_ms": 5.195, "max_ms": 5.195, "fsync_stall_ms": 20.069}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 529.63 MB/s
+p50: 1.393 ms | p95: 3.837 ms | p99: 5.195 ms | max: 5.195 ms
+fsync_stall: 20.069 ms
+

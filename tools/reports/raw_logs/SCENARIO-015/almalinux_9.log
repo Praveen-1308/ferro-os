@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015
+OS: AlmaLinux 9 (Image: almalinux:9)
+Timestamp: 2026-10-22T16:29:04.333572+00:00
+Exit Code: 0
+Elapsed Time: 254.04 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 1254.51, "p50_ms": 0.438, "p95_ms": 0.920, "p99_ms": 1.965, "max_ms": 1.965, "fsync_stall_ms": 23.214}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 1254.51 MB/s
+p50: 0.438 ms | p95: 0.920 ms | p99: 1.965 ms | max: 1.965 ms
+fsync_stall: 23.214 ms
+

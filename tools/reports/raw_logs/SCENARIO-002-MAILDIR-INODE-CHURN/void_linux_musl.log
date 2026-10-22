@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-002-MAILDIR-INODE-CHURN
+OS: Void Linux (musl) (Image: ghcr.io/void-linux/void-musl:latest)
+Timestamp: 2026-10-22T16:30:31.801925+00:00
+Exit Code: 0
+Elapsed Time: 345.99 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 52614.93, "p50_ms": 0.025, "p95_ms": 0.050, "p99_ms": 0.331, "max_ms": 0.542}
+
+
+--- STDERR ---
+=== BENCH_MAILDIR COMPLETE ===
+Files: 2000 (6000 total VFS ops) | Throughput: 52614.93 ops/sec
+Create Latency - p50: 0.025 ms | p95: 0.050 ms | p99: 0.331 ms | max: 0.542 ms
+

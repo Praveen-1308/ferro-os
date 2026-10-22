@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-001-BASELINE
+OS: Rocky Linux 9 (Image: rockylinux:9-minimal)
+Timestamp: 2026-10-22T16:33:59.462114+00:00
+Exit Code: 0
+Elapsed Time: 3774.26 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 706.80, "p50_ms": 1.377, "p95_ms": 1.869, "p99_ms": 2.336, "max_ms": 6.209, "mode": "delete"}
+
+
+--- STDERR ---
+=== BENCH_SQLITE_OLTP [delete] COMPLETE ===
+Transactions: 2500 | Throughput: 706.80 TPS
+Latency - p50: 1.377 ms | p95: 1.869 ms | p99: 2.336 ms | max: 6.209 ms
+

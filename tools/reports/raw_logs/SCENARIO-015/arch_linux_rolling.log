@@ -1,0 +1,18 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015
+OS: Arch Linux (Rolling) (Image: agners/archlinuxarm:latest)
+Timestamp: 2026-10-22T16:29:05.073995+00:00
+Exit Code: 0
+Elapsed Time: 272.41 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 1626.75, "p50_ms": 0.216, "p95_ms": 0.354, "p99_ms": 0.531, "max_ms": 0.531, "fsync_stall_ms": 23.635}
+
+
+--- STDERR ---
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 1626.75 MB/s
+p50: 0.216 ms | p95: 0.354 ms | p99: 0.531 ms | max: 0.531 ms
+fsync_stall: 23.635 ms
+

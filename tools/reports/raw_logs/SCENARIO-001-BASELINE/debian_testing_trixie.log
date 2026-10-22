@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-001-BASELINE
+OS: Debian Testing (Trixie) (Image: debian:testing-slim)
+Timestamp: 2026-10-22T16:33:48.057255+00:00
+Exit Code: 0
+Elapsed Time: 3869.49 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 684.10, "p50_ms": 1.417, "p95_ms": 1.991, "p99_ms": 2.450, "max_ms": 7.052, "mode": "delete"}
+
+
+--- STDERR ---
+=== BENCH_SQLITE_OLTP [delete] COMPLETE ===
+Transactions: 2500 | Throughput: 684.10 TPS
+Latency - p50: 1.417 ms | p95: 1.991 ms | p99: 2.450 ms | max: 7.052 ms
+

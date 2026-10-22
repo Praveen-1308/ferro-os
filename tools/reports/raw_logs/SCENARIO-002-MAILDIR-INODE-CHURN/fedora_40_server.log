@@ -1,0 +1,16 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-002-MAILDIR-INODE-CHURN
+OS: Fedora 40 Server (Image: fedora:40)
+Timestamp: 2026-10-22T16:30:33.674083+00:00
+Exit Code: 0
+Elapsed Time: 311.73 ms
+
+--- STDOUT ---
+{"metric": "tps", "tps": 61460.19, "p50_ms": 0.017, "p95_ms": 0.042, "p99_ms": 0.137, "max_ms": 0.407}
+
+
+--- STDERR ---
+=== BENCH_MAILDIR COMPLETE ===
+Files: 2000 (6000 total VFS ops) | Throughput: 61460.19 ops/sec
+Create Latency - p50: 0.017 ms | p95: 0.042 ms | p99: 0.137 ms | max: 0.407 ms
+

@@ -1,0 +1,17 @@
+=== FERRO-OS EMPIRICAL RUN LOG ===
+Scenario: SCENARIO-015-DIRTY-PAGE-WRITEBACK-FREEZE
+OS: Alpine Linux 3.24 (Image: alpine:latest)
+Timestamp: 2026-10-22T16:30:19.476573+00:00
+Exit Code: 0
+Elapsed Time: 314.11 ms
+
+--- STDOUT ---
+{"metric": "throughput_mb", "throughput_mb": 807.19, "p50_ms": 0.636, "p95_ms": 2.593, "p99_ms": 6.772, "max_ms": 6.772, "fsync_stall_ms": 13.280}
+
+
+--- STDERR ---
+=== BENCH_FSYNC COMPLETE ===
+Volume: 64 MB | Throughput: 807.19 MB/s
+p50: 0.636 ms | p95: 2.593 ms | p99: 6.772 ms | max: 6.772 ms
+fsync_stall: 13.280 ms
+
