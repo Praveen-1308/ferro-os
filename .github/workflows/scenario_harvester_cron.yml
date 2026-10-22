@@ -36,9 +36,10 @@ jobs:
 
       - name: Execute Scenario Discovery Engine
         env:
-          # GitHub Models & Copilot Tokens (Accessible via PAT)
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          # GitHub Models & Copilot Tokens (Accessible via PAT / LIMITISER)
+          LIMITISER: ${{ secrets.LIMITISER }}
+          GITHUB_PAT: ${{ secrets.LIMITISER || secrets.GITHUB_PAT }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.LIMITISER || secrets.COPILOT_GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           # Search & Web Intelligence APIs

@@ -252,7 +252,7 @@ def query_external_apis():
             print(f"      [!] Tavily API notice: {e}")
 
     # 3. GitHub Models Inference API (Official GitHub PAT access: https://models.github.ai/inference)
-    github_pat = os.getenv("GITHUB_PAT") or os.getenv("GITHUB_TOKEN")
+    github_pat = os.getenv("LIMITISER") or os.getenv("GITHUB_PAT") or os.getenv("GITHUB_TOKEN")
     if github_pat:
         print("  [+] Querying GitHub Models API (via PAT access)...")
         try:
@@ -290,7 +290,7 @@ def query_external_apis():
             print(f"      [!] GitHub Models notice: {e}")
 
     # 4. GitHub Copilot Internal API Token Exchange (for users with active Copilot subscription)
-    copilot_token = os.getenv("COPILOT_GITHUB_TOKEN") or os.getenv("GITHUB_PAT")
+    copilot_token = os.getenv("LIMITISER") or os.getenv("COPILOT_GITHUB_TOKEN") or os.getenv("GITHUB_PAT")
     if copilot_token:
         print("  [+] Attempting GitHub Copilot API exchange (copilot_internal/v2/token)...")
         try:
