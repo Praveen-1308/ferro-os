@@ -1,0 +1,35 @@
+[
+  {
+    "id": "LWN-982144",
+    "title": "Linux Dirty Page Flusher Hang on High-Throughput NVMe Egress",
+    "url": "https://lwn.net/Articles/982144/",
+    "source": "LWN.net Kernel Discussions",
+    "score": 185,
+    "comments": 42,
+    "subsystem": "VFS / Storage / Locking",
+    "analyzed_at": "2026-10-22T10:55:46.541832+00:00",
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_lwn-982144.md"
+  },
+  {
+    "id": "K8S-119284",
+    "title": "CFS Bandwidth Quota Inversion Causes Unresponsive Microservice Bursts",
+    "url": "https://github.com/kubernetes/kubernetes/issues/119284",
+    "source": "Cloud Native Reliability Feed",
+    "score": 240,
+    "comments": 68,
+    "subsystem": "Scheduler / CPU / CFS",
+    "analyzed_at": "2026-10-22T10:55:46.654064+00:00",
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_k8s-119284.md"
+  },
+  {
+    "id": "RFC-793-PORT",
+    "title": "AWS NAT Gateway Ephemeral Port Exhaustion Under Microservice Churn",
+    "url": "https://aws.amazon.com/blogs/networking-and-content-delivery/",
+    "source": "AWS Architecture Outage Reports",
+    "score": 310,
+    "comments": 89,
+    "subsystem": "VFS / Storage / Locking",
+    "analyzed_at": "2026-10-22T10:55:47.762487+00:00",
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_rfc-793-port.md"
+  }
+]

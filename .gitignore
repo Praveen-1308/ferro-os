@@ -11,3 +11,7 @@ build_out/
 __pycache__/
 tools/k6
 *.pyc
+.env
+*.env
+.env.*
+!*.env.example
