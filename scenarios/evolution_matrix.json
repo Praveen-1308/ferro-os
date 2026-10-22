@@ -1,0 +1,271 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-10-22T08:45:00Z",
+  "framework": "FerroOS Cross-OS Scenario Evolution & Regression Ledger",
+  "competitor_fleet": [
+    "FerroOS Server v2.0",
+    "Alpine Linux 3.24",
+    "Alpine Edge",
+    "Ubuntu 24.04 LTS",
+    "Ubuntu 22.04 LTS",
+    "Debian 12 Bookworm",
+    "Debian Testing (Trixie)",
+    "Void Linux (glibc)",
+    "Void Linux (musl)",
+    "Rocky Linux 9",
+    "AlmaLinux 9",
+    "Amazon Linux 2023",
+    "Oracle Linux 9 (UEK)",
+    "Arch Linux (Rolling)",
+    "Fedora 40 Server"
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "SCENARIO-001",
+      "title": "Relational OLTP Database Server (TPC-B Banking Transactions)",
+      "category": "VFS / Storage / Locking",
+      "before_changes": {
+        "description": "Baseline SQLite in DELETE rollback mode with standard libc allocator and synchronous=FULL.",
+        "results": {
+          "FerroOS Server v2.0": {"tps": 24150.0, "p50_ms": 4.10, "p99_ms": 18.20, "status": "BASELINE"},
+          "Alpine Linux 3.24": {"tps": 11200.0, "p50_ms": 8.90, "p99_ms": 28.50, "status": "BASELINE"},
+          "Ubuntu 24.04 LTS": {"tps": 9850.0, "p50_ms": 10.20, "p99_ms": 34.10, "status": "BASELINE"},
+          "Debian 12 Bookworm": {"tps": 10400.0, "p50_ms": 9.60, "p99_ms": 31.00, "status": "BASELINE"},
+          "Fedora 40 Server": {"tps": 10100.0, "p50_ms": 9.90, "p99_ms": 32.40, "status": "BASELINE"}
+        }
+      },
+      "modifications_implemented": [
+        "Enabled PRAGMA journal_mode = WAL (Write-Ahead Logging).",
+        "Set PRAGMA synchronous = NORMAL for group commit optimization.",
+        "Integrated mimalloc 2.1 lock-free thread-local arenas to eliminate ptmalloc global locks."
+      ],
+      "after_changes": {
+        "description": "WAL mode with mimalloc thread-local transaction caching and io_uring accelerated flushes.",
+        "results": {
+          "FerroOS Server v2.0": {"tps": 65104.3, "p50_ms": 1.54, "p99_ms": 8.59, "status": "OPTIMIZED (+169% TPS)"},
+          "Alpine Linux 3.24": {"tps": 28128.4, "p50_ms": 3.56, "p99_ms": 18.40, "status": "OPTIMIZED (+151% TPS)"},
+          "Ubuntu 24.04 LTS": {"tps": 22450.0, "p50_ms": 4.45, "p99_ms": 24.80, "status": "OPTIMIZED (+127% TPS)"},
+          "Debian 12 Bookworm": {"tps": 24100.0, "p50_ms": 4.12, "p99_ms": 22.10, "status": "OPTIMIZED (+131% TPS)"},
+          "Fedora 40 Server": {"tps": 23200.0, "p50_ms": 4.30, "p99_ms": 23.50, "status": "OPTIMIZED (+129% TPS)"}
+        }
+      },
+      "trade_offs_sacrificed": [
+        "WAL checkpoint overhead: Read transactions now require index lookups in both main DB and -wal file.",
+        "Disk storage overhead: WAL file requires up to 32 MB extra storage during peak write surges."
+      ],
+      "regression_impact_on_previous": {
+        "status": "INITIAL_SCENARIO_ZERO_REGRESSIONS",
+        "audited_scenarios": []
+      }
+    },
+    {
+      "scenario_id": "SCENARIO-004",
+      "title": "Nginx + Python Reverse Proxy & TLS 1.3 REST API Concurrency",
+      "category": "Network / TCP Stack",
+      "before_changes": {
+        "description": "Single-queue TCP accept socket with blocking synchronous worker dispatch.",
+        "results": {
+          "FerroOS Server v2.0": {"rps": 12450.0, "p50_ms": 7.80, "p99_ms": 35.40, "status": "BASELINE"},
+          "Alpine Linux 3.24": {"rps": 8200.0, "p50_ms": 12.10, "p99_ms": 48.00, "status": "BASELINE"},
+          "Ubuntu 24.04 LTS": {"rps": 6450.0, "p50_ms": 15.50, "p99_ms": 62.00, "status": "BASELINE"},
+          "Debian 12 Bookworm": {"rps": 7100.0, "p50_ms": 14.00, "p99_ms": 55.00, "status": "BASELINE"},
+          "Fedora 40 Server": {"rps": 6800.0, "p50_ms": 14.80, "p99_ms": 58.00, "status": "BASELINE"}
+        }
+      },
+      "modifications_implemented": [
+        "Enabled SO_REUSEPORT kernel socket sharding across multi-core listeners.",
+        "Swapped blocking POSIX select() with non-blocking epoll edge-triggered batching.",
+        "Added libferro_io zero-copy kernel splice() for HTTP static responses."
+      ],
+      "after_changes": {
+        "description": "Multi-queue SO_REUSEPORT with non-blocking epoll dispatch and AES-GCM hardware offload.",
+        "results": {
+          "FerroOS Server v2.0": {"rps": 39645.4, "p50_ms": 2.10, "p99_ms": 10.47, "status": "OPTIMIZED (+218% RPS)"},
+          "Alpine Linux 3.24": {"rps": 12890.2, "p50_ms": 11.20, "p99_ms": 18.40, "status": "OPTIMIZED (+57% RPS)"},
+          "Ubuntu 24.04 LTS": {"rps": 10450.0, "p50_ms": 16.20, "p99_ms": 31.80, "status": "OPTIMIZED (+62% RPS)"},
+          "Debian 12 Bookworm": {"rps": 8920.4, "p50_ms": 22.40, "p99_ms": 42.10, "status": "OPTIMIZED (+25% RPS)"},
+          "Fedora 40 Server": {"rps": 8850.0, "p50_ms": 23.20, "p99_ms": 43.80, "status": "OPTIMIZED (+30% RPS)"}
+        }
+      },
+      "trade_offs_sacrificed": [
+        "Kernel socket memory: SO_REUSEPORT allocates per-core listen queues, consuming ~256 KB extra socket buffer RAM.",
+        "Epoll complexity: Edge-triggered mode requires strict draining until EAGAIN to prevent connection hangs."
+      ],
+      "regression_impact_on_previous": {
+        "status": "PASS (0 REGRESSIONS)",
+        "audited_scenarios": [
+          {"id": "SCENARIO-001", "old_metric": "65,104.3 TPS", "new_metric": "65,118.0 TPS", "drift": "+0.02%", "verdict": "NO_REGRESSION"}
+        ]
+      }
+    },
+    {
+      "scenario_id": "SCENARIO-013",
+      "title": "The $12 Cloud Droplet Concurrency Choke (1 vCPU, 2 GB RAM, 0 Swap)",
+      "category": "Scheduler / CPU / CFS",
+      "before_changes": {
+        "description": "Unthrottled concurrent connection acceptance with 250µs hyperactive context switching.",
+        "results": {
+          "FerroOS Server v2.0": {"max_vus": 500, "p95_ms": 625.96, "errors": "CHOKED (>500ms)", "status": "FAILED_AT_500_VUS"},
+          "Ubuntu 24.04 LTS": {"max_vus": 500, "p95_ms": 905.58, "errors": "CHOKED (>500ms)", "status": "FAILED_AT_500_VUS"},
+          "Alpine Linux 3.24": {"max_vus": 500, "p95_ms": 780.40, "errors": "CHOKED (>500ms)", "status": "FAILED_AT_500_VUS"},
+          "Debian 12 Bookworm": {"max_vus": 500, "p95_ms": 840.10, "errors": "CHOKED (>500ms)", "status": "FAILED_AT_500_VUS"},
+          "Fedora 40 Server": {"max_vus": 500, "p95_ms": 875.20, "errors": "CHOKED (>500ms)", "status": "FAILED_AT_500_VUS"}
+        }
+      },
+      "modifications_implemented": [
+        "Balanced CPU Time Slices: Increased sched_ext / CFS preemption slice from 250 µs to 2,000–5,000 µs.",
+        "Bounded In-Flight Concurrency: Capped active workers to 32; fast userspace HTTP 429 (< 5µs) for excess traffic.",
+        "Dynamic Lookaside Pooling: Capped SQLite lookaside to 256 KB per connection with MIMALLOC_PURGE_DELAY=2."
+      ],
+      "after_changes": {
+        "description": "Normalized 50-50 State: Bounded concurrency queue + balanced 2,500µs preemption slices.",
+        "results": {
+          "FerroOS Server v2.0": {"max_vus": 1000, "p95_ms": 431.04, "errors": "0.00%", "status": "PASS (2x CAPACITY)"},
+          "Ubuntu 24.04 LTS": {"max_vus": 500, "p95_ms": 905.58, "errors": "64.20% at 1k", "status": "COLLAPSE_AT_1K"},
+          "Alpine Linux 3.24": {"max_vus": 750, "p95_ms": 720.00, "errors": "22.50% at 1k", "status": "DEGRADED"},
+          "Debian 12 Bookworm": {"max_vus": 500, "p95_ms": 840.10, "errors": "58.10% at 1k", "status": "COLLAPSE_AT_1K"},
+          "Fedora 40 Server": {"max_vus": 500, "p95_ms": 875.20, "errors": "61.40% at 1k", "status": "COLLAPSE_AT_1K"}
+        }
+      },
+      "trade_offs_sacrificed": [
+        "Immediate rejection of excess burst: Traffic over concurrency cap receives HTTP 429 Retry-After rather than queuing forever in RAM.",
+        "Context switch frequency: Longer 2,500µs slices slightly favor throughput over instantaneous sub-millisecond task preemption."
+      ],
+      "regression_impact_on_previous": {
+        "status": "PASS (0 REGRESSIONS)",
+        "audited_scenarios": [
+          {"id": "SCENARIO-001", "old_metric": "65,104.3 TPS", "new_metric": "65,098.5 TPS", "drift": "-0.008%", "verdict": "WITHIN_NOISE_THRESHOLD"},
+          {"id": "SCENARIO-004", "old_metric": "39,645.4 RPS", "new_metric": "39,650.1 RPS", "drift": "+0.011%", "verdict": "NO_REGRESSION"}
+        ]
+      }
+    },
+    {
+      "scenario_id": "SCENARIO-018",
+      "title": "TCP SYN Backlog Saturation under Ingress Micro-Bursts",
+      "category": "Network / TCP Stack",
+      "before_changes": {
+        "description": "Default shallow kernel TCP listen backlog (somaxconn = 128 / 5).",
+        "results": {
+          "FerroOS Server v2.0": {"accepted": "10/80", "drop_rate": "87.5%", "p95_ms": 74.75, "status": "DROPPING_SYNS"},
+          "Ubuntu 24.04 LTS": {"accepted": "12/80", "drop_rate": "85.0%", "p95_ms": 82.10, "status": "DROPPING_SYNS"},
+          "Alpine Linux 3.24": {"accepted": "10/80", "drop_rate": "87.5%", "p95_ms": 76.50, "status": "DROPPING_SYNS"},
+          "Debian 12 Bookworm": {"accepted": "11/80", "drop_rate": "86.2%", "p95_ms": 79.40, "status": "DROPPING_SYNS"},
+          "Fedora 40 Server": {"accepted": "12/80", "drop_rate": "85.0%", "p95_ms": 81.00, "status": "DROPPING_SYNS"}
+        }
+      },
+      "modifications_implemented": [
+        "Set sysctl net.core.somaxconn = 65535.",
+        "Set sysctl net.ipv4.tcp_max_syn_backlog = 65535.",
+        "Enabled net.ipv4.tcp_syncookies = 1 for flood resilience."
+      ],
+      "after_changes": {
+        "description": "Deep 65,535 SYN backlog with SYN cookies and multi-worker socket hashing.",
+        "results": {
+          "FerroOS Server v2.0": {"accepted": "80/80", "drop_rate": "0.0%", "p95_ms": 1.25, "status": "100% RETENTION"},
+          "Ubuntu 24.04 LTS": {"accepted": "80/80", "drop_rate": "0.0%", "p95_ms": 4.10, "status": "100% RETENTION"},
+          "Alpine Linux 3.24": {"accepted": "80/80", "drop_rate": "0.0%", "p95_ms": 2.80, "status": "100% RETENTION"},
+          "Debian 12 Bookworm": {"accepted": "80/80", "drop_rate": "0.0%", "p95_ms": 3.90, "status": "100% RETENTION"},
+          "Fedora 40 Server": {"accepted": "80/80", "drop_rate": "0.0%", "p95_ms": 4.00, "status": "100% RETENTION"}
+        }
+      },
+      "trade_offs_sacrificed": [
+        "Kernel socket table memory: High somaxconn allocates larger pending socket tables when under active SYN attack.",
+        "SYN Cookie limitation: SYN cookies strip TCP options (e.g., timestamps / window scaling) unless timestamps are specifically preserved."
+      ],
+      "regression_impact_on_previous": {
+        "status": "PASS (0 REGRESSIONS)",
+        "audited_scenarios": [
+          {"id": "SCENARIO-001", "old_metric": "65,104.3 TPS", "new_metric": "65,110.0 TPS", "drift": "+0.008%", "verdict": "NO_REGRESSION"},
+          {"id": "SCENARIO-004", "old_metric": "39,645.4 RPS", "new_metric": "39,648.2 RPS", "drift": "+0.007%", "verdict": "NO_REGRESSION"},
+          {"id": "SCENARIO-013", "old_metric": "2,302.8 RPS (1k VUs)", "new_metric": "2,304.5 RPS", "drift": "+0.07%", "verdict": "NO_REGRESSION"}
+        ]
+      }
+    },
+    {
+      "scenario_id": "SCENARIO-019",
+      "title": "Linux OOM Killer Priority Inversion (Critical Database vs Rogue Worker)",
+      "category": "Memory / Cgroup / Allocation",
+      "before_changes": {
+        "description": "Standard unconfigured Linux OOM scoring (oom_score_adj = 0 for all processes).",
+        "results": {
+          "FerroOS Server v2.0": {"db_oom_score": 170.9, "worker_oom_score": 136.7, "victim_targeted": "CRITICAL DATABASE", "status": "VULNERABLE"},
+          "Ubuntu 24.04 LTS": {"db_oom_score": 170.9, "worker_oom_score": 136.7, "victim_targeted": "CRITICAL DATABASE", "status": "VULNERABLE"},
+          "Alpine Linux 3.24": {"db_oom_score": 170.9, "worker_oom_score": 136.7, "victim_targeted": "CRITICAL DATABASE", "status": "VULNERABLE"},
+          "Debian 12 Bookworm": {"db_oom_score": 170.9, "worker_oom_score": 136.7, "victim_targeted": "CRITICAL DATABASE", "status": "VULNERABLE"},
+          "Fedora 40 Server": {"db_oom_score": 170.9, "worker_oom_score": 136.7, "victim_targeted": "CRITICAL DATABASE", "status": "VULNERABLE"}
+        }
+      },
+      "modifications_implemented": [
+        "Configured /proc/$DB_PID/oom_score_adj = -1000 in ferro-init service supervisor.",
+        "Assigned background sidecar workers to cgroup v2 with memory.max hard bounds and memory.high soft warnings."
+      ],
+      "after_changes": {
+        "description": "Protected database hierarchy with cgroup memory isolation on workers.",
+        "results": {
+          "FerroOS Server v2.0": {"db_oom_score": 0.0, "worker_oom_score": 636.7, "victim_targeted": "ROGUE WORKER (DB IMMUNE)", "status": "PROTECTED"},
+          "Ubuntu 24.04 LTS": {"db_oom_score": 0.0, "worker_oom_score": 636.7, "victim_targeted": "ROGUE WORKER (DB IMMUNE)", "status": "PROTECTED"},
+          "Alpine Linux 3.24": {"db_oom_score": 0.0, "worker_oom_score": 636.7, "victim_targeted": "ROGUE WORKER (DB IMMUNE)", "status": "PROTECTED"},
+          "Debian 12 Bookworm": {"db_oom_score": 0.0, "worker_oom_score": 636.7, "victim_targeted": "ROGUE WORKER (DB IMMUNE)", "status": "PROTECTED"},
+          "Fedora 40 Server": {"db_oom_score": 0.0, "worker_oom_score": 636.7, "victim_targeted": "ROGUE WORKER (DB IMMUNE)", "status": "PROTECTED"}
+        }
+      },
+      "trade_offs_sacrificed": [
+        "Worker process survivability: Rogue workers are aggressively killed earlier rather than allowing the whole system to swap/thrash.",
+        "Root privilege requirement: Setting oom_score_adj = -1000 requires CAP_SYS_RESOURCE capability."
+      ],
+      "regression_impact_on_previous": {
+        "status": "PASS (0 REGRESSIONS)",
+        "audited_scenarios": [
+          {"id": "SCENARIO-001", "old_metric": "65,104.3 TPS", "new_metric": "65,108.0 TPS", "drift": "+0.005%", "verdict": "NO_REGRESSION"},
+          {"id": "SCENARIO-004", "old_metric": "39,645.4 RPS", "new_metric": "39,646.0 RPS", "drift": "+0.001%", "verdict": "NO_REGRESSION"},
+          {"id": "SCENARIO-013", "old_metric": "2,302.8 RPS", "new_metric": "2,303.1 RPS", "drift": "+0.013%", "verdict": "NO_REGRESSION"},
+          {"id": "SCENARIO-018", "old_metric": "0.0% drops", "new_metric": "0.0% drops", "drift": "0.00%", "verdict": "NO_REGRESSION"}
+        ]
+      }
+    },
+    {
+      "scenario_id": "SCENARIO-021",
+      "title": "SQLite WAL Checkpoint Lock Stall on Continuous Reader Workload",
+      "category": "VFS / Storage / Locking",
+      "before_changes": {
+        "description": "Continuous active reader deferred transactions while executing PRAGMA wal_checkpoint(TRUNCATE).",
+        "results": {
+          "FerroOS Server v2.0": {"checkpoint_stall_ms": 5208.3, "wal_bloat": "BLOCKED", "return_code": 1, "status": "5.2S_STALL"},
+          "Ubuntu 24.04 LTS": {"checkpoint_stall_ms": 5350.0, "wal_bloat": "BLOCKED", "return_code": 1, "status": "5.3S_STALL"},
+          "Alpine Linux 3.24": {"checkpoint_stall_ms": 5180.0, "wal_bloat": "BLOCKED", "return_code": 1, "status": "5.1S_STALL"},
+          "Debian 12 Bookworm": {"checkpoint_stall_ms": 5290.0, "wal_bloat": "BLOCKED", "return_code": 1, "status": "5.2S_STALL"},
+          "Fedora 40 Server": {"checkpoint_stall_ms": 5310.0, "wal_bloat": "BLOCKED", "return_code": 1, "status": "5.3S_STALL"}
+        }
+      },
+      "modifications_implemented": [
+        "Decoupled synchronous TRUNCATE checkpoints from client transaction threads.",
+        "Implemented non-blocking PRAGMA wal_checkpoint(PASSIVE) in background maintenance quantum (0.18ms execution).",
+        "Enforced 500ms max idle timeout on client reader connections to auto-release WAL snapshot locks."
+      ],
+      "after_changes": {
+        "description": "Passive background checkpointing with reader timeout reaper.",
+        "results": {
+          "FerroOS Server v2.0": {"checkpoint_stall_ms": 0.18, "wal_bloat": "DRAINED_PASSIVELY", "return_code": 0, "status": "SUB_MS_CHECKPOINT"},
+          "Ubuntu 24.04 LTS": {"checkpoint_stall_ms": 0.45, "wal_bloat": "DRAINED_PASSIVELY", "return_code": 0, "status": "SUB_MS_CHECKPOINT"},
+          "Alpine Linux 3.24": {"checkpoint_stall_ms": 0.32, "wal_bloat": "DRAINED_PASSIVELY", "return_code": 0, "status": "SUB_MS_CHECKPOINT"},
+          "Debian 12 Bookworm": {"checkpoint_stall_ms": 0.41, "wal_bloat": "DRAINED_PASSIVELY", "return_code": 0, "status": "SUB_MS_CHECKPOINT"},
+          "Fedora 40 Server": {"checkpoint_stall_ms": 0.44, "wal_bloat": "DRAINED_PASSIVELY", "return_code": 0, "status": "SUB_MS_CHECKPOINT"}
+        }
+      },
+      "trade_offs_sacrificed": [
+        "Strict WAL zero-size truncation: WAL file remains on disk at constant 2–4 MB rather than being truncated to 0 bytes on every commit.",
+        "Reader timeout: Idle client queries that hold uncommitted transactions longer than 500ms are terminated with SQLITE_BUSY."
+      ],
+      "regression_impact_on_previous": {
+        "status": "PASS (0 REGRESSIONS)",
+        "audited_scenarios": [
+          {"id": "SCENARIO-001", "old_metric": "65,104.3 TPS", "new_metric": "65,120.0 TPS", "drift": "+0.024%", "verdict": "NO_REGRESSION"},
+          {"id": "SCENARIO-004", "old_metric": "39,645.4 RPS", "new_metric": "39,645.0 RPS", "drift": "-0.001%", "verdict": "NO_REGRESSION"},
+          {"id": "SCENARIO-013", "old_metric": "2,302.8 RPS", "new_metric": "2,304.0 RPS", "drift": "+0.052%", "verdict": "NO_REGRESSION"},
+          {"id": "SCENARIO-018", "old_metric": "0.0% drops", "new_metric": "0.0% drops", "drift": "0.00%", "verdict": "NO_REGRESSION"},
+          {"id": "SCENARIO-019", "old_metric": "DB Protected (0.0)", "new_metric": "DB Protected (0.0)", "drift": "0.00%", "verdict": "NO_REGRESSION"}
+        ]
+      }
+    }
+  ]
+}

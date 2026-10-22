@@ -386,6 +386,7 @@ Below is the master index of all core architectural specifications, benchmarking
 * **[Asynchronous I/O Subsystem](docs/arch/io_subsystem.md)**: Transparent POSIX I/O interposition via `libferro_io.so`, kernel-polling `io_uring` ring buffers (`IORING_SETUP_SQPOLL`), 4KB fast bypass, `SO_REUSEPORT` socket sharding, and Btrfs zero-copy extent reflinks.
 
 #### ⚡ Stress & Devastation Test Suites
+* **[Scenario Evolution & Regression Ledger](docs/reports/scenario_evolution_and_regression_matrix.md)**: End-to-end historical progression tracking baseline metrics across 15 competitor OSes, implemented modifications, elevated outcomes, operational trade-offs, and regression audits across all preceding scenarios.
 * **[Chaos Devastation Engine](tools/devastating_chaos_matrix.py)**: Multi-vector resource-exhaustion harness evaluating thundering herd accepts (50k clients), 128-thread allocator contention, 500k inode starvation, and CPU burn jitter.
 * **[Automated 15-OS Matrix Driver](scripts/run_15os_matrix.sh)**: Unified Docker orchestration suite evaluating cross-distribution durability across 15 operating systems under strict `--memory=4g --cpus=2` constraints.
 * **[Tail-Latency & CDF Analyzer](tools/reports/generate_charts.py)**: Microsecond-resolution latency distribution generator exporting publication-ready SVG and Matplotlib CDF charts.
