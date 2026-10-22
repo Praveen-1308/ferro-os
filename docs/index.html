@@ -1053,6 +1053,51 @@
           </div>
         </div>
       </div>
+
+      <!-- BEFORE VS AFTER 50-50 NORMALIZATION BENCHMARK -->
+      <div style="background: rgba(13, 20, 36, 0.65); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 16px; padding: 24px; margin-top: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 4px;">
+              The $12 Server Challenge: Before vs. After 50-50 Normalization
+            </h3>
+            <p style="color: var(--text-muted); font-size: 13px;">
+              Empirical comparison across 100 to 1,250 concurrent VUs on a constrained 1 vCPU / 2 GB RAM server running an authentic SQLite WAL feed API.
+            </p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <a href="reports/before_after_benchmark_dashboard.svg" target="_blank" rel="noopener" class="btn btn-glass" style="font-size: 12px; padding: 7px 14px;">
+              🔍 Open Vector SVG ↗
+            </a>
+            <a href="reports/before_after_benchmark_dashboard.png" download="before_after_benchmark_dashboard.png" class="btn btn-primary" style="font-size: 12px; padding: 7px 14px;">
+              ⭳ Download 300-DPI PNG
+            </a>
+          </div>
+        </div>
+
+        <div style="background: #070a13; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px; text-align: center; overflow: hidden; margin-bottom: 18px;">
+          <img src="reports/before_after_benchmark_dashboard.png" alt="FerroOS Before vs After Benchmark Dashboard" style="width: 100%; max-height: 520px; object-fit: contain; border-radius: 8px;" />
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; font-size: 13px; color: var(--text-muted);">
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 14px;">
+            <strong style="color: #38bdf8; display: block; margin-bottom: 4px;">Subplot 1: Tail Latency (p95) Log Curve</strong>
+            Before changes, unthrottled queuing caused exponential head-of-line blocking, breaching the 500ms limit at 500 VUs. After 50-50 normalization, p95 drops by 63% to 232ms and remains compliant through 1,000 VUs.
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 14px;">
+            <strong style="color: #38bdf8; display: block; margin-bottom: 4px;">Subplot 2: Sustained Throughput (RPS)</strong>
+            Before changes, high concurrency caused SQLite lock starvation, collapsing throughput from 1,445 req/s to 340 req/s. The normalized architecture saturates the core smoothly at 2,302 req/s.
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 14px;">
+            <strong style="color: #38bdf8; display: block; margin-bottom: 4px;">Subplot 3: 0.00% Drop Rate & Backpressure</strong>
+            Eliminates connection timeouts and kernel socket resets. Excess bursts receive instant HTTP 429 Retry-After headers (&lt; 5µs), keeping 100% of admitted transactions successful.
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 14px;">
+            <strong style="color: #38bdf8; display: block; margin-bottom: 4px;">Subplot 4: Flat ~20MB Memory Footprint</strong>
+            Unlike threaded architectures that balloon to 260MB+, 256KB lookaside buffers and mimalloc page purging keep memory completely flat at 17.5 MB – 21.8 MB.
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- DUAL EDITIONS -->
