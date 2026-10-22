@@ -1,0 +1,17 @@
+{
+  "target_conns": 5000,
+  "active_conns": 5000,
+  "received_msgs": 5000,
+  "coverage_pct": 100.0,
+  "within_10ms_pct": 97.14,
+  "latency_p50_ms": 5.667,
+  "latency_p95_ms": 9.752,
+  "latency_p99_ms": 10.342,
+  "latency_p999_ms": 10.436,
+  "latency_max_ms": 10.446,
+  "dropped_conns": 500,
+  "reconnected_conns": 500,
+  "reconnect_p50_ms": 0.008,
+  "reconnect_p95_ms": 0.008,
+  "errors": 0
+}

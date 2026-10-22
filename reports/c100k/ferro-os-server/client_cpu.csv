@@ -1,0 +1,3 @@
+timestamp,client_cpu_pct,client_rss_mb,active_connections,messages_received,errors
+1792698211.733,0.0,13.8,100000,0,0
+1792698214.196,0.0,19.1,100000,100000,0
