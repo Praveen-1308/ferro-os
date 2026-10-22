@@ -122,12 +122,14 @@ This whitepaper analyzes the dominant production-ready custom operating systems 
 | **Rollback Model** | A/B Partition Swap | Ephemeral Reboot | A/B Partition Swap | A/B Partition Swap | Manual snapshot | None (manual) | **$O(1)$ Atomic Subvolumes** |
 | **Init Daemon** | Custom Rust Agent | Custom Go daemon | systemd | systemd | systemd | systemd | **`ferro-init` (Pure Rust)** |
 | **Idle Memory Footprint** | ~55 MB | ~65 MB | ~70 MB | ~110 MB | ~85 MB | ~160 MB | **~18 MB – 22 MB** |
-| **Cold Boot Latency** | ~5.0 s (VM boot) | ~4.5 s (VM boot) | ~6.0 s (VM boot) | ~8.0 s (VM boot) | ~6.5 s (VM boot) | ~12.0 s (VM boot) | **< 0.8 ms (PID 1 ready)** |
+| **Startup / Spawn Latency** | ~5.0 s (VM boot) | ~4.5 s (VM boot) | ~6.0 s (VM boot) | ~8.0 s (VM boot) | ~6.5 s (VM boot) | ~12.0 s (VM boot) | **< 0.8 ms (ferro-init spawn)\*** |
 | **Crash FD Persistence** | ❌ No | ❌ No | ❌ No | ❌ No | ❌ No | ❌ No | **✅ `SCM_RIGHTS` FD Store** |
 | **Memory Allocator** | glibc ptmalloc3 | musl / Go runtime | glibc ptmalloc3 | glibc ptmalloc3 | glibc ptmalloc3 | glibc ptmalloc3 | **Interposed `mimalloc 2.1`** |
 | **I/O Acceleration** | Standard POSIX | Standard POSIX | Standard POSIX | Standard POSIX | Standard POSIX | Standard POSIX | **Transparent `libferro_io`** |
 | **Interactive Shell** | ❌ None (Debug Pod) | ❌ None | ⚠️ Limited | ✅ Bash | ✅ Bash | ✅ Bash | **✅ Pure Rust `ferro-core`** |
 | **Software Binary ABI** | Container-only | Container-only | Container-only | Container/systemd | glibc / RPM | glibc / Debian | **100% Native GNU glibc** |
+
+*\* Clarification: FerroOS's sub-millisecond metric (< 0.8 ms) explicitly denotes sub-millisecond container initialization and userspace supervisor spawn time (`ferro-init`), rather than bare-metal firmware/hardware boot.*
 
 ---
 

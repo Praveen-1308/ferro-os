@@ -1,0 +1,36 @@
+[
+  {
+    "os_id": "ferro-os-server",
+    "os_name": "FerroOS Server v2.0",
+    "hackbench_time_s": 2.461,
+    "hackbench_psi": 0.0,
+    "fio": {
+      "iops": 1650000.0,
+      "bw_mib_s": 6444.0,
+      "p95_ms": 2224.0,
+      "p99_ms": 3344.0
+    },
+    "sysbench_memory": {
+      "ops_sec": 3497047.3,
+      "mib_sec": 13660.34,
+      "p95_ms": 0.0
+    }
+  },
+  {
+    "os_id": "ubuntu-24-04",
+    "os_name": "Ubuntu Server 24.04 LTS",
+    "hackbench_time_s": 2.285,
+    "hackbench_psi": 0.0,
+    "fio": {
+      "iops": 1507000.0,
+      "bw_mib_s": 5888.0,
+      "p95_ms": 2320.0,
+      "p99_ms": 4128.0
+    },
+    "sysbench_memory": {
+      "ops_sec": 3331361.8,
+      "mib_sec": 13013.13,
+      "p95_ms": 0.0
+    }
+  }
+]

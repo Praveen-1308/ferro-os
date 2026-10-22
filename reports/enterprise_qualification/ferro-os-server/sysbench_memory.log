@@ -1,0 +1,40 @@
+sysbench 1.0.20 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 16
+Initializing random number generator from current time
+
+
+Running memory speed test with the following options:
+  block size: 4KiB
+  total size: 20480MiB
+  operation: write
+  scope: global
+
+Initializing worker threads...
+
+Threads started!
+
+Total operations: 5242880 (3497047.26 per second)
+
+20480.00 MiB transferred (13660.34 MiB/sec)
+
+
+General statistics:
+    total time:                          1.4989s
+    total number of events:              5242880
+
+Latency (ms):
+         min:                                    0.00
+         avg:                                    0.00
+         max:                                   62.01
+         95th percentile:                        0.00
+         sum:                                16722.27
+
+Threads fairness:
+    events (avg/stddev):           327680.0000/0.00
+    execution time (avg/stddev):   1.0451/0.32
+
+
+ERROR: ld.so: object '/usr/local/lib/libmimalloc.so' from LD_PRELOAD cannot be preloaded (cannot open shared object file): ignored.
+ERROR: ld.so: object '/usr/local/lib/libferro_io.so' from LD_PRELOAD cannot be preloaded (cannot open shared object file): ignored.

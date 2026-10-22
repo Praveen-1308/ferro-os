@@ -85,7 +85,7 @@ Tests are run using Grafana `k6` across progressive tiers:
 | **Heap Allocator Contention**| `ptmalloc3` arena locks | `musl` spinlocks | **`mimalloc 2.1` thread-local lock-free arenas** |
 | **glibc / Python / C Compatibility**| 100% Native | ❌ Fails on many wheels | **100% Native GNU glibc** |
 | **I/O Acceleration** | Blocking synchronous POSIX | Blocking synchronous POSIX | **`libferro_io.so` (`io_uring` zero-copy acceleration)** |
-| **PID 1 Cold Boot Time** | 3.5s – 8.0s (`systemd`) | ~1.2s (`openrc`) | **< 0.8 ms (`ferro-init` pure-Rust supervisor)** |
+| **PID 1 Cold Boot Time** | 3.5s – 8.0s (`systemd`) | ~1.2s (`openrc`) | **< 0.8 ms (`ferro-init` supervisor spawn, not bare-metal firmware)** |
 
 ---
 

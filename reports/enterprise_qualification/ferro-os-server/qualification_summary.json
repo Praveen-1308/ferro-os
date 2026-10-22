@@ -1,0 +1,17 @@
+{
+  "os_id": "ferro-os-server",
+  "os_name": "FerroOS Server v2.0",
+  "hackbench_time_s": 2.461,
+  "hackbench_psi": 0.0,
+  "fio": {
+    "iops": 1650000.0,
+    "bw_mib_s": 6444.0,
+    "p95_ms": 2224.0,
+    "p99_ms": 3344.0
+  },
+  "sysbench_memory": {
+    "ops_sec": 3497047.3,
+    "mib_sec": 13660.34,
+    "p95_ms": 0.0
+  }
+}

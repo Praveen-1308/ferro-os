@@ -1,0 +1,6 @@
+Running in threaded mode with 10 groups using 40 file descriptors each (== 400 tasks)
+Each sender will pass 2000 messages of 100 bytes
+Time: 2.461
+
+ERROR: ld.so: object '/usr/local/lib/libmimalloc.so' from LD_PRELOAD cannot be preloaded (cannot open shared object file): ignored.
+ERROR: ld.so: object '/usr/local/lib/libferro_io.so' from LD_PRELOAD cannot be preloaded (cannot open shared object file): ignored.
