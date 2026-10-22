@@ -16,6 +16,7 @@ import os
 import sys
 import json
 import re
+import time
 import urllib.request
 import urllib.parse
 from datetime import datetime, timezone
@@ -183,6 +184,34 @@ def scan_repo_existing_scenarios():
                 pass
     return known
 
+def extract_scenarios_from_llm_text(text, source_tag):
+    found = []
+    # Search for JSON array [ ... ]
+    match = re.search(r'\[\s*\{.*\}\s*\]', text, re.DOTALL)
+    if match:
+        try:
+            items = json.loads(match.group(0))
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, dict) and "title" in item:
+                        s_id = item.get("scenario_id")
+                        if not s_id or not str(s_id).startswith("SCENARIO-"):
+                            s_id = f"SCENARIO-{int(time.time() % 100000):05d}"
+                        found.append({
+                            "scenario_id": str(s_id).strip(),
+                            "title": item.get("title", "Discovered Cloud Scenario").strip(),
+                            "category": item.get("category", "General Cloud / Kernel").strip(),
+                            "source": source_tag,
+                            "cloud_problem_description": item.get("cloud_problem_description", item.get("description", "")).strip(),
+                            "symptoms_and_impact": item.get("symptoms_and_impact", item.get("symptoms", "")).strip(),
+                            "ferro_os_hypothesis": item.get("ferro_os_hypothesis", "Evaluate against FerroOS scheduler and memory allocator.").strip(),
+                            "minimal_elevation_knob": item.get("minimal_elevation_knob", "Sysctl or cgroup tuning.").strip(),
+                            "analysis_status": "QUEUED_FOR_ANALYSIS"
+                        })
+        except Exception as e:
+            print(f"      [!] Error parsing JSON from {source_tag}: {e}")
+    return found
+
 def query_external_apis():
     """
     Checks for available GitHub Secrets / Environment Variables and queries external intelligence feeds.
@@ -262,15 +291,15 @@ def query_external_apis():
                 "messages": [
                     {
                         "role": "system",
-                        "content": "You are a cloud infrastructure reliability engineer. Identify 2 novel real-world Linux cloud server production bottlenecks or failures."
+                        "content": "You are a Linux kernel and cloud infrastructure reliability engineer. Discover real-world cloud server production bugs, bottlenecks, or rare failure modes. Return ONLY a valid JSON array of objects with keys: scenario_id (e.g. SCENARIO-024-NAME), title, category, cloud_problem_description, symptoms_and_impact, ferro_os_hypothesis, minimal_elevation_knob."
                     },
                     {
                         "role": "user",
-                        "content": "Name 2 specific cloud server failure modes with root cause and minimal kernel/sysctl mitigation."
+                        "content": "Provide 2 novel, specific cloud server failure modes (e.g. ephemeral port leak, epoll starvation, CFS pause, lock convoying, zero-window lockup) not commonly tested."
                     }
                 ],
-                "temperature": 0.5,
-                "max_tokens": 400
+                "temperature": 0.7,
+                "max_tokens": 800
             }
             req = urllib.request.Request(
                 gh_models_url,
@@ -281,9 +310,15 @@ def query_external_apis():
                     "User-Agent": "FerroOS-Harvester/1.0"
                 }
             )
-            with urllib.request.urlopen(req, timeout=10) as resp:
+            with urllib.request.urlopen(req, timeout=12) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
-                print("      -> Successfully queried GitHub Models via PAT!")
+                content = data["choices"][0]["message"]["content"]
+                items = extract_scenarios_from_llm_text(content, "GitHub Models (LIMITISER / gpt-4o-mini)")
+                if items:
+                    print(f"      -> Successfully extracted {len(items)} novel scenarios from GitHub Models!")
+                    discovered.extend(items)
+                else:
+                    print("      -> Successfully queried GitHub Models (raw text received).")
         except urllib.error.HTTPError as e:
             print(f"      [!] GitHub Models PAT response ({e.code}): {e.reason}")
         except Exception as e:
@@ -313,7 +348,14 @@ def query_external_apis():
                     chat_payload = {
                         "model": "gpt-4o",
                         "messages": [
-                            {"role": "user", "content": "List 2 rare Linux server edge cases that cause silent TCP packet drops or file descriptor leaks."}
+                            {
+                                "role": "system",
+                                "content": "You are a cloud reliability engineer. Return ONLY a valid JSON array of objects with keys: scenario_id (e.g. SCENARIO-025-NAME), title, category, cloud_problem_description, symptoms_and_impact, ferro_os_hypothesis, minimal_elevation_knob."
+                            },
+                            {
+                                "role": "user",
+                                "content": "List 2 rare Linux server edge cases that cause silent TCP packet drops or file descriptor leaks."
+                            }
                         ]
                     }
                     chat_req = urllib.request.Request(
@@ -326,8 +368,15 @@ def query_external_apis():
                             "User-Agent": "GitHubCopilot/1.155.0"
                         }
                     )
-                    with urllib.request.urlopen(chat_req, timeout=10) as chat_resp:
-                        print("      -> Successfully received GitHub Copilot chat inference!")
+                    with urllib.request.urlopen(chat_req, timeout=12) as chat_resp:
+                        chat_data = json.loads(chat_resp.read().decode("utf-8"))
+                        chat_content = chat_data["choices"][0]["message"]["content"]
+                        copilot_items = extract_scenarios_from_llm_text(chat_content, "GitHub Copilot (LIMITISER / gpt-4o)")
+                        if copilot_items:
+                            print(f"      -> Successfully extracted {len(copilot_items)} novel scenarios from GitHub Copilot!")
+                            discovered.extend(copilot_items)
+                        else:
+                            print("      -> Successfully received GitHub Copilot chat inference.")
         except urllib.error.HTTPError as e:
             if e.code == 401 or e.code == 403:
                 print(f"      [!] Copilot notice: Token does not have active Copilot subscription ({e.code}).")
