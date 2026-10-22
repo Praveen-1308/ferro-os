@@ -213,10 +213,27 @@ def parse_sysbench_memory(output):
     return {"ops_sec": round(ops_sec, 1), "bw_mib_s": round(bw_mib, 2)}
 
 def ensure_dataset():
-    zst_path = "tools/datasets/enterprise_seed.db.zst"
+    zst_path = os.path.abspath("tools/datasets/enterprise_seed.db.zst")
+    active_dir = os.path.abspath("tools/stack/active_data")
+    active_db = os.path.join(active_dir, "enterprise_seed.db")
+    os.makedirs(active_dir, exist_ok=True)
     if not os.path.exists(zst_path):
         print("[Dataset] Generating enterprise seed database...")
         subprocess.run(["python3", "tools/datasets/generate_enterprise_dataset.py"], check=True)
+    if not os.path.exists(active_db) or os.path.getsize(active_db) < 1000:
+        print("[Dataset] Decompressing seed database via zstd...")
+        if shutil.which("zstd"):
+            subprocess.run(["zstd", "-d", "-q", "-f", zst_path, "-o", active_db], check=True)
+        else:
+            subprocess.run(["python3", "tools/datasets/generate_enterprise_dataset.py"], check=True)
+            if shutil.which("zstd"):
+                subprocess.run(["zstd", "-d", "-q", "-f", zst_path, "-o", active_db], check=True)
+    try:
+        os.chmod(active_dir, 0o777)
+        if os.path.exists(active_db):
+            os.chmod(active_db, 0o666)
+    except Exception:
+        pass
 
 def main():
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H%M%S")
@@ -338,10 +355,44 @@ def main():
         print(f"\n[Test 2] CIS Golden Workload: k6 Multi-Tier Load Test (100 VUs)...")
         k6_log = os.path.join(raw_logs_dir, f"{cid}_k6_stdout.log")
         k6_script = os.path.abspath("tools/stack/enterprise_k6_load.js")
-        k6_cmd = ["k6", "run", "--vus=100", "--duration=20s", k6_script]
+
+        # Start service container hosting enterprise_service.py
+        service_container = f"bench-svc-{cid}"
+        subprocess.run(["docker", "rm", "-f", service_container], capture_output=True)
+        srv_cmd = [
+            "docker", "run", "-d",
+            "--name", service_container,
+            "--cpus=4.0", "--memory=6g",
+            "--net=host",
+            "-v", f"{os.path.abspath('tools/stack')}:/stack",
+            "-v", f"{os.path.abspath('tools/stack/active_data')}:/data",
+            "-e", "PORT=10000",
+            "-e", "SQLITE_PATH=/data/enterprise_seed.db",
+            "-w", "/stack"
+        ] + env_args + [img, "python3", "enterprise_service.py"]
+        subprocess.run(srv_cmd, check=True)
+        time.sleep(2.5)
+
+        # Run k6 (check host binary or docker fallback)
+        if shutil.which("k6"):
+            k6_cmd = ["k6", "run", "--vus=100", "--duration=20s", k6_script]
+        elif os.path.exists("tools/k6"):
+            k6_cmd = [os.path.abspath("tools/k6"), "run", "--vus=100", "--duration=20s", k6_script]
+        else:
+            k6_cmd = [
+                "docker", "run", "--rm", "--net=host",
+                "-v", f"{os.path.abspath('tools/stack')}:/stack",
+                "-w", "/stack",
+                "grafana/k6:latest", "run", "--vus=100", "--duration=20s", "enterprise_k6_load.js"
+            ]
+
         res_k6 = subprocess.run(k6_cmd, capture_output=True, text=True)
         with open(k6_log, "w") as f:
             f.write(res_k6.stdout + "\n" + res_k6.stderr)
+
+        # Stop service container
+        subprocess.run(["docker", "rm", "-f", service_container], capture_output=True)
+
         cand_metrics["k6_status"] = "PASSED (0 Errors)"
         print(f"  -> CIS Golden Workload: PASSED (Zero Connection Drops)")
 

@@ -54,15 +54,16 @@ jobs:
 
       - name: Tune Host Kernel & Limits
         run: |
-          ulimit -n 1048576
+          sudo prlimit --pid $$ --nofile=1048576:1048576 || true
+          ulimit -n 1048576 || ulimit -n 65535 || true
           sudo sysctl -w fs.file-max=2097152 || true
           sudo sysctl -w net.netfilter.nf_conntrack_max=1048576 || true
           sudo sysctl -w net.core.somaxconn=65535 || true
 
-      - name: Install Host Tools (k6, fio, sysbench, rt-tests)
+      - name: Install Host Tools (k6, fio, sysbench, rt-tests, zstd)
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq fio sysbench rt-tests gcc make curl
+          sudo apt-get install -y -qq fio sysbench rt-tests gcc make curl zstd
 
           # Install Grafana k6
           sudo gpg -k || true
@@ -95,9 +96,12 @@ jobs:
       - name: Publish Comparison Scorecard to GitHub Step Summary
         if: always()
         run: |
-          if comp_file=$(ls reports/runs/*/comparison_summary.md 2>/dev/null | head -n 1); then
-            cat "$comp_file" >> $GITHUB_STEP_SUMMARY
-          fi
+          for f in reports/runs/*/comparison_summary.md; do
+            if [ -f "$f" ]; then
+              cat "$f" >> $GITHUB_STEP_SUMMARY
+              break
+            fi
+          done
 
       - name: Archive Benchmark Telemetry and Logs
         uses: actions/upload-artifact@v4
