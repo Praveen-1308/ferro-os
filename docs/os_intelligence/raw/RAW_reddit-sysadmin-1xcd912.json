@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xcd912",
+  "title": "Is AI causing impatience and removal of troubleshooting skills? Leading to burnout of sysadmins.",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xcd912/is_ai_causing_impatience_and_removal_of/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Is AI causing impatience and removal of troubleshooting skills? Leading to burnout of sysadmins. <!-- SC_OFF --><div class=\"md\"><p>I&#39;m a desktop admin and have been in this role for a few years, but Im starting to feel a lot more burnout due to others expectations. </p> <p>I think AI has given people instant answers to all the problems, that they struggle if they need to wait for something. </p> <p>I use it a lot myself for quick powershell scripts for app deployments or remediations. Sometimes as a research aid, but I&#39;m also finding tickets escalated to me without any basic troubleshooting. </p> <p>Ill get questions like &quot;can you tell me if this app is deployed to this user?&quot; &quot;Did a Windows update cause this computer to crash?&quot; </p> <p>Things they should have and used to find out themselves. But they won&#39;t even attempt to look into the problem. Even an app install failure will now automatically come to me because &quot;its on intune&quot;. Only for me to look at it and see the user had a pending windows update, or the computer was out of drive space. </p> <p>More and more I&#39;m being pulled into meetings from other departments for my knowledge bec",
+  "harvested_at": "2026-10-22T11:30:08.455026+00:00"
+}

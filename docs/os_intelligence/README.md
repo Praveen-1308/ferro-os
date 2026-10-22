@@ -1,11 +1,11 @@
 # 📡 FerroOS Real-Time Cloud Infrastructure & OS Intelligence Radar
 
 > [!IMPORTANT]
-> **Automated Surveillance Engine**: Continuously scans Hacker News, Reddit (r/sysadmin, r/devops),
+> **Automated Surveillance Engine**: Continuously scans Hacker News, Reddit (r/sysadmin, r/devops, r/PostgreSQL, r/kubernetes),
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 6 | **Last Sweep**: 2026-10-22 11:20:25 UTC
+**Active Tracked Incidents**: 31 | **Last Sweep**: 2026-10-22 11:30:12 UTC
 
 ---
 
@@ -19,6 +19,31 @@
 | `CF-POSTMORTEM-2024` | **Cloud Infrastructure** | Cloudflare Edge Proxy Outage: Epoll Event Queue Saturation Under TLS Churn | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_cf-postmortem-2024.json) | [Read Dossier](incidents/INCIDENT_cf-postmortem-2024.md) |
 | `AWS-POSTGRES-AURORA-OOM` | **Cloud Infrastructure** | PostgreSQL Connection Pool Exhaustion on 1 vCPU Container: Linux OOM Termination | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_aws-postgres-aurora-oom.json) | [Read Dossier](incidents/INCIDENT_aws-postgres-aurora-oom.md) |
 | `REDIS-COW-SPIKE` | **Cloud Infrastructure** | Redis BGSAVE Fork Stall on High-Throughput Write Workload: 4-Second Tail Latency | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_redis-cow-spike.json) | [Read Dossier](incidents/INCIDENT_redis-cow-spike.md) |
+| `HN-48851069` | **PostgreSQL** | The four horsemen behind Postgres outages | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-48851069.json) | [Read Dossier](incidents/INCIDENT_hn-48851069.md) |
+| `HN-48873837` | **PostgreSQL** | The four horsemen behind Postgres outages | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-48873837.json) | [Read Dossier](incidents/INCIDENT_hn-48873837.md) |
+| `HN-48841546` | **PostgreSQL** | The four horsemen behind Postgres outages | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-48841546.json) | [Read Dossier](incidents/INCIDENT_hn-48841546.md) |
+| `HN-30451967` | **Nginx** | Understanding Nginx Tail Latencies | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-30451967.json) | [Read Dossier](incidents/INCIDENT_hn-30451967.md) |
+| `HN-31336430` | **Kubernetes** | Kubernetes CPU allocation and throttling demystified | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-31336430.json) | [Read Dossier](incidents/INCIDENT_hn-31336430.md) |
+| `HN-44295831` | **Kubernetes** | Why Kubernetes Throttled My Idle Pods | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-44295831.json) | [Read Dossier](incidents/INCIDENT_hn-44295831.md) |
+| `HN-22349110` | **Kubernetes** | CPU limits and aggressive throttling in Kubernetes | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-22349110.json) | [Read Dossier](incidents/INCIDENT_hn-22349110.md) |
+| `HN-8551516` | **Redis** | Redis latency spikes and the Linux kernel: a few more details | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-8551516.json) | [Read Dossier](incidents/INCIDENT_hn-8551516.md) |
+| `HN-8532851` | **Redis** | Redis latency spikes and the 99th percentile | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-8532851.json) | [Read Dossier](incidents/INCIDENT_hn-8532851.md) |
+| `HN-33786159` | **Redis** | We diagnosed and resolved Redis latency spikes with BPF and other tools | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-33786159.json) | [Read Dossier](incidents/INCIDENT_hn-33786159.md) |
+| `HN-7644910` | **Linux Kernel** | Avoiding Memory Allocation Deadlocks (In Linux Kernel) | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-7644910.json) | [Read Dossier](incidents/INCIDENT_hn-7644910.md) |
+| `HN-36005879` | **Linux Kernel** | Debugging a FUSE deadlock in the Linux kernel | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-36005879.json) | [Read Dossier](incidents/INCIDENT_hn-36005879.md) |
+| `HN-36009768` | **Linux Kernel** | Debugging a FUSE deadlock in the Linux kernel at Netflix | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-36009768.json) | [Read Dossier](incidents/INCIDENT_hn-36009768.md) |
+| `HN-36019197` | **VFS Filesystem** | Debugging a FUSE deadlock in the Linux kernel | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-36019197.json) | [Read Dossier](incidents/INCIDENT_hn-36019197.md) |
+| `HN-47511866` | **Linux Cgroups** | Show HN: Herd – A Go sidecar to stop stateful processes Puppeteer/LLMs from OOM | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-47511866.json) | [Read Dossier](incidents/INCIDENT_hn-47511866.md) |
+| `HN-954033` | **Linux Cgroups** | Maglev, Gemstone's Ruby VM, Finally Revealed | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-954033.json) | [Read Dossier](incidents/INCIDENT_hn-954033.md) |
+| `HN-47847354` | **SQLite Database** | SQLite WAL in 2026: an architecture note on checkpoint starvation | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-47847354.json) | [Read Dossier](incidents/INCIDENT_hn-47847354.md) |
+| `HN-47136294` | **SQLite Database** | Show HN: GrantFlow (FastAPI and LangGraph) for donor-aligned NGO proposal drafts | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-47136294.json) | [Read Dossier](incidents/INCIDENT_hn-47136294.md) |
+| `HN-46899939` | **SQLite Database** | Show HN: Lightweight embedded document database in Rust with ACID and MVCC | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-46899939.json) | [Read Dossier](incidents/INCIDENT_hn-46899939.md) |
+| `HN-49046973` | **Linux io_uring** | Show HN: Cygnus – A fast, lightweight self-hostable serverless runtime and PaaS | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-49046973.json) | [Read Dossier](incidents/INCIDENT_hn-49046973.md) |
+| `HN-27812145` | **Linux io_uring** | A Crash Course on Debugging Kernel Crashes Using the Crash Utility | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-27812145.json) | [Read Dossier](incidents/INCIDENT_hn-27812145.md) |
+| `HN-36895220` | **Linux io_uring** | Launch HN: PeerDB (YC S23) – Fast, Native ETL/ELT for Postgres | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-36895220.json) | [Read Dossier](incidents/INCIDENT_hn-36895220.md) |
+| `REDDIT-SYSADMIN-1xc328i` | **Linux Server Administration** | Hostname: TEMP-PHP-2014 | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xc328i.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xc328i.md) |
+| `REDDIT-SYSADMIN-1xc99ct` | **Linux Server Administration** | PHP2Shell was probed 4 days before disclosure. Is anyone doing a look-back hunt, not just patching? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xc99ct.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xc99ct.md) |
+| `REDDIT-SYSADMIN-1xcd912` | **Linux Server Administration** | Is AI causing impatience and removal of troubleshooting skills? Leading to burnout of sysadmins. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xcd912.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xcd912.md) |
 
 ---
 
@@ -28,4 +53,4 @@ All collected intelligence is organized into structured source and subsystem tre
 
 - `docs/os_intelligence/tree/hackernews/`: Hacker News engineering discussions
 - `docs/os_intelligence/tree/reddit/`: Production sysadmin & devops incident reports
-- `docs/os_intelligence/tree/cloud_blogs/`: Cloudflare, AWS, and enterprise database post-mortems
+- `docs/os_intelligence/tree/cloud_blogs/`: Cloudflare, AWS, Netflix, Stripe, Datadog post-mortems

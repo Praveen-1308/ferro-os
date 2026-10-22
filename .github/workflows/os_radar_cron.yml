@@ -1,0 +1,65 @@
+name: OS Incident Radar - Autonomous Surveillance Engine
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Runs every 30 minutes
+  workflow_dispatch:
+
+concurrency:
+  group: os-radar-cron
+  cancel-in-progress: false
+
+jobs:
+  harvest-and-publish:
+    name: Harvest OS & Cloud Incidents
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Multi-Source OS Incident Radar
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python3 tools/intelligence/os_radar_harvester.py
+
+      - name: Compile Hugging Face Space Single-Page App
+        run: |
+          python3 tools/hf_space/build_index.py
+
+      - name: Deploy to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -n "$HF_TOKEN" ]; then
+            git clone https://praveenkumargorlec79d92:$HF_TOKEN@huggingface.co/spaces/praveenkumargorlec79d92/ferro-os-benchmarks /tmp/hf_cron || true
+            if [ -d "/tmp/hf_cron" ]; then
+              cp tools/hf_space/index.html /tmp/hf_cron/index.html
+              cp tools/hf_space/README.md /tmp/hf_cron/README.md
+              cd /tmp/hf_cron
+              git config user.name "FerroOS Bot"
+              git config user.email "bot@ferro-os.dev"
+              git add index.html README.md
+              git commit -m "chore(cron): sync radar incidents to live space" || true
+              git push origin main || true
+            fi
+          fi
+
+      - name: Commit & Push New Dossiers to Repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.LIMITISER || secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/os_intelligence/ tools/hf_space/
+          if git diff --staged --quiet; then
+            echo "No new incidents to commit in this sweep."
+          else
+            git commit -m "chore(intelligence): archive novel cloud hosting & OS incidents [skip ci]"
+            git push origin main
+          fi

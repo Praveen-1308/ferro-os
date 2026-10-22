@@ -1,0 +1,10 @@
+{
+  "id": "HN-36005879",
+  "title": "Debugging a FUSE deadlock in the Linux kernel",
+  "source": "Hacker News",
+  "source_url": "https://news.ycombinator.com/item?id=36005879",
+  "sub_url": "https://netflixtechblog.com/debugging-a-fuse-deadlock-in-the-linux-kernel-c75cd7989b6d?gi=f4c590ed3fe6",
+  "sub_content": null,
+  "raw_text": "Debugging a FUSE deadlock in the Linux kernel. Referenced source: https://netflixtechblog.com/debugging-a-fuse-deadlock-in-the-linux-kernel-c75cd7989b6d?gi=f4c590ed3fe6. Points: 166",
+  "harvested_at": "2026-10-22T11:29:40.457059+00:00"
+}
