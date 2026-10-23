@@ -83,10 +83,12 @@ status_ok = (
 )
 log_test("Gaming Subsystem Introspection", status_ok, f"Exit: {code}")
 
+host_arch = "aarch64" if ("aarch64" in os.uname().machine.lower() or "arm64" in os.uname().machine.lower()) else "x86_64"
+
 # ------------------------------------------------------------------------------
-# SCENARIO 02: Native Linux ELF ARM64 Binary Identification
+# SCENARIO 02: Linux ELF ARM64 Binary Identification & Architecture Routing
 # ------------------------------------------------------------------------------
-print("\n[Scenario 02] Native Linux ELF ARM64 Binary Identification")
+print("\n[Scenario 02] Linux ELF ARM64 Binary Identification")
 elf_arm64_path = os.path.join(test_dir, "game_arm64.bin")
 # ELF Header: 0x7F 'E' 'L' 'F', class=2 (64-bit), data=1 (little endian), version=1
 # e_machine at offset 18 (2 bytes little endian) = 0x00B7 (AArch64)
@@ -99,13 +101,17 @@ with open(elf_arm64_path, "wb") as f:
     f.write(hdr)
 
 code, out, err = run_cmd([FERRO_CORE, "game", "probe", elf_arm64_path])
-arm64_ok = (code == 0 and "Linux ELF 64-bit (ARM aarch64 native)" in out and "Direct Native Execution" in out)
-log_test("Native Linux ELF ARM64 Binary Probe", arm64_ok, "AArch64 native direct routing")
+if host_arch == "aarch64":
+    arm64_ok = (code == 0 and "Linux ELF 64-bit (ARM aarch64 native)" in out and "Direct Native Execution" in out)
+    log_test("Native Linux ELF ARM64 Binary Probe", arm64_ok, "AArch64 native direct routing")
+else:
+    arm64_ok = (code == 0 and "Linux ELF 64-bit (ARM aarch64 native)" in out and "QEMU AArch64" in out)
+    log_test("Foreign Linux ELF ARM64 Binary Probe", arm64_ok, "AArch64 emulated routing")
 
 # ------------------------------------------------------------------------------
-# SCENARIO 03: Foreign Linux ELF x86_64 Binary Identification & Translation Routing
+# SCENARIO 03: Linux ELF x86_64 Binary Identification & Architecture Routing
 # ------------------------------------------------------------------------------
-print("\n[Scenario 03] Foreign Linux ELF x86_64 Binary Identification & Translation Routing")
+print("\n[Scenario 03] Linux ELF x86_64 Binary Identification & Translation Routing")
 elf_x86_64_path = os.path.join(test_dir, "game_x86_64.bin")
 with open(elf_x86_64_path, "wb") as f:
     hdr = bytearray(64)
@@ -116,8 +122,12 @@ with open(elf_x86_64_path, "wb") as f:
     f.write(hdr)
 
 code, out, err = run_cmd([FERRO_CORE, "game", "probe", elf_x86_64_path])
-x86_64_ok = (code == 0 and "Linux ELF 64-bit (x86_64 / AMD64)" in out and "BOX64" in out)
-log_test("Foreign Linux ELF x86_64 Binary Probe", x86_64_ok, "Routed to Box64 DBT bridge")
+if host_arch == "x86_64":
+    x86_64_ok = (code == 0 and "Linux ELF 64-bit (x86_64 / AMD64)" in out and "Direct Native Execution" in out)
+    log_test("Native Linux ELF x86_64 Binary Probe", x86_64_ok, "x86_64 native direct routing")
+else:
+    x86_64_ok = (code == 0 and "Linux ELF 64-bit (x86_64 / AMD64)" in out and "BOX64" in out)
+    log_test("Foreign Linux ELF x86_64 Binary Probe", x86_64_ok, "Routed to Box64 DBT bridge")
 
 # ------------------------------------------------------------------------------
 # SCENARIO 04: Legacy 32-bit Linux ELF i386 Binary Identification
