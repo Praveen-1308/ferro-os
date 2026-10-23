@@ -30,7 +30,8 @@ fn check_peer_authorization(sock_fd: libc::c_int) -> bool {
             &mut len,
         ) == 0
         {
-            return ucred.uid == 0;
+            let current_uid = libc::getuid();
+            return ucred.uid == 0 || ucred.uid == current_uid;
         }
     }
     false
@@ -139,13 +140,11 @@ impl FdStoreServer {
 
         let store_clone = Arc::clone(&self.store);
         let handle = thread::spawn(move || {
-            for stream in listener.incoming() {
-                if let Ok(stream) = stream {
-                    let store = Arc::clone(&store_clone);
-                    thread::spawn(move || {
-                        handle_client(stream, store);
-                    });
-                }
+            for stream in listener.incoming().flatten() {
+                let store = Arc::clone(&store_clone);
+                thread::spawn(move || {
+                    handle_client(stream, store);
+                });
             }
         });
 
@@ -171,12 +170,12 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
             return;
         }
 
-        // Access Control Verification: Only root (UID 0) allowed to interact with PID 1 FD Store
+        // Access Control Verification: Only root (UID 0) or owner UID allowed to interact with PID 1 FD Store
         if !check_peer_authorization(raw_sock) {
             let _ = send_fd(
                 raw_sock,
                 -1,
-                "ERROR PERMISSION_DENIED: Root UID 0 required\n",
+                "ERROR PERMISSION_DENIED: Root UID 0 or process owner required\n",
             );
             if let Some(fd) = recvd_fd {
                 libc::close(fd);
