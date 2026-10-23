@@ -1,0 +1,59 @@
+{
+  "candidate": "ubuntu24",
+  "tool": "checksec v2.6.0 (Enterprise Profile)",
+  "total_binaries_audited": 5,
+  "fully_compliant_count": 0,
+  "hardening_compliance_pct": 0.0,
+  "binaries": [
+    {
+      "binary": "systemd",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "95.0% Compliant"
+    },
+    {
+      "binary": "bash",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "95.0% Compliant"
+    },
+    {
+      "binary": "dpkg",
+      "relro": "Partial RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "80.0% Partial (Partial RELRO detected)"
+    },
+    {
+      "binary": "sshd",
+      "relro": "Partial RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "80.0% Partial (Partial RELRO detected)"
+    },
+    {
+      "binary": "postgres",
+      "relro": "Partial RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "80.0% Partial (Partial RELRO detected)"
+    }
+  ]
+}

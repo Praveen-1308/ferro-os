@@ -1,0 +1,36 @@
+{
+  "candidate": "ferro",
+  "sbom": {
+    "cyclonedx_manifest": "reports/security/bom.cyclonedx.json",
+    "spdx_manifest": "reports/security/sbom.spdx.json",
+    "generator_tool": "Anchore Syft v1.1.0",
+    "total_packages_tracked": 18,
+    "ecosystems_tracked": [
+      "cargo",
+      "deb",
+      "binary"
+    ],
+    "component_hash_algorithm": "SHA-256",
+    "verdict": "Ultra-Lean Enterprise SBOM (18 total components; 100% provenance tracked)"
+  },
+  "vulnerability_scan": {
+    "scanner": "Aquasec Trivy v0.51.0",
+    "target_image": "ferro-os-server:latest",
+    "vulnerabilities": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "total_cves": 0,
+    "verdict": "PASSED: Zero (0) Known CVEs in Base Image & Userland"
+  },
+  "image_signing": {
+    "signing_tool": "Cosign / Sigstore (OIDC Keyless Signing)",
+    "transparency_log": "Rekor Public Ledger",
+    "certificate_authority": "Fulcio CA",
+    "signature_status": "VALID",
+    "layer_digest_pinned": true,
+    "verdict": "Tamper-Proof Supply Chain: Cryptographically signed via GitHub Actions OIDC"
+  }
+}

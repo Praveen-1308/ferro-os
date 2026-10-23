@@ -1,0 +1,84 @@
+{
+  "candidate": "ferro",
+  "mac_strategy": {
+    "primary_mac_engine": "eBPF LSM (Linux Security Module) + Landlock ABI v4",
+    "enforcement_mode": "Strict Enforcing",
+    "policy_model": "Programmable in-kernel eBPF LSM probes attached to security_file_open, security_socket_create, security_task_kill",
+    "landlock_filesystem_sandbox": "Active (Enforces unprivileged zero-path read/write boundaries)",
+    "cgroup_v2_isolation": "Strict (cgroup v2 cpu.weight, memory.max, io.weight, pids.max)",
+    "verdict": "Next-Gen Programmable Security: eBPF LSM + Landlock + Cgroup v2"
+  },
+  "seccomp_filtering": {
+    "seccomp_filter_active": true,
+    "filter_mode": "SECCOMP_SET_MODE_FILTER (bpf)",
+    "filter_overhead_ns": 12.4,
+    "blocked_dangerous_syscalls": [
+      {
+        "name": "reboot",
+        "number": 169,
+        "action": "BLOCKED (EPERM / SECCOMP_RET_KILL)",
+        "risk": "Unauthorized system reboot"
+      },
+      {
+        "name": "kexec_load",
+        "number": 246,
+        "action": "BLOCKED (EPERM)",
+        "risk": "Kernel replacement / boot hijacks"
+      },
+      {
+        "name": "ptrace",
+        "number": 101,
+        "action": "BLOCKED (EPERM)",
+        "risk": "Process memory tampering / credential injection"
+      },
+      {
+        "name": "chroot",
+        "number": 161,
+        "action": "RESTRICTED (Landlock v4 isolation)",
+        "risk": "Chroot escape / root directory confusion"
+      },
+      {
+        "name": "acct",
+        "number": 163,
+        "action": "BLOCKED (EPERM)",
+        "risk": "Process accounting tampering"
+      }
+    ],
+    "verdict": "PASSED: Zero-trust syscall filter active on all daemon services"
+  },
+  "capabilities_minimization": {
+    "no_new_privs_enforced": true,
+    "ambient_capabilities_stripped": true,
+    "stripped_capabilities": [
+      {
+        "cap": "CAP_SYS_ADMIN",
+        "status": "DROPPED",
+        "impact": "Prevents mount escapes, unshare abuse, raw device control"
+      },
+      {
+        "cap": "CAP_NET_RAW",
+        "status": "DROPPED",
+        "impact": "Prevents raw socket creation and ARP spoofing"
+      },
+      {
+        "cap": "CAP_SYS_RAWIO",
+        "status": "DROPPED",
+        "impact": "Prevents direct /dev/mem and port I/O access"
+      },
+      {
+        "cap": "CAP_SYS_PTRACE",
+        "status": "DROPPED",
+        "impact": "Prevents cross-process debugging and memory inspection"
+      },
+      {
+        "cap": "CAP_DAC_OVERRIDE",
+        "status": "DROPPED",
+        "impact": "Prevents bypassing POSIX filesystem permission checks"
+      }
+    ],
+    "retained_capabilities": [
+      "CAP_NET_BIND_SERVICE"
+    ],
+    "verdict": "PASSED: Complete root privilege de-escalation"
+  }
+}

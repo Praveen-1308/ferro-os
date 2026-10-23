@@ -1,0 +1,56 @@
+name: Enterprise Security, Hardening & Compliance Audit (RHEL 9 vs Ubuntu 24.04 vs FerroOS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security-compliance-audit:
+    name: 6-Pillar Security, Hardening & Compliance Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Security Tools (checksec, syft)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq zstd curl checksec || true
+
+      - name: Execute 6-Pillar Security & Compliance Suite
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          python3 tools/enterprise_security_compliance/run_master_security_compliance_suite.py
+
+      - name: Publish Security Audit Scorecard to Step Summary
+        if: always()
+        run: |
+          for f in reports/runs/*_SECURITY_HARDENING_COMPLIANCE/comparison_summary.md; do
+            if [ -f "$f" ]; then
+              cat "$f" >> $GITHUB_STEP_SUMMARY
+              break
+            fi
+          done
+
+      - name: Upload Security Audit Run Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: enterprise-security-audit-run-${{ github.run_id }}
+          path: reports/runs/*_SECURITY_HARDENING_COMPLIANCE/

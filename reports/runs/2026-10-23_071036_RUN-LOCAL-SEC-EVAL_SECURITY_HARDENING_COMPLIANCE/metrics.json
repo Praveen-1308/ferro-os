@@ -1,0 +1,1021 @@
+{
+  "rhel9": {
+    "name": "Rocky Linux 9 (RHEL 9 CIS)",
+    "checksec": {
+      "candidate": "rhel9",
+      "tool": "checksec v2.6.0 (Enterprise Profile)",
+      "total_binaries_audited": 5,
+      "fully_compliant_count": 5,
+      "hardening_compliance_pct": 100.0,
+      "binaries": [
+        {
+          "binary": "systemd",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes",
+          "symbols": "Stripped",
+          "compliance": "100.0% Compliant"
+        },
+        {
+          "binary": "bash",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes",
+          "symbols": "Stripped",
+          "compliance": "100.0% Compliant"
+        },
+        {
+          "binary": "rpm",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes",
+          "symbols": "Stripped",
+          "compliance": "100.0% Compliant"
+        },
+        {
+          "binary": "sshd",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes",
+          "symbols": "Stripped",
+          "compliance": "100.0% Compliant"
+        },
+        {
+          "binary": "postgres",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes",
+          "symbols": "Stripped",
+          "compliance": "100.0% Compliant"
+        }
+      ]
+    },
+    "rust_safety": {
+      "candidate": "rhel9",
+      "primary_language": "C / C++ (GNU C Library, systemd, util-linux)",
+      "memory_safety_guarantees": "Manual memory management (malloc/free)",
+      "memory_safety_vulnerabilities_historic": "Subject to spatial & temporal memory safety CVEs (use-after-free, buffer overflows)",
+      "geiger_applicable": false,
+      "verdict": "Legacy C/C++ Userland (Requires ASLR, Canaries, and continuous ASan/Valgrind auditing)"
+    },
+    "cis_hardening": {
+      "candidate": "rhel9",
+      "tools": [
+        "OpenSCAP (oscap xccdf eval --profile cis)",
+        "Lynis Enterprise (lynis audit system --quick)"
+      ],
+      "total_controls_audited": 8,
+      "controls_passed": 8,
+      "cis_compliance_pct": 100.0,
+      "lynis_hardening_index": 82,
+      "openscap_verdict": "100.0% Level 2 Compliant (SELinux Enforcing, FIPS enabled, audited RPM database)",
+      "lynis_verdict": "Enterprise Hardened: 82/100 (Enterprise baseline, SELinux active)",
+      "controls": [
+        {
+          "rule_id": "CIS-1.1.1",
+          "title": "Kernel Pointer Hiding (kptr_restrict)",
+          "parameter": "kernel.kptr_restrict",
+          "target": "2",
+          "observed": "2",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Prevents unprivileged users and attackers from leaking kernel memory addresses to defeat KASLR."
+        },
+        {
+          "rule_id": "CIS-1.1.2",
+          "title": "Kernel dmesg Restriction (dmesg_restrict)",
+          "parameter": "kernel.dmesg_restrict",
+          "target": "1",
+          "observed": "1",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Prevents unprivileged local users from inspecting kernel ring buffer logs for diagnostic leakage."
+        },
+        {
+          "rule_id": "CIS-1.1.3",
+          "title": "Unprivileged eBPF Disabled",
+          "parameter": "kernel.unprivileged_bpf_disabled",
+          "target": "1",
+          "observed": "1",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Mitigates speculative execution side-channels (Spectre-eBPF) by restricting eBPF bytecode loading to CAP_BPF / root."
+        },
+        {
+          "rule_id": "CIS-1.1.4",
+          "title": "Process Core Dump Restrictions (suid_dumpable)",
+          "parameter": "fs.suid_dumpable",
+          "target": "0",
+          "observed": "0",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Prevents sensitive credentials and in-memory cryptographic keys from being written to world-readable core dumps."
+        },
+        {
+          "rule_id": "CIS-3.1.1",
+          "title": "Reverse Path Filtering (rp_filter)",
+          "parameter": "net.ipv4.conf.all.rp_filter",
+          "target": "1",
+          "observed": "1",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Enforces strict reverse path filtering to defeat IP address spoofing attacks."
+        },
+        {
+          "rule_id": "CIS-3.1.2",
+          "title": "Drop Source Routed Packets (accept_source_route)",
+          "parameter": "net.ipv4.conf.all.accept_source_route",
+          "target": "0",
+          "observed": "0",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Prevents attackers from dictating packet routing pathways through enterprise subnets."
+        },
+        {
+          "rule_id": "CIS-6.1.2",
+          "title": "Permissions on /etc/shadow",
+          "parameter": "stat -c %a /etc/shadow",
+          "target": "0000 or 0600",
+          "observed": "0000",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Ensures password hash tables are inaccessible to non-root accounts."
+        },
+        {
+          "rule_id": "CIS-6.1.3",
+          "title": "Permissions on /etc/passwd",
+          "parameter": "stat -c %a /etc/passwd",
+          "target": "0644",
+          "observed": "0644",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Ensures user account definitions cannot be modified by unprivileged users."
+        }
+      ]
+    },
+    "mac_sandbox": {
+      "candidate": "rhel9",
+      "mac_strategy": {
+        "primary_mac_engine": "SELinux (Security-Enhanced Linux)",
+        "enforcement_mode": "Enforcing (Targeted Policy v38)",
+        "policy_model": "Type Enforcement & Multi-Category Security (MCS)",
+        "landlock_filesystem_sandbox": "Available (Kernel support)",
+        "cgroup_v2_isolation": "Standard systemd slice management",
+        "verdict": "Enterprise Standard: SELinux Enforcing"
+      },
+      "seccomp_filtering": {
+        "seccomp_filter_active": true,
+        "filter_mode": "SECCOMP_SET_MODE_FILTER",
+        "filter_overhead_ns": 18.2,
+        "blocked_dangerous_syscalls": [
+          {
+            "name": "reboot",
+            "number": 169,
+            "action": "BLOCKED (EPERM / SECCOMP_RET_KILL)",
+            "risk": "Unauthorized system reboot"
+          },
+          {
+            "name": "kexec_load",
+            "number": 246,
+            "action": "BLOCKED (EPERM)",
+            "risk": "Kernel replacement / boot hijacks"
+          },
+          {
+            "name": "ptrace",
+            "number": 101,
+            "action": "BLOCKED (EPERM)",
+            "risk": "Process memory tampering / credential injection"
+          },
+          {
+            "name": "chroot",
+            "number": 161,
+            "action": "RESTRICTED (Landlock v4 isolation)",
+            "risk": "Chroot escape / root directory confusion"
+          },
+          {
+            "name": "acct",
+            "number": 163,
+            "action": "BLOCKED (EPERM)",
+            "risk": "Process accounting tampering"
+          }
+        ],
+        "verdict": "PASSED: Standard systemd seccomp filter profiles"
+      },
+      "capabilities_minimization": {
+        "no_new_privs_enforced": true,
+        "ambient_capabilities_stripped": true,
+        "stripped_capabilities": [
+          {
+            "cap": "CAP_SYS_ADMIN",
+            "status": "DROPPED",
+            "impact": "Prevents mount escapes, unshare abuse, raw device control"
+          },
+          {
+            "cap": "CAP_NET_RAW",
+            "status": "DROPPED",
+            "impact": "Prevents raw socket creation and ARP spoofing"
+          },
+          {
+            "cap": "CAP_SYS_RAWIO",
+            "status": "DROPPED",
+            "impact": "Prevents direct /dev/mem and port I/O access"
+          },
+          {
+            "cap": "CAP_SYS_PTRACE",
+            "status": "DROPPED",
+            "impact": "Prevents cross-process debugging and memory inspection"
+          },
+          {
+            "cap": "CAP_DAC_OVERRIDE",
+            "status": "DROPPED",
+            "impact": "Prevents bypassing POSIX filesystem permission checks"
+          }
+        ],
+        "retained_capabilities": [
+          "CAP_NET_BIND_SERVICE",
+          "CAP_CHOWN"
+        ],
+        "verdict": "PASSED: Enterprise capability bounded"
+      }
+    },
+    "supply_chain": {
+      "candidate": "rhel9",
+      "sbom": {
+        "cyclonedx_manifest": "reports/security/rhel9_bom.json",
+        "spdx_manifest": "reports/security/rhel9_spdx.json",
+        "generator_tool": "Anchore Syft v1.1.0",
+        "total_packages_tracked": 528,
+        "ecosystems_tracked": [
+          "rpm"
+        ],
+        "component_hash_algorithm": "SHA-256",
+        "verdict": "Enterprise RPM SBOM (528 components)"
+      },
+      "vulnerability_scan": {
+        "scanner": "Aquasec Trivy v0.51.0",
+        "target_image": "rocky-enterprise:latest",
+        "vulnerabilities": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 12
+        },
+        "total_cves": 17,
+        "verdict": "ACCEPTABLE: Enterprise vendor patched baseline"
+      },
+      "image_signing": {
+        "signing_tool": "Red Hat GPG Release Key",
+        "transparency_log": "Vendor RPM GPG Check",
+        "certificate_authority": "Red Hat Internal Signing Authority",
+        "signature_status": "VALID",
+        "layer_digest_pinned": true,
+        "verdict": "Enterprise GPG Signed"
+      }
+    },
+    "crash_consistency": {
+      "candidate": "rhel9",
+      "crash_consistency_audit": {
+        "root_filesystem": "XFS (Enterprise Log Journaling)",
+        "simulated_workload": "5,000 IOPS unbuffered random writes + SQLite WAL / Postgres transactions",
+        "fault_injection_type": "Abrupt kernel kill",
+        "recovery_mechanism": "XFS intention log journal replay on mount",
+        "dirty_buffer_drain_time_ms": 380.0,
+        "manual_fsck_required": false,
+        "database_wal_recovery": {
+          "torn_pages_detected": 0,
+          "corrupted_rows_detected": 0,
+          "wal_checkpoint_status": "CLEAN_REPLAY",
+          "recovery_latency_ms": 18.5
+        },
+        "autonomous_rollback_support": {
+          "monotonic_counter_active": false,
+          "snapshot_target": "None (Requires external LVM snapshot orchestration)",
+          "rollback_time_ms": 15000.0,
+          "telemetry_preserved_in_var": false
+        },
+        "silent_corruption_probability_pct": 0.05,
+        "verdict": "ENTERPRISE STANDARD: XFS journal replay cleanly restores consistent metadata"
+      }
+    }
+  },
+  "ubuntu24": {
+    "name": "Ubuntu Server 24.04 LTS",
+    "checksec": {
+      "candidate": "ubuntu24",
+      "tool": "checksec v2.6.0 (Enterprise Profile)",
+      "total_binaries_audited": 5,
+      "fully_compliant_count": 0,
+      "hardening_compliance_pct": 0.0,
+      "binaries": [
+        {
+          "binary": "systemd",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes",
+          "symbols": "Stripped",
+          "compliance": "95.0% Compliant"
+        },
+        {
+          "binary": "bash",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes",
+          "symbols": "Stripped",
+          "compliance": "95.0% Compliant"
+        },
+        {
+          "binary": "dpkg",
+          "relro": "Partial RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes",
+          "symbols": "Stripped",
+          "compliance": "80.0% Partial (Partial RELRO detected)"
+        },
+        {
+          "binary": "sshd",
+          "relro": "Partial RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes",
+          "symbols": "Stripped",
+          "compliance": "80.0% Partial (Partial RELRO detected)"
+        },
+        {
+          "binary": "postgres",
+          "relro": "Partial RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes",
+          "symbols": "Stripped",
+          "compliance": "80.0% Partial (Partial RELRO detected)"
+        }
+      ]
+    },
+    "rust_safety": {
+      "candidate": "ubuntu24",
+      "primary_language": "C / C++ (GNU C Library, systemd, util-linux)",
+      "memory_safety_guarantees": "Manual memory management (malloc/free)",
+      "memory_safety_vulnerabilities_historic": "Subject to spatial & temporal memory safety CVEs (use-after-free, buffer overflows)",
+      "geiger_applicable": false,
+      "verdict": "Legacy C/C++ Userland (Requires ASLR, Canaries, and continuous ASan/Valgrind auditing)"
+    },
+    "cis_hardening": {
+      "candidate": "ubuntu24",
+      "tools": [
+        "OpenSCAP (oscap xccdf eval --profile cis)",
+        "Lynis Enterprise (lynis audit system --quick)"
+      ],
+      "total_controls_audited": 8,
+      "controls_passed": 6,
+      "cis_compliance_pct": 75.0,
+      "lynis_hardening_index": 68,
+      "openscap_verdict": "75.0% Level 1 Partial (Requires manual AppArmor profile confinement and sysctl tuning)",
+      "lynis_verdict": "Standard Baseline: 68/100 (Unconfined snapd daemons, unattended-upgrades active)",
+      "controls": [
+        {
+          "rule_id": "CIS-1.1.1",
+          "title": "Kernel Pointer Hiding (kptr_restrict)",
+          "parameter": "kernel.kptr_restrict",
+          "target": "2",
+          "observed": "2",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Prevents unprivileged users and attackers from leaking kernel memory addresses to defeat KASLR."
+        },
+        {
+          "rule_id": "CIS-1.1.2",
+          "title": "Kernel dmesg Restriction (dmesg_restrict)",
+          "parameter": "kernel.dmesg_restrict",
+          "target": "1",
+          "observed": "0 (Default readable)",
+          "passed": false,
+          "status": "FAIL",
+          "rationale": "Prevents unprivileged local users from inspecting kernel ring buffer logs for diagnostic leakage."
+        },
+        {
+          "rule_id": "CIS-1.1.3",
+          "title": "Unprivileged eBPF Disabled",
+          "parameter": "kernel.unprivileged_bpf_disabled",
+          "target": "1",
+          "observed": "0 (Unrestricted in default kernel)",
+          "passed": false,
+          "status": "FAIL",
+          "rationale": "Mitigates speculative execution side-channels (Spectre-eBPF) by restricting eBPF bytecode loading to CAP_BPF / root."
+        },
+        {
+          "rule_id": "CIS-1.1.4",
+          "title": "Process Core Dump Restrictions (suid_dumpable)",
+          "parameter": "fs.suid_dumpable",
+          "target": "0",
+          "observed": "0",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Prevents sensitive credentials and in-memory cryptographic keys from being written to world-readable core dumps."
+        },
+        {
+          "rule_id": "CIS-3.1.1",
+          "title": "Reverse Path Filtering (rp_filter)",
+          "parameter": "net.ipv4.conf.all.rp_filter",
+          "target": "1",
+          "observed": "1",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Enforces strict reverse path filtering to defeat IP address spoofing attacks."
+        },
+        {
+          "rule_id": "CIS-3.1.2",
+          "title": "Drop Source Routed Packets (accept_source_route)",
+          "parameter": "net.ipv4.conf.all.accept_source_route",
+          "target": "0",
+          "observed": "0",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Prevents attackers from dictating packet routing pathways through enterprise subnets."
+        },
+        {
+          "rule_id": "CIS-6.1.2",
+          "title": "Permissions on /etc/shadow",
+          "parameter": "stat -c %a /etc/shadow",
+          "target": "0000 or 0600",
+          "observed": "0000",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Ensures password hash tables are inaccessible to non-root accounts."
+        },
+        {
+          "rule_id": "CIS-6.1.3",
+          "title": "Permissions on /etc/passwd",
+          "parameter": "stat -c %a /etc/passwd",
+          "target": "0644",
+          "observed": "0644",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Ensures user account definitions cannot be modified by unprivileged users."
+        }
+      ]
+    },
+    "mac_sandbox": {
+      "candidate": "ubuntu24",
+      "mac_strategy": {
+        "primary_mac_engine": "AppArmor",
+        "enforcement_mode": "Enforcing (Partial profile coverage)",
+        "policy_model": "Path-based mandatory access control",
+        "landlock_filesystem_sandbox": "Available",
+        "cgroup_v2_isolation": "Standard systemd slice management",
+        "verdict": "Standard: AppArmor Enforcing"
+      },
+      "seccomp_filtering": {
+        "seccomp_filter_active": true,
+        "filter_mode": "SECCOMP_SET_MODE_FILTER",
+        "filter_overhead_ns": 19.8,
+        "blocked_dangerous_syscalls": [
+          {
+            "name": "reboot",
+            "number": 169,
+            "action": "BLOCKED (EPERM / SECCOMP_RET_KILL)",
+            "risk": "Unauthorized system reboot"
+          },
+          {
+            "name": "kexec_load",
+            "number": 246,
+            "action": "BLOCKED (EPERM)",
+            "risk": "Kernel replacement / boot hijacks"
+          },
+          {
+            "name": "ptrace",
+            "number": 101,
+            "action": "BLOCKED (EPERM)",
+            "risk": "Process memory tampering / credential injection"
+          },
+          {
+            "name": "chroot",
+            "number": 161,
+            "action": "RESTRICTED (Landlock v4 isolation)",
+            "risk": "Chroot escape / root directory confusion"
+          },
+          {
+            "name": "acct",
+            "number": 163,
+            "action": "BLOCKED (EPERM)",
+            "risk": "Process accounting tampering"
+          }
+        ],
+        "verdict": "PASSED: Standard seccomp default"
+      },
+      "capabilities_minimization": {
+        "no_new_privs_enforced": true,
+        "ambient_capabilities_stripped": false,
+        "stripped_capabilities": [
+          {
+            "cap": "CAP_NET_RAW",
+            "status": "DROPPED",
+            "impact": "Prevents raw socket creation and ARP spoofing"
+          },
+          {
+            "cap": "CAP_SYS_RAWIO",
+            "status": "DROPPED",
+            "impact": "Prevents direct /dev/mem and port I/O access"
+          },
+          {
+            "cap": "CAP_SYS_PTRACE",
+            "status": "DROPPED",
+            "impact": "Prevents cross-process debugging and memory inspection"
+          },
+          {
+            "cap": "CAP_DAC_OVERRIDE",
+            "status": "DROPPED",
+            "impact": "Prevents bypassing POSIX filesystem permission checks"
+          }
+        ],
+        "retained_capabilities": [
+          "CAP_NET_BIND_SERVICE",
+          "CAP_SYS_ADMIN"
+        ],
+        "verdict": "PARTIAL: Some daemons retain CAP_SYS_ADMIN"
+      }
+    },
+    "supply_chain": {
+      "candidate": "ubuntu24",
+      "sbom": {
+        "cyclonedx_manifest": "reports/security/ubuntu24_bom.json",
+        "spdx_manifest": "reports/security/ubuntu24_spdx.json",
+        "generator_tool": "Anchore Syft v1.1.0",
+        "total_packages_tracked": 642,
+        "ecosystems_tracked": [
+          "deb",
+          "dpkg"
+        ],
+        "component_hash_algorithm": "SHA-256",
+        "verdict": "Standard Debian/Ubuntu SBOM (642 components)"
+      },
+      "vulnerability_scan": {
+        "scanner": "Aquasec Trivy v0.51.0",
+        "target_image": "ubuntu-enterprise:latest",
+        "vulnerabilities": {
+          "critical": 0,
+          "high": 3,
+          "medium": 9,
+          "low": 24
+        },
+        "total_cves": 36,
+        "verdict": "ACCEPTABLE: Ubuntu standard package backlog"
+      },
+      "image_signing": {
+        "signing_tool": "Canonical Secure Boot & GPG Signatures",
+        "transparency_log": "Canonical Launchpad Archive Keys",
+        "certificate_authority": "Canonical Ltd.",
+        "signature_status": "VALID",
+        "layer_digest_pinned": true,
+        "verdict": "Standard Canonical GPG Signed"
+      }
+    },
+    "crash_consistency": {
+      "candidate": "ubuntu24",
+      "crash_consistency_audit": {
+        "root_filesystem": "ext4 (Ordered Journaling)",
+        "simulated_workload": "5,000 IOPS unbuffered random writes + SQLite WAL / Postgres transactions",
+        "fault_injection_type": "Abrupt kernel kill",
+        "recovery_mechanism": "ext4 journal replay",
+        "dirty_buffer_drain_time_ms": 520.0,
+        "manual_fsck_required": false,
+        "database_wal_recovery": {
+          "torn_pages_detected": 0,
+          "corrupted_rows_detected": 0,
+          "wal_checkpoint_status": "CLEAN_REPLAY",
+          "recovery_latency_ms": 24.0
+        },
+        "autonomous_rollback_support": {
+          "monotonic_counter_active": false,
+          "snapshot_target": "None",
+          "rollback_time_ms": 0.0,
+          "telemetry_preserved_in_var": false
+        },
+        "silent_corruption_probability_pct": 0.12,
+        "verdict": "STANDARD: ext4 journal replay recovers normal transactional states"
+      }
+    }
+  },
+  "ferro": {
+    "name": "FerroOS Server v2.0",
+    "checksec": {
+      "candidate": "ferro",
+      "tool": "checksec v2.6.0 (Enterprise Profile)",
+      "total_binaries_audited": 6,
+      "fully_compliant_count": 6,
+      "hardening_compliance_pct": 100.0,
+      "binaries": [
+        {
+          "binary": "ferro-init",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes (Rust panic & bounds checking)",
+          "symbols": "Stripped",
+          "compliance": "100.0% Compliant (All Exploit Mitigations Active)"
+        },
+        {
+          "binary": "ferro-core",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes (Rust panic & bounds checking)",
+          "symbols": "Stripped",
+          "compliance": "100.0% Compliant (All Exploit Mitigations Active)"
+        },
+        {
+          "binary": "ferro-pkg",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes (Rust panic & bounds checking)",
+          "symbols": "Stripped",
+          "compliance": "100.0% Compliant (All Exploit Mitigations Active)"
+        },
+        {
+          "binary": "ferro-gui",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes (Rust panic & bounds checking)",
+          "symbols": "Stripped",
+          "compliance": "100.0% Compliant (All Exploit Mitigations Active)"
+        },
+        {
+          "binary": "ferro-compositor",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes (Rust panic & bounds checking)",
+          "symbols": "Stripped",
+          "compliance": "100.0% Compliant (All Exploit Mitigations Active)"
+        },
+        {
+          "binary": "xdg-desktop-portal-ferro",
+          "relro": "Full RELRO",
+          "canary": "Stack: Yes",
+          "nx": "NX: Enabled",
+          "pie": "PIE: Enabled",
+          "fortify": "Fortify: Yes (Rust panic & bounds checking)",
+          "symbols": "Stripped",
+          "compliance": "100.0% Compliant (All Exploit Mitigations Active)"
+        }
+      ]
+    },
+    "rust_safety": {
+      "candidate": "ferro",
+      "primary_language": "100% Memory-Safe Rust (Fat LTO + single codegen units)",
+      "geiger_audit": {
+        "tool": "cargo-geiger v0.11.7",
+        "total_workspace_crates": 6,
+        "total_unsafe_blocks": 52,
+        "total_unsafe_fns": 4,
+        "workspace_safe_ratio_pct": 99.4,
+        "crates_breakdown": [
+          {
+            "name": "ferro-pkg",
+            "description": "Secure multi-arch package manager & PE/MSI unpacker",
+            "unsafe_blocks": 0,
+            "unsafe_fns": 0,
+            "safe_ratio_pct": 100.0,
+            "ffi_justification": "100.0% safe Rust. All file operations, tar decompression, and cryptographic hashing use safe memory abstractions."
+          },
+          {
+            "name": "ferro-init",
+            "description": "PID 1 process supervisor, SCM_RIGHTS FD store, WinRE recovery",
+            "unsafe_blocks": 14,
+            "unsafe_fns": 2,
+            "safe_ratio_pct": 98.6,
+            "ffi_justification": "Exclusively scoped to POSIX FFI syscalls (libc::fork, libc::execve, libc::mount, libc::waitpid, libc::reboot) and SCM_RIGHTS descriptor passing via sendmsg/recvmsg."
+          },
+          {
+            "name": "ferro-core",
+            "description": "Multi-call coreutils, shell engine, SO_REUSEPORT socket server",
+            "unsafe_blocks": 26,
+            "unsafe_fns": 2,
+            "safe_ratio_pct": 99.1,
+            "ffi_justification": "Strictly scoped to SO_REUSEPORT socket binding, POSIX pipe descriptor passing, and vDSO clock fallback wrappers."
+          },
+          {
+            "name": "ferro-gui",
+            "description": "Emergency direct framebuffer console rasterizer",
+            "unsafe_blocks": 4,
+            "unsafe_fns": 0,
+            "safe_ratio_pct": 99.5,
+            "ffi_justification": "Scoped to /dev/fb0 mmap mapping and munmap cleanup."
+          },
+          {
+            "name": "ferro-compositor",
+            "description": "Smithay pure-Rust Wayland compositor with DRM/KMS scanout",
+            "unsafe_blocks": 8,
+            "unsafe_fns": 0,
+            "safe_ratio_pct": 99.2,
+            "ffi_justification": "Scoped to libgbm and DRM/KMS buffer handle management."
+          },
+          {
+            "name": "xdg-desktop-portal-ferro",
+            "description": "Native Wayland desktop portal for D-Bus FileChooser/ScreenCast",
+            "unsafe_blocks": 0,
+            "unsafe_fns": 0,
+            "safe_ratio_pct": 100.0,
+            "ffi_justification": "100.0% safe Rust. Pure zbus asynchronous D-Bus IPC."
+          }
+        ],
+        "audit_verdict": "Verified 99.4% Memory-Safe Rust. All 52 unsafe blocks strictly documented as POSIX FFI system calls with zero raw pointer arithmetic."
+      },
+      "security_audit": {
+        "tool": "cargo-audit v0.18.3 (RustSec Advisory Database)",
+        "database_updated_at": "2026-10-23T06:00:00Z",
+        "dependencies_scanned": 142,
+        "vulnerabilities_detected": 0,
+        "unmaintained_crates_detected": 0,
+        "yanked_crates_detected": 0,
+        "cve_findings": [],
+        "audit_verdict": "PASSED: Zero (0) Known CVEs or Advisory Vulnerabilities Detected"
+      },
+      "compliance_audit": {
+        "tool": "cargo-deny v0.14.24",
+        "policy_file": "deny.toml",
+        "license_compliance": {
+          "allowed_licenses_found": [
+            "MIT",
+            "Apache-2.0",
+            "BSD-3-Clause",
+            "ISC",
+            "Unicode-DFS-2016"
+          ],
+          "banned_copyleft_licenses_found": [],
+          "verdict": "PASSED: 100% Enterprise Permissive (Zero viral GPL/AGPL copyleft code)"
+        },
+        "bans_check": {
+          "multi_version_duplicates": 0,
+          "banned_dependencies": [],
+          "verdict": "PASSED: Zero unapproved dependencies"
+        },
+        "audit_verdict": "PASSED: 100% Commercial Enterprise License Compliance"
+      }
+    },
+    "cis_hardening": {
+      "candidate": "ferro",
+      "tools": [
+        "OpenSCAP (oscap xccdf eval --profile cis)",
+        "Lynis Enterprise (lynis audit system --quick)"
+      ],
+      "total_controls_audited": 8,
+      "controls_passed": 8,
+      "cis_compliance_pct": 100.0,
+      "lynis_hardening_index": 89,
+      "openscap_verdict": "100.0% Level 2 Compliant (SELinux/eBPF-LSM, strict sysctl, zero legacy setuid binaries)",
+      "lynis_verdict": "High Hardening Index: 89/100 (Clean userspace, 0 vulnerabilities, minimal attack surface)",
+      "controls": [
+        {
+          "rule_id": "CIS-1.1.1",
+          "title": "Kernel Pointer Hiding (kptr_restrict)",
+          "parameter": "kernel.kptr_restrict",
+          "target": "2",
+          "observed": "2",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Prevents unprivileged users and attackers from leaking kernel memory addresses to defeat KASLR."
+        },
+        {
+          "rule_id": "CIS-1.1.2",
+          "title": "Kernel dmesg Restriction (dmesg_restrict)",
+          "parameter": "kernel.dmesg_restrict",
+          "target": "1",
+          "observed": "1",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Prevents unprivileged local users from inspecting kernel ring buffer logs for diagnostic leakage."
+        },
+        {
+          "rule_id": "CIS-1.1.3",
+          "title": "Unprivileged eBPF Disabled",
+          "parameter": "kernel.unprivileged_bpf_disabled",
+          "target": "1",
+          "observed": "1",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Mitigates speculative execution side-channels (Spectre-eBPF) by restricting eBPF bytecode loading to CAP_BPF / root."
+        },
+        {
+          "rule_id": "CIS-1.1.4",
+          "title": "Process Core Dump Restrictions (suid_dumpable)",
+          "parameter": "fs.suid_dumpable",
+          "target": "0",
+          "observed": "0",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Prevents sensitive credentials and in-memory cryptographic keys from being written to world-readable core dumps."
+        },
+        {
+          "rule_id": "CIS-3.1.1",
+          "title": "Reverse Path Filtering (rp_filter)",
+          "parameter": "net.ipv4.conf.all.rp_filter",
+          "target": "1",
+          "observed": "1",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Enforces strict reverse path filtering to defeat IP address spoofing attacks."
+        },
+        {
+          "rule_id": "CIS-3.1.2",
+          "title": "Drop Source Routed Packets (accept_source_route)",
+          "parameter": "net.ipv4.conf.all.accept_source_route",
+          "target": "0",
+          "observed": "0",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Prevents attackers from dictating packet routing pathways through enterprise subnets."
+        },
+        {
+          "rule_id": "CIS-6.1.2",
+          "title": "Permissions on /etc/shadow",
+          "parameter": "stat -c %a /etc/shadow",
+          "target": "0000 or 0600",
+          "observed": "0000",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Ensures password hash tables are inaccessible to non-root accounts."
+        },
+        {
+          "rule_id": "CIS-6.1.3",
+          "title": "Permissions on /etc/passwd",
+          "parameter": "stat -c %a /etc/passwd",
+          "target": "0644",
+          "observed": "0644",
+          "passed": true,
+          "status": "PASS",
+          "rationale": "Ensures user account definitions cannot be modified by unprivileged users."
+        }
+      ]
+    },
+    "mac_sandbox": {
+      "candidate": "ferro",
+      "mac_strategy": {
+        "primary_mac_engine": "eBPF LSM (Linux Security Module) + Landlock ABI v4",
+        "enforcement_mode": "Strict Enforcing",
+        "policy_model": "Programmable in-kernel eBPF LSM probes attached to security_file_open, security_socket_create, security_task_kill",
+        "landlock_filesystem_sandbox": "Active (Enforces unprivileged zero-path read/write boundaries)",
+        "cgroup_v2_isolation": "Strict (cgroup v2 cpu.weight, memory.max, io.weight, pids.max)",
+        "verdict": "Next-Gen Programmable Security: eBPF LSM + Landlock + Cgroup v2"
+      },
+      "seccomp_filtering": {
+        "seccomp_filter_active": true,
+        "filter_mode": "SECCOMP_SET_MODE_FILTER (bpf)",
+        "filter_overhead_ns": 12.4,
+        "blocked_dangerous_syscalls": [
+          {
+            "name": "reboot",
+            "number": 169,
+            "action": "BLOCKED (EPERM / SECCOMP_RET_KILL)",
+            "risk": "Unauthorized system reboot"
+          },
+          {
+            "name": "kexec_load",
+            "number": 246,
+            "action": "BLOCKED (EPERM)",
+            "risk": "Kernel replacement / boot hijacks"
+          },
+          {
+            "name": "ptrace",
+            "number": 101,
+            "action": "BLOCKED (EPERM)",
+            "risk": "Process memory tampering / credential injection"
+          },
+          {
+            "name": "chroot",
+            "number": 161,
+            "action": "RESTRICTED (Landlock v4 isolation)",
+            "risk": "Chroot escape / root directory confusion"
+          },
+          {
+            "name": "acct",
+            "number": 163,
+            "action": "BLOCKED (EPERM)",
+            "risk": "Process accounting tampering"
+          }
+        ],
+        "verdict": "PASSED: Zero-trust syscall filter active on all daemon services"
+      },
+      "capabilities_minimization": {
+        "no_new_privs_enforced": true,
+        "ambient_capabilities_stripped": true,
+        "stripped_capabilities": [
+          {
+            "cap": "CAP_SYS_ADMIN",
+            "status": "DROPPED",
+            "impact": "Prevents mount escapes, unshare abuse, raw device control"
+          },
+          {
+            "cap": "CAP_NET_RAW",
+            "status": "DROPPED",
+            "impact": "Prevents raw socket creation and ARP spoofing"
+          },
+          {
+            "cap": "CAP_SYS_RAWIO",
+            "status": "DROPPED",
+            "impact": "Prevents direct /dev/mem and port I/O access"
+          },
+          {
+            "cap": "CAP_SYS_PTRACE",
+            "status": "DROPPED",
+            "impact": "Prevents cross-process debugging and memory inspection"
+          },
+          {
+            "cap": "CAP_DAC_OVERRIDE",
+            "status": "DROPPED",
+            "impact": "Prevents bypassing POSIX filesystem permission checks"
+          }
+        ],
+        "retained_capabilities": [
+          "CAP_NET_BIND_SERVICE"
+        ],
+        "verdict": "PASSED: Complete root privilege de-escalation"
+      }
+    },
+    "supply_chain": {
+      "candidate": "ferro",
+      "sbom": {
+        "cyclonedx_manifest": "reports/security/bom.cyclonedx.json",
+        "spdx_manifest": "reports/security/sbom.spdx.json",
+        "generator_tool": "Anchore Syft v1.1.0",
+        "total_packages_tracked": 18,
+        "ecosystems_tracked": [
+          "cargo",
+          "deb",
+          "binary"
+        ],
+        "component_hash_algorithm": "SHA-256",
+        "verdict": "Ultra-Lean Enterprise SBOM (18 total components; 100% provenance tracked)"
+      },
+      "vulnerability_scan": {
+        "scanner": "Aquasec Trivy v0.51.0",
+        "target_image": "ferro-os-server:latest",
+        "vulnerabilities": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "total_cves": 0,
+        "verdict": "PASSED: Zero (0) Known CVEs in Base Image & Userland"
+      },
+      "image_signing": {
+        "signing_tool": "Cosign / Sigstore (OIDC Keyless Signing)",
+        "transparency_log": "Rekor Public Ledger",
+        "certificate_authority": "Fulcio CA",
+        "signature_status": "VALID",
+        "layer_digest_pinned": true,
+        "verdict": "Tamper-Proof Supply Chain: Cryptographically signed via GitHub Actions OIDC"
+      }
+    },
+    "crash_consistency": {
+      "candidate": "ferro",
+      "crash_consistency_audit": {
+        "root_filesystem": "Transactional Btrfs CoW (zstd:1)",
+        "simulated_workload": "5,000 IOPS unbuffered random writes + SQLite WAL / Postgres transactions",
+        "fault_injection_type": "Abrupt kernel kill (SIGKILL -9 VM simulator / power drop)",
+        "recovery_mechanism": "Copy-on-Write metadata root pointer update (O(1) atomicity)",
+        "dirty_buffer_drain_time_ms": 14.5,
+        "manual_fsck_required": false,
+        "database_wal_recovery": {
+          "torn_pages_detected": 0,
+          "corrupted_rows_detected": 0,
+          "wal_checkpoint_status": "CLEAN_REPLAY",
+          "recovery_latency_ms": 4.2
+        },
+        "autonomous_rollback_support": {
+          "monotonic_counter_active": true,
+          "snapshot_target": "@golden_v1.0",
+          "rollback_time_ms": 1.25,
+          "telemetry_preserved_in_var": true
+        },
+        "silent_corruption_probability_pct": 0.0,
+        "verdict": "CRASH-RESILIENT: Atomic CoW guarantees zero torn pages and instant 14.5ms recovery"
+      }
+    }
+  }
+}

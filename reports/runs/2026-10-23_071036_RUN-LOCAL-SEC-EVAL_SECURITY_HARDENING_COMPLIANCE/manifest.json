@@ -1,0 +1,24 @@
+{
+  "run_id": "LOCAL-SEC-EVAL",
+  "timestamp": "2026-10-23_071036",
+  "commit": "a0859f054abebe439dd224fea58538ad838069c6",
+  "host_specs": {
+    "kernel": "25.6.0",
+    "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+    "vcpus": 4.0,
+    "ram_gb": 6.0
+  },
+  "candidates": [
+    "rhel9",
+    "ubuntu24",
+    "ferro"
+  ],
+  "pillars": [
+    "1. Binary and Compiler Hardening (checksec)",
+    "2. Rust Codebase Memory-Safety Audit (geiger, audit, deny)",
+    "3. CIS Benchmarks & OS Hardening Audit (Lynis, OpenSCAP)",
+    "4. Mandatory Access Control (MAC) & Sandboxing (eBPF LSM, Landlock)",
+    "5. Supply Chain Security and SBOM Generation (CycloneDX, SPDX, Trivy, Cosign)",
+    "6. Power Loss and Crash-Consistency Testing (Btrfs CoW vs XFS vs ext4)"
+  ]
+}

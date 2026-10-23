@@ -1,0 +1,95 @@
+{
+  "candidate": "ubuntu24",
+  "tools": [
+    "OpenSCAP (oscap xccdf eval --profile cis)",
+    "Lynis Enterprise (lynis audit system --quick)"
+  ],
+  "total_controls_audited": 8,
+  "controls_passed": 6,
+  "cis_compliance_pct": 75.0,
+  "lynis_hardening_index": 68,
+  "openscap_verdict": "75.0% Level 1 Partial (Requires manual AppArmor profile confinement and sysctl tuning)",
+  "lynis_verdict": "Standard Baseline: 68/100 (Unconfined snapd daemons, unattended-upgrades active)",
+  "controls": [
+    {
+      "rule_id": "CIS-1.1.1",
+      "title": "Kernel Pointer Hiding (kptr_restrict)",
+      "parameter": "kernel.kptr_restrict",
+      "target": "2",
+      "observed": "2",
+      "passed": true,
+      "status": "PASS",
+      "rationale": "Prevents unprivileged users and attackers from leaking kernel memory addresses to defeat KASLR."
+    },
+    {
+      "rule_id": "CIS-1.1.2",
+      "title": "Kernel dmesg Restriction (dmesg_restrict)",
+      "parameter": "kernel.dmesg_restrict",
+      "target": "1",
+      "observed": "0 (Default readable)",
+      "passed": false,
+      "status": "FAIL",
+      "rationale": "Prevents unprivileged local users from inspecting kernel ring buffer logs for diagnostic leakage."
+    },
+    {
+      "rule_id": "CIS-1.1.3",
+      "title": "Unprivileged eBPF Disabled",
+      "parameter": "kernel.unprivileged_bpf_disabled",
+      "target": "1",
+      "observed": "0 (Unrestricted in default kernel)",
+      "passed": false,
+      "status": "FAIL",
+      "rationale": "Mitigates speculative execution side-channels (Spectre-eBPF) by restricting eBPF bytecode loading to CAP_BPF / root."
+    },
+    {
+      "rule_id": "CIS-1.1.4",
+      "title": "Process Core Dump Restrictions (suid_dumpable)",
+      "parameter": "fs.suid_dumpable",
+      "target": "0",
+      "observed": "0",
+      "passed": true,
+      "status": "PASS",
+      "rationale": "Prevents sensitive credentials and in-memory cryptographic keys from being written to world-readable core dumps."
+    },
+    {
+      "rule_id": "CIS-3.1.1",
+      "title": "Reverse Path Filtering (rp_filter)",
+      "parameter": "net.ipv4.conf.all.rp_filter",
+      "target": "1",
+      "observed": "1",
+      "passed": true,
+      "status": "PASS",
+      "rationale": "Enforces strict reverse path filtering to defeat IP address spoofing attacks."
+    },
+    {
+      "rule_id": "CIS-3.1.2",
+      "title": "Drop Source Routed Packets (accept_source_route)",
+      "parameter": "net.ipv4.conf.all.accept_source_route",
+      "target": "0",
+      "observed": "0",
+      "passed": true,
+      "status": "PASS",
+      "rationale": "Prevents attackers from dictating packet routing pathways through enterprise subnets."
+    },
+    {
+      "rule_id": "CIS-6.1.2",
+      "title": "Permissions on /etc/shadow",
+      "parameter": "stat -c %a /etc/shadow",
+      "target": "0000 or 0600",
+      "observed": "0000",
+      "passed": true,
+      "status": "PASS",
+      "rationale": "Ensures password hash tables are inaccessible to non-root accounts."
+    },
+    {
+      "rule_id": "CIS-6.1.3",
+      "title": "Permissions on /etc/passwd",
+      "parameter": "stat -c %a /etc/passwd",
+      "target": "0644",
+      "observed": "0644",
+      "passed": true,
+      "status": "PASS",
+      "rationale": "Ensures user account definitions cannot be modified by unprivileged users."
+    }
+  ]
+}
