@@ -8,7 +8,8 @@
 * **FerroOS Server v2.0 (Current Version)** (Pure-Rust userland + Linux kernel + `mimalloc 2.1` + `libferro_io`)
 
 **Hardware Baseline**: Azure Standard VM (AMD EPYC 9V45 96-Core Processor, 4.0 vCPUs, 6.0 GB RAM constraint, Linux Kernel `6.17.0-azure`, `ulimit -n 65536`)  
-**Audit Directory**: [`reports/runs/`](../../reports/runs/)  
+**Verified Cloud Run**: [GitHub Actions Run #39918015586](https://github.com/Praveen-1308/ferro-os/actions/runs/39918015586)  
+**Audit Directory**: [`reports/runs/2026-10-23_071036_RUN-LOCAL-SEC-EVAL_SECURITY_HARDENING_COMPLIANCE/`](../../reports/runs/2026-10-23_071036_RUN-LOCAL-SEC-EVAL_SECURITY_HARDENING_COMPLIANCE/comparison_summary.md)  
 
 ---
 

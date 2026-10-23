@@ -261,6 +261,7 @@ Evaluates FerroOS's enterprise commercial readiness from a security, hardening, 
 | **11. Container Vulnerabilities (`trivy`)**| 1 High / 4 Medium (17 total)| 3 High / 9 Medium (36 total)| **0 Critical / 0 High / 0 CVEs** | 🏆 **Zero unpatched vulnerability backlog** |
 | **12. Sudden Power Cut Recovery** | 380 ms (XFS journal replay) | 520 ms (ext4 journal replay) | **14.5 ms (Btrfs CoW atomic snapshot)**| ⚡ **Zero torn pages; instant recovery** |
 
+> 🌐 **Verified Cloud Run**: [GitHub Actions Run #39918015586](https://github.com/Praveen-1308/ferro-os/actions/runs/39918015586)  
 > 📚 **Detailed 6-Pillar Whitepaper**: [Enterprise Security, Hardening & Compliance Qualification Whitepaper](docs/reports/enterprise_security_hardening_and_compliance_audit.md)
 
 ---
