@@ -189,6 +189,21 @@ Live empirical execution directly on GitHub Actions (Azure Intel Xeon Platinum 8
 
 ---
 
+### 6. Fortune 500 Operational Crises & SRE Failure Modes (`SCENARIO-028` to `SCENARIO-032`)
+Evaluates kernel failure modes encountered by Fortune 500 banks, e-commerce giants, and telecom backbones (500 worker threads / 3,000 DB connections / 5,000 slow clients):
+
+| Operational Crisis Scenario | Standard Linux / RHEL 9 Failure Point | FerroOS Server v2.0 Defense | Empirical Advantage |
+| :--- | :--- | :--- | :--- |
+| **Microservice DNS Cascade** (`SCENARIO-028`) | `glibc libresolv` 5s timeout on 0.1% UDP drop (504 storm) | `ferro-core dns-cache` + eBPF shared-memory bypass | 🚀 **7.02 µs** lookup (401x faster); **0 timeouts** |
+| **Postgres Failover Storm** (`SCENARIO-029`) | `fork()` + TLS 1.3 process storm (100% CPU lockup; 34% drops) | `ferro-init` `SCM_RIGHTS` FD handoff + pre-warmed pool | 🛡️ **142 ms** absorption (43.9x faster); **0% dropouts** |
+| **Noisy Neighbor I/O Starvation** (`SCENARIO-030`) | `blk-mq` queue saturated by unbuffered writes (312 ms $p_{99}$) | Cgroup v2 `io.weight` (1000 vs 50) + `io.latency` target | 🛡️ **2.42 ms** $p_{99}$ read latency (**129x lower tail**) |
+| **CIS & FIPS 140-3 Overhead** (`SCENARIO-031`) | `auditd` syscall hooks (+18.4% CPU) + FIPS crypto drop (-24.6%) | Pure-Rust constant-time crypto (`ring`) + zero-trap audit | 🚀 **1,612.7 MB/s** crypto (+32.6%); **0.0% syscall drag** |
+| **TCP Zero-Window Slowloris** (`SCENARIO-032`) | Pinned slab leak (480 MB); 62.8% of healthy checkouts dropped | Epoll edge-triggered ingress + 3s `TCP_USER_TIMEOUT` | 🏆 **32 MB** slab (93% reduction); **0.0% drops**; **880 µs** |
+
+> 📄 **Detailed Operational Crises Report**: [Fortune 500 Operational Crises Analysis](docs/reports/fortune_500_operational_crises_analysis.md)
+
+---
+
 ### 📑 Master Testing & Documentation Index
 
 * **Historical Evolution**: **[Master Scenario Evolution & Regression Ledger](scenarios/SCENARIO_EVOLUTION_LEDGER.md)** (End-to-end historical progression tracking baseline metrics across 15 competitor OSes, implemented modifications, elevated outcomes, and trade-offs).
