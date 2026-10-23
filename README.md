@@ -238,6 +238,7 @@ Evaluates hardware subsystem performance, enterprise security hardening profiles
 | **Standard Requirements: Filesystem Recovery** | 380 ms (XFS Replay) | 520 ms (ext4 Replay) | **14.5 ms (Btrfs CoW)** | 🛡️ **Atomic snapshot rollback (zero corrupt)** |
 | **Standard Requirements: PID 1 Boot-to-Ready** | 2,150.0 ms (systemd) | 2,350.0 ms (systemd) | **0.78 ms (ferro-init)** | ⚡ **3,000x faster userspace supervisor startup**|
 
+> 🌐 **Verified Cloud Run**: [GitHub Actions Run #39908801879](https://github.com/Praveen-1308/ferro-os/actions/runs/39908801879)  
 > 📚 **Comprehensive Qualification Whitepaper**: [Enterprise System Performance, Security & OS Standards Qualification](docs/reports/enterprise_system_security_and_standards_qualification.md)
 
 ---
