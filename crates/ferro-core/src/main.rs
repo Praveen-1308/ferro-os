@@ -1343,14 +1343,19 @@ fn run_bench(args: &[String]) -> ExitCode {
 
 #[cfg(unix)]
 fn create_reuseport_listener(addr_str: &str) -> io::Result<std::net::TcpListener> {
-    use std::os::unix::io::FromRawFd;
     use std::net::ToSocketAddrs;
+    use std::os::unix::io::FromRawFd;
 
-    let addr = addr_str.to_socket_addrs()?.next().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::InvalidInput, "Invalid address")
-    })?;
+    let addr = addr_str
+        .to_socket_addrs()?
+        .next()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "Invalid address"))?;
 
-    let domain = if addr.is_ipv4() { libc::AF_INET } else { libc::AF_INET6 };
+    let domain = if addr.is_ipv4() {
+        libc::AF_INET
+    } else {
+        libc::AF_INET6
+    };
     let sock = unsafe { libc::socket(domain, libc::SOCK_STREAM, 0) };
     if sock < 0 {
         return Err(io::Error::last_os_error());
@@ -1358,10 +1363,28 @@ fn create_reuseport_listener(addr_str: &str) -> io::Result<std::net::TcpListener
 
     unsafe {
         let opt: libc::c_int = 1;
-        libc::setsockopt(sock, libc::SOL_SOCKET, libc::SO_REUSEADDR, &opt as *const _ as *const libc::c_void, std::mem::size_of_val(&opt) as _);
-        libc::setsockopt(sock, libc::SOL_SOCKET, libc::SO_REUSEPORT, &opt as *const _ as *const libc::c_void, std::mem::size_of_val(&opt) as _);
+        libc::setsockopt(
+            sock,
+            libc::SOL_SOCKET,
+            libc::SO_REUSEADDR,
+            &opt as *const _ as *const libc::c_void,
+            std::mem::size_of_val(&opt) as _,
+        );
+        libc::setsockopt(
+            sock,
+            libc::SOL_SOCKET,
+            libc::SO_REUSEPORT,
+            &opt as *const _ as *const libc::c_void,
+            std::mem::size_of_val(&opt) as _,
+        );
         let nodelay: libc::c_int = 1;
-        libc::setsockopt(sock, libc::IPPROTO_TCP, libc::TCP_NODELAY, &nodelay as *const _ as *const libc::c_void, std::mem::size_of_val(&nodelay) as _);
+        libc::setsockopt(
+            sock,
+            libc::IPPROTO_TCP,
+            libc::TCP_NODELAY,
+            &nodelay as *const _ as *const libc::c_void,
+            std::mem::size_of_val(&nodelay) as _,
+        );
     }
 
     let ret = match addr {
@@ -1394,14 +1417,18 @@ fn create_reuseport_listener(addr_str: &str) -> io::Result<std::net::TcpListener
     };
     if ret < 0 {
         let err = io::Error::last_os_error();
-        unsafe { libc::close(sock); }
+        unsafe {
+            libc::close(sock);
+        }
         return Err(err);
     }
 
     let ret = unsafe { libc::listen(sock, 65535) };
     if ret < 0 {
         let err = io::Error::last_os_error();
-        unsafe { libc::close(sock); }
+        unsafe {
+            libc::close(sock);
+        }
         return Err(err);
     }
 
@@ -1485,7 +1512,10 @@ fn run_serve(args: &[String]) -> ExitCode {
     let addr = format!("0.0.0.0:{}", port);
     let root_path = PathBuf::from(root_dir);
 
-    let shards = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(8);
+    let shards = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4)
+        .min(8);
     println!(
         "[ferro-serve] High-performance Rust HTTP server listening on http://{} (Sharded SO_REUSEPORT across {} workers)",
         addr, shards
@@ -1509,7 +1539,10 @@ fn run_serve(args: &[String]) -> ExitCode {
                             }
                         }
                     } else {
-                        eprintln!("[ferro-serve] Shard {} reuseport bind fallback: {}", shard_id, e);
+                        eprintln!(
+                            "[ferro-serve] Shard {} reuseport bind fallback: {}",
+                            shard_id, e
+                        );
                         return;
                     }
                 }
@@ -1839,8 +1872,20 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                 let raw_fd = socket.as_raw_fd();
                 unsafe {
                     let buf_size: libc::c_int = 64 * 1024 * 1024;
-                    libc::setsockopt(raw_fd, libc::SOL_SOCKET, libc::SO_RCVBUF, &buf_size as *const _ as *const libc::c_void, std::mem::size_of_val(&buf_size) as _);
-                    libc::setsockopt(raw_fd, libc::SOL_SOCKET, libc::SO_SNDBUF, &buf_size as *const _ as *const libc::c_void, std::mem::size_of_val(&buf_size) as _);
+                    libc::setsockopt(
+                        raw_fd,
+                        libc::SOL_SOCKET,
+                        libc::SO_RCVBUF,
+                        &buf_size as *const _ as *const libc::c_void,
+                        std::mem::size_of_val(&buf_size) as _,
+                    );
+                    libc::setsockopt(
+                        raw_fd,
+                        libc::SOL_SOCKET,
+                        libc::SO_SNDBUF,
+                        &buf_size as *const _ as *const libc::c_void,
+                        std::mem::size_of_val(&buf_size) as _,
+                    );
                 }
                 println!("  [Ring Buffer] Expanded UDP SO_RCVBUF / SO_SNDBUF to 64MB");
             }
@@ -3908,7 +3953,9 @@ fn run_win_run(args: &[String]) -> ExitCode {
         println!("  --gaming             Engage GameMode & sched_ext 500µs deterministic slice");
         println!("  --mimalloc           Force NTDLL memory allocations through mimalloc 2.1");
         println!("  --sandbox            Enforce Landlock LSM filesystem boundary confinement");
-        println!("  --status             Inspect Windows compatibility runtime & translation bridges");
+        println!(
+            "  --status             Inspect Windows compatibility runtime & translation bridges"
+        );
         return ExitCode::SUCCESS;
     }
 
@@ -3962,7 +4009,10 @@ fn run_win_run(args: &[String]) -> ExitCode {
 
     let exe_path = Path::new(&exe_path_str);
     if !exe_path.exists() {
-        eprintln!("win-run: Windows executable '{}' does not exist", exe_path_str);
+        eprintln!(
+            "win-run: Windows executable '{}' does not exist",
+            exe_path_str
+        );
         return ExitCode::FAILURE;
     }
 
@@ -3984,7 +4034,10 @@ fn run_win_run(args: &[String]) -> ExitCode {
 
     // 2. Determine prefix
     let prefix = custom_prefix.unwrap_or_else(|| {
-        let app_name = exe_path.file_stem().and_then(|s| s.to_str()).unwrap_or("default");
+        let app_name = exe_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("default");
         dirs_home().join(format!(".local/share/ferro/wineprefixes/{}", app_name))
     });
     let _ = fs::create_dir_all(&prefix);
@@ -4007,7 +4060,9 @@ fn run_win_run(args: &[String]) -> ExitCode {
         }
         BinaryFormat::WindowsPe64 => {
             if host_arch == "aarch64" && which_bin("box64").is_some() {
-                println!("  🚀 Translation Bridge: Box64 dynarec engaged for x86_64 PE on ARM64 host");
+                println!(
+                    "  🚀 Translation Bridge: Box64 dynarec engaged for x86_64 PE on ARM64 host"
+                );
                 let mut b = Command::new("box64");
                 b.arg("wine64");
                 b.arg(exe_path);
@@ -4074,9 +4129,16 @@ fn run_win_run(args: &[String]) -> ExitCode {
 
     // 5. Interpose mimalloc 2.1 Memory Allocator
     if enable_mimalloc {
-        for candidate in &["/usr/lib/libmimalloc.so", "/usr/local/lib/libmimalloc.so", "/lib/libmimalloc.so"] {
+        for candidate in &[
+            "/usr/lib/libmimalloc.so",
+            "/usr/local/lib/libmimalloc.so",
+            "/lib/libmimalloc.so",
+        ] {
             if Path::new(candidate).exists() {
-                println!("  🚀 Memory Bridge: Injected mimalloc 2.1 via LD_PRELOAD ({})", candidate);
+                println!(
+                    "  🚀 Memory Bridge: Injected mimalloc 2.1 via LD_PRELOAD ({})",
+                    candidate
+                );
                 cmd_builder.env("LD_PRELOAD", candidate);
                 cmd_builder.env("MIMALLOC_LARGE_OS_PAGES", "1");
                 cmd_builder.env("MIMALLOC_PURGE_DELAY", "0");
@@ -4092,7 +4154,10 @@ fn run_win_run(args: &[String]) -> ExitCode {
 
     // 7. Enforce Landlock Sandboxing if requested
     if enable_sandbox {
-        println!("  🛡️ Landlock LSM: Confinement applied to prefix '{}'", prefix.display());
+        println!(
+            "  🛡️ Landlock LSM: Confinement applied to prefix '{}'",
+            prefix.display()
+        );
     }
 
     let ret = match cmd_builder.spawn() {
@@ -4139,14 +4204,44 @@ fn run_win_status() -> ExitCode {
     let has_box86 = which_bin("box86").is_some();
     let has_fex = which_bin("FEXInterpreter").is_some();
 
-    println!("   Wine / Proton 64-bit:       {}", if has_wine64 { "READY (/usr/bin/wine64)" } else if has_wine { "READY (/usr/bin/wine)" } else { "ABSENT (Install via rpk install wine-ferro)" });
-    println!("   Box64 x86_64 Dynarec:       {}", if has_box64 { "ACTIVE" } else { "NOT INSTALLED" });
-    println!("   Box86 32-bit Dynarec:       {}", if has_box86 { "ACTIVE" } else { "NOT INSTALLED (0x7ffe0000 bridge)" });
-    println!("   FEX-Emu Translation Bridge: {}", if has_fex { "ACTIVE" } else { "NOT INSTALLED" });
+    println!(
+        "   Wine / Proton 64-bit:       {}",
+        if has_wine64 {
+            "READY (/usr/bin/wine64)"
+        } else if has_wine {
+            "READY (/usr/bin/wine)"
+        } else {
+            "ABSENT (Install via rpk install wine-ferro)"
+        }
+    );
+    println!(
+        "   Box64 x86_64 Dynarec:       {}",
+        if has_box64 { "ACTIVE" } else { "NOT INSTALLED" }
+    );
+    println!(
+        "   Box86 32-bit Dynarec:       {}",
+        if has_box86 {
+            "ACTIVE"
+        } else {
+            "NOT INSTALLED (0x7ffe0000 bridge)"
+        }
+    );
+    println!(
+        "   FEX-Emu Translation Bridge: {}",
+        if has_fex { "ACTIVE" } else { "NOT INSTALLED" }
+    );
 
     // Memory Bridge
-    let mimalloc_present = Path::new("/usr/lib/libmimalloc.so").exists() || Path::new("/usr/local/lib/libmimalloc.so").exists();
-    println!("   mimalloc 2.1 Heap Bridge:   {}", if mimalloc_present { "ACTIVE (O(1) thread-local allocation)" } else { "AVAILABLE (bundled in FerroOS)" });
+    let mimalloc_present = Path::new("/usr/lib/libmimalloc.so").exists()
+        || Path::new("/usr/local/lib/libmimalloc.so").exists();
+    println!(
+        "   mimalloc 2.1 Heap Bridge:   {}",
+        if mimalloc_present {
+            "ACTIVE (O(1) thread-local allocation)"
+        } else {
+            "AVAILABLE (bundled in FerroOS)"
+        }
+    );
 
     // Graphics Pipeline
     println!("   Direct3D -> Vulkan Layer:   DXVK 2.3 + VKD3D-Proton (Direct to Mesa RADV/ANV)");
@@ -4652,9 +4747,15 @@ fn run_ai_mode(args: &[String]) -> ExitCode {
     let cmd = args.first().map(|s| s.as_str()).unwrap_or("status");
     match cmd {
         "status" => {
-            println!("================================================================================");
-            println!("      ⬡ FERRO-OS AI ACCELERATOR & HUGEPAGES STATUS                              ");
-            println!("================================================================================");
+            println!(
+                "================================================================================"
+            );
+            println!(
+                "      ⬡ FERRO-OS AI ACCELERATOR & HUGEPAGES STATUS                              "
+            );
+            println!(
+                "================================================================================"
+            );
             let thp = fs::read_to_string("/sys/kernel/mm/transparent_hugepage/enabled")
                 .unwrap_or_else(|_| "always [madvise] never".to_string());
             println!("  Transparent HugePages (THP):  {}", thp.trim());
@@ -4662,7 +4763,9 @@ fn run_ai_mode(args: &[String]) -> ExitCode {
                 .unwrap_or_else(|_| "65530".to_string());
             println!("  Virtual Memory Max Mappings:  {}", max_map.trim());
             println!("  Memory Pinning (mlockall):    Supported");
-            println!("================================================================================");
+            println!(
+                "================================================================================"
+            );
             ExitCode::SUCCESS
         }
         "on" | "enable" => {
@@ -4707,15 +4810,32 @@ fn run_sandbox(args: &[String]) -> ExitCode {
     }
     match args[0].as_str() {
         "status" => {
-            println!("================================================================================");
-            println!("      ⬡ FERRO-OS LANDLOCK LSM & SECCOMP-BPF SANDBOX SUBSYSTEM                   ");
-            println!("================================================================================");
+            println!(
+                "================================================================================"
+            );
+            println!(
+                "      ⬡ FERRO-OS LANDLOCK LSM & SECCOMP-BPF SANDBOX SUBSYSTEM                   "
+            );
+            println!(
+                "================================================================================"
+            );
             let landlock_supported = Path::new("/sys/kernel/security/lsm").exists()
-                || fs::read_to_string("/sys/kernel/security/lsm").map(|s| s.contains("landlock")).unwrap_or(false);
-            println!("  Landlock LSM Kernel Support:   {}", if landlock_supported { "ARMED (Available)" } else { "Active / Emulated" });
+                || fs::read_to_string("/sys/kernel/security/lsm")
+                    .map(|s| s.contains("landlock"))
+                    .unwrap_or(false);
+            println!(
+                "  Landlock LSM Kernel Support:   {}",
+                if landlock_supported {
+                    "ARMED (Available)"
+                } else {
+                    "Active / Emulated"
+                }
+            );
             println!("  seccomp-bpf Filter:           Active");
             println!("  PR_SET_NO_NEW_PRIVS:          Enabled");
-            println!("================================================================================");
+            println!(
+                "================================================================================"
+            );
             ExitCode::SUCCESS
         }
         "enforce" => {
@@ -4740,16 +4860,24 @@ fn run_sandbox(args: &[String]) -> ExitCode {
                 libc::prctl(38, 1, 0, 0, 0); // PR_SET_NO_NEW_PRIVS
             }
 
-            println!("[ferro-sandbox] Confining execution to directory: '{}'", allowed_dir);
-            println!("[ferro-sandbox] Executing: {} {:?}", target_cmd, target_args);
+            println!(
+                "[ferro-sandbox] Confining execution to directory: '{}'",
+                allowed_dir
+            );
+            println!(
+                "[ferro-sandbox] Executing: {} {:?}",
+                target_cmd, target_args
+            );
 
-            let status = Command::new(target_cmd)
-                .args(target_args)
-                .status();
+            let status = Command::new(target_cmd).args(target_args).status();
 
             match status {
                 Ok(s) => {
-                    if s.success() { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+                    if s.success() {
+                        ExitCode::SUCCESS
+                    } else {
+                        ExitCode::FAILURE
+                    }
                 }
                 Err(e) => {
                     eprintln!("Failed executing sandboxed command: {}", e);
@@ -4892,8 +5020,7 @@ mod tests {
         // offset 0: \x03com\x00
         // offset 5: \x03api\xc0\x00 -> "api.com"
         let compressed_wire = [
-            0x03, b'c', b'o', b'm', 0x00,
-            0x03, b'a', b'p', b'i', 0xc0, 0x00
+            0x03, b'c', b'o', b'm', 0x00, 0x03, b'a', b'p', b'i', 0xc0, 0x00,
         ];
         let (resolved, end) = parse_dns_qname(&compressed_wire, 5).unwrap();
         assert_eq!(resolved, "api.com");

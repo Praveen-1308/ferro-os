@@ -658,7 +658,10 @@ mod linux_init {
                 println!("[ferro-init] Process file descriptor limit elevated to 65,536 (RLIMIT_NOFILE).");
             } else {
                 // In unprivileged containers, maximize soft limit up to hard limit
-                let mut current = libc::rlimit { rlim_cur: 0, rlim_max: 0 };
+                let mut current = libc::rlimit {
+                    rlim_cur: 0,
+                    rlim_max: 0,
+                };
                 if libc::getrlimit(libc::RLIMIT_NOFILE, &mut current) == 0 {
                     let elevated = libc::rlimit {
                         rlim_cur: current.rlim_max,

@@ -28,7 +28,8 @@ fn check_peer_authorization(sock_fd: libc::c_int) -> bool {
             libc::SO_PEERCRED,
             &mut ucred as *mut _ as *mut libc::c_void,
             &mut len,
-        ) == 0 {
+        ) == 0
+        {
             return ucred.uid == 0;
         }
     }
@@ -172,7 +173,11 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
 
         // Access Control Verification: Only root (UID 0) allowed to interact with PID 1 FD Store
         if !check_peer_authorization(raw_sock) {
-            let _ = send_fd(raw_sock, -1, "ERROR PERMISSION_DENIED: Root UID 0 required\n");
+            let _ = send_fd(
+                raw_sock,
+                -1,
+                "ERROR PERMISSION_DENIED: Root UID 0 required\n",
+            );
             if let Some(fd) = recvd_fd {
                 libc::close(fd);
             }
@@ -192,7 +197,12 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
             "STORE" => {
                 if parts.len() >= 2 {
                     let name = parts[1].to_string();
-                    if name.is_empty() || name.len() > 64 || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.') {
+                    if name.is_empty()
+                        || name.len() > 64
+                        || !name
+                            .chars()
+                            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.')
+                    {
                         let _ = send_fd(raw_sock, -1, "ERROR Invalid service name\n");
                         if let Some(fd) = recvd_fd {
                             libc::close(fd);
@@ -203,7 +213,11 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
                     if let Some(fd) = recvd_fd {
                         let mut map = store.lock().unwrap();
                         if map.len() >= MAX_STORED_FDS && !map.contains_key(&name) {
-                            let _ = send_fd(raw_sock, -1, "ERROR FD Store Capacity Exceeded (max 1024)\n");
+                            let _ = send_fd(
+                                raw_sock,
+                                -1,
+                                "ERROR FD Store Capacity Exceeded (max 1024)\n",
+                            );
                             libc::close(fd);
                             return;
                         }

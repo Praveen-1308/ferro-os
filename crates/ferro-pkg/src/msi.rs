@@ -2,10 +2,10 @@
 //! Extracts Windows installation packages directly into rootless prefixes on FerroOS
 //! without requiring a full Windows virtual machine or native msiexec.exe.
 
+use flate2::read::DeflateDecoder;
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
-use flate2::read::DeflateDecoder;
 
 /// Magic bytes for Microsoft Compound Document File (OLE CFBF)
 pub const OLE_MAGIC: [u8; 8] = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
@@ -107,19 +107,12 @@ impl MsiExtractor {
             ));
         }
 
-        let first_dir_sector = u32::from_le_bytes([
-            self.data[48],
-            self.data[49],
-            self.data[50],
-            self.data[51],
-        ]);
+        let first_dir_sector =
+            u32::from_le_bytes([self.data[48], self.data[49], self.data[50], self.data[51]]);
 
-        let num_fat_sectors = u32::from_le_bytes([
-            self.data[44],
-            self.data[45],
-            self.data[46],
-            self.data[47],
-        ]) as usize;
+        let num_fat_sectors =
+            u32::from_le_bytes([self.data[44], self.data[45], self.data[46], self.data[47]])
+                as usize;
 
         // Parse first 109 DIFAT entries located in header
         let mut fat_sector_locs = Vec::new();
@@ -312,10 +305,16 @@ impl MsiExtractor {
                             {
                                 use std::os::unix::fs::PermissionsExt;
                                 if file_bytes.len() >= 2 && file_bytes[0..2] == PE_DOS_MAGIC {
-                                    let _ = fs::set_permissions(&sub_path, fs::Permissions::from_mode(0o755));
+                                    let _ = fs::set_permissions(
+                                        &sub_path,
+                                        fs::Permissions::from_mode(0o755),
+                                    );
                                 }
                             }
-                            if file_bytes.len() >= 2 && file_bytes[0..2] == PE_DOS_MAGIC && main_exe.is_none() {
+                            if file_bytes.len() >= 2
+                                && file_bytes[0..2] == PE_DOS_MAGIC
+                                && main_exe.is_none()
+                            {
                                 main_exe = Some(sub_path.clone());
                             }
                             extracted.push(sub_path);
@@ -490,7 +489,8 @@ pub fn extract_cabinet_stream(data: &[u8]) -> io::Result<Vec<(String, Vec<u8>)>>
         if cur + 8 + cb_cf_folder > data.len() {
             break;
         }
-        let coff_cab_start = u32::from_le_bytes([data[cur], data[cur + 1], data[cur + 2], data[cur + 3]]) as usize;
+        let coff_cab_start =
+            u32::from_le_bytes([data[cur], data[cur + 1], data[cur + 2], data[cur + 3]]) as usize;
         let c_cf_data = u16::from_le_bytes([data[cur + 4], data[cur + 5]]) as usize;
         let type_compress = u16::from_le_bytes([data[cur + 6], data[cur + 7]]);
         folders.push((coff_cab_start, c_cf_data, type_compress));
@@ -504,8 +504,11 @@ pub fn extract_cabinet_stream(data: &[u8]) -> io::Result<Vec<(String, Vec<u8>)>>
         if cur + 16 > data.len() {
             break;
         }
-        let cb_file = u32::from_le_bytes([data[cur], data[cur + 1], data[cur + 2], data[cur + 3]]) as usize;
-        let uoff_folder = u32::from_le_bytes([data[cur + 4], data[cur + 5], data[cur + 6], data[cur + 7]]) as usize;
+        let cb_file =
+            u32::from_le_bytes([data[cur], data[cur + 1], data[cur + 2], data[cur + 3]]) as usize;
+        let uoff_folder =
+            u32::from_le_bytes([data[cur + 4], data[cur + 5], data[cur + 6], data[cur + 7]])
+                as usize;
         let i_folder = u16::from_le_bytes([data[cur + 8], data[cur + 9]]) as usize;
         cur += 16;
 
@@ -522,7 +525,8 @@ pub fn extract_cabinet_stream(data: &[u8]) -> io::Result<Vec<(String, Vec<u8>)>>
 
     // 3. Decompress folders and extract files
     let mut extracted_files = Vec::new();
-    for (folder_idx, (coff_cab_start, c_cf_data, type_compress)) in folders.into_iter().enumerate() {
+    for (folder_idx, (coff_cab_start, c_cf_data, type_compress)) in folders.into_iter().enumerate()
+    {
         let mut folder_bytes = Vec::new();
         let mut blk_off = coff_cab_start;
 
@@ -571,7 +575,11 @@ pub fn extract_cabinet_stream(data: &[u8]) -> io::Result<Vec<(String, Vec<u8>)>>
 }
 
 /// Generates a virtualized Wine registry hive (system.reg and user.reg) inside the isolated prefix.
-pub fn generate_virtual_wine_prefix(target_dir: &Path, app_name: &str, main_exe: &Path) -> io::Result<()> {
+pub fn generate_virtual_wine_prefix(
+    target_dir: &Path,
+    app_name: &str,
+    main_exe: &Path,
+) -> io::Result<()> {
     let drive_c = target_dir.join("drive_c");
     let prog_files = drive_c.join("Program Files").join(app_name);
     let sys32 = drive_c.join("windows/system32");
@@ -588,7 +596,7 @@ pub fn generate_virtual_wine_prefix(target_dir: &Path, app_name: &str, main_exe:
     let win_path = format!("C:\\\\Program Files\\\\{}\\\\{}", app_name, exe_name);
 
     let system_reg_content = format!(
-r#"WINE REGISTRY Version 2
+        r#"WINE REGISTRY Version 2
 ;; All keys relative to \\Machine
 
 [Software\\Microsoft\\Windows\\CurrentVersion]
@@ -609,11 +617,12 @@ r#"WINE REGISTRY Version 2
 [Software\\{app_name}]
 "Installed"=dword:00000001
 "InstallPath"="C:\\Program Files\\{app_name}"
-"#);
+"#
+    );
     fs::write(target_dir.join("system.reg"), system_reg_content)?;
 
     let user_reg_content = format!(
-r#"WINE REGISTRY Version 2
+        r#"WINE REGISTRY Version 2
 ;; All keys relative to \\User\\S-1-5-21-0-0-0-1000
 
 [Environment]
@@ -629,7 +638,8 @@ r#"WINE REGISTRY Version 2
 
 [Software\\{app_name}]
 "FirstRun"=dword:00000000
-"#);
+"#
+    );
     fs::write(target_dir.join("user.reg"), user_reg_content)?;
     fs::write(target_dir.join("userdef.reg"), "WINE REGISTRY Version 2\n")?;
 

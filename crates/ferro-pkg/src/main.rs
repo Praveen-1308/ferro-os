@@ -564,12 +564,12 @@ fn cmd_install(
     let host_arch = get_host_arch();
 
     // 3. Extract Entries with Transactional Tracking & Defensive Security Hardening
-    let archive_file_size = fs::metadata(&archive_path).map(|m| m.len()).unwrap_or(1024 * 1024);
+    let archive_file_size = fs::metadata(&archive_path)
+        .map(|m| m.len())
+        .unwrap_or(1024 * 1024);
     // Decompression bomb ceiling: 500 MB max or 100x compression ratio
-    let max_allowed_uncompressed_bytes: u64 = std::cmp::max(
-        500 * 1024 * 1024,
-        archive_file_size.saturating_mul(100),
-    );
+    let max_allowed_uncompressed_bytes: u64 =
+        std::cmp::max(500 * 1024 * 1024, archive_file_size.saturating_mul(100));
     let mut total_uncompressed_bytes: u64 = 0;
 
     let mut extraction_failed = false;
@@ -652,9 +652,14 @@ fn cmd_install(
 
         // 2. Zip-Slip & Path Traversal Defense
         let path_norm = Path::new(clean_path);
-        let has_traversal = path_norm
-            .components()
-            .any(|comp| matches!(comp, std::path::Component::ParentDir | std::path::Component::RootDir | std::path::Component::Prefix(_)));
+        let has_traversal = path_norm.components().any(|comp| {
+            matches!(
+                comp,
+                std::path::Component::ParentDir
+                    | std::path::Component::RootDir
+                    | std::path::Component::Prefix(_)
+            )
+        });
 
         if has_traversal || clean_path.contains("..") {
             extraction_failed = true;
@@ -682,7 +687,9 @@ fn cmd_install(
                     break;
                 }
                 // Check for recursive symlink loop or self-reference
-                if link_target == path_norm || link_target == Path::new(path_norm.file_name().unwrap_or_default()) {
+                if link_target == path_norm
+                    || link_target == Path::new(path_norm.file_name().unwrap_or_default())
+                {
                     extraction_failed = true;
                     failure_reason = format!(
                         "Security Violation: Recursive symlink loop detected in '{}' -> '{}'!",
@@ -695,7 +702,9 @@ fn cmd_install(
                 let mut normalized = std::path::PathBuf::new();
                 for comp in full_target.components() {
                     match comp {
-                        std::path::Component::ParentDir => { normalized.pop(); }
+                        std::path::Component::ParentDir => {
+                            normalized.pop();
+                        }
                         std::path::Component::Normal(c) => normalized.push(c),
                         std::path::Component::RootDir => normalized.push("/"),
                         _ => {}
@@ -742,7 +751,11 @@ fn cmd_install(
                 if let Ok(m) = fs::symlink_metadata(&cur) {
                     if m.file_type().is_symlink() {
                         if let Ok(target) = fs::read_link(&cur) {
-                            let resolved = if target.is_absolute() { target } else { cur.parent().unwrap().join(target) };
+                            let resolved = if target.is_absolute() {
+                                target
+                            } else {
+                                cur.parent().unwrap().join(target)
+                            };
                             if !resolved.starts_with(&root) {
                                 extraction_failed = true;
                                 failure_reason = format!(
@@ -1113,11 +1126,17 @@ fn cmd_msi_info(args: &[String]) -> ExitCode {
             let summary = extractor.inspect();
             println!("📦 [MSI Package] '{}'", msi_path.display());
             println!("   Total Structured Streams: {}", summary.total_streams);
-            println!("   Cabinet (.cab) Archives:  {}", summary.cabinet_streams.len());
+            println!(
+                "   Cabinet (.cab) Archives:  {}",
+                summary.cabinet_streams.len()
+            );
             for c in &summary.cabinet_streams {
                 println!("     • {}", c);
             }
-            println!("   Executable Binaries (.exe): {}", summary.executable_binaries.len());
+            println!(
+                "   Executable Binaries (.exe): {}",
+                summary.executable_binaries.len()
+            );
             for e in &summary.executable_binaries {
                 println!("     • {}", e);
             }
@@ -1127,7 +1146,11 @@ fn cmd_msi_info(args: &[String]) -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(e) => {
-            eprintln!("rpk msi-info: failed to parse MSI '{}': {}", msi_path.display(), e);
+            eprintln!(
+                "rpk msi-info: failed to parse MSI '{}': {}",
+                msi_path.display(),
+                e
+            );
             ExitCode::FAILURE
         }
     }
@@ -1155,12 +1178,19 @@ fn cmd_msi_extract(args: &[String]) -> ExitCode {
 
     match msi::MsiExtractor::open(msi_path) {
         Ok(extractor) => {
-            println!("⚡ [rpk MSI] Parsing & Unpacking '{}' into '{}'...", msi_path.display(), target_dir.display());
+            println!(
+                "⚡ [rpk MSI] Parsing & Unpacking '{}' into '{}'...",
+                msi_path.display(),
+                target_dir.display()
+            );
             match extractor.extract_all(&target_dir) {
                 Ok(report) => {
                     println!("✅ Extraction completed in pure Rust (Zero Windows VM Overhead)!");
                     println!("   Total Files Extracted: {}", report.extracted_files.len());
-                    println!("   Total Size Extracted:  {:.2} MB", report.total_bytes_extracted as f64 / 1_048_576.0);
+                    println!(
+                        "   Total Size Extracted:  {:.2} MB",
+                        report.total_bytes_extracted as f64 / 1_048_576.0
+                    );
                     if let Some(ref exe) = report.main_executable {
                         println!("   Main Executable:       {}", exe.display());
                     }
@@ -1176,7 +1206,11 @@ fn cmd_msi_extract(args: &[String]) -> ExitCode {
             }
         }
         Err(e) => {
-            eprintln!("rpk msi-extract: failed to parse MSI '{}': {}", msi_path.display(), e);
+            eprintln!(
+                "rpk msi-extract: failed to parse MSI '{}': {}",
+                msi_path.display(),
+                e
+            );
             ExitCode::FAILURE
         }
     }
@@ -1193,30 +1227,55 @@ fn cmd_pe_info(args: &[String]) -> ExitCode {
         Ok(inspector) => match inspector.analyze() {
             Ok(analysis) => {
                 println!("🔍 [Windows PE Analysis] '{}'", pe_path.display());
-                println!("  • Architecture:     {}", analysis.architecture.description());
+                println!(
+                    "  • Architecture:     {}",
+                    analysis.architecture.description()
+                );
                 println!("  • Subsystem:        {}", analysis.subsystem.description());
                 println!("  • Entrypoint RVA:   0x{:08X}", analysis.entry_point_rva);
                 println!("  • Image Base:       0x{:016X}", analysis.image_base);
-                println!("  • Virtual Image:    {} KiB (Section Alignment: {} B)", analysis.size_of_image / 1024, analysis.section_alignment);
+                println!(
+                    "  • Virtual Image:    {} KiB (Section Alignment: {} B)",
+                    analysis.size_of_image / 1024,
+                    analysis.section_alignment
+                );
                 println!("  • Total Sections:   {}", analysis.sections.len());
                 for s in &analysis.sections {
-                    println!("      [{:8}] VirtAddr: 0x{:08X} (Size: {:6} B) RawSize: {:6} B", s.name, s.virtual_address, s.virtual_size, s.raw_data_size);
+                    println!(
+                        "      [{:8}] VirtAddr: 0x{:08X} (Size: {:6} B) RawSize: {:6} B",
+                        s.name, s.virtual_address, s.virtual_size, s.raw_data_size
+                    );
                 }
                 println!("  • Imported DLLs:    {}", analysis.imports.len());
                 for imp in &analysis.imports {
-                    println!("      [{}] ({} imported functions)", imp.dll_name, imp.functions.len());
+                    println!(
+                        "      [{}] ({} imported functions)",
+                        imp.dll_name,
+                        imp.functions.len()
+                    );
                 }
-                println!("  • Native Shims:     {:.1}% standard NTDLL/KERNEL32 coverage", analysis.native_stub_coverage_pct);
+                println!(
+                    "  • Native Shims:     {:.1}% standard NTDLL/KERNEL32 coverage",
+                    analysis.native_stub_coverage_pct
+                );
                 println!("  🚀 Recommended:     {}", analysis.recommended_engine);
                 ExitCode::SUCCESS
             }
             Err(e) => {
-                eprintln!("rpk pe-info: failed to analyze PE '{}': {}", pe_path.display(), e);
+                eprintln!(
+                    "rpk pe-info: failed to analyze PE '{}': {}",
+                    pe_path.display(),
+                    e
+                );
                 ExitCode::FAILURE
             }
         },
         Err(e) => {
-            eprintln!("rpk pe-info: failed to open PE '{}': {}", pe_path.display(), e);
+            eprintln!(
+                "rpk pe-info: failed to open PE '{}': {}",
+                pe_path.display(),
+                e
+            );
             ExitCode::FAILURE
         }
     }
@@ -1360,7 +1419,7 @@ mod tests {
         stream_entry[64] = stream_name.len() as u8;
         stream_entry[66] = 2; // Stream type
         stream_entry[116] = 2; // Starting sector 2
-        // Size = 128 bytes
+                               // Size = 128 bytes
         stream_entry[120] = 128;
 
         // Sector 2 is Stream data (offset 1536..2048)
@@ -1382,7 +1441,9 @@ mod tests {
         // Test extraction to temporary folder
         let temp_dir = env::temp_dir().join("ferro_msi_extract_test");
         let _ = fs::remove_dir_all(&temp_dir);
-        let report = extractor.extract_all(&temp_dir).expect("Successful extraction");
+        let report = extractor
+            .extract_all(&temp_dir)
+            .expect("Successful extraction");
         assert_eq!(report.extracted_files.len(), 1);
         assert!(report.main_executable.is_some());
         assert!(report.desktop_shortcut.is_some());

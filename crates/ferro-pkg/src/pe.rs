@@ -8,9 +8,9 @@ use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PeArchitecture {
-    I386,       // 32-bit x86
-    Amd64,      // 64-bit x86_64
-    Arm64,      // 64-bit ARM64
+    I386,  // 32-bit x86
+    Amd64, // 64-bit x86_64
+    Arm64, // 64-bit ARM64
     Unknown(u16),
 }
 
@@ -123,8 +123,10 @@ impl PeInspector {
         // COFF Header (20 bytes following PE\0\0)
         let coff_off = pe_offset + 4;
         let machine_raw = u16::from_le_bytes([self.data[coff_off], self.data[coff_off + 1]]);
-        let num_sections = u16::from_le_bytes([self.data[coff_off + 2], self.data[coff_off + 3]]) as usize;
-        let opt_header_size = u16::from_le_bytes([self.data[coff_off + 16], self.data[coff_off + 17]]) as usize;
+        let num_sections =
+            u16::from_le_bytes([self.data[coff_off + 2], self.data[coff_off + 3]]) as usize;
+        let opt_header_size =
+            u16::from_le_bytes([self.data[coff_off + 16], self.data[coff_off + 17]]) as usize;
 
         let arch = match machine_raw {
             0x014C => PeArchitecture::I386,
@@ -151,34 +153,86 @@ impl PeInspector {
             self.data[opt_off + 19],
         ]);
 
-        let (image_base, section_align, file_align, size_of_image, subsystem_raw, import_dir_rva) = if is_64bit {
-            let ib = u64::from_le_bytes([
-                self.data[opt_off + 24], self.data[opt_off + 25], self.data[opt_off + 26], self.data[opt_off + 27],
-                self.data[opt_off + 28], self.data[opt_off + 29], self.data[opt_off + 30], self.data[opt_off + 31],
-            ]);
-            let sa = u32::from_le_bytes([self.data[opt_off + 32], self.data[opt_off + 33], self.data[opt_off + 34], self.data[opt_off + 35]]);
-            let fa = u32::from_le_bytes([self.data[opt_off + 36], self.data[opt_off + 37], self.data[opt_off + 38], self.data[opt_off + 39]]);
-            let si = u32::from_le_bytes([self.data[opt_off + 56], self.data[opt_off + 57], self.data[opt_off + 58], self.data[opt_off + 59]]);
-            let sub = u16::from_le_bytes([self.data[opt_off + 68], self.data[opt_off + 69]]);
-            let imp_rva = if opt_header_size >= 120 {
-                u32::from_le_bytes([self.data[opt_off + 120], self.data[opt_off + 121], self.data[opt_off + 122], self.data[opt_off + 123]])
+        let (image_base, section_align, file_align, size_of_image, subsystem_raw, import_dir_rva) =
+            if is_64bit {
+                let ib = u64::from_le_bytes([
+                    self.data[opt_off + 24],
+                    self.data[opt_off + 25],
+                    self.data[opt_off + 26],
+                    self.data[opt_off + 27],
+                    self.data[opt_off + 28],
+                    self.data[opt_off + 29],
+                    self.data[opt_off + 30],
+                    self.data[opt_off + 31],
+                ]);
+                let sa = u32::from_le_bytes([
+                    self.data[opt_off + 32],
+                    self.data[opt_off + 33],
+                    self.data[opt_off + 34],
+                    self.data[opt_off + 35],
+                ]);
+                let fa = u32::from_le_bytes([
+                    self.data[opt_off + 36],
+                    self.data[opt_off + 37],
+                    self.data[opt_off + 38],
+                    self.data[opt_off + 39],
+                ]);
+                let si = u32::from_le_bytes([
+                    self.data[opt_off + 56],
+                    self.data[opt_off + 57],
+                    self.data[opt_off + 58],
+                    self.data[opt_off + 59],
+                ]);
+                let sub = u16::from_le_bytes([self.data[opt_off + 68], self.data[opt_off + 69]]);
+                let imp_rva = if opt_header_size >= 120 {
+                    u32::from_le_bytes([
+                        self.data[opt_off + 120],
+                        self.data[opt_off + 121],
+                        self.data[opt_off + 122],
+                        self.data[opt_off + 123],
+                    ])
+                } else {
+                    0
+                };
+                (ib, sa, fa, si, sub, imp_rva)
             } else {
-                0
+                let ib = u32::from_le_bytes([
+                    self.data[opt_off + 28],
+                    self.data[opt_off + 29],
+                    self.data[opt_off + 30],
+                    self.data[opt_off + 31],
+                ]) as u64;
+                let sa = u32::from_le_bytes([
+                    self.data[opt_off + 32],
+                    self.data[opt_off + 33],
+                    self.data[opt_off + 34],
+                    self.data[opt_off + 35],
+                ]);
+                let fa = u32::from_le_bytes([
+                    self.data[opt_off + 36],
+                    self.data[opt_off + 37],
+                    self.data[opt_off + 38],
+                    self.data[opt_off + 39],
+                ]);
+                let si = u32::from_le_bytes([
+                    self.data[opt_off + 56],
+                    self.data[opt_off + 57],
+                    self.data[opt_off + 58],
+                    self.data[opt_off + 59],
+                ]);
+                let sub = u16::from_le_bytes([self.data[opt_off + 68], self.data[opt_off + 69]]);
+                let imp_rva = if opt_header_size >= 104 {
+                    u32::from_le_bytes([
+                        self.data[opt_off + 104],
+                        self.data[opt_off + 105],
+                        self.data[opt_off + 106],
+                        self.data[opt_off + 107],
+                    ])
+                } else {
+                    0
+                };
+                (ib, sa, fa, si, sub, imp_rva)
             };
-            (ib, sa, fa, si, sub, imp_rva)
-        } else {
-            let ib = u32::from_le_bytes([self.data[opt_off + 28], self.data[opt_off + 29], self.data[opt_off + 30], self.data[opt_off + 31]]) as u64;
-            let sa = u32::from_le_bytes([self.data[opt_off + 32], self.data[opt_off + 33], self.data[opt_off + 34], self.data[opt_off + 35]]);
-            let fa = u32::from_le_bytes([self.data[opt_off + 36], self.data[opt_off + 37], self.data[opt_off + 38], self.data[opt_off + 39]]);
-            let si = u32::from_le_bytes([self.data[opt_off + 56], self.data[opt_off + 57], self.data[opt_off + 58], self.data[opt_off + 59]]);
-            let sub = u16::from_le_bytes([self.data[opt_off + 68], self.data[opt_off + 69]]);
-            let imp_rva = if opt_header_size >= 104 {
-                u32::from_le_bytes([self.data[opt_off + 104], self.data[opt_off + 105], self.data[opt_off + 106], self.data[opt_off + 107]])
-            } else {
-                0
-            };
-            (ib, sa, fa, si, sub, imp_rva)
-        };
 
         let subsystem = match subsystem_raw {
             1 => PeSubsystem::Native,
@@ -199,12 +253,39 @@ impl PeInspector {
                 break;
             }
             let name_bytes = &self.data[s_off..s_off + 8];
-            let name = String::from_utf8_lossy(name_bytes).trim_matches(char::from(0)).to_string();
-            let virt_size = u32::from_le_bytes([self.data[s_off + 8], self.data[s_off + 9], self.data[s_off + 10], self.data[s_off + 11]]);
-            let virt_addr = u32::from_le_bytes([self.data[s_off + 12], self.data[s_off + 13], self.data[s_off + 14], self.data[s_off + 15]]);
-            let raw_size = u32::from_le_bytes([self.data[s_off + 16], self.data[s_off + 17], self.data[s_off + 18], self.data[s_off + 19]]);
-            let raw_ptr = u32::from_le_bytes([self.data[s_off + 20], self.data[s_off + 21], self.data[s_off + 22], self.data[s_off + 23]]);
-            let charact = u32::from_le_bytes([self.data[s_off + 36], self.data[s_off + 37], self.data[s_off + 38], self.data[s_off + 39]]);
+            let name = String::from_utf8_lossy(name_bytes)
+                .trim_matches(char::from(0))
+                .to_string();
+            let virt_size = u32::from_le_bytes([
+                self.data[s_off + 8],
+                self.data[s_off + 9],
+                self.data[s_off + 10],
+                self.data[s_off + 11],
+            ]);
+            let virt_addr = u32::from_le_bytes([
+                self.data[s_off + 12],
+                self.data[s_off + 13],
+                self.data[s_off + 14],
+                self.data[s_off + 15],
+            ]);
+            let raw_size = u32::from_le_bytes([
+                self.data[s_off + 16],
+                self.data[s_off + 17],
+                self.data[s_off + 18],
+                self.data[s_off + 19],
+            ]);
+            let raw_ptr = u32::from_le_bytes([
+                self.data[s_off + 20],
+                self.data[s_off + 21],
+                self.data[s_off + 22],
+                self.data[s_off + 23],
+            ]);
+            let charact = u32::from_le_bytes([
+                self.data[s_off + 36],
+                self.data[s_off + 37],
+                self.data[s_off + 38],
+                self.data[s_off + 39],
+            ]);
 
             sections.push(PeSection {
                 name,
@@ -219,7 +300,9 @@ impl PeInspector {
         // Helper to convert RVA to file offset
         let rva_to_file = |rva: u32| -> Option<usize> {
             for sec in &sections {
-                if rva >= sec.virtual_address && rva < sec.virtual_address + sec.virtual_size.max(sec.raw_data_size) {
+                if rva >= sec.virtual_address
+                    && rva < sec.virtual_address + sec.virtual_size.max(sec.raw_data_size)
+                {
                     let diff = rva - sec.virtual_address;
                     return Some((sec.raw_data_ptr + diff) as usize);
                 }
@@ -232,8 +315,18 @@ impl PeInspector {
         if import_dir_rva > 0 {
             if let Some(mut imp_off) = rva_to_file(import_dir_rva) {
                 while imp_off + 20 <= self.data.len() {
-                    let name_rva = u32::from_le_bytes([self.data[imp_off + 12], self.data[imp_off + 13], self.data[imp_off + 14], self.data[imp_off + 15]]);
-                    let first_thunk_rva = u32::from_le_bytes([self.data[imp_off + 16], self.data[imp_off + 17], self.data[imp_off + 18], self.data[imp_off + 19]]);
+                    let name_rva = u32::from_le_bytes([
+                        self.data[imp_off + 12],
+                        self.data[imp_off + 13],
+                        self.data[imp_off + 14],
+                        self.data[imp_off + 15],
+                    ]);
+                    let first_thunk_rva = u32::from_le_bytes([
+                        self.data[imp_off + 16],
+                        self.data[imp_off + 17],
+                        self.data[imp_off + 18],
+                        self.data[imp_off + 19],
+                    ]);
                     if name_rva == 0 && first_thunk_rva == 0 {
                         break;
                     }
@@ -254,16 +347,31 @@ impl PeInspector {
                         while thunk_off + step <= self.data.len() {
                             let val = if is_64bit {
                                 u64::from_le_bytes([
-                                    self.data[thunk_off], self.data[thunk_off + 1], self.data[thunk_off + 2], self.data[thunk_off + 3],
-                                    self.data[thunk_off + 4], self.data[thunk_off + 5], self.data[thunk_off + 6], self.data[thunk_off + 7],
+                                    self.data[thunk_off],
+                                    self.data[thunk_off + 1],
+                                    self.data[thunk_off + 2],
+                                    self.data[thunk_off + 3],
+                                    self.data[thunk_off + 4],
+                                    self.data[thunk_off + 5],
+                                    self.data[thunk_off + 6],
+                                    self.data[thunk_off + 7],
                                 ])
                             } else {
-                                u32::from_le_bytes([self.data[thunk_off], self.data[thunk_off + 1], self.data[thunk_off + 2], self.data[thunk_off + 3]]) as u64
+                                u32::from_le_bytes([
+                                    self.data[thunk_off],
+                                    self.data[thunk_off + 1],
+                                    self.data[thunk_off + 2],
+                                    self.data[thunk_off + 3],
+                                ]) as u64
                             };
                             if val == 0 {
                                 break;
                             }
-                            let is_ordinal = if is_64bit { (val & 0x8000_0000_0000_0000) != 0 } else { (val & 0x8000_0000) != 0 };
+                            let is_ordinal = if is_64bit {
+                                (val & 0x8000_0000_0000_0000) != 0
+                            } else {
+                                (val & 0x8000_0000) != 0
+                            };
                             if !is_ordinal {
                                 if let Some(ibn_off) = rva_to_file(val as u32) {
                                     if ibn_off + 2 < self.data.len() {
@@ -271,7 +379,10 @@ impl PeInspector {
                                         while fn_end < self.data.len() && self.data[fn_end] != 0 {
                                             fn_end += 1;
                                         }
-                                        let fname = String::from_utf8_lossy(&self.data[ibn_off + 2..fn_end]).to_string();
+                                        let fname = String::from_utf8_lossy(
+                                            &self.data[ibn_off + 2..fn_end],
+                                        )
+                                        .to_string();
                                         if !fname.is_empty() {
                                             func_names.push(fname);
                                         }
@@ -296,10 +407,26 @@ impl PeInspector {
 
         // Evaluate Stub Coverage against FerroOS Native Shims
         let supported_stubs = [
-            "ExitProcess", "GetCommandLineA", "GetCommandLineW", "GetStdHandle",
-            "WriteFile", "ReadFile", "VirtualAlloc", "VirtualFree", "GetModuleHandleA",
-            "GetModuleHandleW", "GetProcAddress", "HeapCreate", "HeapAlloc", "HeapFree",
-            "Sleep", "GetLastError", "SetLastError", "CloseHandle", "CreateFileA", "CreateFileW"
+            "ExitProcess",
+            "GetCommandLineA",
+            "GetCommandLineW",
+            "GetStdHandle",
+            "WriteFile",
+            "ReadFile",
+            "VirtualAlloc",
+            "VirtualFree",
+            "GetModuleHandleA",
+            "GetModuleHandleW",
+            "GetProcAddress",
+            "HeapCreate",
+            "HeapAlloc",
+            "HeapFree",
+            "Sleep",
+            "GetLastError",
+            "SetLastError",
+            "CloseHandle",
+            "CreateFileA",
+            "CreateFileW",
         ];
 
         let mut total_funcs = 0;
@@ -308,7 +435,11 @@ impl PeInspector {
 
         for imp in &imports {
             let dll_lower = imp.dll_name.to_lowercase();
-            if dll_lower.contains("user32") || dll_lower.contains("gdi32") || dll_lower.contains("d3d") || dll_lower.contains("opengl32") {
+            if dll_lower.contains("user32")
+                || dll_lower.contains("gdi32")
+                || dll_lower.contains("d3d")
+                || dll_lower.contains("opengl32")
+            {
                 has_gui_imports = true;
             }
             for func in &imp.functions {
@@ -331,16 +462,15 @@ impl PeInspector {
             }
             PeArchitecture::Amd64 => {
                 if has_gui_imports || subsystem == PeSubsystem::WindowsGui {
-                    "Box64 + Wine64 Compatibility Engine (Direct Vulkan/Wayland Pipeline)".to_string()
+                    "Box64 + Wine64 Compatibility Engine (Direct Vulkan/Wayland Pipeline)"
+                        .to_string()
                 } else if coverage_pct >= 90.0 {
                     "FerroOS Native PE Loader Shim (mimalloc + sched_ext)".to_string()
                 } else {
                     "Box64 + Wine64 Compatibility Engine".to_string()
                 }
             }
-            PeArchitecture::Arm64 => {
-                "Direct Native AArch64 Wine / OS Execution".to_string()
-            }
+            PeArchitecture::Arm64 => "Direct Native AArch64 Wine / OS Execution".to_string(),
             PeArchitecture::Unknown(_) => "Standard Wine Emulation".to_string(),
         };
 
