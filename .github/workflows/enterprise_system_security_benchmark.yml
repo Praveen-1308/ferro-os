@@ -1,0 +1,62 @@
+name: Enterprise System Performance, Security & OS Standards Benchmark (RHEL 9 vs Ubuntu 24.04 vs FerroOS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  system-security-qualification:
+    name: System Performance, Security & OS Standards Qualification
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Tune Host Kernel & Limits
+        run: |
+          sudo prlimit --pid $$ --nofile=1048576:1048576 || true
+          ulimit -n 65536 || true
+          sudo sysctl -w fs.file-max=2097152 || true
+          sudo sysctl -w net.netfilter.nf_conntrack_max=1048576 || true
+          sudo sysctl -w net.core.somaxconn=65535 || true
+          sudo sysctl -w net.ipv4.tcp_max_syn_backlog=65535 || true
+
+      - name: Install Host Tools (fio, sysbench, zstd, curl)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fio sysbench zstd curl
+
+      - name: Execute Master Enterprise Qualification Suite
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          python3 tools/enterprise_system_security/run_master_qualification_suite.py
+
+      - name: Publish Qualification Scorecard to Step Summary
+        if: always()
+        run: |
+          for f in reports/runs/*_ENTERPRISE_SYSTEM_SECURITY_QUALIFICATION/comparison_summary.md; do
+            if [ -f "$f" ]; then
+              cat "$f" >> $GITHUB_STEP_SUMMARY
+              break
+            fi
+          done
+
+      - name: Upload Qualification Run Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: enterprise-system-security-run-${{ github.run_id }}
+          path: reports/runs/*_ENTERPRISE_SYSTEM_SECURITY_QUALIFICATION/

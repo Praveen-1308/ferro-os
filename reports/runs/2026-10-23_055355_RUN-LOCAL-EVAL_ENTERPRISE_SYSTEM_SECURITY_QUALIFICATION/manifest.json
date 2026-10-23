@@ -1,0 +1,22 @@
+{
+  "run_id": "LOCAL-EVAL",
+  "timestamp": "2026-10-23_055355",
+  "commit": "6b067a55c2a78e896f4839cd689efea28474335c",
+  "host_specs": {
+    "kernel": "25.6.0",
+    "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+    "vcpus": 4.0,
+    "ram_gb": 6.0
+  },
+  "candidates": [
+    "rhel9",
+    "ubuntu24",
+    "ferro"
+  ],
+  "categories": [
+    "system_performance",
+    "security",
+    "standard_os_requirements",
+    "refreshed_workloads"
+  ]
+}

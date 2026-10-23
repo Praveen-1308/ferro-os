@@ -1,0 +1,35 @@
+{
+  "candidate": "ferro",
+  "sustained_enterprise": {
+    "workload": "5-Minute Sustained Enterprise (Postgres 17 + Valkey 8.0 + Envoy)",
+    "total_requests": 348920,
+    "sustained_req_sec": 1163.1,
+    "cache_read_p50_ms": 1.85,
+    "db_read_p50_ms": 1.9,
+    "checkout_write_p99_ms": 94.5,
+    "error_rate_pct": 0.0,
+    "peak_dirty_memory_mb": 1.8,
+    "io_psi_avg10": 0.0
+  },
+  "flash_sale_choke": {
+    "workload": "Multi-Modal Flash Sale Choke (4 vCPU / 6 GB, AWS EBS gp3)",
+    "total_requests": 138450,
+    "throughput_req_sec": 1420.5,
+    "media_uploaded_mb": 1045.2,
+    "uploads_completed": 6850,
+    "checkout_p95_ms": 312.0,
+    "sla_verdict": "PASSED (< 500 ms SLA)",
+    "kernel_cpu_psi_peak_pct": 7.4,
+    "allocator_bottleneck": "None (Lock-free thread-local mimalloc pools)"
+  },
+  "c100k_avalanche": {
+    "workload": "C100K Connection Avalanche & Thundering Herd (100,000 Sockets)",
+    "active_sockets": 100000,
+    "broadcast_coverage_pct": 100.0,
+    "latency_p50_ms": 74.2,
+    "latency_p95_ms": 128.5,
+    "worst_tail_p99_ms": 136.8,
+    "churn_reconnect_p95_ms": 0.012,
+    "memory_footprint_mb": 420.0
+  }
+}

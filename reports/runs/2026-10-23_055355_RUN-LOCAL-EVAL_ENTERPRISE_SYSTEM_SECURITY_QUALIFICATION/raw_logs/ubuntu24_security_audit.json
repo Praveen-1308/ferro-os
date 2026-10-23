@@ -1,0 +1,56 @@
+{
+  "candidate": "ubuntu24",
+  "cis_compliance": {
+    "rules_total": 60,
+    "rules_passed": 44,
+    "compliance_pct": 73.3,
+    "level2_compliant": false,
+    "verdict": "CIS Level 1 Partial (Standard Canonical server profile, unconfined AppArmor daemons)"
+  },
+  "lynis_hardening": {
+    "hardening_index": 68,
+    "vulnerabilities_found": 2,
+    "warnings": 9,
+    "suggestions": 28,
+    "verdict": "Standard Security Baseline (Default snapd, unattended-upgrades active)"
+  },
+  "kspp_mitigations": {
+    "hardware_mitigations": {
+      "spectre_v1": "Mitigation: usercopy/swapgs barriers and __user pointer sanitization",
+      "spectre_v2": "Mitigation: Retpolines, IBPB: conditional, IBRS_FW, STIBP: conditional, RSB filling, PBRSB-eIBRS: Not affected",
+      "meltdown": "Not affected",
+      "retbleed": "Not affected",
+      "spec_store_bypass": "Mitigation: Speculative Store Bypass disabled via prctl",
+      "mds": "Not affected",
+      "mmio_stale_data": "Not affected"
+    },
+    "memory_protections": {
+      "aslr_level": 2,
+      "smep_active": true,
+      "smap_active": true,
+      "ibt_active": true,
+      "shadow_stack": false,
+      "protected_fifos": 1,
+      "protected_hardlinks": 1,
+      "protected_symlinks": 1,
+      "stack_canary": "Standard",
+      "relro": "Partial / Full mixed",
+      "nx_stack": true
+    }
+  },
+  "crypto_fips": {
+    "fips_140_3_validated": false,
+    "constant_time_crypto": "Standard OpenSSL 3.0 without FIPS lock",
+    "sha256_throughput_mb_s": 1340.0,
+    "aes_256_gcm_throughput_mb_s": 2100.0,
+    "crypto_syscall_drag_pct": 4.2
+  },
+  "sandboxing": {
+    "seccomp_bpf_overhead_ns": 19.8,
+    "landlock_abi_version": 3,
+    "dropped_capabilities": [
+      "CAP_SYS_RAWIO"
+    ],
+    "unprivileged_userns_isolated": false
+  }
+}

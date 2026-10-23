@@ -1,0 +1,35 @@
+{
+  "candidate": "ubuntu24",
+  "sustained_enterprise": {
+    "workload": "5-Minute Sustained Enterprise (Postgres 17 + Valkey 8.0 + Envoy)",
+    "total_requests": 316106,
+    "sustained_req_sec": 1053.7,
+    "cache_read_p50_ms": 5.0,
+    "db_read_p50_ms": 4.0,
+    "checkout_write_p99_ms": 217.0,
+    "error_rate_pct": 0.0,
+    "peak_dirty_memory_mb": 4.8,
+    "io_psi_avg10": 1.85
+  },
+  "flash_sale_choke": {
+    "workload": "Multi-Modal Flash Sale Choke (4 vCPU / 6 GB, AWS EBS gp3)",
+    "total_requests": 84605,
+    "throughput_req_sec": 937.8,
+    "media_uploaded_mb": 806.4,
+    "uploads_completed": 4125,
+    "checkout_p95_ms": 609.0,
+    "sla_verdict": "CHOKED (> 500 ms SLA breached)",
+    "kernel_cpu_psi_peak_pct": 23.99,
+    "allocator_bottleneck": "ptmalloc3 mutex lock contention & blk-mq queue stall"
+  },
+  "c100k_avalanche": {
+    "workload": "C100K Connection Avalanche & Thundering Herd (100,000 Sockets)",
+    "active_sockets": 100000,
+    "broadcast_coverage_pct": 100.0,
+    "latency_p50_ms": 83.67,
+    "latency_p95_ms": 154.27,
+    "worst_tail_p99_ms": 173.01,
+    "churn_reconnect_p95_ms": 0.018,
+    "memory_footprint_mb": 512.0
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "candidate": "rhel9",
+  "cis_compliance": {
+    "rules_total": 60,
+    "rules_passed": 56,
+    "compliance_pct": 93.3,
+    "level2_compliant": true,
+    "verdict": "CIS Level 2 Compliant (SELinux Enforcing, FIPS enabled)"
+  },
+  "lynis_hardening": {
+    "hardening_index": 82,
+    "vulnerabilities_found": 0,
+    "warnings": 4,
+    "suggestions": 12,
+    "verdict": "Enterprise Hardened (SELinux active, minimal RPM footprint)"
+  },
+  "kspp_mitigations": {
+    "hardware_mitigations": {
+      "spectre_v1": "Mitigation: usercopy/swapgs barriers and __user pointer sanitization",
+      "spectre_v2": "Mitigation: Retpolines, IBPB: conditional, IBRS_FW, STIBP: conditional, RSB filling, PBRSB-eIBRS: Not affected",
+      "meltdown": "Not affected",
+      "retbleed": "Not affected",
+      "spec_store_bypass": "Mitigation: Speculative Store Bypass disabled via prctl",
+      "mds": "Not affected",
+      "mmio_stale_data": "Not affected"
+    },
+    "memory_protections": {
+      "aslr_level": 2,
+      "smep_active": true,
+      "smap_active": true,
+      "ibt_active": true,
+      "shadow_stack": true,
+      "protected_fifos": 2,
+      "protected_hardlinks": 1,
+      "protected_symlinks": 1,
+      "stack_canary": "Full (-fstack-protector-strong)",
+      "relro": "Full RELRO",
+      "nx_stack": true
+    }
+  },
+  "crypto_fips": {
+    "fips_140_3_validated": true,
+    "constant_time_crypto": "Verified (OpenSSL 3.0.7 FIPS module)",
+    "sha256_throughput_mb_s": 1215.0,
+    "aes_256_gcm_throughput_mb_s": 1890.0,
+    "crypto_syscall_drag_pct": 18.4
+  },
+  "sandboxing": {
+    "seccomp_bpf_overhead_ns": 18.2,
+    "landlock_abi_version": 3,
+    "dropped_capabilities": [
+      "CAP_SYS_ADMIN",
+      "CAP_SYS_RAWIO"
+    ],
+    "unprivileged_userns_isolated": true
+  }
+}

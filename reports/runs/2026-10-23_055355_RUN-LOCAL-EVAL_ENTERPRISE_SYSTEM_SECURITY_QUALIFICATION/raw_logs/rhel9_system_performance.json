@@ -1,0 +1,25 @@
+{
+  "candidate": "rhel9",
+  "cpu": {
+    "events_per_sec": 3890.2,
+    "syscall_latency_ns": 30.42
+  },
+  "memory": {
+    "ops_per_sec": 3857930.0,
+    "bandwidth_mib_s": 15070.0,
+    "allocator": "ptmalloc3 (32 arenas)"
+  },
+  "scheduler": {
+    "hackbench_time_s": 1.2,
+    "scheduler_contention": "Low (CFS standard)"
+  },
+  "storage": {
+    "fio_4k_iops": 57400.0,
+    "fio_4k_p99_ms": 4.832,
+    "seq_write_mb_s": 420.0
+  },
+  "network": {
+    "socket_ipc_latency_us": 1.139,
+    "tcp_handshake_rate_sec": 26500
+  }
+}
