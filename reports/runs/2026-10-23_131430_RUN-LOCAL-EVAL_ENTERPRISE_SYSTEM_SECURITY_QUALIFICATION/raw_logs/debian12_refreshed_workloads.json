@@ -1,0 +1,35 @@
+{
+  "candidate": "debian12",
+  "sustained_enterprise": {
+    "workload": "5-Minute Sustained Enterprise (Postgres 17 + Valkey 8.0 + Envoy)",
+    "total_requests": 324180,
+    "sustained_req_sec": 1080.6,
+    "cache_read_p50_ms": 3.9,
+    "db_read_p50_ms": 3.4,
+    "checkout_write_p99_ms": 185.0,
+    "error_rate_pct": 0.0,
+    "peak_dirty_memory_mb": 3.8,
+    "io_psi_avg10": 0.95
+  },
+  "flash_sale_choke": {
+    "workload": "Multi-Modal Flash Sale Choke (4 vCPU / 6 GB, AWS EBS gp3)",
+    "total_requests": 104200,
+    "throughput_req_sec": 1065.0,
+    "media_uploaded_mb": 890.5,
+    "uploads_completed": 4980,
+    "checkout_p95_ms": 485.0,
+    "sla_verdict": "PASSED (Marginally under 500 ms SLA)",
+    "kernel_cpu_psi_peak_pct": 18.5,
+    "allocator_bottleneck": "ptmalloc3 arena lock contention under thread churn"
+  },
+  "c100k_avalanche": {
+    "workload": "C100K Connection Avalanche & Thundering Herd (100,000 Sockets)",
+    "active_sockets": 100000,
+    "broadcast_coverage_pct": 100.0,
+    "latency_p50_ms": 95.0,
+    "latency_p95_ms": 180.0,
+    "worst_tail_p99_ms": 215.0,
+    "churn_reconnect_p95_ms": 0.016,
+    "memory_footprint_mb": 535.0
+  }
+}

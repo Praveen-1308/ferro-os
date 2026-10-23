@@ -1,0 +1,59 @@
+{
+  "candidate": "debian12",
+  "tool": "checksec v2.6.0 (Enterprise Profile)",
+  "total_binaries_audited": 5,
+  "fully_compliant_count": 3,
+  "hardening_compliance_pct": 60.0,
+  "binaries": [
+    {
+      "binary": "systemd",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "100.0% Compliant"
+    },
+    {
+      "binary": "bash",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "100.0% Compliant"
+    },
+    {
+      "binary": "dpkg",
+      "relro": "Partial RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "85.0% Partial (Partial RELRO)"
+    },
+    {
+      "binary": "sshd",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "100.0% Compliant"
+    },
+    {
+      "binary": "postgres",
+      "relro": "Partial RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "85.0% Partial (Partial RELRO)"
+    }
+  ]
+}

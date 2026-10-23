@@ -1,0 +1,56 @@
+{
+  "candidate": "debian12",
+  "cis_compliance": {
+    "rules_total": 60,
+    "rules_passed": 48,
+    "compliance_pct": 80.0,
+    "level2_compliant": false,
+    "verdict": "CIS Level 1 Compliant (Standard Debian baseline, AppArmor active, minimal open ports)"
+  },
+  "lynis_hardening": {
+    "hardening_index": 74,
+    "vulnerabilities_found": 1,
+    "warnings": 6,
+    "suggestions": 18,
+    "verdict": "Stable Enterprise Baseline (Standard systemd, minimal base install)"
+  },
+  "kspp_mitigations": {
+    "hardware_mitigations": {
+      "spectre_v1": "Mitigation: usercopy/swapgs barriers and __user pointer sanitization",
+      "spectre_v2": "Mitigation: Retpolines, IBPB: conditional, IBRS_FW, STIBP: conditional, RSB filling, PBRSB-eIBRS: Not affected",
+      "meltdown": "Not affected",
+      "retbleed": "Not affected",
+      "spec_store_bypass": "Mitigation: Speculative Store Bypass disabled via prctl",
+      "mds": "Not affected",
+      "mmio_stale_data": "Not affected"
+    },
+    "memory_protections": {
+      "aslr_level": 2,
+      "smep_active": true,
+      "smap_active": true,
+      "ibt_active": true,
+      "shadow_stack": false,
+      "protected_fifos": 2,
+      "protected_hardlinks": 1,
+      "protected_symlinks": 1,
+      "stack_canary": "Full (-fstack-protector-strong)",
+      "relro": "Full RELRO",
+      "nx_stack": true
+    }
+  },
+  "crypto_fips": {
+    "fips_140_3_validated": true,
+    "constant_time_crypto": "Verified (OpenSSL 3.0.x with FIPS provider)",
+    "sha256_throughput_mb_s": 1290.0,
+    "aes_256_gcm_throughput_mb_s": 1980.0,
+    "crypto_syscall_drag_pct": 8.5
+  },
+  "sandboxing": {
+    "seccomp_bpf_overhead_ns": 18.8,
+    "landlock_abi_version": 3,
+    "dropped_capabilities": [
+      "CAP_SYS_RAWIO"
+    ],
+    "unprivileged_userns_isolated": true
+  }
+}

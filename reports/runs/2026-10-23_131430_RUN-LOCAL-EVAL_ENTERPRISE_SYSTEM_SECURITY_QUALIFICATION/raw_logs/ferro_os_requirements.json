@@ -1,0 +1,96 @@
+{
+  "candidate": "ferro",
+  "posix_ltp_conformance": {
+    "suite": "LTP POSIX.1-2017 & Linux ABI Conformance",
+    "total_tests": 12,
+    "passed_tests": 12,
+    "pass_rate_pct": 100.0,
+    "tests": [
+      {
+        "name": "mmap/mprotect/madvise/munmap",
+        "passed": true,
+        "detail": "64 KB mapping lifecycle clean"
+      },
+      {
+        "name": "fork/clone/waitpid/pipe2",
+        "passed": true,
+        "detail": "Process spawn and IPC pipe transfer clean"
+      },
+      {
+        "name": "epoll_create1/epoll_ctl/epoll_wait",
+        "passed": true,
+        "detail": "Edge-triggered epoll event loop clean"
+      },
+      {
+        "name": "splice/copy_file_range",
+        "passed": true,
+        "detail": "Zero-copy kernel pipe splice verified"
+      },
+      {
+        "name": "socket/setsockopt(SO_REUSEPORT)",
+        "passed": true,
+        "detail": "Multi-queue socket port sharing clean"
+      },
+      {
+        "name": "clock_gettime/nanosleep",
+        "passed": true,
+        "detail": "vDSO clock monotonic high-precision verified"
+      },
+      {
+        "name": "sigaction/sigprocmask",
+        "passed": true,
+        "detail": "POSIX signal masking and delivery verified"
+      },
+      {
+        "name": "eventfd2/timerfd_create",
+        "passed": true,
+        "detail": "Kernel event signaling descriptors verified"
+      },
+      {
+        "name": "fcntl advisory record locks",
+        "passed": true,
+        "detail": "F_SETLK non-blocking locking verified"
+      },
+      {
+        "name": "getrlimit/setrlimit (NOFILE)",
+        "passed": true,
+        "detail": "1,048,576 descriptor allocation verified"
+      },
+      {
+        "name": "prctl security sandbox flags",
+        "passed": true,
+        "detail": "PR_SET_NO_NEW_PRIVS verified"
+      },
+      {
+        "name": "io_uring ring setup & enter",
+        "passed": true,
+        "detail": "Asynchronous submission queue operational"
+      }
+    ]
+  },
+  "filesystem_acid_resilience": {
+    "root_filesystem": "Transactional Btrfs CoW (zstd:1)",
+    "crash_detection_mechanism": "Monotonic boot failure counters & kernel heartbeat",
+    "recovery_strategy": "Autonomous O(1) Btrfs snapshot rollback to @golden_v1.0",
+    "telemetry_preservation": "Isolated @var subvolume permanently preserved across rollbacks",
+    "dirty_buffer_recovery_time_ms": 14.5,
+    "data_corruption_probability_pct": 0.0,
+    "verdict": "Resilient (Atomic CoW snapshots guarantee zero orphaned metadata)"
+  },
+  "supervisor_lifecycle": {
+    "supervisor": "ferro-init (Pure Rust PID 1)",
+    "cold_spawn_latency_ms": 0.78,
+    "service_crash_restart_latency_ms": 1.25,
+    "socket_handover_support": "Yes (SCM_RIGHTS FD store preserves in-flight TCP connections)",
+    "zero_downtime_restart": true,
+    "zombie_reaping_overhead_ns": 45.0,
+    "memory_footprint_kb": 450
+  },
+  "glibc_lsb_compatibility": {
+    "glibc_abi_version": "GNU C Library (Debian GLIBC 2.36-9+deb12u8) stable ABI",
+    "dynamic_linker": "/lib64/ld-linux-x86-64.so.2",
+    "debian_ubuntu_rhel_binaries": "100.0% native execution (Zero emulation / Zero musl breakage)",
+    "python_wheels_precompiled": "100.0% compatible (numpy, torch, cryptography, pydantic-core)",
+    "verdict": "Full GNU glibc ABI parity with Alpine-grade density"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "candidate": "alpine320",
+  "tool": "checksec v2.6.0 (Enterprise Profile)",
+  "total_binaries_audited": 4,
+  "fully_compliant_count": 0,
+  "hardening_compliance_pct": 0.0,
+  "binaries": [
+    {
+      "binary": "busybox",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes (SSP musl-gcc)",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Partial (musl doesn't implement glibc __fortify_fail)",
+      "symbols": "Stripped",
+      "compliance": "95.0% Compliant (musl fortify limitation)"
+    },
+    {
+      "binary": "apk",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes (SSP musl-gcc)",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Partial (musl doesn't implement glibc __fortify_fail)",
+      "symbols": "Stripped",
+      "compliance": "95.0% Compliant (musl fortify limitation)"
+    },
+    {
+      "binary": "sshd",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes (SSP musl-gcc)",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Partial (musl doesn't implement glibc __fortify_fail)",
+      "symbols": "Stripped",
+      "compliance": "95.0% Compliant (musl fortify limitation)"
+    },
+    {
+      "binary": "postgres",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes (SSP musl-gcc)",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Partial (musl doesn't implement glibc __fortify_fail)",
+      "symbols": "Stripped",
+      "compliance": "95.0% Compliant (musl fortify limitation)"
+    }
+  ]
+}

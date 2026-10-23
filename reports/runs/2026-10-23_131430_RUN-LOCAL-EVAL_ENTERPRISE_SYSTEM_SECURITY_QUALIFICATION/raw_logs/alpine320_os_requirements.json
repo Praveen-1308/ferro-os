@@ -1,0 +1,96 @@
+{
+  "candidate": "alpine320",
+  "posix_ltp_conformance": {
+    "suite": "LTP POSIX.1-2017 & Linux ABI Conformance",
+    "total_tests": 12,
+    "passed_tests": 12,
+    "pass_rate_pct": 100.0,
+    "tests": [
+      {
+        "name": "mmap/mprotect/madvise/munmap",
+        "passed": true,
+        "detail": "64 KB mapping lifecycle clean"
+      },
+      {
+        "name": "fork/clone/waitpid/pipe2",
+        "passed": true,
+        "detail": "Process spawn and IPC pipe transfer clean"
+      },
+      {
+        "name": "epoll_create1/epoll_ctl/epoll_wait",
+        "passed": true,
+        "detail": "Edge-triggered epoll event loop clean"
+      },
+      {
+        "name": "splice/copy_file_range",
+        "passed": true,
+        "detail": "Zero-copy kernel pipe splice verified"
+      },
+      {
+        "name": "socket/setsockopt(SO_REUSEPORT)",
+        "passed": true,
+        "detail": "Multi-queue socket port sharing clean"
+      },
+      {
+        "name": "clock_gettime/nanosleep",
+        "passed": true,
+        "detail": "vDSO clock monotonic high-precision verified"
+      },
+      {
+        "name": "sigaction/sigprocmask",
+        "passed": true,
+        "detail": "POSIX signal masking and delivery verified"
+      },
+      {
+        "name": "eventfd2/timerfd_create",
+        "passed": true,
+        "detail": "Kernel event signaling descriptors verified"
+      },
+      {
+        "name": "fcntl advisory record locks",
+        "passed": true,
+        "detail": "F_SETLK non-blocking locking verified"
+      },
+      {
+        "name": "getrlimit/setrlimit (NOFILE)",
+        "passed": true,
+        "detail": "1,048,576 descriptor allocation verified"
+      },
+      {
+        "name": "prctl security sandbox flags",
+        "passed": true,
+        "detail": "PR_SET_NO_NEW_PRIVS verified"
+      },
+      {
+        "name": "io_uring ring setup & enter",
+        "passed": true,
+        "detail": "Asynchronous submission queue operational"
+      }
+    ]
+  },
+  "filesystem_acid_resilience": {
+    "root_filesystem": "ext4 / overlayfs",
+    "crash_detection_mechanism": "OpenRC mount check",
+    "recovery_strategy": "ext4 journal replay / clean overlayfs state",
+    "telemetry_preservation": "Ephemeral in memory unless persistent volume mounted",
+    "dirty_buffer_recovery_time_ms": 395.0,
+    "data_corruption_probability_pct": 0.07,
+    "verdict": "Lightweight Overlay/ext4 (Rapid remount after power interruption)"
+  },
+  "supervisor_lifecycle": {
+    "supervisor": "OpenRC / runit (C / Minimal)",
+    "cold_spawn_latency_ms": 120.0,
+    "service_crash_restart_latency_ms": 45.0,
+    "socket_handover_support": "None (Full TCP reset on crash / restart)",
+    "zero_downtime_restart": false,
+    "zombie_reaping_overhead_ns": 65.0,
+    "memory_footprint_kb": 1800
+  },
+  "glibc_lsb_compatibility": {
+    "glibc_abi_version": "None (musl libc 1.2.5 - incompatible with glibc ABI)",
+    "dynamic_linker": "/lib/ld-musl-x86_64.so.1",
+    "debian_ubuntu_rhel_binaries": "Incompatible (Requires gcompat or rebuild from source)",
+    "python_wheels_precompiled": "Partial / Broken (Many manylinux wheels fail with symbol lookup errors)",
+    "verdict": "musl-only ecosystem: Significant binary compatibility barriers"
+  }
+}

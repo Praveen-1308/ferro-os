@@ -409,7 +409,7 @@ fn run_ls(args: &[String]) -> ExitCode {
         Ok(entries) => {
             for entry in entries.flatten() {
                 let file_name = entry.file_name();
-                let is_dir = entry.file_type().map_or(false, |t| t.is_dir());
+                let is_dir = entry.file_type().is_ok_and(|t| t.is_dir());
                 if is_dir {
                     print!("\x1b[1;34m{}/\x1b[0m  ", file_name.to_string_lossy());
                 } else {
@@ -747,7 +747,7 @@ fn run_mv(args: &[String]) -> ExitCode {
             dst_raw.to_path_buf()
         };
 
-        if let Err(_) = fs::rename(src_path, &effective_dst) {
+        if fs::rename(src_path, &effective_dst).is_err() {
             // Fallback for cross-device moves: zero-copy copy then unlink
             let res = if src_path.is_dir() {
                 copy_recursive(src_path, &effective_dst).and_then(|_| fs::remove_dir_all(src_path))
@@ -824,20 +824,18 @@ fn run_grep(args: &[String]) -> ExitCode {
         } else {
             pattern.to_string()
         };
-        for line_res in reader.lines() {
-            if let Ok(line) = line_res {
-                let check_line = if case_insensitive {
-                    line.to_lowercase()
-                } else {
-                    line.clone()
-                };
-                if check_line.contains(&pat) {
-                    found = true;
-                    if let Some(lbl) = label {
-                        print!("{}:", lbl);
-                    }
-                    println!("{}", line);
+        for line in reader.lines().map_while(Result::ok) {
+            let check_line = if case_insensitive {
+                line.to_lowercase()
+            } else {
+                line.clone()
+            };
+            if check_line.contains(&pat) {
+                found = true;
+                if let Some(lbl) = label {
+                    print!("{}:", lbl);
                 }
+                println!("{}", line);
             }
         }
     };
@@ -958,7 +956,7 @@ fn run_tail(args: &[String]) -> ExitCode {
         Box::new(io::stdin().lock())
     };
 
-    let lines: Vec<String> = reader.lines().filter_map(|r| r.ok()).collect();
+    let lines: Vec<String> = reader.lines().map_while(Result::ok).collect();
     let start = if lines.len() > count {
         lines.len() - count
     } else {
@@ -988,12 +986,10 @@ fn run_wc(args: &[String]) -> ExitCode {
     let mut words = 0;
     let mut bytes = 0;
 
-    for line_res in reader.lines() {
-        if let Ok(line) = line_res {
-            lines += 1;
-            words += line.split_whitespace().count();
-            bytes += line.len() + 1;
-        }
+    for line in reader.lines().map_while(Result::ok) {
+        lines += 1;
+        words += line.split_whitespace().count();
+        bytes += line.len() + 1;
     }
 
     println!(
@@ -1276,7 +1272,7 @@ fn run_bench(args: &[String]) -> ExitCode {
     use std::time::Instant;
 
     let threads_count = args
-        .get(0)
+        .first()
         .and_then(|s| s.parse::<usize>().ok())
         .unwrap_or(8);
     let iterations = args
@@ -1482,7 +1478,7 @@ fn handle_http_client(stream: &mut std::net::TcpStream, root: &Path, shard_id: u
             )
         }
         _ => {
-            let rel_path = if path.starts_with('/') { &path[1..] } else { path };
+            let rel_path = path.strip_prefix('/').unwrap_or(path);
             let target_file = if rel_path.is_empty() { root.join("index.html") } else { root.join(rel_path) };
             if target_file.is_file() {
                 if let Ok(contents) = fs::read(&target_file) {
@@ -1507,7 +1503,7 @@ fn handle_http_client(stream: &mut std::net::TcpStream, root: &Path, shard_id: u
 }
 
 fn run_serve(args: &[String]) -> ExitCode {
-    let port = args.get(0).map(|s| s.as_str()).unwrap_or("8088");
+    let port = args.first().map(|s| s.as_str()).unwrap_or("8088");
     let root_dir = args.get(1).map(|s| s.as_str()).unwrap_or(".");
     let addr = format!("0.0.0.0:{}", port);
     let root_path = PathBuf::from(root_dir);
@@ -1548,11 +1544,9 @@ fn run_serve(args: &[String]) -> ExitCode {
                 }
             };
 
-            for stream in listener.incoming() {
-                if let Ok(mut stream) = stream {
-                    let root = root_clone.clone();
-                    handle_http_client(&mut stream, &root, shard_id);
-                }
+            for mut stream in listener.incoming().flatten() {
+                let root = root_clone.clone();
+                handle_http_client(&mut stream, &root, shard_id);
             }
         });
         handles.push(handle);
@@ -1735,7 +1729,7 @@ fn parse_dns_qname(buf: &[u8], offset: usize) -> Option<(String, usize)> {
             if hops > MAX_HOPS {
                 return None;
             }
-            let ptr_offset = (((len & 0x3f) << 8) | (buf[idx + 1] as usize)) as usize;
+            let ptr_offset = ((len & 0x3f) << 8) | (buf[idx + 1] as usize);
             if ptr_offset >= buf.len() || ptr_offset == idx {
                 // Out-of-bounds or self-referential loop! Drop
                 return None;
@@ -1793,7 +1787,7 @@ fn load_hosts_map() -> HashMap<String, [u8; 4]> {
 
     if let Ok(file) = File::open("/etc/hosts") {
         let reader = BufReader::new(file);
-        for line in reader.lines().flatten() {
+        for line in reader.lines().map_while(Result::ok) {
             let line = line.trim();
             if line.is_empty() || line.starts_with('#') {
                 continue;
@@ -1925,7 +1919,7 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                 };
 
                 // Defensive boundary check: Drop truncated headers (< 12 bytes) or oversized packets (> 4096 bytes) in O(1)
-                if amt < 12 || amt > 4096 {
+                if !(12..=4096).contains(&amt) {
                     continue;
                 }
 
@@ -1982,7 +1976,7 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                 }
 
                 // 3. Cache Miss: Forward to Upstream
-                if let Ok(_) = upstream.send_to(&buf[..amt], &upstream_addr) {
+                if upstream.send_to(&buf[..amt], &upstream_addr).is_ok() {
                     if let Ok((up_amt, _)) = upstream.recv_from(&mut upstream_buf) {
                         if up_amt >= 12 {
                             let mut resp = upstream_buf[..up_amt].to_vec();
@@ -2139,10 +2133,10 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
             let t_start_total = Instant::now();
             for _ in 0..count {
                 let t0 = Instant::now();
-                if client.send_to(&query, &target).is_ok() {
-                    if client.recv_from(&mut resp_buf).is_ok() {
-                        latencies_us.push(t0.elapsed().as_micros());
-                    }
+                if client.send_to(&query, &target).is_ok()
+                    && client.recv_from(&mut resp_buf).is_ok()
+                {
+                    latencies_us.push(t0.elapsed().as_micros());
                 }
             }
             let total_duration = t_start_total.elapsed();

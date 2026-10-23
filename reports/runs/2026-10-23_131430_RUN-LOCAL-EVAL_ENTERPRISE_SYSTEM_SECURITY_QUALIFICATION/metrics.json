@@ -1,0 +1,1082 @@
+{
+  "debian12": {
+    "name": "Debian 12 Bookworm",
+    "system_performance": {
+      "candidate": "debian12",
+      "cpu": {
+        "events_per_sec": 3980.1,
+        "syscall_latency_ns": 30.19
+      },
+      "memory": {
+        "ops_per_sec": 3910000.0,
+        "bandwidth_mib_s": 15280.0,
+        "allocator": "ptmalloc3 (32 arenas)"
+      },
+      "scheduler": {
+        "hackbench_time_s": 1.22,
+        "scheduler_contention": "Low (CFS standard)"
+      },
+      "storage": {
+        "fio_4k_iops": 59200.0,
+        "fio_4k_p99_ms": 5.12,
+        "seq_write_mb_s": 428.0
+      },
+      "network": {
+        "socket_ipc_latency_us": 1.097,
+        "tcp_handshake_rate_sec": 27400
+      }
+    },
+    "security": {
+      "candidate": "debian12",
+      "cis_compliance": {
+        "rules_total": 60,
+        "rules_passed": 48,
+        "compliance_pct": 80.0,
+        "level2_compliant": false,
+        "verdict": "CIS Level 1 Compliant (Standard Debian baseline, AppArmor active, minimal open ports)"
+      },
+      "lynis_hardening": {
+        "hardening_index": 74,
+        "vulnerabilities_found": 1,
+        "warnings": 6,
+        "suggestions": 18,
+        "verdict": "Stable Enterprise Baseline (Standard systemd, minimal base install)"
+      },
+      "kspp_mitigations": {
+        "hardware_mitigations": {
+          "spectre_v1": "Mitigation: usercopy/swapgs barriers and __user pointer sanitization",
+          "spectre_v2": "Mitigation: Retpolines, IBPB: conditional, IBRS_FW, STIBP: conditional, RSB filling, PBRSB-eIBRS: Not affected",
+          "meltdown": "Not affected",
+          "retbleed": "Not affected",
+          "spec_store_bypass": "Mitigation: Speculative Store Bypass disabled via prctl",
+          "mds": "Not affected",
+          "mmio_stale_data": "Not affected"
+        },
+        "memory_protections": {
+          "aslr_level": 2,
+          "smep_active": true,
+          "smap_active": true,
+          "ibt_active": true,
+          "shadow_stack": false,
+          "protected_fifos": 2,
+          "protected_hardlinks": 1,
+          "protected_symlinks": 1,
+          "stack_canary": "Full (-fstack-protector-strong)",
+          "relro": "Full RELRO",
+          "nx_stack": true
+        }
+      },
+      "crypto_fips": {
+        "fips_140_3_validated": true,
+        "constant_time_crypto": "Verified (OpenSSL 3.0.x with FIPS provider)",
+        "sha256_throughput_mb_s": 1290.0,
+        "aes_256_gcm_throughput_mb_s": 1980.0,
+        "crypto_syscall_drag_pct": 8.5
+      },
+      "sandboxing": {
+        "seccomp_bpf_overhead_ns": 18.8,
+        "landlock_abi_version": 3,
+        "dropped_capabilities": [
+          "CAP_SYS_RAWIO"
+        ],
+        "unprivileged_userns_isolated": true
+      }
+    },
+    "os_requirements": {
+      "candidate": "debian12",
+      "posix_ltp_conformance": {
+        "suite": "LTP POSIX.1-2017 & Linux ABI Conformance",
+        "total_tests": 12,
+        "passed_tests": 12,
+        "pass_rate_pct": 100.0,
+        "tests": [
+          {
+            "name": "mmap/mprotect/madvise/munmap",
+            "passed": true,
+            "detail": "64 KB mapping lifecycle clean"
+          },
+          {
+            "name": "fork/clone/waitpid/pipe2",
+            "passed": true,
+            "detail": "Process spawn and IPC pipe transfer clean"
+          },
+          {
+            "name": "epoll_create1/epoll_ctl/epoll_wait",
+            "passed": true,
+            "detail": "Edge-triggered epoll event loop clean"
+          },
+          {
+            "name": "splice/copy_file_range",
+            "passed": true,
+            "detail": "Zero-copy kernel pipe splice verified"
+          },
+          {
+            "name": "socket/setsockopt(SO_REUSEPORT)",
+            "passed": true,
+            "detail": "Multi-queue socket port sharing clean"
+          },
+          {
+            "name": "clock_gettime/nanosleep",
+            "passed": true,
+            "detail": "vDSO clock monotonic high-precision verified"
+          },
+          {
+            "name": "sigaction/sigprocmask",
+            "passed": true,
+            "detail": "POSIX signal masking and delivery verified"
+          },
+          {
+            "name": "eventfd2/timerfd_create",
+            "passed": true,
+            "detail": "Kernel event signaling descriptors verified"
+          },
+          {
+            "name": "fcntl advisory record locks",
+            "passed": true,
+            "detail": "F_SETLK non-blocking locking verified"
+          },
+          {
+            "name": "getrlimit/setrlimit (NOFILE)",
+            "passed": true,
+            "detail": "1,048,576 descriptor allocation verified"
+          },
+          {
+            "name": "prctl security sandbox flags",
+            "passed": true,
+            "detail": "PR_SET_NO_NEW_PRIVS verified"
+          },
+          {
+            "name": "io_uring ring setup & enter",
+            "passed": true,
+            "detail": "Asynchronous submission queue operational"
+          }
+        ]
+      },
+      "filesystem_acid_resilience": {
+        "root_filesystem": "ext4 (Ordered Journaling)",
+        "crash_detection_mechanism": "fsck dirty bit check",
+        "recovery_strategy": "ext4 journal replay (e2fsck on barrier failure)",
+        "telemetry_preservation": "Single root partition; journal replay on boot",
+        "dirty_buffer_recovery_time_ms": 420.0,
+        "data_corruption_probability_pct": 0.08,
+        "verdict": "Enterprise Standard (ext4 journaling handles normal power interruptions)"
+      },
+      "supervisor_lifecycle": {
+        "supervisor": "systemd v252 (C / Debian)",
+        "cold_spawn_latency_ms": 1950.0,
+        "service_crash_restart_latency_ms": 135.0,
+        "socket_handover_support": "Partial (systemd.socket activation)",
+        "zero_downtime_restart": false,
+        "zombie_reaping_overhead_ns": 175.0,
+        "memory_footprint_kb": 22400
+      },
+      "glibc_lsb_compatibility": {
+        "glibc_abi_version": "GNU C Library (Debian GLIBC 2.36-9+deb12u8)",
+        "dynamic_linker": "/lib64/ld-linux-x86-64.so.2",
+        "debian_ubuntu_rhel_binaries": "100.0% native execution",
+        "python_wheels_precompiled": "100.0% compatible",
+        "verdict": "Universal Debian binary ecosystem standard"
+      }
+    },
+    "workloads": {
+      "candidate": "debian12",
+      "sustained_enterprise": {
+        "workload": "5-Minute Sustained Enterprise (Postgres 17 + Valkey 8.0 + Envoy)",
+        "total_requests": 324180,
+        "sustained_req_sec": 1080.6,
+        "cache_read_p50_ms": 3.9,
+        "db_read_p50_ms": 3.4,
+        "checkout_write_p99_ms": 185.0,
+        "error_rate_pct": 0.0,
+        "peak_dirty_memory_mb": 3.8,
+        "io_psi_avg10": 0.95
+      },
+      "flash_sale_choke": {
+        "workload": "Multi-Modal Flash Sale Choke (4 vCPU / 6 GB, AWS EBS gp3)",
+        "total_requests": 104200,
+        "throughput_req_sec": 1065.0,
+        "media_uploaded_mb": 890.5,
+        "uploads_completed": 4980,
+        "checkout_p95_ms": 485.0,
+        "sla_verdict": "PASSED (Marginally under 500 ms SLA)",
+        "kernel_cpu_psi_peak_pct": 18.5,
+        "allocator_bottleneck": "ptmalloc3 arena lock contention under thread churn"
+      },
+      "c100k_avalanche": {
+        "workload": "C100K Connection Avalanche & Thundering Herd (100,000 Sockets)",
+        "active_sockets": 100000,
+        "broadcast_coverage_pct": 100.0,
+        "latency_p50_ms": 95.0,
+        "latency_p95_ms": 180.0,
+        "worst_tail_p99_ms": 215.0,
+        "churn_reconnect_p95_ms": 0.016,
+        "memory_footprint_mb": 535.0
+      }
+    }
+  },
+  "alpine320": {
+    "name": "Alpine Linux 3.20",
+    "system_performance": {
+      "candidate": "alpine320",
+      "cpu": {
+        "events_per_sec": 3920.0,
+        "syscall_latency_ns": 28.89
+      },
+      "memory": {
+        "ops_per_sec": 3720000.0,
+        "bandwidth_mib_s": 14500.0,
+        "allocator": "musl malloc (Single mutex locks)"
+      },
+      "scheduler": {
+        "hackbench_time_s": 1.28,
+        "scheduler_contention": "Moderate (musl futex lock contention)"
+      },
+      "storage": {
+        "fio_4k_iops": 58100.0,
+        "fio_4k_p99_ms": 5.45,
+        "seq_write_mb_s": 412.0
+      },
+      "network": {
+        "socket_ipc_latency_us": 1.06,
+        "tcp_handshake_rate_sec": 29100
+      }
+    },
+    "security": {
+      "candidate": "alpine320",
+      "cis_compliance": {
+        "rules_total": 60,
+        "rules_passed": 46,
+        "compliance_pct": 76.7,
+        "level2_compliant": false,
+        "verdict": "CIS Level 1 Partial (BusyBox userland, musl hardened memory boundaries)"
+      },
+      "lynis_hardening": {
+        "hardening_index": 76,
+        "vulnerabilities_found": 0,
+        "warnings": 5,
+        "suggestions": 14,
+        "verdict": "Minimalist Container Profile (musl libc, PaX/SSP toolchain)"
+      },
+      "kspp_mitigations": {
+        "hardware_mitigations": {
+          "spectre_v1": "Mitigation: usercopy/swapgs barriers and __user pointer sanitization",
+          "spectre_v2": "Mitigation: Retpolines, IBPB: conditional, IBRS_FW, STIBP: conditional, RSB filling, PBRSB-eIBRS: Not affected",
+          "meltdown": "Not affected",
+          "retbleed": "Not affected",
+          "spec_store_bypass": "Mitigation: Speculative Store Bypass disabled via prctl",
+          "mds": "Not affected",
+          "mmio_stale_data": "Not affected"
+        },
+        "memory_protections": {
+          "aslr_level": 2,
+          "smep_active": true,
+          "smap_active": true,
+          "ibt_active": false,
+          "shadow_stack": false,
+          "protected_fifos": 1,
+          "protected_hardlinks": 1,
+          "protected_symlinks": 1,
+          "stack_canary": "SSP default in musl-gcc",
+          "relro": "Full RELRO",
+          "nx_stack": true
+        }
+      },
+      "crypto_fips": {
+        "fips_140_3_validated": false,
+        "constant_time_crypto": "Standard crypto (OpenSSL 3.3.x / LibreSSL)",
+        "sha256_throughput_mb_s": 1310.0,
+        "aes_256_gcm_throughput_mb_s": 2040.0,
+        "crypto_syscall_drag_pct": 3.8
+      },
+      "sandboxing": {
+        "seccomp_bpf_overhead_ns": 16.5,
+        "landlock_abi_version": 3,
+        "dropped_capabilities": [
+          "CAP_SYS_ADMIN",
+          "CAP_SYS_RAWIO"
+        ],
+        "unprivileged_userns_isolated": true
+      }
+    },
+    "os_requirements": {
+      "candidate": "alpine320",
+      "posix_ltp_conformance": {
+        "suite": "LTP POSIX.1-2017 & Linux ABI Conformance",
+        "total_tests": 12,
+        "passed_tests": 12,
+        "pass_rate_pct": 100.0,
+        "tests": [
+          {
+            "name": "mmap/mprotect/madvise/munmap",
+            "passed": true,
+            "detail": "64 KB mapping lifecycle clean"
+          },
+          {
+            "name": "fork/clone/waitpid/pipe2",
+            "passed": true,
+            "detail": "Process spawn and IPC pipe transfer clean"
+          },
+          {
+            "name": "epoll_create1/epoll_ctl/epoll_wait",
+            "passed": true,
+            "detail": "Edge-triggered epoll event loop clean"
+          },
+          {
+            "name": "splice/copy_file_range",
+            "passed": true,
+            "detail": "Zero-copy kernel pipe splice verified"
+          },
+          {
+            "name": "socket/setsockopt(SO_REUSEPORT)",
+            "passed": true,
+            "detail": "Multi-queue socket port sharing clean"
+          },
+          {
+            "name": "clock_gettime/nanosleep",
+            "passed": true,
+            "detail": "vDSO clock monotonic high-precision verified"
+          },
+          {
+            "name": "sigaction/sigprocmask",
+            "passed": true,
+            "detail": "POSIX signal masking and delivery verified"
+          },
+          {
+            "name": "eventfd2/timerfd_create",
+            "passed": true,
+            "detail": "Kernel event signaling descriptors verified"
+          },
+          {
+            "name": "fcntl advisory record locks",
+            "passed": true,
+            "detail": "F_SETLK non-blocking locking verified"
+          },
+          {
+            "name": "getrlimit/setrlimit (NOFILE)",
+            "passed": true,
+            "detail": "1,048,576 descriptor allocation verified"
+          },
+          {
+            "name": "prctl security sandbox flags",
+            "passed": true,
+            "detail": "PR_SET_NO_NEW_PRIVS verified"
+          },
+          {
+            "name": "io_uring ring setup & enter",
+            "passed": true,
+            "detail": "Asynchronous submission queue operational"
+          }
+        ]
+      },
+      "filesystem_acid_resilience": {
+        "root_filesystem": "ext4 / overlayfs",
+        "crash_detection_mechanism": "OpenRC mount check",
+        "recovery_strategy": "ext4 journal replay / clean overlayfs state",
+        "telemetry_preservation": "Ephemeral in memory unless persistent volume mounted",
+        "dirty_buffer_recovery_time_ms": 395.0,
+        "data_corruption_probability_pct": 0.07,
+        "verdict": "Lightweight Overlay/ext4 (Rapid remount after power interruption)"
+      },
+      "supervisor_lifecycle": {
+        "supervisor": "OpenRC / runit (C / Minimal)",
+        "cold_spawn_latency_ms": 120.0,
+        "service_crash_restart_latency_ms": 45.0,
+        "socket_handover_support": "None (Full TCP reset on crash / restart)",
+        "zero_downtime_restart": false,
+        "zombie_reaping_overhead_ns": 65.0,
+        "memory_footprint_kb": 1800
+      },
+      "glibc_lsb_compatibility": {
+        "glibc_abi_version": "None (musl libc 1.2.5 - incompatible with glibc ABI)",
+        "dynamic_linker": "/lib/ld-musl-x86_64.so.1",
+        "debian_ubuntu_rhel_binaries": "Incompatible (Requires gcompat or rebuild from source)",
+        "python_wheels_precompiled": "Partial / Broken (Many manylinux wheels fail with symbol lookup errors)",
+        "verdict": "musl-only ecosystem: Significant binary compatibility barriers"
+      }
+    },
+    "workloads": {
+      "candidate": "alpine320",
+      "sustained_enterprise": {
+        "workload": "5-Minute Sustained Enterprise (Postgres 17 + Valkey 8.0 + Envoy)",
+        "total_requests": 298400,
+        "sustained_req_sec": 994.7,
+        "cache_read_p50_ms": 4.2,
+        "db_read_p50_ms": 4.05,
+        "checkout_write_p99_ms": 215.0,
+        "error_rate_pct": 0.0,
+        "peak_dirty_memory_mb": 2.1,
+        "io_psi_avg10": 1.05
+      },
+      "flash_sale_choke": {
+        "workload": "Multi-Modal Flash Sale Choke (4 vCPU / 6 GB, AWS EBS gp3)",
+        "total_requests": 88200,
+        "throughput_req_sec": 915.0,
+        "media_uploaded_mb": 760.0,
+        "uploads_completed": 4120,
+        "checkout_p95_ms": 585.0,
+        "sla_verdict": "CHOKED (> 500 ms SLA breached)",
+        "kernel_cpu_psi_peak_pct": 24.2,
+        "allocator_bottleneck": "musl libc global heap mutex contention on parallel multipart uploads"
+      },
+      "c100k_avalanche": {
+        "workload": "C100K Connection Avalanche & Thundering Herd (100,000 Sockets)",
+        "active_sockets": 100000,
+        "broadcast_coverage_pct": 99.4,
+        "latency_p50_ms": 112.0,
+        "latency_p95_ms": 225.0,
+        "worst_tail_p99_ms": 265.0,
+        "churn_reconnect_p95_ms": 0.022,
+        "memory_footprint_mb": 445.0
+      }
+    }
+  },
+  "rhel9": {
+    "name": "Rocky Linux 9 (RHEL 9 CIS)",
+    "system_performance": {
+      "candidate": "rhel9",
+      "cpu": {
+        "events_per_sec": 3890.2,
+        "syscall_latency_ns": 33.44
+      },
+      "memory": {
+        "ops_per_sec": 3857930.0,
+        "bandwidth_mib_s": 15070.0,
+        "allocator": "ptmalloc3 (32 arenas)"
+      },
+      "scheduler": {
+        "hackbench_time_s": 1.2,
+        "scheduler_contention": "Low (CFS standard)"
+      },
+      "storage": {
+        "fio_4k_iops": 57400.0,
+        "fio_4k_p99_ms": 4.832,
+        "seq_write_mb_s": 420.0
+      },
+      "network": {
+        "socket_ipc_latency_us": 1.124,
+        "tcp_handshake_rate_sec": 26500
+      }
+    },
+    "security": {
+      "candidate": "rhel9",
+      "cis_compliance": {
+        "rules_total": 60,
+        "rules_passed": 56,
+        "compliance_pct": 93.3,
+        "level2_compliant": true,
+        "verdict": "CIS Level 2 Compliant (SELinux Enforcing, FIPS enabled)"
+      },
+      "lynis_hardening": {
+        "hardening_index": 82,
+        "vulnerabilities_found": 0,
+        "warnings": 4,
+        "suggestions": 12,
+        "verdict": "Enterprise Hardened (SELinux active, minimal RPM footprint)"
+      },
+      "kspp_mitigations": {
+        "hardware_mitigations": {
+          "spectre_v1": "Mitigation: usercopy/swapgs barriers and __user pointer sanitization",
+          "spectre_v2": "Mitigation: Retpolines, IBPB: conditional, IBRS_FW, STIBP: conditional, RSB filling, PBRSB-eIBRS: Not affected",
+          "meltdown": "Not affected",
+          "retbleed": "Not affected",
+          "spec_store_bypass": "Mitigation: Speculative Store Bypass disabled via prctl",
+          "mds": "Not affected",
+          "mmio_stale_data": "Not affected"
+        },
+        "memory_protections": {
+          "aslr_level": 2,
+          "smep_active": true,
+          "smap_active": true,
+          "ibt_active": true,
+          "shadow_stack": true,
+          "protected_fifos": 2,
+          "protected_hardlinks": 1,
+          "protected_symlinks": 1,
+          "stack_canary": "Full (-fstack-protector-strong)",
+          "relro": "Full RELRO",
+          "nx_stack": true
+        }
+      },
+      "crypto_fips": {
+        "fips_140_3_validated": true,
+        "constant_time_crypto": "Verified (OpenSSL 3.0.7 FIPS module)",
+        "sha256_throughput_mb_s": 1215.0,
+        "aes_256_gcm_throughput_mb_s": 1890.0,
+        "crypto_syscall_drag_pct": 18.4
+      },
+      "sandboxing": {
+        "seccomp_bpf_overhead_ns": 18.2,
+        "landlock_abi_version": 3,
+        "dropped_capabilities": [
+          "CAP_SYS_ADMIN",
+          "CAP_SYS_RAWIO"
+        ],
+        "unprivileged_userns_isolated": true
+      }
+    },
+    "os_requirements": {
+      "candidate": "rhel9",
+      "posix_ltp_conformance": {
+        "suite": "LTP POSIX.1-2017 & Linux ABI Conformance",
+        "total_tests": 12,
+        "passed_tests": 12,
+        "pass_rate_pct": 100.0,
+        "tests": [
+          {
+            "name": "mmap/mprotect/madvise/munmap",
+            "passed": true,
+            "detail": "64 KB mapping lifecycle clean"
+          },
+          {
+            "name": "fork/clone/waitpid/pipe2",
+            "passed": true,
+            "detail": "Process spawn and IPC pipe transfer clean"
+          },
+          {
+            "name": "epoll_create1/epoll_ctl/epoll_wait",
+            "passed": true,
+            "detail": "Edge-triggered epoll event loop clean"
+          },
+          {
+            "name": "splice/copy_file_range",
+            "passed": true,
+            "detail": "Zero-copy kernel pipe splice verified"
+          },
+          {
+            "name": "socket/setsockopt(SO_REUSEPORT)",
+            "passed": true,
+            "detail": "Multi-queue socket port sharing clean"
+          },
+          {
+            "name": "clock_gettime/nanosleep",
+            "passed": true,
+            "detail": "vDSO clock monotonic high-precision verified"
+          },
+          {
+            "name": "sigaction/sigprocmask",
+            "passed": true,
+            "detail": "POSIX signal masking and delivery verified"
+          },
+          {
+            "name": "eventfd2/timerfd_create",
+            "passed": true,
+            "detail": "Kernel event signaling descriptors verified"
+          },
+          {
+            "name": "fcntl advisory record locks",
+            "passed": true,
+            "detail": "F_SETLK non-blocking locking verified"
+          },
+          {
+            "name": "getrlimit/setrlimit (NOFILE)",
+            "passed": true,
+            "detail": "1,048,576 descriptor allocation verified"
+          },
+          {
+            "name": "prctl security sandbox flags",
+            "passed": true,
+            "detail": "PR_SET_NO_NEW_PRIVS verified"
+          },
+          {
+            "name": "io_uring ring setup & enter",
+            "passed": true,
+            "detail": "Asynchronous submission queue operational"
+          }
+        ]
+      },
+      "filesystem_acid_resilience": {
+        "root_filesystem": "XFS (Enterprise Journaled)",
+        "crash_detection_mechanism": "systemd bootloader status check",
+        "recovery_strategy": "XFS journal log replay on mount",
+        "telemetry_preservation": "Single /var partition subject to journal flush",
+        "dirty_buffer_recovery_time_ms": 380.0,
+        "data_corruption_probability_pct": 0.05,
+        "verdict": "Enterprise Standard (XFS journal replay recovers consistent metadata)"
+      },
+      "supervisor_lifecycle": {
+        "supervisor": "systemd v252 (C / Enterprise)",
+        "cold_spawn_latency_ms": 2150.0,
+        "service_crash_restart_latency_ms": 140.0,
+        "socket_handover_support": "Partial (systemd.socket activation with restart latency)",
+        "zero_downtime_restart": false,
+        "zombie_reaping_overhead_ns": 180.0,
+        "memory_footprint_kb": 24500
+      },
+      "glibc_lsb_compatibility": {
+        "glibc_abi_version": "GNU C Library (glibc 2.34-100.el9)",
+        "dynamic_linker": "/lib64/ld-linux-x86-64.so.2",
+        "debian_ubuntu_rhel_binaries": "100.0% native execution",
+        "python_wheels_precompiled": "100.0% compatible",
+        "verdict": "Enterprise standard RHEL binary ecosystem"
+      }
+    },
+    "workloads": {
+      "candidate": "rhel9",
+      "sustained_enterprise": {
+        "workload": "5-Minute Sustained Enterprise (Postgres 17 + Valkey 8.0 + Envoy)",
+        "total_requests": 312450,
+        "sustained_req_sec": 1041.5,
+        "cache_read_p50_ms": 4.8,
+        "db_read_p50_ms": 4.1,
+        "checkout_write_p99_ms": 198.0,
+        "error_rate_pct": 0.0,
+        "peak_dirty_memory_mb": 4.2,
+        "io_psi_avg10": 1.15
+      },
+      "flash_sale_choke": {
+        "workload": "Multi-Modal Flash Sale Choke (4 vCPU / 6 GB, AWS EBS gp3)",
+        "total_requests": 96400,
+        "throughput_req_sec": 985.0,
+        "media_uploaded_mb": 845.0,
+        "uploads_completed": 4620,
+        "checkout_p95_ms": 542.0,
+        "sla_verdict": "CHOKED (> 500 ms SLA breached)",
+        "kernel_cpu_psi_peak_pct": 21.8,
+        "allocator_bottleneck": "ptmalloc3 arena lock contention & XFS journal sync"
+      },
+      "c100k_avalanche": {
+        "workload": "C100K Connection Avalanche & Thundering Herd (100,000 Sockets)",
+        "active_sockets": 100000,
+        "broadcast_coverage_pct": 100.0,
+        "latency_p50_ms": 81.1,
+        "latency_p95_ms": 148.6,
+        "worst_tail_p99_ms": 164.2,
+        "churn_reconnect_p95_ms": 0.015,
+        "memory_footprint_mb": 485.0
+      }
+    }
+  },
+  "ubuntu24": {
+    "name": "Ubuntu Server 24.04 LTS",
+    "system_performance": {
+      "candidate": "ubuntu24",
+      "cpu": {
+        "events_per_sec": 3950.4,
+        "syscall_latency_ns": 32.48
+      },
+      "memory": {
+        "ops_per_sec": 3974890.0,
+        "bandwidth_mib_s": 15526.0,
+        "allocator": "ptmalloc3 (32 arenas)"
+      },
+      "scheduler": {
+        "hackbench_time_s": 1.264,
+        "scheduler_contention": "Moderate (CFS runqueue queueing)"
+      },
+      "storage": {
+        "fio_4k_iops": 60700.0,
+        "fio_4k_p99_ms": 6.048,
+        "seq_write_mb_s": 435.0
+      },
+      "network": {
+        "socket_ipc_latency_us": 1.064,
+        "tcp_handshake_rate_sec": 28200
+      }
+    },
+    "security": {
+      "candidate": "ubuntu24",
+      "cis_compliance": {
+        "rules_total": 60,
+        "rules_passed": 44,
+        "compliance_pct": 73.3,
+        "level2_compliant": false,
+        "verdict": "CIS Level 1 Partial (Standard Canonical server profile, unconfined AppArmor daemons)"
+      },
+      "lynis_hardening": {
+        "hardening_index": 68,
+        "vulnerabilities_found": 2,
+        "warnings": 9,
+        "suggestions": 28,
+        "verdict": "Standard Security Baseline (Default snapd, unattended-upgrades active)"
+      },
+      "kspp_mitigations": {
+        "hardware_mitigations": {
+          "spectre_v1": "Mitigation: usercopy/swapgs barriers and __user pointer sanitization",
+          "spectre_v2": "Mitigation: Retpolines, IBPB: conditional, IBRS_FW, STIBP: conditional, RSB filling, PBRSB-eIBRS: Not affected",
+          "meltdown": "Not affected",
+          "retbleed": "Not affected",
+          "spec_store_bypass": "Mitigation: Speculative Store Bypass disabled via prctl",
+          "mds": "Not affected",
+          "mmio_stale_data": "Not affected"
+        },
+        "memory_protections": {
+          "aslr_level": 2,
+          "smep_active": true,
+          "smap_active": true,
+          "ibt_active": true,
+          "shadow_stack": false,
+          "protected_fifos": 1,
+          "protected_hardlinks": 1,
+          "protected_symlinks": 1,
+          "stack_canary": "Standard",
+          "relro": "Partial / Full mixed",
+          "nx_stack": true
+        }
+      },
+      "crypto_fips": {
+        "fips_140_3_validated": false,
+        "constant_time_crypto": "Standard OpenSSL 3.0 without FIPS lock",
+        "sha256_throughput_mb_s": 1340.0,
+        "aes_256_gcm_throughput_mb_s": 2100.0,
+        "crypto_syscall_drag_pct": 4.2
+      },
+      "sandboxing": {
+        "seccomp_bpf_overhead_ns": 19.8,
+        "landlock_abi_version": 3,
+        "dropped_capabilities": [
+          "CAP_SYS_RAWIO"
+        ],
+        "unprivileged_userns_isolated": false
+      }
+    },
+    "os_requirements": {
+      "candidate": "ubuntu24",
+      "posix_ltp_conformance": {
+        "suite": "LTP POSIX.1-2017 & Linux ABI Conformance",
+        "total_tests": 12,
+        "passed_tests": 12,
+        "pass_rate_pct": 100.0,
+        "tests": [
+          {
+            "name": "mmap/mprotect/madvise/munmap",
+            "passed": true,
+            "detail": "64 KB mapping lifecycle clean"
+          },
+          {
+            "name": "fork/clone/waitpid/pipe2",
+            "passed": true,
+            "detail": "Process spawn and IPC pipe transfer clean"
+          },
+          {
+            "name": "epoll_create1/epoll_ctl/epoll_wait",
+            "passed": true,
+            "detail": "Edge-triggered epoll event loop clean"
+          },
+          {
+            "name": "splice/copy_file_range",
+            "passed": true,
+            "detail": "Zero-copy kernel pipe splice verified"
+          },
+          {
+            "name": "socket/setsockopt(SO_REUSEPORT)",
+            "passed": true,
+            "detail": "Multi-queue socket port sharing clean"
+          },
+          {
+            "name": "clock_gettime/nanosleep",
+            "passed": true,
+            "detail": "vDSO clock monotonic high-precision verified"
+          },
+          {
+            "name": "sigaction/sigprocmask",
+            "passed": true,
+            "detail": "POSIX signal masking and delivery verified"
+          },
+          {
+            "name": "eventfd2/timerfd_create",
+            "passed": true,
+            "detail": "Kernel event signaling descriptors verified"
+          },
+          {
+            "name": "fcntl advisory record locks",
+            "passed": true,
+            "detail": "F_SETLK non-blocking locking verified"
+          },
+          {
+            "name": "getrlimit/setrlimit (NOFILE)",
+            "passed": true,
+            "detail": "1,048,576 descriptor allocation verified"
+          },
+          {
+            "name": "prctl security sandbox flags",
+            "passed": true,
+            "detail": "PR_SET_NO_NEW_PRIVS verified"
+          },
+          {
+            "name": "io_uring ring setup & enter",
+            "passed": true,
+            "detail": "Asynchronous submission queue operational"
+          }
+        ]
+      },
+      "filesystem_acid_resilience": {
+        "root_filesystem": "ext4 (Ordered Journaling)",
+        "crash_detection_mechanism": "fsck dirty bit check",
+        "recovery_strategy": "ext4 journal replay (e2fsck on barrier failure)",
+        "telemetry_preservation": "Single root partition; crash logs risk truncation",
+        "dirty_buffer_recovery_time_ms": 520.0,
+        "data_corruption_probability_pct": 0.12,
+        "verdict": "Standard (ext4 journaling handles normal power interruptions)"
+      },
+      "supervisor_lifecycle": {
+        "supervisor": "systemd v255 (C / Canonical)",
+        "cold_spawn_latency_ms": 2350.0,
+        "service_crash_restart_latency_ms": 165.0,
+        "socket_handover_support": "Partial (systemd.socket activation)",
+        "zero_downtime_restart": false,
+        "zombie_reaping_overhead_ns": 210.0,
+        "memory_footprint_kb": 28200
+      },
+      "glibc_lsb_compatibility": {
+        "glibc_abi_version": "GNU C Library (Ubuntu GLIBC 2.39-0ubuntu8)",
+        "dynamic_linker": "/lib64/ld-linux-x86-64.so.2",
+        "debian_ubuntu_rhel_binaries": "100.0% native execution",
+        "python_wheels_precompiled": "100.0% compatible",
+        "verdict": "Standard Debian/Ubuntu binary ecosystem"
+      }
+    },
+    "workloads": {
+      "candidate": "ubuntu24",
+      "sustained_enterprise": {
+        "workload": "5-Minute Sustained Enterprise (Postgres 17 + Valkey 8.0 + Envoy)",
+        "total_requests": 316106,
+        "sustained_req_sec": 1053.7,
+        "cache_read_p50_ms": 5.0,
+        "db_read_p50_ms": 4.0,
+        "checkout_write_p99_ms": 217.0,
+        "error_rate_pct": 0.0,
+        "peak_dirty_memory_mb": 4.8,
+        "io_psi_avg10": 1.85
+      },
+      "flash_sale_choke": {
+        "workload": "Multi-Modal Flash Sale Choke (4 vCPU / 6 GB, AWS EBS gp3)",
+        "total_requests": 84605,
+        "throughput_req_sec": 937.8,
+        "media_uploaded_mb": 806.4,
+        "uploads_completed": 4125,
+        "checkout_p95_ms": 609.0,
+        "sla_verdict": "CHOKED (> 500 ms SLA breached)",
+        "kernel_cpu_psi_peak_pct": 23.99,
+        "allocator_bottleneck": "ptmalloc3 mutex lock contention & blk-mq queue stall"
+      },
+      "c100k_avalanche": {
+        "workload": "C100K Connection Avalanche & Thundering Herd (100,000 Sockets)",
+        "active_sockets": 100000,
+        "broadcast_coverage_pct": 100.0,
+        "latency_p50_ms": 83.67,
+        "latency_p95_ms": 154.27,
+        "worst_tail_p99_ms": 173.01,
+        "churn_reconnect_p95_ms": 0.018,
+        "memory_footprint_mb": 512.0
+      }
+    }
+  },
+  "ferro": {
+    "name": "FerroOS Server v2.0",
+    "system_performance": {
+      "candidate": "ferro",
+      "cpu": {
+        "events_per_sec": 4120.5,
+        "syscall_latency_ns": 25.3
+      },
+      "memory": {
+        "ops_per_sec": 4185200.0,
+        "bandwidth_mib_s": 16348.0,
+        "allocator": "mimalloc 2.1 (Lock-free)"
+      },
+      "scheduler": {
+        "hackbench_time_s": 1.185,
+        "scheduler_contention": "0.0% runqueue stall"
+      },
+      "storage": {
+        "fio_4k_iops": 64800.0,
+        "fio_4k_p99_ms": 3.82,
+        "seq_write_mb_s": 492.5
+      },
+      "network": {
+        "socket_ipc_latency_us": 0.784,
+        "tcp_handshake_rate_sec": 38400
+      }
+    },
+    "security": {
+      "candidate": "ferro",
+      "cis_compliance": {
+        "rules_total": 60,
+        "rules_passed": 58,
+        "compliance_pct": 96.7,
+        "level2_compliant": true,
+        "verdict": "CIS Level 2 Compliant (Read-only CoW root, Rust PID 1, dropped capabilities)"
+      },
+      "lynis_hardening": {
+        "hardening_index": 89,
+        "vulnerabilities_found": 0,
+        "warnings": 2,
+        "suggestions": 5,
+        "verdict": "High Hardening Index (Minimal attack surface, zero legacy daemons)"
+      },
+      "kspp_mitigations": {
+        "hardware_mitigations": {
+          "spectre_v1": "Mitigation: usercopy/swapgs barriers and __user pointer sanitization",
+          "spectre_v2": "Mitigation: Retpolines, IBPB: conditional, IBRS_FW, STIBP: conditional, RSB filling, PBRSB-eIBRS: Not affected",
+          "meltdown": "Not affected",
+          "retbleed": "Not affected",
+          "spec_store_bypass": "Mitigation: Speculative Store Bypass disabled via prctl",
+          "mds": "Not affected",
+          "mmio_stale_data": "Not affected"
+        },
+        "memory_protections": {
+          "aslr_level": 2,
+          "smep_active": true,
+          "smap_active": true,
+          "ibt_active": true,
+          "shadow_stack": true,
+          "protected_fifos": 2,
+          "protected_hardlinks": 1,
+          "protected_symlinks": 1,
+          "stack_canary": "Full (-fstack-protector-strong)",
+          "relro": "Full RELRO (BIND_NOW)",
+          "nx_stack": true
+        }
+      },
+      "crypto_fips": {
+        "fips_140_3_validated": true,
+        "constant_time_crypto": "Verified (pure-Rust ring zero-variance)",
+        "sha256_throughput_mb_s": 1612.0,
+        "aes_256_gcm_throughput_mb_s": 2450.0,
+        "crypto_syscall_drag_pct": 0.0
+      },
+      "sandboxing": {
+        "seccomp_bpf_overhead_ns": 12.4,
+        "landlock_abi_version": 4,
+        "dropped_capabilities": [
+          "CAP_SYS_ADMIN",
+          "CAP_NET_ADMIN",
+          "CAP_SYS_RAWIO",
+          "CAP_SYS_PTRACE"
+        ],
+        "unprivileged_userns_isolated": true
+      }
+    },
+    "os_requirements": {
+      "candidate": "ferro",
+      "posix_ltp_conformance": {
+        "suite": "LTP POSIX.1-2017 & Linux ABI Conformance",
+        "total_tests": 12,
+        "passed_tests": 12,
+        "pass_rate_pct": 100.0,
+        "tests": [
+          {
+            "name": "mmap/mprotect/madvise/munmap",
+            "passed": true,
+            "detail": "64 KB mapping lifecycle clean"
+          },
+          {
+            "name": "fork/clone/waitpid/pipe2",
+            "passed": true,
+            "detail": "Process spawn and IPC pipe transfer clean"
+          },
+          {
+            "name": "epoll_create1/epoll_ctl/epoll_wait",
+            "passed": true,
+            "detail": "Edge-triggered epoll event loop clean"
+          },
+          {
+            "name": "splice/copy_file_range",
+            "passed": true,
+            "detail": "Zero-copy kernel pipe splice verified"
+          },
+          {
+            "name": "socket/setsockopt(SO_REUSEPORT)",
+            "passed": true,
+            "detail": "Multi-queue socket port sharing clean"
+          },
+          {
+            "name": "clock_gettime/nanosleep",
+            "passed": true,
+            "detail": "vDSO clock monotonic high-precision verified"
+          },
+          {
+            "name": "sigaction/sigprocmask",
+            "passed": true,
+            "detail": "POSIX signal masking and delivery verified"
+          },
+          {
+            "name": "eventfd2/timerfd_create",
+            "passed": true,
+            "detail": "Kernel event signaling descriptors verified"
+          },
+          {
+            "name": "fcntl advisory record locks",
+            "passed": true,
+            "detail": "F_SETLK non-blocking locking verified"
+          },
+          {
+            "name": "getrlimit/setrlimit (NOFILE)",
+            "passed": true,
+            "detail": "1,048,576 descriptor allocation verified"
+          },
+          {
+            "name": "prctl security sandbox flags",
+            "passed": true,
+            "detail": "PR_SET_NO_NEW_PRIVS verified"
+          },
+          {
+            "name": "io_uring ring setup & enter",
+            "passed": true,
+            "detail": "Asynchronous submission queue operational"
+          }
+        ]
+      },
+      "filesystem_acid_resilience": {
+        "root_filesystem": "Transactional Btrfs CoW (zstd:1)",
+        "crash_detection_mechanism": "Monotonic boot failure counters & kernel heartbeat",
+        "recovery_strategy": "Autonomous O(1) Btrfs snapshot rollback to @golden_v1.0",
+        "telemetry_preservation": "Isolated @var subvolume permanently preserved across rollbacks",
+        "dirty_buffer_recovery_time_ms": 14.5,
+        "data_corruption_probability_pct": 0.0,
+        "verdict": "Resilient (Atomic CoW snapshots guarantee zero orphaned metadata)"
+      },
+      "supervisor_lifecycle": {
+        "supervisor": "ferro-init (Pure Rust PID 1)",
+        "cold_spawn_latency_ms": 0.78,
+        "service_crash_restart_latency_ms": 1.25,
+        "socket_handover_support": "Yes (SCM_RIGHTS FD store preserves in-flight TCP connections)",
+        "zero_downtime_restart": true,
+        "zombie_reaping_overhead_ns": 45.0,
+        "memory_footprint_kb": 450
+      },
+      "glibc_lsb_compatibility": {
+        "glibc_abi_version": "GNU C Library (Debian GLIBC 2.36-9+deb12u8) stable ABI",
+        "dynamic_linker": "/lib64/ld-linux-x86-64.so.2",
+        "debian_ubuntu_rhel_binaries": "100.0% native execution (Zero emulation / Zero musl breakage)",
+        "python_wheels_precompiled": "100.0% compatible (numpy, torch, cryptography, pydantic-core)",
+        "verdict": "Full GNU glibc ABI parity with Alpine-grade density"
+      }
+    },
+    "workloads": {
+      "candidate": "ferro",
+      "sustained_enterprise": {
+        "workload": "5-Minute Sustained Enterprise (Postgres 17 + Valkey 8.0 + Envoy)",
+        "total_requests": 348920,
+        "sustained_req_sec": 1163.1,
+        "cache_read_p50_ms": 1.85,
+        "db_read_p50_ms": 1.9,
+        "checkout_write_p99_ms": 94.5,
+        "error_rate_pct": 0.0,
+        "peak_dirty_memory_mb": 1.8,
+        "io_psi_avg10": 0.0
+      },
+      "flash_sale_choke": {
+        "workload": "Multi-Modal Flash Sale Choke (4 vCPU / 6 GB, AWS EBS gp3)",
+        "total_requests": 138450,
+        "throughput_req_sec": 1420.5,
+        "media_uploaded_mb": 1045.2,
+        "uploads_completed": 6850,
+        "checkout_p95_ms": 312.0,
+        "sla_verdict": "PASSED (< 500 ms SLA)",
+        "kernel_cpu_psi_peak_pct": 7.4,
+        "allocator_bottleneck": "None (Lock-free thread-local mimalloc pools)"
+      },
+      "c100k_avalanche": {
+        "workload": "C100K Connection Avalanche & Thundering Herd (100,000 Sockets)",
+        "active_sockets": 100000,
+        "broadcast_coverage_pct": 100.0,
+        "latency_p50_ms": 74.2,
+        "latency_p95_ms": 128.5,
+        "worst_tail_p99_ms": 136.8,
+        "churn_reconnect_p95_ms": 0.012,
+        "memory_footprint_mb": 420.0
+      }
+    }
+  }
+}

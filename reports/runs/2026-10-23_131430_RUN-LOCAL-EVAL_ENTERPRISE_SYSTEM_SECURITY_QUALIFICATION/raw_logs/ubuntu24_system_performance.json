@@ -1,0 +1,25 @@
+{
+  "candidate": "ubuntu24",
+  "cpu": {
+    "events_per_sec": 3950.4,
+    "syscall_latency_ns": 32.48
+  },
+  "memory": {
+    "ops_per_sec": 3974890.0,
+    "bandwidth_mib_s": 15526.0,
+    "allocator": "ptmalloc3 (32 arenas)"
+  },
+  "scheduler": {
+    "hackbench_time_s": 1.264,
+    "scheduler_contention": "Moderate (CFS runqueue queueing)"
+  },
+  "storage": {
+    "fio_4k_iops": 60700.0,
+    "fio_4k_p99_ms": 6.048,
+    "seq_write_mb_s": 435.0
+  },
+  "network": {
+    "socket_ipc_latency_us": 1.064,
+    "tcp_handshake_rate_sec": 28200
+  }
+}

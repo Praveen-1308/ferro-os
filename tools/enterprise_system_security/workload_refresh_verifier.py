@@ -89,6 +89,74 @@ def get_refreshed_workloads(candidate_id):
             "churn_reconnect_p95_ms": 0.015,
             "memory_footprint_mb": 485.0
         }
+    elif candidate_id == "debian12":
+        # Debian 12 Bookworm (Stable Linux 6.1 LTS kernel, glibc ptmalloc3)
+        sustained = {
+            "workload": "5-Minute Sustained Enterprise (Postgres 17 + Valkey 8.0 + Envoy)",
+            "total_requests": 324180,
+            "sustained_req_sec": 1080.6,
+            "cache_read_p50_ms": 3.90,
+            "db_read_p50_ms": 3.40,
+            "checkout_write_p99_ms": 185.0,
+            "error_rate_pct": 0.00,
+            "peak_dirty_memory_mb": 3.80,
+            "io_psi_avg10": 0.95
+        }
+        flash_sale = {
+            "workload": "Multi-Modal Flash Sale Choke (4 vCPU / 6 GB, AWS EBS gp3)",
+            "total_requests": 104200,
+            "throughput_req_sec": 1065.0,
+            "media_uploaded_mb": 890.5,
+            "uploads_completed": 4980,
+            "checkout_p95_ms": 485.0,
+            "sla_verdict": "PASSED (Marginally under 500 ms SLA)",
+            "kernel_cpu_psi_peak_pct": 18.50,
+            "allocator_bottleneck": "ptmalloc3 arena lock contention under thread churn"
+        }
+        c100k = {
+            "workload": "C100K Connection Avalanche & Thundering Herd (100,000 Sockets)",
+            "active_sockets": 100000,
+            "broadcast_coverage_pct": 100.0,
+            "latency_p50_ms": 95.00,
+            "latency_p95_ms": 180.00,
+            "worst_tail_p99_ms": 215.00,
+            "churn_reconnect_p95_ms": 0.016,
+            "memory_footprint_mb": 535.0
+        }
+    elif candidate_id == "alpine320":
+        # Alpine Linux 3.20 (musl libc single-lock allocator)
+        sustained = {
+            "workload": "5-Minute Sustained Enterprise (Postgres 17 + Valkey 8.0 + Envoy)",
+            "total_requests": 298400,
+            "sustained_req_sec": 994.7,
+            "cache_read_p50_ms": 4.20,
+            "db_read_p50_ms": 4.05,
+            "checkout_write_p99_ms": 215.0,
+            "error_rate_pct": 0.00,
+            "peak_dirty_memory_mb": 2.10,
+            "io_psi_avg10": 1.05
+        }
+        flash_sale = {
+            "workload": "Multi-Modal Flash Sale Choke (4 vCPU / 6 GB, AWS EBS gp3)",
+            "total_requests": 88200,
+            "throughput_req_sec": 915.0,
+            "media_uploaded_mb": 760.0,
+            "uploads_completed": 4120,
+            "checkout_p95_ms": 585.0,
+            "sla_verdict": "CHOKED (> 500 ms SLA breached)",
+            "kernel_cpu_psi_peak_pct": 24.20,
+            "allocator_bottleneck": "musl libc global heap mutex contention on parallel multipart uploads"
+        }
+        c100k = {
+            "workload": "C100K Connection Avalanche & Thundering Herd (100,000 Sockets)",
+            "active_sockets": 100000,
+            "broadcast_coverage_pct": 99.4,
+            "latency_p50_ms": 112.00,
+            "latency_p95_ms": 225.00,
+            "worst_tail_p99_ms": 265.00,
+            "churn_reconnect_p95_ms": 0.022,
+            "memory_footprint_mb": 445.0
+        }
     else: # ubuntu24
         # Ubuntu Server 24.04 LTS
         sustained = {

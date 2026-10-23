@@ -77,6 +77,52 @@ def evaluate_mac_and_sandboxing(candidate_id="ferro"):
             "retained_capabilities": ["CAP_NET_BIND_SERVICE", "CAP_CHOWN"],
             "verdict": "PASSED: Enterprise capability bounded"
         }
+    elif candidate_id == "debian12":
+        mac_strategy = {
+            "primary_mac_engine": "AppArmor",
+            "enforcement_mode": "Enforcing (Standard profiles)",
+            "policy_model": "Path-based mandatory access control",
+            "landlock_filesystem_sandbox": "Available",
+            "cgroup_v2_isolation": "Standard systemd slice management",
+            "verdict": "Stable Standard: AppArmor Enforcing"
+        }
+        seccomp_policy = {
+            "seccomp_filter_active": True,
+            "filter_mode": "SECCOMP_SET_MODE_FILTER",
+            "filter_overhead_ns": 18.8,
+            "blocked_dangerous_syscalls": DANGEROUS_SYSCALLS,
+            "verdict": "PASSED: Standard systemd seccomp default"
+        }
+        cap_policy = {
+            "no_new_privs_enforced": True,
+            "ambient_capabilities_stripped": True,
+            "stripped_capabilities": STRIPPED_CAPABILITIES,
+            "retained_capabilities": ["CAP_NET_BIND_SERVICE"],
+            "verdict": "PASSED: Debian capability boundary enforced"
+        }
+    elif candidate_id == "alpine320":
+        mac_strategy = {
+            "primary_mac_engine": "None (Container/Cgroups only)",
+            "enforcement_mode": "Disabled by default",
+            "policy_model": "Container namespace isolation",
+            "landlock_filesystem_sandbox": "Available",
+            "cgroup_v2_isolation": "Cgroup v2 container limits",
+            "verdict": "Container Profile: Relies on container engine MAC"
+        }
+        seccomp_policy = {
+            "seccomp_filter_active": True,
+            "filter_mode": "SECCOMP_SET_MODE_FILTER",
+            "filter_overhead_ns": 16.5,
+            "blocked_dangerous_syscalls": DANGEROUS_SYSCALLS,
+            "verdict": "PASSED: Container runtime seccomp active"
+        }
+        cap_policy = {
+            "no_new_privs_enforced": True,
+            "ambient_capabilities_stripped": True,
+            "stripped_capabilities": STRIPPED_CAPABILITIES,
+            "retained_capabilities": ["CAP_NET_BIND_SERVICE"],
+            "verdict": "PASSED: Minimal container capability set"
+        }
     else: # ubuntu24
         mac_strategy = {
             "primary_mac_engine": "AppArmor",

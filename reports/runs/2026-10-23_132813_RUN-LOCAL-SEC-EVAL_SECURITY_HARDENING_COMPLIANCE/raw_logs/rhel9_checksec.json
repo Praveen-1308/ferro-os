@@ -1,0 +1,59 @@
+{
+  "candidate": "rhel9",
+  "tool": "checksec v2.6.0 (Enterprise Profile)",
+  "total_binaries_audited": 5,
+  "fully_compliant_count": 5,
+  "hardening_compliance_pct": 100.0,
+  "binaries": [
+    {
+      "binary": "systemd",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "100.0% Compliant"
+    },
+    {
+      "binary": "bash",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "100.0% Compliant"
+    },
+    {
+      "binary": "rpm",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "100.0% Compliant"
+    },
+    {
+      "binary": "sshd",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "100.0% Compliant"
+    },
+    {
+      "binary": "postgres",
+      "relro": "Full RELRO",
+      "canary": "Stack: Yes",
+      "nx": "NX: Enabled",
+      "pie": "PIE: Enabled",
+      "fortify": "Fortify: Yes",
+      "symbols": "Stripped",
+      "compliance": "100.0% Compliant"
+    }
+  ]
+}

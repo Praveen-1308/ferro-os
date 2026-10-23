@@ -1,0 +1,35 @@
+{
+  "candidate": "ubuntu24",
+  "sbom": {
+    "cyclonedx_manifest": "reports/security/ubuntu24_bom.json",
+    "spdx_manifest": "reports/security/ubuntu24_spdx.json",
+    "generator_tool": "Anchore Syft v1.1.0",
+    "total_packages_tracked": 642,
+    "ecosystems_tracked": [
+      "deb",
+      "dpkg"
+    ],
+    "component_hash_algorithm": "SHA-256",
+    "verdict": "Standard Debian/Ubuntu SBOM (642 components)"
+  },
+  "vulnerability_scan": {
+    "scanner": "Aquasec Trivy v0.51.0",
+    "target_image": "ubuntu-enterprise:latest",
+    "vulnerabilities": {
+      "critical": 0,
+      "high": 3,
+      "medium": 9,
+      "low": 24
+    },
+    "total_cves": 36,
+    "verdict": "ACCEPTABLE: Ubuntu standard package backlog"
+  },
+  "image_signing": {
+    "signing_tool": "Canonical Secure Boot & GPG Signatures",
+    "transparency_log": "Canonical Launchpad Archive Keys",
+    "certificate_authority": "Canonical Ltd.",
+    "signature_status": "VALID",
+    "layer_digest_pinned": true,
+    "verdict": "Standard Canonical GPG Signed"
+  }
+}

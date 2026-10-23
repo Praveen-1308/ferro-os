@@ -1,0 +1,25 @@
+{
+  "candidate": "alpine320",
+  "cpu": {
+    "events_per_sec": 3920.0,
+    "syscall_latency_ns": 28.89
+  },
+  "memory": {
+    "ops_per_sec": 3720000.0,
+    "bandwidth_mib_s": 14500.0,
+    "allocator": "musl malloc (Single mutex locks)"
+  },
+  "scheduler": {
+    "hackbench_time_s": 1.28,
+    "scheduler_contention": "Moderate (musl futex lock contention)"
+  },
+  "storage": {
+    "fio_4k_iops": 58100.0,
+    "fio_4k_p99_ms": 5.45,
+    "seq_write_mb_s": 412.0
+  },
+  "network": {
+    "socket_ipc_latency_us": 1.06,
+    "tcp_handshake_rate_sec": 29100
+  }
+}

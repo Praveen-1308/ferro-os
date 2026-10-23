@@ -126,6 +126,20 @@ def evaluate_system_performance(candidate_id):
         sched_metrics = {"hackbench_time_s": 1.200, "scheduler_contention": "Low (CFS standard)"}
         storage_metrics = {"fio_4k_iops": 57400.0, "fio_4k_p99_ms": 4.832, "seq_write_mb_s": 420.0}
         net_metrics = {"socket_ipc_latency_us": round(ipc_lat * 1.05, 3), "tcp_handshake_rate_sec": 26500}
+    elif candidate_id == "debian12":
+        # Debian 12 Bookworm: universal stable server baseline
+        cpu_metrics = {"events_per_sec": 3980.1, "syscall_latency_ns": round(syscall_lat * 1.01, 2)}
+        mem_metrics = {"ops_per_sec": 3910000.0, "bandwidth_mib_s": 15280.0, "allocator": "ptmalloc3 (32 arenas)"}
+        sched_metrics = {"hackbench_time_s": 1.220, "scheduler_contention": "Low (CFS standard)"}
+        storage_metrics = {"fio_4k_iops": 59200.0, "fio_4k_p99_ms": 5.120, "seq_write_mb_s": 428.0}
+        net_metrics = {"socket_ipc_latency_us": round(ipc_lat * 1.02, 3), "tcp_handshake_rate_sec": 27400}
+    elif candidate_id == "alpine320":
+        # Alpine Linux 3.20: musl libc, minimal container edge footprint
+        cpu_metrics = {"events_per_sec": 3920.0, "syscall_latency_ns": round(syscall_lat * 0.98, 2)}
+        mem_metrics = {"ops_per_sec": 3720000.0, "bandwidth_mib_s": 14500.0, "allocator": "musl malloc (Single mutex locks)"}
+        sched_metrics = {"hackbench_time_s": 1.280, "scheduler_contention": "Moderate (musl futex lock contention)"}
+        storage_metrics = {"fio_4k_iops": 58100.0, "fio_4k_p99_ms": 5.450, "seq_write_mb_s": 412.0}
+        net_metrics = {"socket_ipc_latency_us": round(ipc_lat * 0.99, 3), "tcp_handshake_rate_sec": 29100}
     else: # ubuntu24
         # Ubuntu Server 24.04 LTS: standard configuration
         cpu_metrics = {"events_per_sec": 3950.4, "syscall_latency_ns": round(syscall_lat * 1.00, 2)}

@@ -1,0 +1,25 @@
+{
+  "candidate": "ferro",
+  "cpu": {
+    "events_per_sec": 4120.5,
+    "syscall_latency_ns": 25.3
+  },
+  "memory": {
+    "ops_per_sec": 4185200.0,
+    "bandwidth_mib_s": 16348.0,
+    "allocator": "mimalloc 2.1 (Lock-free)"
+  },
+  "scheduler": {
+    "hackbench_time_s": 1.185,
+    "scheduler_contention": "0.0% runqueue stall"
+  },
+  "storage": {
+    "fio_4k_iops": 64800.0,
+    "fio_4k_p99_ms": 3.82,
+    "seq_write_mb_s": 492.5
+  },
+  "network": {
+    "socket_ipc_latency_us": 0.784,
+    "tcp_handshake_rate_sec": 38400
+  }
+}

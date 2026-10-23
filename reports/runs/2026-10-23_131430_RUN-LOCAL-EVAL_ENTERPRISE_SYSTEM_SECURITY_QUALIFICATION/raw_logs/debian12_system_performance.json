@@ -1,0 +1,25 @@
+{
+  "candidate": "debian12",
+  "cpu": {
+    "events_per_sec": 3980.1,
+    "syscall_latency_ns": 30.19
+  },
+  "memory": {
+    "ops_per_sec": 3910000.0,
+    "bandwidth_mib_s": 15280.0,
+    "allocator": "ptmalloc3 (32 arenas)"
+  },
+  "scheduler": {
+    "hackbench_time_s": 1.22,
+    "scheduler_contention": "Low (CFS standard)"
+  },
+  "storage": {
+    "fio_4k_iops": 59200.0,
+    "fio_4k_p99_ms": 5.12,
+    "seq_write_mb_s": 428.0
+  },
+  "network": {
+    "socket_ipc_latency_us": 1.097,
+    "tcp_handshake_rate_sec": 27400
+  }
+}

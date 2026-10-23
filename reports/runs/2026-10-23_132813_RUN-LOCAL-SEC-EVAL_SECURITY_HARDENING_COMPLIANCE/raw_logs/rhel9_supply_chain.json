@@ -1,0 +1,34 @@
+{
+  "candidate": "rhel9",
+  "sbom": {
+    "cyclonedx_manifest": "reports/security/rhel9_bom.json",
+    "spdx_manifest": "reports/security/rhel9_spdx.json",
+    "generator_tool": "Anchore Syft v1.1.0",
+    "total_packages_tracked": 528,
+    "ecosystems_tracked": [
+      "rpm"
+    ],
+    "component_hash_algorithm": "SHA-256",
+    "verdict": "Enterprise RPM SBOM (528 components)"
+  },
+  "vulnerability_scan": {
+    "scanner": "Aquasec Trivy v0.51.0",
+    "target_image": "rocky-enterprise:latest",
+    "vulnerabilities": {
+      "critical": 0,
+      "high": 1,
+      "medium": 4,
+      "low": 12
+    },
+    "total_cves": 17,
+    "verdict": "ACCEPTABLE: Enterprise vendor patched baseline"
+  },
+  "image_signing": {
+    "signing_tool": "Red Hat GPG Release Key",
+    "transparency_log": "Vendor RPM GPG Check",
+    "certificate_authority": "Red Hat Internal Signing Authority",
+    "signature_status": "VALID",
+    "layer_digest_pinned": true,
+    "verdict": "Enterprise GPG Signed"
+  }
+}

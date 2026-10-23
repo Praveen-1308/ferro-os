@@ -1,0 +1,24 @@
+{
+  "run_id": "LOCAL-EVAL",
+  "timestamp": "2026-10-23_131430",
+  "commit": "562b3fcfebfa6d9fb5a343cc987acbfff4518af0",
+  "host_specs": {
+    "kernel": "25.6.0",
+    "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+    "vcpus": 4.0,
+    "ram_gb": 6.0
+  },
+  "candidates": [
+    "debian12",
+    "alpine320",
+    "rhel9",
+    "ubuntu24",
+    "ferro"
+  ],
+  "categories": [
+    "system_performance",
+    "security",
+    "standard_os_requirements",
+    "refreshed_workloads"
+  ]
+}

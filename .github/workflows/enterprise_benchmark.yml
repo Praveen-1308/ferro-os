@@ -1,4 +1,4 @@
-name: Enterprise Benchmark Pipeline (RHEL 9 vs Ubuntu 24.04 vs Debian 12 vs FerroOS)
+name: Enterprise Benchmark Pipeline (RHEL 9 vs Ubuntu 24.04 vs Debian 12 vs Alpine 3.20 vs FerroOS)
 
 on:
   workflow_dispatch:
@@ -74,18 +74,21 @@ jobs:
 
       - name: Build & Cache Enterprise Container Images
         run: |
-          echo "[1/4] Building FerroOS Server container..."
+          echo "[1/5] Building FerroOS Server container..."
           docker build -t ferro-os-server:latest -f Dockerfile.server .
           docker build -t ferro-os-enterprise:latest -f tools/enterprise_qualification/Dockerfile.ferro .
 
-          echo "[2/4] Building Ubuntu 24.04 Enterprise container..."
+          echo "[2/5] Building Ubuntu 24.04 Enterprise container..."
           docker build -t ubuntu-enterprise:latest -f tools/enterprise_qualification/Dockerfile.ubuntu .
 
-          echo "[3/4] Building Debian 12 Enterprise container..."
+          echo "[3/5] Building Debian 12 Enterprise container..."
           docker build -t debian-enterprise:latest -f tools/enterprise_qualification/Dockerfile.debian .
 
-          echo "[4/4] Building Rocky Linux 9 (RHEL 9) Enterprise container..."
+          echo "[4/5] Building Rocky Linux 9 (RHEL 9) Enterprise container..."
           docker build -t rocky-enterprise:latest -f tools/enterprise_qualification/Dockerfile.rocky .
+
+          echo "[5/5] Building Alpine Linux 3.20 Enterprise container..."
+          docker build -t alpine-enterprise:latest -f tools/enterprise_qualification/Dockerfile.alpine .
 
       - name: Execute Enterprise Benchmark Pipeline
         env:

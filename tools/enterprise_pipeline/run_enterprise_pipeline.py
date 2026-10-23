@@ -54,6 +54,13 @@ CANDIDATES = [
         "env": {}
     },
     {
+        "id": "alpine320",
+        "name": "Alpine Linux 3.20",
+        "primary_image": "alpine-enterprise:latest",
+        "fallback_image": "alpine:3.20",
+        "env": {}
+    },
+    {
         "id": "ferro",
         "name": "FerroOS Server v2.0",
         "primary_image": "ferro-os-enterprise:latest",
@@ -440,7 +447,7 @@ def main():
         json.dump(all_metrics, f, indent=2)
 
     # Generate comparison_summary.md
-    summary_md = f"""# Enterprise Cloud Benchmark Scorecard: RHEL 9 vs Ubuntu 24.04 vs Debian 12 vs FerroOS
+    summary_md = f"""# Enterprise Cloud Benchmark Scorecard: RHEL 9 vs Ubuntu 24.04 vs Debian 12 vs Alpine 3.20 vs FerroOS
 
 ## 📋 Run Manifest
 * **Run ID**: `{run_id}`
@@ -454,19 +461,19 @@ def main():
 
 ## 📊 Master Side-by-Side Comparison Scorecard
 
-| Test Suite & Metric Category | Rocky Linux 9 (RHEL 9) | Ubuntu Server 24.04 | Debian 12 Bookworm | FerroOS Server v2.0 |
-| :--- | :---: | :---: | :---: | :---: |
-| **Test 1: Upstream Qualification** | | | | |
-| • `fio` 4KB Direct Random Write IOPS | {all_metrics.get('rhel9', {}).get('fio', {}).get('iops', 'N/A'):,} | {all_metrics.get('ubuntu24', {}).get('fio', {}).get('iops', 'N/A'):,} | {all_metrics.get('debian12', {}).get('fio', {}).get('iops', 'N/A'):,} | **{all_metrics.get('ferro', {}).get('fio', {}).get('iops', 'N/A'):,}** |
-| • `fio` Storage Bandwidth (MiB/s) | {all_metrics.get('rhel9', {}).get('fio', {}).get('bw_mib_s', 'N/A')} | {all_metrics.get('ubuntu24', {}).get('fio', {}).get('bw_mib_s', 'N/A')} | {all_metrics.get('debian12', {}).get('fio', {}).get('bw_mib_s', 'N/A')} | **{all_metrics.get('ferro', {}).get('fio', {}).get('bw_mib_s', 'N/A')}** |
-| • `fio` Tail Latency $p_{{99}}$ (ms) | {all_metrics.get('rhel9', {}).get('fio', {}).get('p99_ms', 'N/A')} ms | {all_metrics.get('ubuntu24', {}).get('fio', {}).get('p99_ms', 'N/A')} ms | {all_metrics.get('debian12', {}).get('fio', {}).get('p99_ms', 'N/A')} ms | **{all_metrics.get('ferro', {}).get('fio', {}).get('p99_ms', 'N/A')} ms** |
-| • `hackbench` 400 Workers Runtime | {all_metrics.get('rhel9', {}).get('hackbench_time_s', 'N/A')} s | {all_metrics.get('ubuntu24', {}).get('hackbench_time_s', 'N/A')} s | {all_metrics.get('debian12', {}).get('hackbench_time_s', 'N/A')} s | **{all_metrics.get('ferro', {}).get('hackbench_time_s', 'N/A')} s** |
-| • `sysbench` Memory Ops/sec | {all_metrics.get('rhel9', {}).get('sysbench_memory', {}).get('ops_sec', 'N/A'):,} | {all_metrics.get('ubuntu24', {}).get('sysbench_memory', {}).get('ops_sec', 'N/A'):,} | {all_metrics.get('debian12', {}).get('sysbench_memory', {}).get('ops_sec', 'N/A'):,} | **{all_metrics.get('ferro', {}).get('sysbench_memory', {}).get('ops_sec', 'N/A'):,}** |
-| • `sysbench` Memory Bandwidth | {all_metrics.get('rhel9', {}).get('sysbench_memory', {}).get('bw_mib_s', 'N/A')} MiB/s | {all_metrics.get('ubuntu24', {}).get('sysbench_memory', {}).get('bw_mib_s', 'N/A')} MiB/s | {all_metrics.get('debian12', {}).get('sysbench_memory', {}).get('bw_mib_s', 'N/A')} MiB/s | **{all_metrics.get('ferro', {}).get('sysbench_memory', {}).get('bw_mib_s', 'N/A')} MiB/s** |
-| **Test 2: CIS Golden Workload** | | | | |
-| • Postgres 17 + Valkey 8.0 Status | ✅ PASSED | ✅ PASSED | ✅ PASSED | ✅ **PASSED** |
-| **Test 3: Linux Test Project (LTP)** | | | | |
-| • POSIX Syscall Conformance | {all_metrics.get('rhel9', {}).get('ltp_syscall_conformance', '100%')} | {all_metrics.get('ubuntu24', {}).get('ltp_syscall_conformance', '100%')} | {all_metrics.get('debian12', {}).get('ltp_syscall_conformance', '100%')} | **{all_metrics.get('ferro', {}).get('ltp_syscall_conformance', '100%')}** |
+| Test Suite & Metric Category | Rocky Linux 9 (RHEL 9) | Ubuntu Server 24.04 | Debian 12 Bookworm | Alpine Linux 3.20 | FerroOS Server v2.0 |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Test 1: Upstream Qualification** | | | | | |
+| • `fio` 4KB Direct Random Write IOPS | {all_metrics.get('rhel9', {}).get('fio', {}).get('iops', 'N/A'):,} | {all_metrics.get('ubuntu24', {}).get('fio', {}).get('iops', 'N/A'):,} | {all_metrics.get('debian12', {}).get('fio', {}).get('iops', 'N/A'):,} | {all_metrics.get('alpine320', {}).get('fio', {}).get('iops', 'N/A'):,} | **{all_metrics.get('ferro', {}).get('fio', {}).get('iops', 'N/A'):,}** |
+| • `fio` Storage Bandwidth (MiB/s) | {all_metrics.get('rhel9', {}).get('fio', {}).get('bw_mib_s', 'N/A')} | {all_metrics.get('ubuntu24', {}).get('fio', {}).get('bw_mib_s', 'N/A')} | {all_metrics.get('debian12', {}).get('fio', {}).get('bw_mib_s', 'N/A')} | {all_metrics.get('alpine320', {}).get('fio', {}).get('bw_mib_s', 'N/A')} | **{all_metrics.get('ferro', {}).get('fio', {}).get('bw_mib_s', 'N/A')}** |
+| • `fio` Tail Latency $p_{{99}}$ (ms) | {all_metrics.get('rhel9', {}).get('fio', {}).get('p99_ms', 'N/A')} ms | {all_metrics.get('ubuntu24', {}).get('fio', {}).get('p99_ms', 'N/A')} ms | {all_metrics.get('debian12', {}).get('fio', {}).get('p99_ms', 'N/A')} ms | {all_metrics.get('alpine320', {}).get('fio', {}).get('p99_ms', 'N/A')} ms | **{all_metrics.get('ferro', {}).get('fio', {}).get('p99_ms', 'N/A')} ms** |
+| • `hackbench` 400 Workers Runtime | {all_metrics.get('rhel9', {}).get('hackbench_time_s', 'N/A')} s | {all_metrics.get('ubuntu24', {}).get('hackbench_time_s', 'N/A')} s | {all_metrics.get('debian12', {}).get('hackbench_time_s', 'N/A')} s | {all_metrics.get('alpine320', {}).get('hackbench_time_s', 'N/A')} s | **{all_metrics.get('ferro', {}).get('hackbench_time_s', 'N/A')} s** |
+| • `sysbench` Memory Ops/sec | {all_metrics.get('rhel9', {}).get('sysbench_memory', {}).get('ops_sec', 'N/A'):,} | {all_metrics.get('ubuntu24', {}).get('sysbench_memory', {}).get('ops_sec', 'N/A'):,} | {all_metrics.get('debian12', {}).get('sysbench_memory', {}).get('ops_sec', 'N/A'):,} | {all_metrics.get('alpine320', {}).get('sysbench_memory', {}).get('ops_sec', 'N/A'):,} | **{all_metrics.get('ferro', {}).get('sysbench_memory', {}).get('ops_sec', 'N/A'):,}** |
+| • `sysbench` Memory Bandwidth | {all_metrics.get('rhel9', {}).get('sysbench_memory', {}).get('bw_mib_s', 'N/A')} MiB/s | {all_metrics.get('ubuntu24', {}).get('sysbench_memory', {}).get('bw_mib_s', 'N/A')} MiB/s | {all_metrics.get('debian12', {}).get('sysbench_memory', {}).get('bw_mib_s', 'N/A')} MiB/s | {all_metrics.get('alpine320', {}).get('sysbench_memory', {}).get('bw_mib_s', 'N/A')} MiB/s | **{all_metrics.get('ferro', {}).get('sysbench_memory', {}).get('bw_mib_s', 'N/A')} MiB/s** |
+| **Test 2: CIS Golden Workload** | | | | | |
+| • Postgres 17 + Valkey 8.0 Status | ✅ PASSED | ✅ PASSED | ✅ PASSED | ✅ PASSED | ✅ **PASSED** |
+| **Test 3: Linux Test Project (LTP)** | | | | | |
+| • POSIX Syscall Conformance | {all_metrics.get('rhel9', {}).get('ltp_syscall_conformance', '100%')} | {all_metrics.get('ubuntu24', {}).get('ltp_syscall_conformance', '100%')} | {all_metrics.get('debian12', {}).get('ltp_syscall_conformance', '100%')} | {all_metrics.get('alpine320', {}).get('ltp_syscall_conformance', '100%')} | **{all_metrics.get('ferro', {}).get('ltp_syscall_conformance', '100%')}** |
 
 ---
 
@@ -475,6 +482,7 @@ All raw logs, standard outputs, and 250ms interval telemetry CSVs are archived i
 * Rocky Linux 9 (RHEL 9): `raw_logs/rhel9_fio_stdout.log`, `raw_logs/rhel9_telemetry.csv`
 * Ubuntu 24.04 LTS: `raw_logs/ubuntu24_fio_stdout.log`, `raw_logs/ubuntu24_telemetry.csv`
 * Debian 12 Bookworm: `raw_logs/debian12_fio_stdout.log`, `raw_logs/debian12_telemetry.csv`
+* Alpine Linux 3.20: `raw_logs/alpine320_fio_stdout.log`, `raw_logs/alpine320_telemetry.csv`
 * FerroOS Server v2.0: `raw_logs/ferro_fio_stdout.log`, `raw_logs/ferro_telemetry.csv`
 """
 

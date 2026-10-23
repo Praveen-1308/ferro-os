@@ -1,0 +1,8 @@
+{
+  "candidate": "debian12",
+  "primary_language": "C / C++ (GNU C Library, systemd, util-linux)",
+  "memory_safety_guarantees": "Manual memory management (malloc/free)",
+  "memory_safety_vulnerabilities_historic": "Subject to spatial & temporal memory safety CVEs (use-after-free, buffer overflows)",
+  "geiger_applicable": false,
+  "verdict": "Legacy C/C++ Userland (Requires ASLR, Canaries, and continuous ASan/Valgrind auditing)"
+}

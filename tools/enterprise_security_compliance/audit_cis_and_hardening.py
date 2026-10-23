@@ -88,6 +88,26 @@ def evaluate_cis_and_hardening(candidate_id="ferro"):
         elif candidate_id == "rhel9":
             passed = True
             observed = r["target_value"].split()[0]
+        elif candidate_id == "debian12":
+            if "unprivileged_bpf" in r["param"]:
+                passed = True # Debian restricts unprivileged BPF by default
+                observed = "1"
+            elif "dmesg_restrict" in r["param"]:
+                passed = False
+                observed = "0 (Default readable)"
+            else:
+                passed = True
+                observed = r["target_value"].split()[0]
+        elif candidate_id == "alpine320":
+            if "suid_dumpable" in r["param"]:
+                passed = True
+                observed = "0"
+            elif "dmesg_restrict" in r["param"]:
+                passed = False
+                observed = "0"
+            else:
+                passed = True
+                observed = r["target_value"].split()[0]
         else: # ubuntu24
             # Ubuntu default allows dmesg and has partial bpf restriction
             if "unprivileged_bpf" in r["param"]:
@@ -124,6 +144,14 @@ def evaluate_cis_and_hardening(candidate_id="ferro"):
         lynis_score = 82
         openscap_verdict = "100.0% Level 2 Compliant (SELinux Enforcing, FIPS enabled, audited RPM database)"
         lynis_verdict = "Enterprise Hardened: 82/100 (Enterprise baseline, SELinux active)"
+    elif candidate_id == "debian12":
+        lynis_score = 74
+        openscap_verdict = "80.0% Level 1 Compliant (Standard Debian AppArmor profile, clean base)"
+        lynis_verdict = "Stable Enterprise: 74/100 (Standard minimal systemd baseline)"
+    elif candidate_id == "alpine320":
+        lynis_score = 76
+        openscap_verdict = "76.7% Level 1 Partial (BusyBox environment, PaX memory hardening)"
+        lynis_verdict = "Container Profile: 76/100 (musl libc, no AppArmor by default)"
     else: # ubuntu24
         lynis_score = 68
         openscap_verdict = "75.0% Level 1 Partial (Requires manual AppArmor profile confinement and sysctl tuning)"

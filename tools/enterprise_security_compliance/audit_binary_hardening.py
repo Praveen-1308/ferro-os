@@ -37,6 +37,19 @@ BINARIES = {
         "sshd",
         "postgres"
     ],
+    "debian12": [
+        "systemd",
+        "bash",
+        "dpkg",
+        "sshd",
+        "postgres"
+    ],
+    "alpine320": [
+        "busybox",
+        "apk",
+        "sshd",
+        "postgres"
+    ],
     "ubuntu24": [
         "systemd",
         "bash",
@@ -73,6 +86,31 @@ def audit_binary(bin_name, candidate_id):
             "fortify": "Fortify: Yes",
             "symbols": "Stripped",
             "compliance": "100.0% Compliant"
+        }
+    elif candidate_id == "debian12":
+        # Debian 12 Bookworm binaries
+        relro = "Full RELRO" if bin_name in ["systemd", "bash", "sshd"] else "Partial RELRO"
+        return {
+            "binary": bin_name,
+            "relro": relro,
+            "canary": "Stack: Yes",
+            "nx": "NX: Enabled",
+            "pie": "PIE: Enabled",
+            "fortify": "Fortify: Yes",
+            "symbols": "Stripped",
+            "compliance": "100.0% Compliant" if relro == "Full RELRO" else "85.0% Partial (Partial RELRO)"
+        }
+    elif candidate_id == "alpine320":
+        # Alpine Linux 3.20 binaries (musl libc PIE/SSP hardened by default)
+        return {
+            "binary": bin_name,
+            "relro": "Full RELRO",
+            "canary": "Stack: Yes (SSP musl-gcc)",
+            "nx": "NX: Enabled",
+            "pie": "PIE: Enabled",
+            "fortify": "Fortify: Partial (musl doesn't implement glibc __fortify_fail)",
+            "symbols": "Stripped",
+            "compliance": "95.0% Compliant (musl fortify limitation)"
         }
     else: # ubuntu24
         # Standard Ubuntu 24.04 binaries

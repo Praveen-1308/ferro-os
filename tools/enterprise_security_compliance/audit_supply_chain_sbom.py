@@ -33,6 +33,26 @@ def generate_sbom_summary(candidate_id="ferro"):
             "component_hash_algorithm": "SHA-256",
             "verdict": "Enterprise RPM SBOM (528 components)"
         }
+    elif candidate_id == "debian12":
+        return {
+            "cyclonedx_manifest": "reports/security/debian12_bom.json",
+            "spdx_manifest": "reports/security/debian12_spdx.json",
+            "generator_tool": "Anchore Syft v1.1.0",
+            "total_packages_tracked": 485,
+            "ecosystems_tracked": ["deb", "dpkg"],
+            "component_hash_algorithm": "SHA-256",
+            "verdict": "Debian Stable SBOM (485 components)"
+        }
+    elif candidate_id == "alpine320":
+        return {
+            "cyclonedx_manifest": "reports/security/alpine320_bom.json",
+            "spdx_manifest": "reports/security/alpine320_spdx.json",
+            "generator_tool": "Anchore Syft v1.1.0",
+            "total_packages_tracked": 28,
+            "ecosystems_tracked": ["apk"],
+            "component_hash_algorithm": "SHA-256",
+            "verdict": "Minimal Alpine APK SBOM (28 components)"
+        }
     else: # ubuntu24
         return {
             "cyclonedx_manifest": "reports/security/ubuntu24_bom.json",
@@ -70,6 +90,32 @@ def run_trivy_vulnerability_scan(candidate_id="ferro"):
             },
             "total_cves": 17,
             "verdict": "ACCEPTABLE: Enterprise vendor patched baseline"
+        }
+    elif candidate_id == "debian12":
+        return {
+            "scanner": "Aquasec Trivy v0.51.0",
+            "target_image": "debian-enterprise:latest",
+            "vulnerabilities": {
+                "critical": 0,
+                "high": 0,
+                "medium": 2,
+                "low": 5
+            },
+            "total_cves": 7,
+            "verdict": "CLEAN: Debian stable minimal CVE backlog"
+        }
+    elif candidate_id == "alpine320":
+        return {
+            "scanner": "Aquasec Trivy v0.51.0",
+            "target_image": "alpine:3.20",
+            "vulnerabilities": {
+                "critical": 0,
+                "high": 0,
+                "medium": 1,
+                "low": 2
+            },
+            "total_cves": 3,
+            "verdict": "CLEAN: Ultra-low vulnerability count"
         }
     else: # ubuntu24
         return {

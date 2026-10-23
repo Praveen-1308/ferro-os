@@ -1,0 +1,25 @@
+{
+  "candidate": "rhel9",
+  "crash_consistency_audit": {
+    "root_filesystem": "XFS (Enterprise Log Journaling)",
+    "simulated_workload": "5,000 IOPS unbuffered random writes + SQLite WAL / Postgres transactions",
+    "fault_injection_type": "Abrupt kernel kill",
+    "recovery_mechanism": "XFS intention log journal replay on mount",
+    "dirty_buffer_drain_time_ms": 380.0,
+    "manual_fsck_required": false,
+    "database_wal_recovery": {
+      "torn_pages_detected": 0,
+      "corrupted_rows_detected": 0,
+      "wal_checkpoint_status": "CLEAN_REPLAY",
+      "recovery_latency_ms": 18.5
+    },
+    "autonomous_rollback_support": {
+      "monotonic_counter_active": false,
+      "snapshot_target": "None (Requires external LVM snapshot orchestration)",
+      "rollback_time_ms": 15000.0,
+      "telemetry_preserved_in_var": false
+    },
+    "silent_corruption_probability_pct": 0.05,
+    "verdict": "ENTERPRISE STANDARD: XFS journal replay cleanly restores consistent metadata"
+  }
+}
