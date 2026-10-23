@@ -1,0 +1,14 @@
+{
+  "os_id": "ferro",
+  "os_name": "FerroOS Server v2.0",
+  "image": "ferro-os-enterprise:latest",
+  "total_requests": 816600,
+  "overall_error_rate_pct": 25.62,
+  "p95_latency_ms": 592.87,
+  "p99_latency_ms": 704.8,
+  "breaking_point_vus": 2800,
+  "death_point_vus": 3450,
+  "fatal_kernel_event": "Physical cgroup memory ceiling hit (6.0 GB buffer limit) & socket buffer depletion",
+  "kernel_dmesg_cause": "cgroup out-of-memory memory.max reached; non-blocking epoll reject",
+  "resurrection_time_s": 0.4
+}

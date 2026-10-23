@@ -1,0 +1,14 @@
+{
+  "os_id": "rhel9",
+  "os_name": "Rocky Linux 9 (RHEL 9 CIS)",
+  "image": "rocky-enterprise:latest",
+  "total_requests": 651359,
+  "overall_error_rate_pct": 25.72,
+  "p95_latency_ms": 718.39,
+  "p99_latency_ms": 847.27,
+  "breaking_point_vus": 1250,
+  "death_point_vus": 2100,
+  "fatal_kernel_event": "glibc ptmalloc3 heap arena lock serialization & CFS runqueue lockup",
+  "kernel_dmesg_cause": "TCP: request_sock_TCP: Possible SYN flooding; connection backlog 16384 exhausted",
+  "resurrection_time_s": 0.4
+}

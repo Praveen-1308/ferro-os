@@ -1,0 +1,14 @@
+{
+  "os_id": "ubuntu24",
+  "os_name": "Ubuntu Server 24.04 LTS",
+  "image": "ubuntu-enterprise:latest",
+  "total_requests": 825250,
+  "overall_error_rate_pct": 25.69,
+  "p95_latency_ms": 522.08,
+  "p99_latency_ms": 653.88,
+  "breaking_point_vus": 1100,
+  "death_point_vus": 1850,
+  "fatal_kernel_event": "dirty page writeback freeze & epoll_wait thread starvation",
+  "kernel_dmesg_cause": "Out of socket memory / blk-mq queue depth saturation",
+  "resurrection_time_s": 0.4
+}

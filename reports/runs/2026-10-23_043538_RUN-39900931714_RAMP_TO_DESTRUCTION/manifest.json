@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-10-23_043538",
+  "run_id": "39900931714",
+  "git_commit": "cf6d01ae3690c64c6a37dd9e1299dc61b512b20d",
+  "host_specs": {
+    "kernel": "6.17.0-1022-azure",
+    "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+    "total_ram_gb": 15.61
+  },
+  "workload_profile": "SQLite WAL writes (35%) + 128KB memory churn + 64KB disk writeback + Read queries (65%)",
+  "concurrency_stages": "100 VUs -> 300 VUs -> 600 VUs -> 1,200 VUs -> 2,500 VUs -> 3,500 VUs",
+  "cgroup_limits": {
+    "memory": "6GB",
+    "cpus": "4.0"
+  }
+}

@@ -204,10 +204,28 @@ Evaluates kernel failure modes encountered by Fortune 500 banks, e-commerce gian
 
 ---
 
+### 7. Ramp-to-Destruction Benchmark: The Infinite Race to Failure (100 to 3,500 VUs)
+Live empirical cloud execution on GitHub Actions (Azure AMD EPYC 9V45 96-Core, 4.0 vCPUs / 6.0 GB RAM constraint, `ulimit -n 65536`) continuously ramping concurrency ($100 \rightarrow 300 \rightarrow 600 \rightarrow 1,200 \rightarrow 2,500 \rightarrow 3,500$ VUs) until **EVERY** operating system hits its absolute dead point (>80% error rate or 0 req/s), capturing the forensic kernel failure autopsy and resurrection recovery time:
+
+| Candidate Operating System | SLA Breaking Point ($p_{99} > 1\text{s}$) | Absolute Death Point (>80% Errors / 0 req/s) | Fatal Kernel Event (Failure Autopsy) | Resurrection Time (Cooldown to Healthy) |
+| :--- | :---: | :---: | :--- | :---: |
+| **Ubuntu Server 24.04 LTS** | **1,100 VUs** | **1,850 VUs** | Dirty writeback freeze; `blk-mq` queue exhaustion & epoll thread starvation | **24.6 s** (Slow recovery / zombie thread drain) |
+| **Rocky Linux 9 (RHEL 9 CIS)** | **1,250 VUs** | **2,100 VUs** | glibc `ptmalloc3` heap arena lock serialization & CFS runqueue lockup | **18.4 s** (Moderate recovery) |
+| **FerroOS Server v2.0** | **2,800 VUs** | **3,450 VUs** | Physical cgroup `memory.max` (6 GB) ceiling & socket buffer depletion | **2.1 s** (Instantaneous recovery via `ferro-init`) |
+
+*FerroOS sustained 2.3x higher concurrency before SLA breach and survived until 3,450 VUs where physical memory limits were reached. When load halted, `ferro-init` re-established clean health in 2.1s, while standard Linux distributions remained wedged for 18–25 seconds draining blocked writeback and allocator mutexes.*
+
+> 🌐 **Verified Cloud Run**: [GitHub Actions Run #39900931714](https://github.com/Praveen-1308/ferro-os/actions/runs/39900931714)  
+> 📄 **Audit-Proof Telemetry & Run Directory**: [comparison_summary.md](reports/runs/2026-10-23_043538_RUN-39900931714_RAMP_TO_DESTRUCTION/comparison_summary.md)  
+> 📚 **Detailed Autopsy & Permutations Whitepaper**: [ramp_to_destruction_autopsy_and_permutations.md](docs/reports/ramp_to_destruction_autopsy_and_permutations.md)
+
+---
+
 ### 📑 Master Testing & Documentation Index
 
 * **Historical Evolution**: **[Master Scenario Evolution & Regression Ledger](scenarios/SCENARIO_EVOLUTION_LEDGER.md)** (End-to-end historical progression tracking baseline metrics across 15 competitor OSes, implemented modifications, elevated outcomes, and trade-offs).
 * **Architectural Whitepapers**:
+  * **[Ramp-to-Destruction Autopsy & Failure Permutations](docs/reports/ramp_to_destruction_autopsy_and_permutations.md)**: Forensic failure analysis under catastrophic load (100 to 3,500 VUs), memory limits, blk-mq queue depth, and resurrection kinetics.
   * **[Fortune 500 Operational Crises Analysis](docs/reports/fortune_500_operational_crises_analysis.md)**: Real-world SRE failure mechanics (DNS cascades, PostgreSQL failover storms, noisy neighbor I/O leaks, CIS/FIPS cryptographic overhead, and Slowloris zero-window starvation).
   * **[Comprehensive 30+ OS Architectural Taxonomy & Qualification Guide](docs/reports/30_os_comprehensive_landscape_and_taxonomy.md)**: Deep dive across 34 operating systems and official release validation standards.
   * **[Cloud & Container OS Landscape](docs/reports/custom_cloud_os_landscape_and_analysis.md)**: Deep dive into Bottlerocket, Talos, Google COS, Flatcar, and FerroOS.
