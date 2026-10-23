@@ -1,0 +1,82 @@
+name: Ramp-to-Destruction Benchmark (The Infinite Race to Hard Failure)
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_vus:
+        description: "Maximum Concurrency Overdrive Ceiling (e.g. 3500)"
+        required: false
+        default: "3500"
+
+jobs:
+  ramp-to-destruction:
+    name: Ramp-to-Destruction Hard Failure & Resurrection Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Tune Host Kernel & Limits
+        run: |
+          sudo prlimit --pid $$ --nofile=1048576:1048576 || true
+          ulimit -n 65536 || true
+          sudo sysctl -w fs.file-max=2097152 || true
+          sudo sysctl -w net.netfilter.nf_conntrack_max=1048576 || true
+          sudo sysctl -w net.core.somaxconn=65535 || true
+          sudo sysctl -w net.ipv4.tcp_max_syn_backlog=65535 || true
+
+      - name: Install Host Tools (k6, zstd, curl)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq zstd curl
+
+          # Install Grafana k6
+          sudo gpg -k || true
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69 || true
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update -qq || true
+          sudo apt-get install -y -qq k6 || sudo snap install k6 || true
+
+      - name: Build & Cache Enterprise Container Images
+        run: |
+          echo "[1/3] Building FerroOS Server container..."
+          docker build -t ferro-os-server:latest -f Dockerfile.server .
+          docker build -t ferro-os-enterprise:latest -f tools/enterprise_qualification/Dockerfile.ferro .
+
+          echo "[2/3] Building Ubuntu 24.04 Enterprise container..."
+          docker build -t ubuntu-enterprise:latest -f tools/enterprise_qualification/Dockerfile.ubuntu .
+
+          echo "[3/3] Building Rocky Linux 9 (RHEL 9) Enterprise container..."
+          docker build -t rocky-enterprise:latest -f tools/enterprise_qualification/Dockerfile.rocky .
+
+      - name: Execute Ramp-to-Destruction Benchmark Pipeline
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          MAX_VUS: ${{ github.event.inputs.max_vus || '3500' }}
+        run: |
+          python3 tools/destruction_test/run_ramp_to_destruction.py
+
+      - name: Publish Death-Point Scorecard to GitHub Step Summary
+        if: always()
+        run: |
+          for f in reports/runs/*_RAMP_TO_DESTRUCTION/comparison_summary.md; do
+            if [ -f "$f" ]; then
+              cat "$f" >> $GITHUB_STEP_SUMMARY
+              break
+            fi
+          done
+
+      - name: Archive Benchmark Telemetry, Dmesg, and Autopsy Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: destruction-run-${{ github.run_id }}
+          path: reports/runs/*_RAMP_TO_DESTRUCTION/
+          retention-days: 90
