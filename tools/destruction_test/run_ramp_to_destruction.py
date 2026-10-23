@@ -419,7 +419,7 @@ def main():
 
 ## 📊 Master Death-Point Comparison Table
 
-| Candidate Operating System | SLA Breaking Point ($p_{99} > 1\text{s}$) | Absolute Death Point (>80% Errors / 0 req/s) | Fatal Kernel Event (Failure Autopsy) | Resurrection Time (Cooldown to Healthy) |
+| Candidate Operating System | SLA Breaking Point ($p_{99} > 1s$) | Absolute Death Point (>80% Errors / 0 req/s) | Fatal Kernel Event (Failure Autopsy) | Resurrection Time (Cooldown to Healthy) |
 | :--- | :---: | :---: | :--- | :---: |
 | **Ubuntu Server 24.04 LTS** | **1,100 VUs** | **1,850 VUs** | Dirty writeback freeze; blk-mq queue exhaustion & epoll thread starvation | **24.6 s** (Slow recovery / thread drain) |
 | **Rocky Linux 9 (RHEL 9 CIS)** | **1,250 VUs** | **2,100 VUs** | glibc `ptmalloc3` heap lock contention & CFS runqueue backlog | **18.4 s** (Moderate recovery) |
