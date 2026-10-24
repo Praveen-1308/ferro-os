@@ -101,3 +101,52 @@ jobs:
           curl -f -s -X POST http://127.0.0.1:9300/posts/1/like > /dev/null
           kill $SRV_PID || true
           echo "✅ 50-50 Normalized Server verified cleanly in CI!"
+
+  pure-rust-os-pipeline:
+    name: Pure-Rust OS Cloud Runtime & Security Standards
+    runs-on: ubuntu-latest
+    needs: rust-check
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile Release Binaries & Pure-Rust cdylib
+        run: |
+          cargo build --release -p ferro-init -p ferro-core -p ferro-pkg -p ferro-io
+          echo "$GITHUB_WORKSPACE/target/release" >> $GITHUB_PATH
+          sudo cp target/release/ferro-core /usr/local/bin/ || true
+          sudo cp target/release/ferro-init /usr/local/sbin/ || true
+          sudo cp target/release/libferro_io.so /usr/lib/libferro_io.so || true
+
+      - name: Run Pure-Rust Execution Principles Suite
+        run: python3 tools/test_rust_os_execution_principles.py
+
+      - name: Run Cloud FHS 3.0 & Sticky-Bit Security Standards
+        run: python3 tools/test_pure_rust_os_standards.py
+
+      - name: Run Comprehensive Vulnerability Audit Suite
+        run: python3 tools/test_vulnerability_audit.py
+
+      - name: Run Theoretical & Empirical Architecture Benchmark
+        run: python3 tools/test_theoretical_architecture_empirical.py
+
+      - name: Build Autonomous 2.9MB Pure-Rust RootFS & Scratch Container Image
+        run: python3 tools/build_pure_rust_os.py
+
+      - name: Verify Container Execution on Cloud Kernel (ferro-os-pure:latest)
+        run: |
+          echo "Testing command execution on cloud runner:"
+          docker run --rm ferro-os-pure:latest /usr/bin/ferro-core whoami
+          docker run --rm ferro-os-pure:latest /usr/bin/ferro-core id
+          docker run --rm ferro-os-pure:latest /usr/bin/ferro-core dhcp --test-synthetic
+          docker run --rm ferro-os-pure:latest /usr/bin/hackbench -g 2 -l 20 -s 64
+          docker run --rm ferro-os-pure:latest /usr/bin/bench-fsync -n 4 -s 128
+          echo "✅ FerroOS pure-Rust OS successfully executed in GitHub Actions cloud environment!"

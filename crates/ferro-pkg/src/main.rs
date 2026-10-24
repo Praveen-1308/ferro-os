@@ -1354,13 +1354,13 @@ mod tests {
     #[test]
     fn test_rpk_game_status() {
         let code = cmd_game(&["status".to_string()]);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_eq!(format!("{:?}", code), format!("{:?}", ExitCode::SUCCESS));
     }
 
     #[test]
     fn test_rpk_game_list() {
         let code = cmd_game(&["list".to_string()]);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_eq!(format!("{:?}", code), format!("{:?}", ExitCode::SUCCESS));
     }
 
     #[test]
