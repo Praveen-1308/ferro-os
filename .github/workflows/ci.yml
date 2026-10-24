@@ -148,6 +148,9 @@ jobs:
       - name: Run Theoretical & Empirical Architecture Benchmark
         run: python3 tools/test_theoretical_architecture_empirical.py
 
+      - name: Verify Python Language Runtime & rpk Package Management
+        run: python3 tools/test_ferro_os_python_runtime.py
+
       - name: Build Autonomous 2.9MB Pure-Rust RootFS & Scratch Container Image
         run: python3 tools/build_pure_rust_os.py
 

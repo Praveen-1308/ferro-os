@@ -2,39 +2,39 @@
   "SCENARIO-014": {
     "success": 500,
     "errors": 0,
-    "conns_sec": 25034.89739505219,
-    "p50_ms": 0.03819799985649297,
-    "p95_ms": 0.05312400026014075,
-    "p99_ms": 0.06834299983893288,
+    "conns_sec": 10194.866315207348,
+    "p50_ms": 0.09754090569913387,
+    "p95_ms": 0.13570813462138176,
+    "p99_ms": 0.18329196609556675,
     "status": "EMPIRICALLY_ANALYZED"
   },
   "SCENARIO-015": {
-    "p50_write_ms": 0.18568500036053592,
-    "p95_write_ms": 0.262542000200483,
-    "max_write_ms": 0.35109899999952177,
-    "fsync_stall_ms": 0.05916999998589745,
-    "throughput_mb_s": 4942.831901121962,
+    "p50_write_ms": 0.09375018998980522,
+    "p95_write_ms": 0.270624877884984,
+    "max_write_ms": 0.8970419876277447,
+    "fsync_stall_ms": 1.1364580132067204,
+    "throughput_mb_s": 6825.968292480267,
     "status": "EMPIRICALLY_ANALYZED"
   },
   "SCENARIO-016": {
-    "p50_jitter_ms": 0.18196900076873135,
-    "p95_jitter_ms": 0.23058800001308555,
-    "p99_jitter_ms": 0.2360130003944505,
+    "p50_jitter_ms": 1.2677081488072872,
+    "p95_jitter_ms": 1.2730409018695354,
+    "p99_jitter_ms": 1.2867499701678753,
     "status": "EMPIRICALLY_ANALYZED"
   },
   "SCENARIO-017": {
     "redundant_queries": 50,
-    "p50_ms": 3.9825710000513936,
-    "p95_ms": 11.146603999804938,
-    "total_stampede_time_ms": 24.53578699987702,
+    "p50_ms": 11.816791025921702,
+    "p95_ms": 68.76537506468594,
+    "total_stampede_time_ms": 76.6849999781698,
     "status": "EMPIRICALLY_ANALYZED"
   },
   "SCENARIO-018": {
-    "accepted": 6,
-    "dropped": 74,
-    "drop_rate_pct": 92.5,
-    "p50_ms": 0.15698299921496073,
-    "p95_ms": 0.27542099996935576,
+    "accepted": 10,
+    "dropped": 70,
+    "drop_rate_pct": 87.5,
+    "p50_ms": 93.94629206508398,
+    "p95_ms": 94.53720902092755,
     "status": "EMPIRICALLY_ANALYZED"
   },
   "SCENARIO-019": {
@@ -45,9 +45,9 @@
     "status": "EMPIRICALLY_ANALYZED"
   },
   "SCENARIO-020": {
-    "p50_ms": 0.030651999622932635,
-    "p95_ms": 0.034298000173293985,
-    "p99_ms": 0.07802999971318059,
+    "p50_ms": 0.04612491466104984,
+    "p95_ms": 0.048666028305888176,
+    "p99_ms": 0.05795806646347046,
     "status": "EMPIRICALLY_ANALYZED"
   },
   "SCENARIO-021": {
@@ -66,15 +66,15 @@
     "status": "EMPIRICALLY_ANALYZED"
   },
   "SCENARIO-022": {
-    "total_opened": 120,
+    "total_opened": 124,
     "emfile_hit": true,
     "recovered": true,
     "status": "EMPIRICALLY_ANALYZED"
   },
   "SCENARIO-023": {
-    "bytes_sent": 524288,
-    "stalled": false,
-    "stall_time_ms": 0.5225140002949047,
+    "bytes_sent": 319020,
+    "stalled": true,
+    "stall_time_ms": 0.06508408114314079,
     "status": "EMPIRICALLY_ANALYZED"
   }
 }

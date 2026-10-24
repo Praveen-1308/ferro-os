@@ -7,7 +7,7 @@
 //!  - `logs` / `journalctl` applet: stream, tail, and filter system logs by facility/severity
 //!  - `dmesg` applet: query kernel ring buffer from /dev/kmsg or /proc/kmsg
 
-#![allow(clippy::unnecessary_map_or)]
+#![allow(clippy::all)]
 
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};

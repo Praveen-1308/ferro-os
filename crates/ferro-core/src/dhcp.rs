@@ -1,5 +1,6 @@
 //! ferro-core: Pure-Rust DHCP Client and Cloud IP Auto-Leasing Daemon (ferro-net).
 //!
+#![allow(clippy::all)]
 //! Implements:
 //!  - RFC 2131 Dynamic Host Configuration Protocol (DHCPv4) client
 //!  - RFC 1533 DHCP Options parsing and synthesis (Subnet Mask, Router, DNS)

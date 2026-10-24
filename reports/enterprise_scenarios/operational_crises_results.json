@@ -2,42 +2,42 @@
   "scenario_028": {
     "scenario_id": "SCENARIO-028-DNS-CASCADE-STALL",
     "standard_udp": {
-      "avg_ms": 0.011,
-      "p99_ms": 0.017,
+      "avg_ms": 0.066,
+      "p99_ms": 0.105,
       "timeouts": 0
     },
     "ferro_cache": {
-      "avg_us": 0.092,
-      "p99_us": 0.19,
-      "speedup": 120.4
+      "avg_us": 0.081,
+      "p99_us": 0.208,
+      "speedup": 818.2
     }
   },
   "scenario_029": {
     "scenario_id": "SCENARIO-029-POSTGRES-FAILOVER-STORM",
     "fork_model": {
-      "total_ms": 19.3,
+      "total_ms": 30.4,
       "drops_pct": 0.0
     },
     "pre_warmed_pool": {
-      "total_ms": 19.1,
+      "total_ms": 40.4,
       "drops_pct": 0.0,
-      "speedup": 1.0
+      "speedup": 0.8
     }
   },
   "scenario_030": {
     "scenario_id": "SCENARIO-030-NOISY-NEIGHBOR-BLKIO",
-    "background_mb_dumped": 2.0,
+    "background_mb_dumped": 5.0,
     "transactional_reads": {
       "p50_ms": 0.001,
-      "p99_ms": 0.003,
-      "max_ms": 0.022
+      "p99_ms": 0.016,
+      "max_ms": 0.024
     }
   },
   "scenario_031": {
     "scenario_id": "SCENARIO-031-CIS-FIPS-AUDITD-OVERHEAD",
-    "unhindered_crypto_bw_mb_s": 1626.9,
-    "hooked_crypto_bw_mb_s": 1554.4,
-    "audit_overhead_pct": 4.7
+    "unhindered_crypto_bw_mb_s": 1551.3,
+    "hooked_crypto_bw_mb_s": 1522.2,
+    "audit_overhead_pct": 1.9
   },
   "scenario_032": {
     "scenario_id": "SCENARIO-032-TCP-ZERO-WINDOW-SLOWLORIS",
@@ -45,8 +45,8 @@
     "healthy_clients": {
       "completed": 50,
       "drops_pct": 0.0,
-      "p50_ms": 0.584,
-      "p99_ms": 1.318
+      "p50_ms": 1.063,
+      "p99_ms": 2.027
     }
   }
 }

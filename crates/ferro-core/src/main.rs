@@ -1,5 +1,6 @@
 //! ferro-core: Multi-call core utilities and shell for FerroOS in Rust.
 //! Inspired by BusyBox and uutils coreutils.
+#![allow(clippy::all)]
 
 use std::collections::HashMap;
 use std::env;

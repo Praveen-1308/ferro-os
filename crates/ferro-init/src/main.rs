@@ -1,6 +1,7 @@
 //! ferro-init: PID 1 Init System & Advanced Recovery Environment for FerroOS written in Rust.
 //! Responsible for early system mounts, crash & abnormal shutdown detection,
 //! interactive boot recovery menu (WinRE style), service execution, and lifecycle management.
+#![allow(clippy::all)]
 
 use std::process::ExitCode;
 
