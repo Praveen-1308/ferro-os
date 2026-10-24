@@ -1,0 +1,94 @@
+{
+  "timestamp": "2026-10-24T06:50:38Z",
+  "scenarios": {
+    "SCENARIO-014": {
+      "baseline": {
+        "conns_sec": 29245.0,
+        "p50_ms": 0.033,
+        "p99_ms": 0.048
+      },
+      "ferro_elevated": {
+        "conns_sec": 24594.2,
+        "p50_ms": 0.04,
+        "p99_ms": 0.057
+      },
+      "speedup": 0.84
+    },
+    "SCENARIO-015": {
+      "baseline": {
+        "fsync_stall_ms": 23.06,
+        "throughput_mb_s": 1863.6
+      },
+      "ferro_elevated": {
+        "fsync_stall_ms": 0.46,
+        "throughput_mb_s": 1316.6
+      }
+    },
+    "SCENARIO-016": {
+      "baseline": {
+        "p99_jitter_ms": 0.375
+      },
+      "ferro_elevated": {
+        "p99_jitter_ms": 0.193
+      }
+    },
+    "SCENARIO-017": {
+      "baseline": {
+        "redundant_writes": 50,
+        "elapsed_ms": 2551.2
+      },
+      "ferro_elevated": {
+        "redundant_writes": 1,
+        "elapsed_ms": 15.7
+      }
+    },
+    "SCENARIO-018": {
+      "baseline": {
+        "accepted": 6,
+        "dropped": 74,
+        "drop_rate_pct": 92.5
+      },
+      "ferro_elevated": {
+        "accepted": 80,
+        "dropped": 0,
+        "drop_rate_pct": 0.0
+      }
+    },
+    "SCENARIO-019": {
+      "baseline": {
+        "db_score": 170.9,
+        "worker_score": 136.7,
+        "target": "CRITICAL DATABASE"
+      },
+      "ferro_elevated": {
+        "db_score": 0,
+        "worker_score": 636.7,
+        "target": "ROGUE LEAK WORKER"
+      }
+    },
+    "SCENARIO-021": {
+      "baseline": {
+        "checkpoint_result": [
+          0,
+          7,
+          7
+        ],
+        "time_ms": 6.25
+      },
+      "ferro_elevated": {
+        "checkpoint_result": [
+          0,
+          0,
+          0
+        ],
+        "time_ms": 0.04,
+        "wal_size_after": 0
+      }
+    },
+    "SCENARIO-022": {
+      "emfile_hit": true,
+      "emergency_fd_recovered": true,
+      "restored_limit": 1024
+    }
+  }
+}

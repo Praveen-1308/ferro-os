@@ -9,6 +9,7 @@
 
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
+#include <bpf/bpf_tracing.h>
 
 #define SCX_DSQ_GLOBAL 0
 #define SCX_DSQ_LOCAL 1

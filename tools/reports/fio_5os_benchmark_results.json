@@ -1,0 +1,87 @@
+{
+  "ferro-os-server": {
+    "name": "FerroOS Server (Real)",
+    "sync_fsync": {
+      "iops": 180.7,
+      "bw_mib_s": 0.71,
+      "mean_lat_us": 11.96,
+      "p95_ms": 0.019,
+      "p99_ms": 0.026
+    },
+    "buffered_write": {
+      "iops": 290525.6,
+      "bw_mib_s": 1134.87,
+      "mean_lat_us": 1.78,
+      "p95_ms": 0.003,
+      "p99_ms": 0.007
+    }
+  },
+  "alpine-3-20": {
+    "name": "Alpine Linux 3.20",
+    "sync_fsync": {
+      "iops": 182.7,
+      "bw_mib_s": 0.71,
+      "mean_lat_us": 12.15,
+      "p95_ms": 0.019,
+      "p99_ms": 0.028
+    },
+    "buffered_write": {
+      "iops": 294654.3,
+      "bw_mib_s": 1150.99,
+      "mean_lat_us": 1.7,
+      "p95_ms": 0.003,
+      "p99_ms": 0.007
+    }
+  },
+  "ubuntu-24-04": {
+    "name": "Ubuntu 24.04 LTS",
+    "sync_fsync": {
+      "iops": 179.1,
+      "bw_mib_s": 0.7,
+      "mean_lat_us": 11.96,
+      "p95_ms": 0.019,
+      "p99_ms": 0.027
+    },
+    "buffered_write": {
+      "iops": 302763.5,
+      "bw_mib_s": 1182.67,
+      "mean_lat_us": 1.65,
+      "p95_ms": 0.003,
+      "p99_ms": 0.006
+    }
+  },
+  "debian-12": {
+    "name": "Debian 12 Bookworm",
+    "sync_fsync": {
+      "iops": 183.5,
+      "bw_mib_s": 0.72,
+      "mean_lat_us": 12.89,
+      "p95_ms": 0.02,
+      "p99_ms": 0.025
+    },
+    "buffered_write": {
+      "iops": 291184.7,
+      "bw_mib_s": 1137.44,
+      "mean_lat_us": 1.69,
+      "p95_ms": 0.003,
+      "p99_ms": 0.006
+    }
+  },
+  "rocky-linux-9": {
+    "name": "Rocky Linux 9 (RHEL 9)",
+    "sync_fsync": {
+      "iops": 176.6,
+      "bw_mib_s": 0.69,
+      "mean_lat_us": 12.93,
+      "p95_ms": 0.021,
+      "p99_ms": 0.029
+    },
+    "buffered_write": {
+      "iops": 292717.8,
+      "bw_mib_s": 1143.43,
+      "mean_lat_us": 1.68,
+      "p95_ms": 0.003,
+      "p99_ms": 0.006
+    }
+  }
+}

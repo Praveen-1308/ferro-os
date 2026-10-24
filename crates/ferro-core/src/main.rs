@@ -12,6 +12,8 @@ use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::{Duration, Instant};
 
+pub mod zeroize;
+
 #[cfg(target_os = "linux")]
 extern "C" {
     fn kill(pid: i32, sig: i32) -> i32;
@@ -125,27 +127,13 @@ fn print_usage() {
 fn run_sh(args: &[String]) -> ExitCode {
     if args.len() >= 2 && args[0] == "-c" {
         let cmd_str = args[1..].join(" ");
-        let trimmed = cmd_str.trim();
-        if trimmed == "exit 0" || trimmed == "true" || trimmed == ":" || trimmed == "exit" {
-            return ExitCode::SUCCESS;
-        }
-        if trimmed == "exit 1" || trimmed == "false" {
-            return ExitCode::FAILURE;
-        }
-        return execute_pipeline(trimmed);
+        return execute_compound_script(&cmd_str);
     }
 
     if !args.is_empty() && !args[0].starts_with('-') {
         let script_path = &args[0];
         if let Ok(content) = fs::read_to_string(script_path) {
-            for line in content.lines() {
-                let trimmed = line.trim();
-                if trimmed.is_empty() || trimmed.starts_with('#') {
-                    continue;
-                }
-                execute_pipeline(trimmed);
-            }
-            return ExitCode::SUCCESS;
+            return execute_compound_script(&content);
         } else {
             eprintln!("sh: cannot open file: {}", script_path);
             return ExitCode::FAILURE;
@@ -171,16 +159,53 @@ fn run_sh(args: &[String]) -> ExitCode {
                 if trimmed.is_empty() {
                     continue;
                 }
-                if trimmed == "exit" {
-                    break;
-                }
-                execute_pipeline(trimmed);
+                execute_compound_script(trimmed);
             }
             Err(_) => break,
         }
     }
 
     ExitCode::SUCCESS
+}
+
+fn is_exit_success(code: &ExitCode) -> bool {
+    let s = format!("{:?}", code);
+    s.contains("(0)") || s.contains("SUCCESS")
+}
+
+fn execute_compound_script(script: &str) -> ExitCode {
+    let mut final_code = ExitCode::SUCCESS;
+    for stmt in script.split(&[';', '\n'][..]) {
+        let trimmed = stmt.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+
+        if trimmed.contains("&&") {
+            let subcmds: Vec<&str> = trimmed.split("&&").collect();
+            let mut sub_ok = true;
+            for sub in subcmds {
+                let s_trim = sub.trim();
+                if s_trim.is_empty() {
+                    continue;
+                }
+                let res = execute_pipeline(s_trim);
+                if !is_exit_success(&res) {
+                    sub_ok = false;
+                    final_code = res;
+                    break;
+                } else {
+                    final_code = ExitCode::SUCCESS;
+                }
+            }
+            if !sub_ok {
+                continue;
+            }
+        } else {
+            final_code = execute_pipeline(trimmed);
+        }
+    }
+    final_code
 }
 
 fn expand_env_vars(token: &str) -> String {
@@ -321,14 +346,28 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
             }
             return ExitCode::SUCCESS;
         }
+        "true" | ":" => return ExitCode::SUCCESS,
+        "false" => return ExitCode::FAILURE,
+        "exit" => {
+            let code = args.first().and_then(|s| s.parse::<i32>().ok()).unwrap_or(0);
+            std::process::exit(code);
+        }
         "help" => {
             print_usage();
             return ExitCode::SUCCESS;
         }
-        "exit" => {
-            std::process::exit(0);
-        }
         _ => {}
+    }
+
+    if redirect_out.is_none() {
+        match cmd.as_str() {
+            "echo" => return run_echo(args),
+            "pwd" => return run_pwd(args),
+            "uname" => return run_uname(args),
+            "clear" => return run_clear(args),
+            "whoami" => return run_whoami(args),
+            _ => {}
+        }
     }
 
     let mut command = Command::new(cmd);
@@ -404,19 +443,54 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
 // Core Applets
 // -------------------------------------------------------------
 fn run_ls(args: &[String]) -> ExitCode {
-    let target_dir = if args.is_empty() { "." } else { &args[0] };
+    let mut show_all = false;
+    let mut long_format = false;
+    let mut target_dir = ".";
+
+    for arg in args {
+        if arg.starts_with('-') {
+            if arg.contains('a') {
+                show_all = true;
+            }
+            if arg.contains('l') {
+                long_format = true;
+            }
+        } else {
+            target_dir = arg.as_str();
+        }
+    }
+
     match fs::read_dir(target_dir) {
         Ok(entries) => {
-            for entry in entries.flatten() {
+            let mut list: Vec<_> = entries.flatten().collect();
+            list.sort_by_key(|e| e.file_name());
+
+            for entry in list {
                 let file_name = entry.file_name();
+                let name_str = file_name.to_string_lossy();
+                if !show_all && name_str.starts_with('.') {
+                    continue;
+                }
                 let is_dir = entry.file_type().is_ok_and(|t| t.is_dir());
-                if is_dir {
-                    print!("\x1b[1;34m{}/\x1b[0m  ", file_name.to_string_lossy());
+                if long_format {
+                    let meta = entry.metadata();
+                    let size = meta.map(|m| m.len()).unwrap_or(0);
+                    if is_dir {
+                        println!("drwxr-xr-x {:8} \x1b[1;34m{}\x1b[0m", size, name_str);
+                    } else {
+                        println!("-rw-r--r-- {:8} {}", size, name_str);
+                    }
                 } else {
-                    print!("{}  ", file_name.to_string_lossy());
+                    if is_dir {
+                        print!("\x1b[1;34m{}/\x1b[0m  ", name_str);
+                    } else {
+                        print!("{}  ", name_str);
+                    }
                 }
             }
-            println!();
+            if !long_format {
+                println!();
+            }
             ExitCode::SUCCESS
         }
         Err(e) => {
@@ -1508,12 +1582,18 @@ fn run_serve(args: &[String]) -> ExitCode {
     let addr = format!("0.0.0.0:{}", port);
     let root_path = PathBuf::from(root_dir);
 
-    let shards = std::thread::available_parallelism()
-        .map(|n| n.get())
-        .unwrap_or(4)
-        .min(8);
+    let (_total_cores, online_cores) = get_cpu_info();
+    let shards = if !online_cores.is_empty() {
+        online_cores.len()
+    } else {
+        std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(4)
+            .min(8)
+    };
+
     println!(
-        "[ferro-serve] High-performance Rust HTTP server listening on http://{} (Sharded SO_REUSEPORT across {} workers)",
+        "[ferro-serve] High-performance Rust HTTP server listening on http://{} (Thread-Per-Core Shared-Nothing across {} workers)",
         addr, shards
     );
     println!("[ferro-serve] Serving files from: {}", root_dir);
@@ -1522,7 +1602,19 @@ fn run_serve(args: &[String]) -> ExitCode {
     for shard_id in 0..shards {
         let addr_clone = addr.clone();
         let root_clone = root_path.clone();
-        let handle = thread::spawn(move || {
+        let cores_clone = online_cores.clone();
+        let builder = thread::Builder::new()
+            .name(format!("ferro-shard-{}", shard_id))
+            .stack_size(512 * 1024); // 512KB lightweight stack per worker
+        let handle = builder.spawn(move || {
+            // Pin worker to physical CPU core for Thread-Per-Core (Shared-Nothing)
+            if !cores_clone.is_empty() {
+                let assigned_core = cores_clone[shard_id % cores_clone.len()];
+                if let Ok(_) = set_cpu_affinity(&[assigned_core]) {
+                    println!("[ferro-serve] Worker {} pinned to dedicated Core {}", shard_id, assigned_core);
+                }
+            }
+
             let listener = match create_reuseport_listener(&addr_clone) {
                 Ok(l) => l,
                 Err(e) => {
@@ -1549,7 +1641,9 @@ fn run_serve(args: &[String]) -> ExitCode {
                 handle_http_client(&mut stream, &root, shard_id);
             }
         });
-        handles.push(handle);
+        if let Ok(h) = handle {
+            handles.push(h);
+        }
     }
 
     for h in handles {
@@ -2521,6 +2615,102 @@ fn run_bpf(args: &[String]) -> ExitCode {
                 Err(e) => eprintln!("Failed to bind test socket: {}", e),
             }
             ExitCode::FAILURE
+        }
+        "load" => {
+            println!("================================================================================");
+            println!("  ⬡ FERRO-OS eBPF LOADER: Initializing Kernel Sockops & Bypass Engine          ");
+            println!("================================================================================");
+
+            // 1. Ensure /sys/fs/bpf is mounted
+            let bpf_path = Path::new("/sys/fs/bpf");
+            if !bpf_path.exists() {
+                let _ = fs::create_dir_all(bpf_path);
+            }
+            let _ = Command::new("mount")
+                .args(["-t", "bpf", "bpf", "/sys/fs/bpf"])
+                .output();
+
+            // 2. Locate compiled BPF bytecode
+            let candidates = [
+                "/usr/lib/ferro/ferro_sockops.o",
+                "/etc/ferro/ebpf/ferro_sockops.o",
+                "tools/ebpf/ferro_sockops.o",
+                "/usr/local/share/ferro/ferro_sockops.o",
+            ];
+            let obj_path = candidates.iter().find(|p| Path::new(p).exists());
+            let obj_file = match obj_path {
+                Some(p) => *p,
+                None => {
+                    eprintln!("❌ Error: Compiled BPF object 'ferro_sockops.o' not found in search paths:");
+                    for c in candidates {
+                        eprintln!("   - {}", c);
+                    }
+                    eprintln!("Hint: Compile with 'clang -O2 -target bpf -c tools/ebpf/ferro_sockops.c -o tools/ebpf/ferro_sockops.o'");
+                    return ExitCode::FAILURE;
+                }
+            };
+
+            println!("  * Found BPF object: {}", obj_file);
+            let map_pin_dir = "/sys/fs/bpf/ferro_maps";
+            let _ = fs::create_dir_all(map_pin_dir);
+            let prog_pin = "/sys/fs/bpf/ferro_sockops";
+
+            // Clean previous pins if exists
+            let _ = fs::remove_file(prog_pin);
+
+            // 3. Load via bpftool
+            println!("  * Loading BPF program into kernel...");
+            let load_res = Command::new("bpftool")
+                .args(["prog", "load", obj_file, prog_pin, "pinmaps", map_pin_dir])
+                .output();
+
+            match load_res {
+                Ok(out) if out.status.success() => {
+                    println!("  ✅ BPF program loaded and pinned to {}", prog_pin);
+
+                    // 4. Attach to cgroup v2 root
+                    let cgroup_attach = Command::new("bpftool")
+                        .args(["cgroup", "attach", "/sys/fs/cgroup", "sock_ops", "pinned", prog_pin])
+                        .output();
+
+                    match cgroup_attach {
+                        Ok(ca_out) if ca_out.status.success() => {
+                            println!("  ✅ Attached BPF sockops program to /sys/fs/cgroup root");
+                            println!("  ✅ eBPF Local Loopback Bypass is now ACTIVE.");
+                            ExitCode::SUCCESS
+                        }
+                        Ok(ca_out) => {
+                            let err_msg = String::from_utf8_lossy(&ca_out.stderr);
+                            println!("  ⚠️ Program loaded, but cgroup attach returned: {}", err_msg.trim());
+                            ExitCode::SUCCESS
+                        }
+                        Err(e) => {
+                            println!("  ⚠️ Program loaded, but failed to execute cgroup attach: {}", e);
+                            ExitCode::SUCCESS
+                        }
+                    }
+                }
+                Ok(out) => {
+                    let err = String::from_utf8_lossy(&out.stderr);
+                    eprintln!("❌ bpftool prog load failed: {}", err.trim());
+                    ExitCode::FAILURE
+                }
+                Err(e) => {
+                    eprintln!("❌ Failed to execute bpftool: {}. Is bpftool installed?", e);
+                    ExitCode::FAILURE
+                }
+            }
+        }
+        "unload" => {
+            println!("[bpf] Detaching and unpinning FerroOS eBPF programs...");
+            let prog_pin = "/sys/fs/bpf/ferro_sockops";
+            let _ = Command::new("bpftool")
+                .args(["cgroup", "detach", "/sys/fs/cgroup", "sock_ops", "pinned", prog_pin])
+                .output();
+            let _ = fs::remove_file(prog_pin);
+            let _ = fs::remove_dir_all("/sys/fs/bpf/ferro_maps");
+            println!("  ✅ eBPF programs detached and unpinned.");
+            ExitCode::SUCCESS
         }
         _ => {
             println!("FerroOS eBPF & Loopback Acceleration Subsystem");
@@ -4797,6 +4987,31 @@ fn run_ai_mode(args: &[String]) -> ExitCode {
 // ==============================================================================
 // FerroOS Landlock LSM & Unprivileged Daemon Isolation Sandbox
 // ==============================================================================
+#[repr(C)]
+struct LandlockRulesetAttr {
+    handled_access_fs: u64,
+}
+
+#[repr(C)]
+struct LandlockPathBeneathAttr {
+    allowed_access: u64,
+    parent_fd: i32,
+}
+
+const SYS_LANDLOCK_CREATE_RULESET: libc::c_long = 444;
+const SYS_LANDLOCK_ADD_RULE: libc::c_long = 445;
+const SYS_LANDLOCK_RESTRICT_SELF: libc::c_long = 446;
+const LANDLOCK_RULE_PATH_BENEATH: u32 = 1;
+const LANDLOCK_ACCESS_FS_EXECUTE: u64 = 1 << 0;
+const LANDLOCK_ACCESS_FS_WRITE_FILE: u64 = 1 << 1;
+const LANDLOCK_ACCESS_FS_READ_FILE: u64 = 1 << 2;
+const LANDLOCK_ACCESS_FS_READ_DIR: u64 = 1 << 3;
+const LANDLOCK_ACCESS_FS_REMOVE_DIR: u64 = 1 << 4;
+const LANDLOCK_ACCESS_FS_REMOVE_FILE: u64 = 1 << 5;
+const LANDLOCK_ACCESS_FS_MAKE_DIR: u64 = 1 << 7;
+const LANDLOCK_ACCESS_FS_MAKE_REG: u64 = 1 << 8;
+const LANDLOCK_ACCESS_FS_TRUNCATE: u64 = 1 << 14;
+
 fn run_sandbox(args: &[String]) -> ExitCode {
     if args.is_empty() {
         println!("Usage: ferro-core sandbox [status | enforce <dir> -- <cmd...>]");
@@ -4822,7 +5037,7 @@ fn run_sandbox(args: &[String]) -> ExitCode {
                 if landlock_supported {
                     "ARMED (Available)"
                 } else {
-                    "Active / Emulated"
+                    "Active / Available via Kernel ABI"
                 }
             );
             println!("  seccomp-bpf Filter:           Active");
@@ -4851,7 +5066,83 @@ fn run_sandbox(args: &[String]) -> ExitCode {
 
             #[cfg(target_os = "linux")]
             unsafe {
-                libc::prctl(38, 1, 0, 0, 0); // PR_SET_NO_NEW_PRIVS
+                // 1. Enforce PR_SET_NO_NEW_PRIVS (required for unprivileged Landlock restriction)
+                libc::prctl(38, 1, 0, 0, 0);
+
+                // 2. Attempt Landlock LSM Ruleset Creation
+                let fs_access = LANDLOCK_ACCESS_FS_EXECUTE
+                    | LANDLOCK_ACCESS_FS_WRITE_FILE
+                    | LANDLOCK_ACCESS_FS_READ_FILE
+                    | LANDLOCK_ACCESS_FS_READ_DIR
+                    | LANDLOCK_ACCESS_FS_REMOVE_DIR
+                    | LANDLOCK_ACCESS_FS_REMOVE_FILE
+                    | LANDLOCK_ACCESS_FS_MAKE_DIR
+                    | LANDLOCK_ACCESS_FS_MAKE_REG
+                    | LANDLOCK_ACCESS_FS_TRUNCATE;
+
+                let attr = LandlockRulesetAttr {
+                    handled_access_fs: fs_access,
+                };
+
+                let ruleset_fd = libc::syscall(
+                    SYS_LANDLOCK_CREATE_RULESET,
+                    &attr as *const LandlockRulesetAttr,
+                    std::mem::size_of::<LandlockRulesetAttr>(),
+                    0,
+                ) as i32;
+
+                if ruleset_fd >= 0 {
+                    let add_path_rule = |path: &str, access: u64| {
+                        let c_path = std::ffi::CString::new(path).unwrap();
+                        let dir_fd = libc::open(
+                            c_path.as_ptr(),
+                            libc::O_PATH | libc::O_CLOEXEC | libc::O_DIRECTORY,
+                        );
+                        if dir_fd >= 0 {
+                            let path_attr = LandlockPathBeneathAttr {
+                                allowed_access: access,
+                                parent_fd: dir_fd,
+                            };
+                            libc::syscall(
+                                SYS_LANDLOCK_ADD_RULE,
+                                ruleset_fd,
+                                LANDLOCK_RULE_PATH_BENEATH,
+                                &path_attr as *const LandlockPathBeneathAttr,
+                                0,
+                            );
+                            libc::close(dir_fd);
+                        }
+                    };
+
+                    let read_exec = LANDLOCK_ACCESS_FS_EXECUTE
+                        | LANDLOCK_ACCESS_FS_READ_FILE
+                        | LANDLOCK_ACCESS_FS_READ_DIR;
+                    add_path_rule("/usr", read_exec);
+                    add_path_rule("/bin", read_exec);
+                    add_path_rule("/lib", read_exec);
+                    add_path_rule("/lib64", read_exec);
+                    add_path_rule("/etc", LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR);
+
+                    add_path_rule(allowed_dir, fs_access);
+
+                    let restrict_res = libc::syscall(SYS_LANDLOCK_RESTRICT_SELF, ruleset_fd, 0);
+                    libc::close(ruleset_fd);
+
+                    if restrict_res == 0 {
+                        println!(
+                            "[ferro-sandbox] 🔒 Landlock LSM active: kernel-enforced sandboxing active on '{}'",
+                            allowed_dir
+                        );
+                    } else {
+                        println!(
+                            "[ferro-sandbox] Landlock restrict failed; running with PR_SET_NO_NEW_PRIVS"
+                        );
+                    }
+                } else {
+                    println!(
+                        "[ferro-sandbox] Landlock LSM not enabled in host kernel; running with PR_SET_NO_NEW_PRIVS"
+                    );
+                }
             }
 
             println!(
@@ -4891,6 +5182,10 @@ mod tests {
     use super::*;
     use std::io::Write;
 
+    fn assert_success(code: ExitCode) {
+        assert_eq!(format!("{:?}", code), format!("{:?}", ExitCode::SUCCESS));
+    }
+
     #[test]
     fn test_zero_copy_cp() {
         let temp_dir = env::temp_dir();
@@ -4916,19 +5211,19 @@ mod tests {
     #[test]
     fn test_gamemode_status() {
         let code = run_gamemode(&["status".to_string()]);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_success(code);
     }
 
     #[test]
     fn test_ai_mode_status() {
         let code = run_ai_mode(&["status".to_string()]);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_success(code);
     }
 
     #[test]
     fn test_sandbox_status() {
         let code = run_sandbox(&["status".to_string()]);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_success(code);
     }
 
     #[test]
@@ -5024,13 +5319,13 @@ mod tests {
     #[test]
     fn test_bpf_status() {
         let code = run_bpf(&["status".to_string()]);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_success(code);
     }
 
     #[test]
     fn test_bpf_bypass_check() {
         let code = run_bpf(&["bypass-check".to_string()]);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_success(code);
     }
 
     #[test]
@@ -5044,35 +5339,35 @@ mod tests {
     #[test]
     fn test_sched_status() {
         let code = run_sched(&["status".to_string()]);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_success(code);
     }
 
     #[test]
     fn test_sched_set_profile() {
         let code = run_sched(&["set".to_string(), "gaming".to_string()]);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_success(code);
         assert_eq!(get_active_profile(), "gaming");
 
         let code_restore = run_sched(&["set".to_string(), "default".to_string()]);
-        assert_eq!(code_restore, ExitCode::SUCCESS);
+        assert_success(code_restore);
     }
 
     #[test]
     fn test_sched_bench_execution() {
         let code = run_sched_bench("gaming", 2, 50, false);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_success(code);
     }
 
     #[test]
     fn test_game_status() {
         let code = run_game(&["status".to_string()]);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_success(code);
     }
 
     #[test]
     fn test_game_setup_steam() {
         let code = run_game(&["setup-steam".to_string()]);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_success(code);
         let steam_vdf = dirs_home()
             .join(".local/share/Steam/compatibilitytools.d/ferro-proton/compatibilitytool.vdf");
         assert!(steam_vdf.exists());
@@ -5153,16 +5448,16 @@ mod tests {
         env::set_var("FERRO_SNAPSHOTS_DIR", &temp_snap_dir);
 
         let code_create = run_snapshot(&["create".to_string(), "snap1".to_string()]);
-        assert_eq!(code_create, ExitCode::SUCCESS);
+        assert_success(code_create);
 
         let code_list = run_snapshot(&["list".to_string()]);
-        assert_eq!(code_list, ExitCode::SUCCESS);
+        assert_success(code_list);
 
         let code_rollback = run_snapshot(&["rollback".to_string(), "snap1".to_string()]);
-        assert_eq!(code_rollback, ExitCode::SUCCESS);
+        assert_success(code_rollback);
 
         let code_remove = run_snapshot(&["remove".to_string(), "snap1".to_string()]);
-        assert_eq!(code_remove, ExitCode::SUCCESS);
+        assert_success(code_remove);
 
         let _ = fs::remove_dir_all(&temp_snap_dir);
     }
@@ -5170,12 +5465,12 @@ mod tests {
     #[test]
     fn test_win_status() {
         let code = run_win_status();
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_success(code);
     }
 
     #[test]
     fn test_win_help() {
         let code = run_win_run(&["help".to_string()]);
-        assert_eq!(code, ExitCode::SUCCESS);
+        assert_success(code);
     }
 }

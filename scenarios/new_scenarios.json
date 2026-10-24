@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-22T12:19:45.642479+00:00",
+  "last_updated": "2026-10-24T05:54:01.898845+00:00",
   "description": "Master Catalog of Cloud Server Failure Scenarios, Edge Cases, and Performance Bottlenecks for FerroOS Testing and Resilience Evaluation.",
   "workflow_policy": "Strict Analysis-First Protocol: All discovered scenarios are marked [QUEUED_FOR_ANALYSIS]. No OS kernel or userspace code modifications may be made until the scenario is empirically analyzed.",
   "scenarios": [
@@ -174,10 +174,10 @@
       "empirical_telemetry": {
         "success": 500,
         "errors": 0,
-        "conns_sec": 9915.552591789581,
-        "p50_ms": 0.09099999442696571,
-        "p95_ms": 0.15862495638430119,
-        "p99_ms": 0.3233329625800252,
+        "conns_sec": 25034.89739505219,
+        "p50_ms": 0.03819799985649297,
+        "p95_ms": 0.05312400026014075,
+        "p99_ms": 0.06834299983893288,
         "status": "EMPIRICALLY_ANALYZED"
       }
     },
@@ -193,11 +193,11 @@
       "analysis_status": "EMPIRICALLY_ANALYZED",
       "added_at": "2026-10-22T06:48:38.836779Z",
       "empirical_telemetry": {
-        "p50_write_ms": 0.10800000745803118,
-        "p95_write_ms": 0.902624917216599,
-        "max_write_ms": 2.5623750407248735,
-        "fsync_stall_ms": 1.1371669825166464,
-        "throughput_mb_s": 4188.070525828539,
+        "p50_write_ms": 0.18568500036053592,
+        "p95_write_ms": 0.262542000200483,
+        "max_write_ms": 0.35109899999952177,
+        "fsync_stall_ms": 0.05916999998589745,
+        "throughput_mb_s": 4942.831901121962,
         "status": "EMPIRICALLY_ANALYZED"
       }
     },
@@ -213,9 +213,9 @@
       "analysis_status": "EMPIRICALLY_ANALYZED",
       "added_at": "2026-10-22T06:48:38.836784Z",
       "empirical_telemetry": {
-        "p50_jitter_ms": 1.265499982982874,
-        "p95_jitter_ms": 1.2732920097187161,
-        "p99_jitter_ms": 1.297082994133234,
+        "p50_jitter_ms": 0.18196900076873135,
+        "p95_jitter_ms": 0.23058800001308555,
+        "p99_jitter_ms": 0.2360130003944505,
         "status": "EMPIRICALLY_ANALYZED"
       }
     },
@@ -232,9 +232,9 @@
       "added_at": "2026-10-22T06:48:38.836787Z",
       "empirical_telemetry": {
         "redundant_queries": 50,
-        "p50_ms": 8.907833020202816,
-        "p95_ms": 46.44729208666831,
-        "total_stampede_time_ms": 71.19225000496954,
+        "p50_ms": 3.9825710000513936,
+        "p95_ms": 11.146603999804938,
+        "total_stampede_time_ms": 24.53578699987702,
         "status": "EMPIRICALLY_ANALYZED"
       }
     },
@@ -250,11 +250,11 @@
       "analysis_status": "EMPIRICALLY_ANALYZED",
       "added_at": "2026-10-22T06:48:38.836789Z",
       "empirical_telemetry": {
-        "accepted": 10,
-        "dropped": 70,
-        "drop_rate_pct": 87.5,
-        "p50_ms": 62.15720798354596,
-        "p95_ms": 62.902458012104034,
+        "accepted": 6,
+        "dropped": 74,
+        "drop_rate_pct": 92.5,
+        "p50_ms": 0.15698299921496073,
+        "p95_ms": 0.27542099996935576,
         "status": "EMPIRICALLY_ANALYZED"
       }
     },
@@ -289,9 +289,9 @@
       "analysis_status": "EMPIRICALLY_ANALYZED",
       "added_at": "2026-10-22T06:48:38.836795Z",
       "empirical_telemetry": {
-        "p50_ms": 0.04612491466104984,
-        "p95_ms": 0.04666706081479788,
-        "p99_ms": 0.05983305163681507,
+        "p50_ms": 0.030651999622932635,
+        "p95_ms": 0.034298000173293985,
+        "p99_ms": 0.07802999971318059,
         "status": "EMPIRICALLY_ANALYZED"
       }
     },
@@ -334,7 +334,7 @@
       "analysis_status": "EMPIRICALLY_ANALYZED",
       "added_at": "2026-10-22T06:48:38.836799Z",
       "empirical_telemetry": {
-        "total_opened": 124,
+        "total_opened": 120,
         "emfile_hit": true,
         "recovered": true,
         "status": "EMPIRICALLY_ANALYZED"
@@ -352,9 +352,9 @@
       "analysis_status": "EMPIRICALLY_ANALYZED",
       "added_at": "2026-10-22T06:48:38.836802Z",
       "empirical_telemetry": {
-        "bytes_sent": 319020,
-        "stalled": true,
-        "stall_time_ms": 0.06383296567946672,
+        "bytes_sent": 524288,
+        "stalled": false,
+        "stall_time_ms": 0.5225140002949047,
         "status": "EMPIRICALLY_ANALYZED"
       }
     }

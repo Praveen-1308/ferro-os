@@ -19,3 +19,4 @@ tools/stack/active_data/
 tools/observability/*.csv
 tools/datasets/*.db
 tools/stack/flash_data/
+*.o

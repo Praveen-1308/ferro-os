@@ -9,12 +9,14 @@
 # ------------------------------------------------------------------------------
 FROM rust:1.80-slim-bookworm AS builder
 
+RUN apt-get update && apt-get install -y --no-install-recommends liburing-dev gcc libc6-dev && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 
-# Build release binaries with Fat LTO and symbol stripping
-RUN cargo build --release -p ferro-init -p ferro-core -p ferro-pkg
+# Build release binaries with Fat LTO and symbol stripping (Pure-Rust Init, Core, Pkg, and IO)
+RUN cargo build --release -p ferro-init -p ferro-core -p ferro-pkg -p ferro-io
 
 # ------------------------------------------------------------------------------
 # STAGE 2: RUNTIME
@@ -34,11 +36,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libmimalloc2.0 \
     libmimalloc-dev \
+    liburing2 \
+    liburing-dev \
+    bpftool \
+    libbpf-dev \
     python3 \
     python3-psutil \
     sqlite3 \
     procps \
     net-tools \
+    fio \
+    sysbench \
     gcc \
     libc6-dev \
     make \
@@ -46,12 +54,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # 3. Create non-root ferro user & standard directories
 RUN useradd -m -s /bin/bash -u 1000 ferro && \
-    mkdir -p /var/www /var/log/ferro /var/lib/ferro /etc/ferro
+    mkdir -p /var/www /var/log/ferro /var/lib/ferro /etc/ferro /usr/lib/ferro
 
-# 4. Copy custom acceleration shim & compile
-COPY tools/libferro_io.c /tmp/libferro_io.c
-RUN gcc -shared -fPIC -O3 -Wall -Wextra /tmp/libferro_io.c -o /usr/lib/libferro_io.so -ldl -lpthread && \
-    rm /tmp/libferro_io.c
+# 4. Copy pure-Rust acceleration shim from builder stage
+COPY --from=builder /build/target/release/libferro_io.so /usr/lib/libferro_io.so
+
+# 4a. Copy compiled eBPF socket bypass bytecode
+COPY tools/ebpf/ferro_sockops.o /usr/lib/ferro/ferro_sockops.o
 
 # 4b. Optimized Ultra-Throughput SQLite Engine (Lookaside memory pool, DEFAULT_MEMSTATUS=0, DIRECT_OVERFLOW_READ, FTS5)
 COPY tools/sqlite/sqlite-amalgamation-3450100/sqlite3.c /tmp/sqlite3.c
@@ -69,9 +78,14 @@ RUN ARCH=$(uname -m) && \
     fi && \
     rm /tmp/sqlite3.c
 
-# Configure kernel VFS and dentry cache defaults
+# Configure kernel VFS, dentry cache and KSPP/CIS security defaults
+COPY etc/sysctl.d/99-ferro-kspp.conf /etc/sysctl.d/99-ferro-kspp.conf
 RUN mkdir -p /etc/sysctl.d && \
     printf "vm.vfs_cache_pressure = 50\nvm.swappiness = 10\nvm.max_map_count = 1048576\n" > /etc/sysctl.d/99-ferro-performance.conf
+
+ENV MIMALLOC_PURGE_DELAY=0
+ENV MIMALLOC_PAGE_RESET=1
+ENV MIMALLOC_RESERVE_OS_MEMORY=0
 
 # Configure system-wide LD_PRELOAD
 RUN ARCH=$(uname -m) && \

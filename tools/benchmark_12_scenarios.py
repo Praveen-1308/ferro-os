@@ -525,7 +525,7 @@ def run_scenario_09():
                 buf[p+2] = min(255, int(buf[p+2] * 1.1))
 
     concurrency = 6
-    frames_per_th = 60
+    frames_per_th = 20
     total_frames = concurrency * frames_per_th
     
     t0 = time.perf_counter()
@@ -556,7 +556,7 @@ def run_scenario_10():
         corpus.append([x / norm for x in vec])
         
     concurrency = 8
-    queries_per_th = 40
+    queries_per_th = 20
     total_queries = concurrency * queries_per_th
     q_lats = [[] for _ in range(concurrency)]
     

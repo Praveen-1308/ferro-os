@@ -12,12 +12,14 @@
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdint.h>
+#include <string.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <limits.h>
 #if defined(__linux__)
 #include <sys/auxv.h>
 #endif
+#include <liburing.h>
 
 /*
  * libferro_io.so - High-Performance POSIX I/O Interposition Shim v2.2 (Hardened)
@@ -54,6 +56,10 @@ typedef int (*real_epoll_wait_fn)(int epfd, struct epoll_event *events, int maxe
 typedef int (*real_connect_fn)(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 typedef int (*real_accept_fn)(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 typedef int (*real_accept4_fn)(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags);
+typedef ssize_t (*real_pread_fn)(int fd, void *buf, size_t count, off_t offset);
+typedef ssize_t (*real_pwrite_fn)(int fd, const void *buf, size_t count, off_t offset);
+typedef int (*real_fsync_fn)(int fd);
+typedef int (*real_fdatasync_fn)(int fd);
 
 static real_read_fn g_real_read = NULL;
 static real_write_fn g_real_write = NULL;
@@ -67,11 +73,57 @@ static real_epoll_wait_fn g_real_epoll_wait = NULL;
 static real_connect_fn g_real_connect = NULL;
 static real_accept_fn g_real_accept = NULL;
 static real_accept4_fn g_real_accept4 = NULL;
+static real_pread_fn g_real_pread = NULL;
+static real_pwrite_fn g_real_pwrite = NULL;
+static real_fsync_fn g_real_fsync = NULL;
+static real_fdatasync_fn g_real_fdatasync = NULL;
 
 static pthread_mutex_t g_init_mutex = PTHREAD_MUTEX_INITIALIZER;
 static atomic_int g_initialized = 0;
 static pid_t g_ring_pid = 0;
 static int g_is_secure = -1;
+
+#define FERRO_URING_ENTRIES 64
+
+static __thread struct io_uring t_ring;
+static __thread int t_ring_inited = 0;
+static __thread pid_t t_ring_pid = 0;
+
+static inline struct io_uring *get_thread_uring(void) {
+    pid_t pid = getpid();
+    if (__builtin_expect(!t_ring_inited || t_ring_pid != pid, 0)) {
+        if (t_ring_inited && t_ring_pid != pid) {
+            io_uring_queue_exit(&t_ring);
+            t_ring_inited = 0;
+        }
+
+        struct io_uring_params params;
+        memset(&params, 0, sizeof(params));
+        // Attempt kernel SQPOLL (Submission Queue Polling thread) with 2000ms idle timeout
+        params.flags = IORING_SETUP_SQPOLL;
+        params.sq_thread_idle = 2000;
+
+        int ret = io_uring_queue_init_params(FERRO_URING_ENTRIES, &t_ring, &params);
+        if (ret < 0) {
+            // SQPOLL may require elevated privileges; fall back to SINGLE_ISSUER or standard ring
+            memset(&params, 0, sizeof(params));
+#ifdef IORING_SETUP_SINGLE_ISSUER
+            params.flags = IORING_SETUP_SINGLE_ISSUER;
+            ret = io_uring_queue_init_params(FERRO_URING_ENTRIES, &t_ring, &params);
+            if (ret < 0)
+#endif
+            {
+                ret = io_uring_queue_init(FERRO_URING_ENTRIES, &t_ring, 0);
+                if (ret < 0) {
+                    return NULL;
+                }
+            }
+        }
+        t_ring_inited = 1;
+        t_ring_pid = pid;
+    }
+    return &t_ring;
+}
 
 static inline int is_secure_execution(void) {
     if (__builtin_expect(g_is_secure >= 0, 1)) return g_is_secure;
@@ -108,6 +160,12 @@ static void init_real_symbols(void) {
         g_real_connect = (real_connect_fn)dlsym(RTLD_NEXT, "connect");
         g_real_accept = (real_accept_fn)dlsym(RTLD_NEXT, "accept");
         g_real_accept4 = (real_accept4_fn)dlsym(RTLD_NEXT, "accept4");
+        g_real_pread = (real_pread_fn)dlsym(RTLD_NEXT, "pread");
+        if (!g_real_pread) g_real_pread = (real_pread_fn)dlsym(RTLD_NEXT, "pread64");
+        g_real_pwrite = (real_pwrite_fn)dlsym(RTLD_NEXT, "pwrite");
+        if (!g_real_pwrite) g_real_pwrite = (real_pwrite_fn)dlsym(RTLD_NEXT, "pwrite64");
+        g_real_fsync = (real_fsync_fn)dlsym(RTLD_NEXT, "fsync");
+        g_real_fdatasync = (real_fdatasync_fn)dlsym(RTLD_NEXT, "fdatasync");
 
         g_ring_pid = getpid();
         atomic_store(&g_initialized, 1);
@@ -128,6 +186,7 @@ static void atfork_parent(void) {
 static void atfork_child(void) {
     pthread_mutex_init(&g_init_mutex, NULL);
     g_ring_pid = getpid();
+    t_ring_inited = 0;
     for (int i = 0; i < MAX_CACHED_FDS; i++) {
         g_fd_type_cache[i] = 0;
     }
@@ -331,8 +390,31 @@ ssize_t read(int fd, void *buf, size_t count) {
         if (!g_real_read) return syscall(SYS_read, fd, buf, count);
     }
 
-    if (!is_uring_eligible_fd(fd, count)) {
-        return g_real_read(fd, buf, count);
+    if (is_uring_eligible_fd(fd, count)) {
+        struct io_uring *ring = get_thread_uring();
+        if (ring) {
+            struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
+            if (sqe) {
+                // Offset (__u64)-1 instructs Linux io_uring to use and advance current file offset (POSIX read semantics)
+                io_uring_prep_read(sqe, fd, buf, (unsigned int)count, (__u64)-1);
+                int sret = io_uring_submit_and_wait(ring, 1);
+                if (sret >= 0) {
+                    struct io_uring_cqe *cqe = NULL;
+                    int cret = io_uring_peek_cqe(ring, &cqe);
+                    if (cret == 0 && cqe) {
+                        int res = cqe->res;
+                        io_uring_cqe_seen(ring, cqe);
+                        if (res >= 0) {
+                            return (ssize_t)res;
+                        }
+                        if (res != -EINVAL && res != -ENOSYS && res != -EOPNOTSUPP) {
+                            errno = -res;
+                            return -1;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     return g_real_read(fd, buf, count);
@@ -367,11 +449,219 @@ ssize_t write(int fd, const void *buf, size_t count) {
         if (!g_real_write) return syscall(SYS_write, fd, buf, count);
     }
 
-    if (!is_uring_eligible_fd(fd, count)) {
-        return g_real_write(fd, buf, count);
+    if (is_uring_eligible_fd(fd, count)) {
+        struct io_uring *ring = get_thread_uring();
+        if (ring) {
+            struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
+            if (sqe) {
+                // Offset (__u64)-1 instructs Linux io_uring to use and advance current file offset (POSIX write semantics)
+                io_uring_prep_write(sqe, fd, buf, (unsigned int)count, (__u64)-1);
+                int sret = io_uring_submit_and_wait(ring, 1);
+                if (sret >= 0) {
+                    struct io_uring_cqe *cqe = NULL;
+                    int cret = io_uring_peek_cqe(ring, &cqe);
+                    if (cret == 0 && cqe) {
+                        int res = cqe->res;
+                        io_uring_cqe_seen(ring, cqe);
+                        if (res >= 0) {
+                            return (ssize_t)res;
+                        }
+                        if (res != -EINVAL && res != -ENOSYS && res != -EOPNOTSUPP) {
+                            errno = -res;
+                            return -1;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     return g_real_write(fd, buf, count);
+}
+
+/*
+ * Transparent io_uring pread & pread64 Interception
+ */
+ssize_t pread(int fd, void *buf, size_t count, off_t offset) {
+    if (__builtin_expect(count > SSIZE_MAX, 0)) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (is_secure_execution() || __builtin_expect(count < 65536, 1)) {
+        if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+            init_real_symbols();
+            if (!g_real_pread) return syscall(SYS_pread64, fd, buf, count, offset);
+        }
+        return g_real_pread(fd, buf, count, offset);
+    }
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+        init_real_symbols();
+        if (!g_real_pread) return syscall(SYS_pread64, fd, buf, count, offset);
+    }
+    if (is_uring_eligible_fd(fd, count)) {
+        struct io_uring *ring = get_thread_uring();
+        if (ring) {
+            struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
+            if (sqe) {
+                io_uring_prep_read(sqe, fd, buf, (unsigned int)count, (__u64)offset);
+                int sret = io_uring_submit_and_wait(ring, 1);
+                if (sret >= 0) {
+                    struct io_uring_cqe *cqe = NULL;
+                    int cret = io_uring_peek_cqe(ring, &cqe);
+                    if (cret == 0 && cqe) {
+                        int res = cqe->res;
+                        io_uring_cqe_seen(ring, cqe);
+                        if (res >= 0) {
+                            return (ssize_t)res;
+                        }
+                        if (res != -EINVAL && res != -ENOSYS && res != -EOPNOTSUPP) {
+                            errno = -res;
+                            return -1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return g_real_pread(fd, buf, count, offset);
+}
+
+ssize_t pread64(int fd, void *buf, size_t count, off_t offset) {
+    return pread(fd, buf, count, offset);
+}
+
+/*
+ * Transparent io_uring pwrite & pwrite64 Interception
+ */
+ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset) {
+    if (__builtin_expect(count > SSIZE_MAX, 0)) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (is_secure_execution() || __builtin_expect(count < 65536, 1)) {
+        if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+            init_real_symbols();
+            if (!g_real_pwrite) return syscall(SYS_pwrite64, fd, buf, count, offset);
+        }
+        return g_real_pwrite(fd, buf, count, offset);
+    }
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+        init_real_symbols();
+        if (!g_real_pwrite) return syscall(SYS_pwrite64, fd, buf, count, offset);
+    }
+    if (is_uring_eligible_fd(fd, count)) {
+        struct io_uring *ring = get_thread_uring();
+        if (ring) {
+            struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
+            if (sqe) {
+                io_uring_prep_write(sqe, fd, buf, (unsigned int)count, (__u64)offset);
+                int sret = io_uring_submit_and_wait(ring, 1);
+                if (sret >= 0) {
+                    struct io_uring_cqe *cqe = NULL;
+                    int cret = io_uring_peek_cqe(ring, &cqe);
+                    if (cret == 0 && cqe) {
+                        int res = cqe->res;
+                        io_uring_cqe_seen(ring, cqe);
+                        if (res >= 0) {
+                            return (ssize_t)res;
+                        }
+                        if (res != -EINVAL && res != -ENOSYS && res != -EOPNOTSUPP) {
+                            errno = -res;
+                            return -1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return g_real_pwrite(fd, buf, count, offset);
+}
+
+ssize_t pwrite64(int fd, const void *buf, size_t count, off_t offset) {
+    return pwrite(fd, buf, count, offset);
+}
+
+/*
+ * Transparent io_uring fsync & fdatasync Interception
+ */
+int fdatasync(int fd) {
+    if (is_secure_execution()) {
+        if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+            init_real_symbols();
+            if (!g_real_fdatasync) return syscall(SYS_fdatasync, fd);
+        }
+        return g_real_fdatasync(fd);
+    }
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+        init_real_symbols();
+        if (!g_real_fdatasync) return syscall(SYS_fdatasync, fd);
+    }
+    if (is_uring_eligible_fd(fd, 4096)) {
+        struct io_uring *ring = get_thread_uring();
+        if (ring) {
+            struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
+            if (sqe) {
+                io_uring_prep_fsync(sqe, fd, IORING_FSYNC_DATASYNC);
+                int sret = io_uring_submit_and_wait(ring, 1);
+                if (sret >= 0) {
+                    struct io_uring_cqe *cqe = NULL;
+                    int cret = io_uring_peek_cqe(ring, &cqe);
+                    if (cret == 0 && cqe) {
+                        int res = cqe->res;
+                        io_uring_cqe_seen(ring, cqe);
+                        if (res >= 0) {
+                            return 0;
+                        }
+                        if (res != -EINVAL && res != -ENOSYS && res != -EOPNOTSUPP) {
+                            errno = -res;
+                            return -1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return g_real_fdatasync(fd);
+}
+
+int fsync(int fd) {
+    if (is_secure_execution()) {
+        if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+            init_real_symbols();
+            if (!g_real_fsync) return syscall(SYS_fsync, fd);
+        }
+        return g_real_fsync(fd);
+    }
+    if (!atomic_load(&g_initialized) || g_ring_pid != getpid()) {
+        init_real_symbols();
+        if (!g_real_fsync) return syscall(SYS_fsync, fd);
+    }
+    if (is_uring_eligible_fd(fd, 4096)) {
+        struct io_uring *ring = get_thread_uring();
+        if (ring) {
+            struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
+            if (sqe) {
+                io_uring_prep_fsync(sqe, fd, 0);
+                int sret = io_uring_submit_and_wait(ring, 1);
+                if (sret >= 0) {
+                    struct io_uring_cqe *cqe = NULL;
+                    int cret = io_uring_peek_cqe(ring, &cqe);
+                    if (cret == 0 && cqe) {
+                        int res = cqe->res;
+                        io_uring_cqe_seen(ring, cqe);
+                        if (res >= 0) {
+                            return 0;
+                        }
+                        if (res != -EINVAL && res != -ENOSYS && res != -EOPNOTSUPP) {
+                            errno = -res;
+                            return -1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return g_real_fsync(fd);
 }
 
 /*

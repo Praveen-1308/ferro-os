@@ -1,0 +1,312 @@
+{
+  "ferro-os-server": {
+    "metadata": {
+      "id": "ferro-os-server",
+      "name": "FerroOS Server v2.0",
+      "image": "ferro-os-server:latest"
+    },
+    "data": {
+      "duration_s": 1.43,
+      "results": {
+        "scenario_028": {
+          "scenario_id": "SCENARIO-028-DNS-CASCADE-STALL",
+          "standard_udp": {
+            "avg_ms": 0.012,
+            "p99_ms": 0.024,
+            "timeouts": 0
+          },
+          "ferro_cache": {
+            "avg_us": 0.079,
+            "p99_us": 0.162,
+            "speedup": 147.3
+          }
+        },
+        "scenario_029": {
+          "scenario_id": "SCENARIO-029-POSTGRES-FAILOVER-STORM",
+          "fork_model": {
+            "total_ms": 21.1,
+            "drops_pct": 0.0
+          },
+          "pre_warmed_pool": {
+            "total_ms": 20.5,
+            "drops_pct": 0.0,
+            "speedup": 1.0
+          }
+        },
+        "scenario_030": {
+          "scenario_id": "SCENARIO-030-NOISY-NEIGHBOR-BLKIO",
+          "background_mb_dumped": 2.0,
+          "transactional_reads": {
+            "p50_ms": 0.001,
+            "p99_ms": 0.011,
+            "max_ms": 0.021
+          }
+        },
+        "scenario_031": {
+          "scenario_id": "SCENARIO-031-CIS-FIPS-AUDITD-OVERHEAD",
+          "unhindered_crypto_bw_mb_s": 1537.6,
+          "hooked_crypto_bw_mb_s": 1491.3,
+          "audit_overhead_pct": 3.1
+        },
+        "scenario_032": {
+          "scenario_id": "SCENARIO-032-TCP-ZERO-WINDOW-SLOWLORIS",
+          "slow_sockets_count": 20,
+          "healthy_clients": {
+            "completed": 50,
+            "drops_pct": 0.0,
+            "p50_ms": 0.612,
+            "p99_ms": 1.379
+          }
+        }
+      }
+    }
+  },
+  "ubuntu-24-04": {
+    "metadata": {
+      "id": "ubuntu-24-04",
+      "name": "Ubuntu 24.04 LTS",
+      "image": "bench-ubuntu:latest"
+    },
+    "data": {
+      "duration_s": 1.42,
+      "results": {
+        "scenario_028": {
+          "scenario_id": "SCENARIO-028-DNS-CASCADE-STALL",
+          "standard_udp": {
+            "avg_ms": 0.012,
+            "p99_ms": 0.017,
+            "timeouts": 0
+          },
+          "ferro_cache": {
+            "avg_us": 0.077,
+            "p99_us": 0.163,
+            "speedup": 150.0
+          }
+        },
+        "scenario_029": {
+          "scenario_id": "SCENARIO-029-POSTGRES-FAILOVER-STORM",
+          "fork_model": {
+            "total_ms": 17.9,
+            "drops_pct": 0.0
+          },
+          "pre_warmed_pool": {
+            "total_ms": 18.8,
+            "drops_pct": 0.0,
+            "speedup": 1.0
+          }
+        },
+        "scenario_030": {
+          "scenario_id": "SCENARIO-030-NOISY-NEIGHBOR-BLKIO",
+          "background_mb_dumped": 3.0,
+          "transactional_reads": {
+            "p50_ms": 0.001,
+            "p99_ms": 0.007,
+            "max_ms": 0.027
+          }
+        },
+        "scenario_031": {
+          "scenario_id": "SCENARIO-031-CIS-FIPS-AUDITD-OVERHEAD",
+          "unhindered_crypto_bw_mb_s": 1613.6,
+          "hooked_crypto_bw_mb_s": 1568.4,
+          "audit_overhead_pct": 2.9
+        },
+        "scenario_032": {
+          "scenario_id": "SCENARIO-032-TCP-ZERO-WINDOW-SLOWLORIS",
+          "slow_sockets_count": 20,
+          "healthy_clients": {
+            "completed": 50,
+            "drops_pct": 0.0,
+            "p50_ms": 0.57,
+            "p99_ms": 1.045
+          }
+        }
+      }
+    }
+  },
+  "alpine-3-20": {
+    "metadata": {
+      "id": "alpine-3-20",
+      "name": "Alpine Linux 3.20",
+      "image": "bench-alpine:latest"
+    },
+    "data": {
+      "duration_s": 1.41,
+      "results": {
+        "scenario_028": {
+          "scenario_id": "SCENARIO-028-DNS-CASCADE-STALL",
+          "standard_udp": {
+            "avg_ms": 0.013,
+            "p99_ms": 0.026,
+            "timeouts": 0
+          },
+          "ferro_cache": {
+            "avg_us": 0.091,
+            "p99_us": 0.186,
+            "speedup": 146.2
+          }
+        },
+        "scenario_029": {
+          "scenario_id": "SCENARIO-029-POSTGRES-FAILOVER-STORM",
+          "fork_model": {
+            "total_ms": 17.1,
+            "drops_pct": 0.0
+          },
+          "pre_warmed_pool": {
+            "total_ms": 17.5,
+            "drops_pct": 0.0,
+            "speedup": 1.0
+          }
+        },
+        "scenario_030": {
+          "scenario_id": "SCENARIO-030-NOISY-NEIGHBOR-BLKIO",
+          "background_mb_dumped": 3.0,
+          "transactional_reads": {
+            "p50_ms": 0.001,
+            "p99_ms": 0.009,
+            "max_ms": 0.022
+          }
+        },
+        "scenario_031": {
+          "scenario_id": "SCENARIO-031-CIS-FIPS-AUDITD-OVERHEAD",
+          "unhindered_crypto_bw_mb_s": 1625.5,
+          "hooked_crypto_bw_mb_s": 1556.8,
+          "audit_overhead_pct": 4.4
+        },
+        "scenario_032": {
+          "scenario_id": "SCENARIO-032-TCP-ZERO-WINDOW-SLOWLORIS",
+          "slow_sockets_count": 20,
+          "healthy_clients": {
+            "completed": 50,
+            "drops_pct": 0.0,
+            "p50_ms": 0.509,
+            "p99_ms": 1.239
+          }
+        }
+      }
+    }
+  },
+  "rocky-linux-9": {
+    "metadata": {
+      "id": "rocky-linux-9",
+      "name": "Rocky Linux 9 (RHEL 9)",
+      "image": "bench-rocky:latest"
+    },
+    "data": {
+      "duration_s": 1.42,
+      "results": {
+        "scenario_028": {
+          "scenario_id": "SCENARIO-028-DNS-CASCADE-STALL",
+          "standard_udp": {
+            "avg_ms": 0.012,
+            "p99_ms": 0.023,
+            "timeouts": 0
+          },
+          "ferro_cache": {
+            "avg_us": 0.095,
+            "p99_us": 0.195,
+            "speedup": 126.0
+          }
+        },
+        "scenario_029": {
+          "scenario_id": "SCENARIO-029-POSTGRES-FAILOVER-STORM",
+          "fork_model": {
+            "total_ms": 19.4,
+            "drops_pct": 0.0
+          },
+          "pre_warmed_pool": {
+            "total_ms": 20.3,
+            "drops_pct": 0.0,
+            "speedup": 1.0
+          }
+        },
+        "scenario_030": {
+          "scenario_id": "SCENARIO-030-NOISY-NEIGHBOR-BLKIO",
+          "background_mb_dumped": 3.0,
+          "transactional_reads": {
+            "p50_ms": 0.001,
+            "p99_ms": 0.008,
+            "max_ms": 0.017
+          }
+        },
+        "scenario_031": {
+          "scenario_id": "SCENARIO-031-CIS-FIPS-AUDITD-OVERHEAD",
+          "unhindered_crypto_bw_mb_s": 1632.0,
+          "hooked_crypto_bw_mb_s": 1563.5,
+          "audit_overhead_pct": 4.4
+        },
+        "scenario_032": {
+          "scenario_id": "SCENARIO-032-TCP-ZERO-WINDOW-SLOWLORIS",
+          "slow_sockets_count": 20,
+          "healthy_clients": {
+            "completed": 50,
+            "drops_pct": 0.0,
+            "p50_ms": 0.566,
+            "p99_ms": 1.189
+          }
+        }
+      }
+    }
+  },
+  "debian-12": {
+    "metadata": {
+      "id": "debian-12",
+      "name": "Debian 12 Bookworm",
+      "image": "bench-debian:latest"
+    },
+    "data": {
+      "duration_s": 1.41,
+      "results": {
+        "scenario_028": {
+          "scenario_id": "SCENARIO-028-DNS-CASCADE-STALL",
+          "standard_udp": {
+            "avg_ms": 0.011,
+            "p99_ms": 0.017,
+            "timeouts": 0
+          },
+          "ferro_cache": {
+            "avg_us": 0.092,
+            "p99_us": 0.19,
+            "speedup": 120.4
+          }
+        },
+        "scenario_029": {
+          "scenario_id": "SCENARIO-029-POSTGRES-FAILOVER-STORM",
+          "fork_model": {
+            "total_ms": 19.3,
+            "drops_pct": 0.0
+          },
+          "pre_warmed_pool": {
+            "total_ms": 19.1,
+            "drops_pct": 0.0,
+            "speedup": 1.0
+          }
+        },
+        "scenario_030": {
+          "scenario_id": "SCENARIO-030-NOISY-NEIGHBOR-BLKIO",
+          "background_mb_dumped": 2.0,
+          "transactional_reads": {
+            "p50_ms": 0.001,
+            "p99_ms": 0.003,
+            "max_ms": 0.022
+          }
+        },
+        "scenario_031": {
+          "scenario_id": "SCENARIO-031-CIS-FIPS-AUDITD-OVERHEAD",
+          "unhindered_crypto_bw_mb_s": 1626.9,
+          "hooked_crypto_bw_mb_s": 1554.4,
+          "audit_overhead_pct": 4.7
+        },
+        "scenario_032": {
+          "scenario_id": "SCENARIO-032-TCP-ZERO-WINDOW-SLOWLORIS",
+          "slow_sockets_count": 20,
+          "healthy_clients": {
+            "completed": 50,
+            "drops_pct": 0.0,
+            "p50_ms": 0.584,
+            "p99_ms": 1.318
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1305 @@
+{
+  "timestamp": "2026-10-24T09:05:36Z",
+  "host_kernel": "7.0.0-38-generic",
+  "host_safety_ceiling": {
+    "cpus": 4.0,
+    "memory_gb": 7.0
+  },
+  "evaluations": {
+    "ferro-os-server": {
+      "metadata": {
+        "platform": "Linux 7.0.0-38-generic",
+        "nofile_soft": 524288,
+        "nofile_hard": 524288,
+        "runtime_s": 41.9,
+        "target_info": {
+          "id": "ferro-os-server",
+          "name": "FerroOS Server v2.0",
+          "image": "ferro-os-server:latest",
+          "libc": "glibc 2.36 + mimalloc 2.1 + pure-Rust libferro_io",
+          "architecture": "io_uring SQPOLL + eBPF sockops + Landlock LSM + Thread-Per-Core"
+        }
+      },
+      "level_1_normal": {
+        "http_microservice": {
+          "concurrency": 25,
+          "completed": 5000,
+          "qps": 72833.4,
+          "p50_ms": 0.29,
+          "p99_ms": 1.0,
+          "errors": 0,
+          "rss_mb": 22.1
+        },
+        "sqlite_wal_commits": {
+          "tx_count": 1000,
+          "iops": 32429.2,
+          "p50_ms": 0.01,
+          "p99_ms": 0.03
+        },
+        "fio_storage_baseline": {
+          "iops": 172.4,
+          "bw_mib_s": 0.67,
+          "p99_ms": 0.045
+        },
+        "memory_baseline": {
+          "allocated_mb": 256,
+          "throughput_mb_s": 3958.5,
+          "errors": 0
+        },
+        "thread_baseline": {
+          "spawn_latency_us": 42.1
+        }
+      },
+      "level_2_heavy": {
+        "http_microservice_saturated": {
+          "concurrency": 250,
+          "completed": 25000,
+          "qps": 70072.6,
+          "p50_ms": 3.07,
+          "p99_ms": 20.83,
+          "surge_factor": 6.79,
+          "errors": 0,
+          "rss_mb": 47.5
+        },
+        "db_saturated_writes": {
+          "tx_count": 5000,
+          "iops": 19864.2,
+          "p50_ms": 0.01,
+          "p99_ms": 0.04,
+          "churn_mb": 160.2
+        },
+        "fio_io_uring_saturated": {
+          "iops": 375930.0,
+          "bw_mib_s": 1468.48,
+          "p50_us": 49.9,
+          "p99_us": 119.3
+        },
+        "memory_churn_fragmentation": {
+          "allocated_mb": 2048,
+          "churn_rate_mb_s": 3215.8,
+          "peak_rss_mb": 2076.0,
+          "errors": 0
+        },
+        "thread_contention": {
+          "threads": 1000,
+          "lock_ops_sec": 435999.1,
+          "duration_s": 0.115
+        }
+      },
+      "level_3_ultimate": {
+        "concurrency_ramp": {
+          "tiers": [
+            {
+              "tier_concurrency": 500,
+              "completed": 57500,
+              "rps": 13927.7,
+              "p50_ms": 10.7,
+              "p99_ms": 228.86,
+              "errors": 481,
+              "drop_rate_pct": 0.8296,
+              "rss_mb": 1247.0
+            },
+            {
+              "tier_concurrency": 1000,
+              "completed": 56000,
+              "rps": 13553.6,
+              "p50_ms": 20.18,
+              "p99_ms": 291.47,
+              "errors": 999,
+              "drop_rate_pct": 1.7527,
+              "rss_mb": 1247.2
+            },
+            {
+              "tier_concurrency": 2000,
+              "completed": 53200,
+              "rps": 13252.4,
+              "p50_ms": 66.45,
+              "p99_ms": 432.49,
+              "errors": 1072,
+              "drop_rate_pct": 1.9752,
+              "rss_mb": 1247.8
+            },
+            {
+              "tier_concurrency": 4000,
+              "completed": 43200,
+              "rps": 10668.5,
+              "p50_ms": 183.87,
+              "p99_ms": 703.58,
+              "errors": 3072,
+              "drop_rate_pct": 6.639,
+              "rss_mb": 1248.1
+            },
+            {
+              "tier_concurrency": 8000,
+              "completed": 28416,
+              "rps": 6968.2,
+              "p50_ms": 1038.46,
+              "p99_ms": 1282.09,
+              "errors": 6976,
+              "drop_rate_pct": 19.7107,
+              "rss_mb": 1248.9
+            }
+          ],
+          "choking_point": {
+            "concurrency": 500,
+            "reason": "p99 latency surge (228.9ms > 150ms)",
+            "p99_ms": 228.86,
+            "drop_rate_pct": 0.8296
+          },
+          "dead_point": {
+            "concurrency": 500,
+            "reason": "Drop rate (0.830% > 0.05%) with 481 failed connections",
+            "drop_rate_pct": 0.8296,
+            "errors": 481
+          },
+          "recovery": {
+            "drain_time_ms": 500.1,
+            "ping_restored": true,
+            "ping_latency_ms": 0.25,
+            "retained_delta_rss_mb": 2.2
+          }
+        },
+        "storage_io_starvation": {
+          "churn_mb": 275.6,
+          "commit_p50_ms": 0.01,
+          "commit_p99_ms": 1.03,
+          "errors": 0,
+          "choked": false,
+          "dead": false,
+          "recovery_time_ms": 8.8
+        },
+        "memory_edge_riding": {
+          "tiers": [
+            {
+              "target_mb": 1024,
+              "measured_rss_mb": 990.0,
+              "alloc_time_ms": 280.7,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 2048,
+              "measured_rss_mb": 2014.5,
+              "alloc_time_ms": 300.3,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 3072,
+              "measured_rss_mb": 3039.0,
+              "alloc_time_ms": 299.0,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 4096,
+              "measured_rss_mb": 4063.5,
+              "alloc_time_ms": 298.0,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 5120,
+              "measured_rss_mb": 5088.0,
+              "alloc_time_ms": 299.1,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 5632,
+              "measured_rss_mb": 5600.3,
+              "alloc_time_ms": 148.8,
+              "alloc_failed": false
+            }
+          ],
+          "peak_rss_mb": 5600.3,
+          "post_free_rss_mb": 93.6,
+          "reclaimed_mb": 5506.7,
+          "reclamation_pct": 98.3,
+          "choking_mb": 5120,
+          "dead_mb": "Survived 5.5GB",
+          "reclaim_time_ms": 832.4
+        },
+        "thread_scaling": {
+          "tiers": [
+            {
+              "target": 250,
+              "spawned": 250,
+              "errors": 0,
+              "spawn_time_ms": 18.0,
+              "reap_time_ms": 5.9
+            },
+            {
+              "target": 500,
+              "spawned": 500,
+              "errors": 0,
+              "spawn_time_ms": 31.2,
+              "reap_time_ms": 14.0
+            },
+            {
+              "target": 1000,
+              "spawned": 1000,
+              "errors": 0,
+              "spawn_time_ms": 68.6,
+              "reap_time_ms": 43.6
+            },
+            {
+              "target": 2000,
+              "spawned": 2000,
+              "errors": 0,
+              "spawn_time_ms": 167.4,
+              "reap_time_ms": 1061.7
+            },
+            {
+              "target": 3000,
+              "spawned": 3000,
+              "errors": 0,
+              "spawn_time_ms": 304.7,
+              "reap_time_ms": 552.8
+            },
+            {
+              "target": 5000,
+              "spawned": 5000,
+              "errors": 0,
+              "spawn_time_ms": 725.7,
+              "reap_time_ms": 1363.7
+            }
+          ],
+          "choking_threads": 3000,
+          "dead_threads": "Survived 5,000 Threads"
+        }
+      }
+    },
+    "alpine-3-20": {
+      "metadata": {
+        "platform": "Linux 7.0.0-38-generic",
+        "nofile_soft": 524288,
+        "nofile_hard": 524288,
+        "runtime_s": 38.6,
+        "target_info": {
+          "id": "alpine-3-20",
+          "name": "Alpine Linux 3.20",
+          "image": "bench-alpine:latest",
+          "libc": "musl libc 1.2.5",
+          "architecture": "Standard POSIX epoll + musl single-arena"
+        }
+      },
+      "level_1_normal": {
+        "http_microservice": {
+          "concurrency": 25,
+          "completed": 5000,
+          "qps": 89339.3,
+          "p50_ms": 0.24,
+          "p99_ms": 0.58,
+          "errors": 0,
+          "rss_mb": 16.0
+        },
+        "sqlite_wal_commits": {
+          "tx_count": 1000,
+          "iops": 43997.5,
+          "p50_ms": 0.01,
+          "p99_ms": 0.02
+        },
+        "fio_storage_baseline": {
+          "iops": 169.3,
+          "bw_mib_s": 0.66,
+          "p99_ms": 0.049
+        },
+        "memory_baseline": {
+          "allocated_mb": 256,
+          "throughput_mb_s": 3004.5,
+          "errors": 0
+        },
+        "thread_baseline": {
+          "spawn_latency_us": 44.3
+        }
+      },
+      "level_2_heavy": {
+        "http_microservice_saturated": {
+          "concurrency": 250,
+          "completed": 25000,
+          "qps": 82976.2,
+          "p50_ms": 2.57,
+          "p99_ms": 27.33,
+          "surge_factor": 10.61,
+          "errors": 0,
+          "rss_mb": 18.5
+        },
+        "db_saturated_writes": {
+          "tx_count": 5000,
+          "iops": 36568.5,
+          "p50_ms": 0.01,
+          "p99_ms": 0.02,
+          "churn_mb": 87.9
+        },
+        "fio_io_uring_saturated": {
+          "iops": 377486.5,
+          "bw_mib_s": 1474.56,
+          "p50_us": 49.4,
+          "p99_us": 128.5
+        },
+        "memory_churn_fragmentation": {
+          "allocated_mb": 2048,
+          "churn_rate_mb_s": 2958.9,
+          "peak_rss_mb": 18.6,
+          "errors": 0
+        },
+        "thread_contention": {
+          "threads": 1000,
+          "lock_ops_sec": 998924.5,
+          "duration_s": 0.05
+        }
+      },
+      "level_3_ultimate": {
+        "concurrency_ramp": {
+          "tiers": [
+            {
+              "tier_concurrency": 500,
+              "completed": 57500,
+              "rps": 14032.7,
+              "p50_ms": 12.6,
+              "p99_ms": 311.97,
+              "errors": 398,
+              "drop_rate_pct": 0.6874,
+              "rss_mb": 20.3
+            },
+            {
+              "tier_concurrency": 1000,
+              "completed": 56000,
+              "rps": 13584.1,
+              "p50_ms": 20.84,
+              "p99_ms": 288.55,
+              "errors": 989,
+              "drop_rate_pct": 1.7354,
+              "rss_mb": 20.4
+            },
+            {
+              "tier_concurrency": 2000,
+              "completed": 53200,
+              "rps": 13162.1,
+              "p50_ms": 68.32,
+              "p99_ms": 448.33,
+              "errors": 1072,
+              "drop_rate_pct": 1.9752,
+              "rss_mb": 20.6
+            },
+            {
+              "tier_concurrency": 4000,
+              "completed": 44128,
+              "rps": 10720.1,
+              "p50_ms": 184.83,
+              "p99_ms": 711.55,
+              "errors": 3072,
+              "drop_rate_pct": 6.5085,
+              "rss_mb": 21.0
+            },
+            {
+              "tier_concurrency": 8000,
+              "completed": 27392,
+              "rps": 6725.7,
+              "p50_ms": 1014.16,
+              "p99_ms": 1285.13,
+              "errors": 6976,
+              "drop_rate_pct": 20.298,
+              "rss_mb": 22.5
+            }
+          ],
+          "choking_point": {
+            "concurrency": 500,
+            "reason": "p99 latency surge (312.0ms > 150ms)",
+            "p99_ms": 311.97,
+            "drop_rate_pct": 0.6874
+          },
+          "dead_point": {
+            "concurrency": 500,
+            "reason": "Drop rate (0.687% > 0.05%) with 398 failed connections",
+            "drop_rate_pct": 0.6874,
+            "errors": 398
+          },
+          "recovery": {
+            "drain_time_ms": 500.2,
+            "ping_restored": true,
+            "ping_latency_ms": 0.27,
+            "retained_delta_rss_mb": 2.8
+          }
+        },
+        "storage_io_starvation": {
+          "churn_mb": 252.7,
+          "commit_p50_ms": 0.01,
+          "commit_p99_ms": 0.02,
+          "errors": 0,
+          "choked": false,
+          "dead": false,
+          "recovery_time_ms": 13.8
+        },
+        "memory_edge_riding": {
+          "tiers": [
+            {
+              "target_mb": 1024,
+              "measured_rss_mb": 982.6,
+              "alloc_time_ms": 281.4,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 2048,
+              "measured_rss_mb": 2006.6,
+              "alloc_time_ms": 300.0,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 3072,
+              "measured_rss_mb": 3030.7,
+              "alloc_time_ms": 298.9,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 4096,
+              "measured_rss_mb": 4054.8,
+              "alloc_time_ms": 297.1,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 5120,
+              "measured_rss_mb": 5078.8,
+              "alloc_time_ms": 300.1,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 5632,
+              "measured_rss_mb": 5590.8,
+              "alloc_time_ms": 149.1,
+              "alloc_failed": false
+            }
+          ],
+          "peak_rss_mb": 5590.8,
+          "post_free_rss_mb": 86.5,
+          "reclaimed_mb": 5504.3,
+          "reclamation_pct": 98.5,
+          "choking_mb": 5120,
+          "dead_mb": "Survived 5.5GB",
+          "reclaim_time_ms": 664.7
+        },
+        "thread_scaling": {
+          "tiers": [
+            {
+              "target": 250,
+              "spawned": 250,
+              "errors": 0,
+              "spawn_time_ms": 12.5,
+              "reap_time_ms": 5.1
+            },
+            {
+              "target": 500,
+              "spawned": 500,
+              "errors": 0,
+              "spawn_time_ms": 21.7,
+              "reap_time_ms": 8.3
+            },
+            {
+              "target": 1000,
+              "spawned": 1000,
+              "errors": 0,
+              "spawn_time_ms": 49.5,
+              "reap_time_ms": 25.3
+            },
+            {
+              "target": 2000,
+              "spawned": 2000,
+              "errors": 0,
+              "spawn_time_ms": 132.7,
+              "reap_time_ms": 60.8
+            },
+            {
+              "target": 3000,
+              "spawned": 3000,
+              "errors": 0,
+              "spawn_time_ms": 254.5,
+              "reap_time_ms": 98.1
+            },
+            {
+              "target": 5000,
+              "spawned": 5000,
+              "errors": 0,
+              "spawn_time_ms": 574.3,
+              "reap_time_ms": 428.2
+            }
+          ],
+          "choking_threads": 3000,
+          "dead_threads": "Survived 5,000 Threads"
+        }
+      }
+    },
+    "ubuntu-24-04": {
+      "metadata": {
+        "platform": "Linux 7.0.0-38-generic",
+        "nofile_soft": 524288,
+        "nofile_hard": 524288,
+        "runtime_s": 38.2,
+        "target_info": {
+          "id": "ubuntu-24-04",
+          "name": "Ubuntu 24.04 LTS",
+          "image": "bench-ubuntu:latest",
+          "libc": "glibc 2.39 (ptmalloc)",
+          "architecture": "Standard POSIX epoll + multi-arena ptmalloc"
+        }
+      },
+      "level_1_normal": {
+        "http_microservice": {
+          "concurrency": 25,
+          "completed": 5000,
+          "qps": 75651.9,
+          "p50_ms": 0.29,
+          "p99_ms": 0.64,
+          "errors": 0,
+          "rss_mb": 19.3
+        },
+        "sqlite_wal_commits": {
+          "tx_count": 1000,
+          "iops": 43796.0,
+          "p50_ms": 0.01,
+          "p99_ms": 0.02
+        },
+        "fio_storage_baseline": {
+          "iops": 170.5,
+          "bw_mib_s": 0.67,
+          "p99_ms": 0.047
+        },
+        "memory_baseline": {
+          "allocated_mb": 256,
+          "throughput_mb_s": 3016.2,
+          "errors": 0
+        },
+        "thread_baseline": {
+          "spawn_latency_us": 38.1
+        }
+      },
+      "level_2_heavy": {
+        "http_microservice_saturated": {
+          "concurrency": 250,
+          "completed": 25000,
+          "qps": 71407.9,
+          "p50_ms": 3.12,
+          "p99_ms": 18.2,
+          "surge_factor": 5.83,
+          "errors": 0,
+          "rss_mb": 24.1
+        },
+        "db_saturated_writes": {
+          "tx_count": 5000,
+          "iops": 36229.6,
+          "p50_ms": 0.01,
+          "p99_ms": 0.02,
+          "churn_mb": 87.9
+        },
+        "fio_io_uring_saturated": {
+          "iops": 373071.8,
+          "bw_mib_s": 1457.31,
+          "p50_us": 48.9,
+          "p99_us": 150.5
+        },
+        "memory_churn_fragmentation": {
+          "allocated_mb": 2048,
+          "churn_rate_mb_s": 2942.3,
+          "peak_rss_mb": 25.0,
+          "errors": 0
+        },
+        "thread_contention": {
+          "threads": 1000,
+          "lock_ops_sec": 1149475.5,
+          "duration_s": 0.043
+        }
+      },
+      "level_3_ultimate": {
+        "concurrency_ramp": {
+          "tiers": [
+            {
+              "tier_concurrency": 500,
+              "completed": 57500,
+              "rps": 14046.1,
+              "p50_ms": 11.25,
+              "p99_ms": 316.81,
+              "errors": 452,
+              "drop_rate_pct": 0.78,
+              "rss_mb": 26.8
+            },
+            {
+              "tier_concurrency": 1000,
+              "completed": 56000,
+              "rps": 13619.7,
+              "p50_ms": 20.1,
+              "p99_ms": 352.49,
+              "errors": 997,
+              "drop_rate_pct": 1.7492,
+              "rss_mb": 26.9
+            },
+            {
+              "tier_concurrency": 2000,
+              "completed": 53200,
+              "rps": 13195.6,
+              "p50_ms": 66.64,
+              "p99_ms": 446.15,
+              "errors": 1072,
+              "drop_rate_pct": 1.9752,
+              "rss_mb": 27.1
+            },
+            {
+              "tier_concurrency": 4000,
+              "completed": 44128,
+              "rps": 10713.8,
+              "p50_ms": 225.19,
+              "p99_ms": 647.88,
+              "errors": 3072,
+              "drop_rate_pct": 6.5085,
+              "rss_mb": 28.3
+            },
+            {
+              "tier_concurrency": 8000,
+              "completed": 27392,
+              "rps": 6725.2,
+              "p50_ms": 1011.22,
+              "p99_ms": 1274.57,
+              "errors": 6976,
+              "drop_rate_pct": 20.298,
+              "rss_mb": 30.9
+            }
+          ],
+          "choking_point": {
+            "concurrency": 500,
+            "reason": "p99 latency surge (316.8ms > 150ms)",
+            "p99_ms": 316.81,
+            "drop_rate_pct": 0.78
+          },
+          "dead_point": {
+            "concurrency": 500,
+            "reason": "Drop rate (0.780% > 0.05%) with 452 failed connections",
+            "drop_rate_pct": 0.78,
+            "errors": 452
+          },
+          "recovery": {
+            "drain_time_ms": 500.2,
+            "ping_restored": true,
+            "ping_latency_ms": 0.39,
+            "retained_delta_rss_mb": 4.4
+          }
+        },
+        "storage_io_starvation": {
+          "churn_mb": 390.5,
+          "commit_p50_ms": 0.01,
+          "commit_p99_ms": 0.83,
+          "errors": 0,
+          "choked": false,
+          "dead": false,
+          "recovery_time_ms": 26.8
+        },
+        "memory_edge_riding": {
+          "tiers": [
+            {
+              "target_mb": 1024,
+              "measured_rss_mb": 993.0,
+              "alloc_time_ms": 283.0,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 2048,
+              "measured_rss_mb": 2017.1,
+              "alloc_time_ms": 298.3,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 3072,
+              "measured_rss_mb": 3041.2,
+              "alloc_time_ms": 299.4,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 4096,
+              "measured_rss_mb": 4065.2,
+              "alloc_time_ms": 298.6,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 5120,
+              "measured_rss_mb": 5089.3,
+              "alloc_time_ms": 299.5,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 5632,
+              "measured_rss_mb": 5601.3,
+              "alloc_time_ms": 149.1,
+              "alloc_failed": false
+            }
+          ],
+          "peak_rss_mb": 5601.3,
+          "post_free_rss_mb": 97.0,
+          "reclaimed_mb": 5504.3,
+          "reclamation_pct": 98.3,
+          "choking_mb": 5120,
+          "dead_mb": "Survived 5.5GB",
+          "reclaim_time_ms": 669.0
+        },
+        "thread_scaling": {
+          "tiers": [
+            {
+              "target": 250,
+              "spawned": 250,
+              "errors": 0,
+              "spawn_time_ms": 12.3,
+              "reap_time_ms": 4.2
+            },
+            {
+              "target": 500,
+              "spawned": 500,
+              "errors": 0,
+              "spawn_time_ms": 20.6,
+              "reap_time_ms": 9.7
+            },
+            {
+              "target": 1000,
+              "spawned": 1000,
+              "errors": 0,
+              "spawn_time_ms": 46.7,
+              "reap_time_ms": 19.7
+            },
+            {
+              "target": 2000,
+              "spawned": 2000,
+              "errors": 0,
+              "spawn_time_ms": 119.6,
+              "reap_time_ms": 44.8
+            },
+            {
+              "target": 3000,
+              "spawned": 3000,
+              "errors": 0,
+              "spawn_time_ms": 223.0,
+              "reap_time_ms": 86.7
+            },
+            {
+              "target": 5000,
+              "spawned": 5000,
+              "errors": 0,
+              "spawn_time_ms": 531.4,
+              "reap_time_ms": 122.1
+            }
+          ],
+          "choking_threads": 3000,
+          "dead_threads": "Survived 5,000 Threads"
+        }
+      }
+    },
+    "debian-12": {
+      "metadata": {
+        "platform": "Linux 7.0.0-38-generic",
+        "nofile_soft": 524288,
+        "nofile_hard": 524288,
+        "runtime_s": 39.4,
+        "target_info": {
+          "id": "debian-12",
+          "name": "Debian 12 Bookworm",
+          "image": "bench-debian:latest",
+          "libc": "glibc 2.36 (ptmalloc)",
+          "architecture": "Standard POSIX epoll + multi-arena ptmalloc"
+        }
+      },
+      "level_1_normal": {
+        "http_microservice": {
+          "concurrency": 25,
+          "completed": 5000,
+          "qps": 76625.2,
+          "p50_ms": 0.29,
+          "p99_ms": 0.64,
+          "errors": 0,
+          "rss_mb": 18.4
+        },
+        "sqlite_wal_commits": {
+          "tx_count": 1000,
+          "iops": 42877.5,
+          "p50_ms": 0.01,
+          "p99_ms": 0.02
+        },
+        "fio_storage_baseline": {
+          "iops": 171.1,
+          "bw_mib_s": 0.67,
+          "p99_ms": 0.046
+        },
+        "memory_baseline": {
+          "allocated_mb": 256,
+          "throughput_mb_s": 3037.2,
+          "errors": 0
+        },
+        "thread_baseline": {
+          "spawn_latency_us": 37.7
+        }
+      },
+      "level_2_heavy": {
+        "http_microservice_saturated": {
+          "concurrency": 250,
+          "completed": 25000,
+          "qps": 71608.1,
+          "p50_ms": 3.1,
+          "p99_ms": 19.34,
+          "surge_factor": 6.24,
+          "errors": 0,
+          "rss_mb": 23.1
+        },
+        "db_saturated_writes": {
+          "tx_count": 5000,
+          "iops": 37356.1,
+          "p50_ms": 0.01,
+          "p99_ms": 0.03,
+          "churn_mb": 87.9
+        },
+        "fio_io_uring_saturated": {
+          "iops": 372773.6,
+          "bw_mib_s": 1456.15,
+          "p50_us": 49.4,
+          "p99_us": 144.4
+        },
+        "memory_churn_fragmentation": {
+          "allocated_mb": 2048,
+          "churn_rate_mb_s": 2938.7,
+          "peak_rss_mb": 24.0,
+          "errors": 0
+        },
+        "thread_contention": {
+          "threads": 1000,
+          "lock_ops_sec": 1223353.3,
+          "duration_s": 0.041
+        }
+      },
+      "level_3_ultimate": {
+        "concurrency_ramp": {
+          "tiers": [
+            {
+              "tier_concurrency": 500,
+              "completed": 57500,
+              "rps": 14014.0,
+              "p50_ms": 10.75,
+              "p99_ms": 303.31,
+              "errors": 470,
+              "drop_rate_pct": 0.8108,
+              "rss_mb": 25.9
+            },
+            {
+              "tier_concurrency": 1000,
+              "completed": 56000,
+              "rps": 13635.8,
+              "p50_ms": 21.9,
+              "p99_ms": 400.58,
+              "errors": 888,
+              "drop_rate_pct": 1.561,
+              "rss_mb": 26.2
+            },
+            {
+              "tier_concurrency": 2000,
+              "completed": 53200,
+              "rps": 13078.5,
+              "p50_ms": 68.09,
+              "p99_ms": 482.92,
+              "errors": 1072,
+              "drop_rate_pct": 1.9752,
+              "rss_mb": 26.4
+            },
+            {
+              "tier_concurrency": 4000,
+              "completed": 44128,
+              "rps": 10731.4,
+              "p50_ms": 198.03,
+              "p99_ms": 679.43,
+              "errors": 3072,
+              "drop_rate_pct": 6.5085,
+              "rss_mb": 27.4
+            },
+            {
+              "tier_concurrency": 8000,
+              "completed": 27392,
+              "rps": 6732.5,
+              "p50_ms": 1014.43,
+              "p99_ms": 1329.4,
+              "errors": 6976,
+              "drop_rate_pct": 20.298,
+              "rss_mb": 29.8
+            }
+          ],
+          "choking_point": {
+            "concurrency": 500,
+            "reason": "p99 latency surge (303.3ms > 150ms)",
+            "p99_ms": 303.31,
+            "drop_rate_pct": 0.8108
+          },
+          "dead_point": {
+            "concurrency": 500,
+            "reason": "Drop rate (0.811% > 0.05%) with 470 failed connections",
+            "drop_rate_pct": 0.8108,
+            "errors": 470
+          },
+          "recovery": {
+            "drain_time_ms": 500.1,
+            "ping_restored": true,
+            "ping_latency_ms": 0.19,
+            "retained_delta_rss_mb": 4.3
+          }
+        },
+        "storage_io_starvation": {
+          "churn_mb": 252.7,
+          "commit_p50_ms": 0.01,
+          "commit_p99_ms": 0.03,
+          "errors": 0,
+          "choked": false,
+          "dead": false,
+          "recovery_time_ms": 25.9
+        },
+        "memory_edge_riding": {
+          "tiers": [
+            {
+              "target_mb": 1024,
+              "measured_rss_mb": 992.3,
+              "alloc_time_ms": 280.5,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 2048,
+              "measured_rss_mb": 2016.4,
+              "alloc_time_ms": 298.3,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 3072,
+              "measured_rss_mb": 3040.4,
+              "alloc_time_ms": 297.8,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 4096,
+              "measured_rss_mb": 4064.5,
+              "alloc_time_ms": 298.5,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 5120,
+              "measured_rss_mb": 5088.6,
+              "alloc_time_ms": 297.9,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 5632,
+              "measured_rss_mb": 5600.6,
+              "alloc_time_ms": 150.0,
+              "alloc_failed": false
+            }
+          ],
+          "peak_rss_mb": 5600.6,
+          "post_free_rss_mb": 96.2,
+          "reclaimed_mb": 5504.3,
+          "reclamation_pct": 98.3,
+          "choking_mb": 5120,
+          "dead_mb": "Survived 5.5GB",
+          "reclaim_time_ms": 667.8
+        },
+        "thread_scaling": {
+          "tiers": [
+            {
+              "target": 250,
+              "spawned": 250,
+              "errors": 0,
+              "spawn_time_ms": 10.5,
+              "reap_time_ms": 4.2
+            },
+            {
+              "target": 500,
+              "spawned": 500,
+              "errors": 0,
+              "spawn_time_ms": 21.7,
+              "reap_time_ms": 10.8
+            },
+            {
+              "target": 1000,
+              "spawned": 1000,
+              "errors": 0,
+              "spawn_time_ms": 49.6,
+              "reap_time_ms": 30.1
+            },
+            {
+              "target": 2000,
+              "spawned": 2000,
+              "errors": 0,
+              "spawn_time_ms": 128.7,
+              "reap_time_ms": 162.7
+            },
+            {
+              "target": 3000,
+              "spawned": 3000,
+              "errors": 0,
+              "spawn_time_ms": 226.2,
+              "reap_time_ms": 419.2
+            },
+            {
+              "target": 5000,
+              "spawned": 5000,
+              "errors": 0,
+              "spawn_time_ms": 572.0,
+              "reap_time_ms": 843.7
+            }
+          ],
+          "choking_threads": 3000,
+          "dead_threads": "Survived 5,000 Threads"
+        }
+      }
+    },
+    "rocky-linux-9": {
+      "metadata": {
+        "platform": "Linux 7.0.0-38-generic",
+        "nofile_soft": 524288,
+        "nofile_hard": 524288,
+        "runtime_s": 68.0,
+        "target_info": {
+          "id": "rocky-linux-9",
+          "name": "Rocky Linux 9 (RHEL 9)",
+          "image": "bench-rocky:latest",
+          "libc": "glibc 2.34 (ptmalloc)",
+          "architecture": "Standard POSIX epoll + multi-arena ptmalloc"
+        }
+      },
+      "level_1_normal": {
+        "http_microservice": {
+          "concurrency": 25,
+          "completed": 5000,
+          "qps": 82098.0,
+          "p50_ms": 0.27,
+          "p99_ms": 0.58,
+          "errors": 0,
+          "rss_mb": 17.1
+        },
+        "sqlite_wal_commits": {
+          "tx_count": 1000,
+          "iops": 44454.6,
+          "p50_ms": 0.01,
+          "p99_ms": 0.02
+        },
+        "fio_storage_baseline": {
+          "iops": 170.7,
+          "bw_mib_s": 0.67,
+          "p99_ms": 0.046
+        },
+        "memory_baseline": {
+          "allocated_mb": 256,
+          "throughput_mb_s": 2931.8,
+          "errors": 0
+        },
+        "thread_baseline": {
+          "spawn_latency_us": 35.2
+        }
+      },
+      "level_2_heavy": {
+        "http_microservice_saturated": {
+          "concurrency": 250,
+          "completed": 25000,
+          "qps": 76663.1,
+          "p50_ms": 2.86,
+          "p99_ms": 19.48,
+          "surge_factor": 6.81,
+          "errors": 0,
+          "rss_mb": 22.9
+        },
+        "db_saturated_writes": {
+          "tx_count": 5000,
+          "iops": 36063.0,
+          "p50_ms": 0.01,
+          "p99_ms": 0.02,
+          "churn_mb": 87.9
+        },
+        "fio_io_uring_saturated": {
+          "iops": 342966.7,
+          "bw_mib_s": 1339.71,
+          "p50_us": 50.4,
+          "p99_us": 146.4
+        },
+        "memory_churn_fragmentation": {
+          "allocated_mb": 2048,
+          "churn_rate_mb_s": 2947.7,
+          "peak_rss_mb": 23.9,
+          "errors": 0
+        },
+        "thread_contention": {
+          "threads": 1000,
+          "lock_ops_sec": 1317395.8,
+          "duration_s": 0.038
+        }
+      },
+      "level_3_ultimate": {
+        "concurrency_ramp": {
+          "tiers": [
+            {
+              "tier_concurrency": 500,
+              "completed": 57472,
+              "rps": 14224.0,
+              "p50_ms": 11.88,
+              "p99_ms": 161.54,
+              "errors": 28,
+              "drop_rate_pct": 0.0487,
+              "rss_mb": 25.6
+            },
+            {
+              "tier_concurrency": 1000,
+              "completed": 55000,
+              "rps": 13504.5,
+              "p50_ms": 23.34,
+              "p99_ms": 278.15,
+              "errors": 988,
+              "drop_rate_pct": 1.7647,
+              "rss_mb": 25.7
+            },
+            {
+              "tier_concurrency": 2000,
+              "completed": 53200,
+              "rps": 12809.8,
+              "p50_ms": 82.79,
+              "p99_ms": 437.83,
+              "errors": 1072,
+              "drop_rate_pct": 1.9752,
+              "rss_mb": 25.9
+            },
+            {
+              "tier_concurrency": 4000,
+              "completed": 43200,
+              "rps": 10572.3,
+              "p50_ms": 220.97,
+              "p99_ms": 625.45,
+              "errors": 3072,
+              "drop_rate_pct": 6.639,
+              "rss_mb": 26.3
+            },
+            {
+              "tier_concurrency": 8000,
+              "completed": 28416,
+              "rps": 6915.3,
+              "p50_ms": 1022.43,
+              "p99_ms": 1268.41,
+              "errors": 6976,
+              "drop_rate_pct": 19.7107,
+              "rss_mb": 28.9
+            }
+          ],
+          "choking_point": {
+            "concurrency": 500,
+            "reason": "p99 latency surge (161.5ms > 150ms)",
+            "p99_ms": 161.54,
+            "drop_rate_pct": 0.0487
+          },
+          "dead_point": {
+            "concurrency": 1000,
+            "reason": "Drop rate (1.765% > 0.05%) with 988 failed connections",
+            "drop_rate_pct": 1.7647,
+            "errors": 988
+          },
+          "recovery": {
+            "drain_time_ms": 500.7,
+            "ping_restored": true,
+            "ping_latency_ms": 0.4,
+            "retained_delta_rss_mb": 3.4
+          }
+        },
+        "storage_io_starvation": {
+          "churn_mb": 283.3,
+          "commit_p50_ms": 0.01,
+          "commit_p99_ms": 0.04,
+          "errors": 0,
+          "choked": false,
+          "dead": false,
+          "recovery_time_ms": 9.7
+        },
+        "memory_edge_riding": {
+          "tiers": [
+            {
+              "target_mb": 1024,
+              "measured_rss_mb": 991.3,
+              "alloc_time_ms": 279.8,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 2048,
+              "measured_rss_mb": 2015.3,
+              "alloc_time_ms": 295.9,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 3072,
+              "measured_rss_mb": 3039.4,
+              "alloc_time_ms": 296.4,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 4096,
+              "measured_rss_mb": 4063.5,
+              "alloc_time_ms": 295.7,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 5120,
+              "measured_rss_mb": 5087.5,
+              "alloc_time_ms": 295.1,
+              "alloc_failed": false
+            },
+            {
+              "target_mb": 5632,
+              "measured_rss_mb": 5599.5,
+              "alloc_time_ms": 147.4,
+              "alloc_failed": false
+            }
+          ],
+          "peak_rss_mb": 5599.5,
+          "post_free_rss_mb": 95.2,
+          "reclaimed_mb": 5504.3,
+          "reclamation_pct": 98.3,
+          "choking_mb": 5120,
+          "dead_mb": "Survived 5.5GB",
+          "reclaim_time_ms": 670.5
+        },
+        "thread_scaling": {
+          "tiers": [
+            {
+              "target": 250,
+              "spawned": 250,
+              "errors": 0,
+              "spawn_time_ms": 14.3,
+              "reap_time_ms": 3.3
+            },
+            {
+              "target": 500,
+              "spawned": 500,
+              "errors": 0,
+              "spawn_time_ms": 24.9,
+              "reap_time_ms": 7.6
+            },
+            {
+              "target": 1000,
+              "spawned": 1000,
+              "errors": 0,
+              "spawn_time_ms": 59.6,
+              "reap_time_ms": 18.2
+            },
+            {
+              "target": 2000,
+              "spawned": 2000,
+              "errors": 0,
+              "spawn_time_ms": 157.8,
+              "reap_time_ms": 58.5
+            },
+            {
+              "target": 3000,
+              "spawned": 3000,
+              "errors": 0,
+              "spawn_time_ms": 327.8,
+              "reap_time_ms": 130.5
+            },
+            {
+              "target": 5000,
+              "spawned": 5000,
+              "errors": 0,
+              "spawn_time_ms": 833.4,
+              "reap_time_ms": 29479.3
+            }
+          ],
+          "choking_threads": 3000,
+          "dead_threads": "Survived 5,000 Threads"
+        }
+      }
+    }
+  }
+}

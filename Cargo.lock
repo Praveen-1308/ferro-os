@@ -65,6 +65,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ferro-io"
+version = "0.2.0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "ferro-pkg"
 version = "0.1.0"
 dependencies = [

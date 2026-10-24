@@ -1,0 +1,738 @@
+{
+  "timestamp": "2026-10-24T06:33:42Z",
+  "host_kernel": "7.0.0-38-generic",
+  "evaluations": {
+    "ferro-os-server": {
+      "metadata": {
+        "id": "ferro-os-server",
+        "name": "FerroOS Server v2.0",
+        "image": "ferro-os-server:latest",
+        "libc": "glibc 2.36 + mimalloc 2.1 + libferro_io (io_uring)",
+        "kernel_interception": "io_uring SQPOLL + eBPF sockops + Landlock LSM"
+      },
+      "application_scenarios": {
+        "s01_tps_normal": 64656.4,
+        "s01_tps_highend": 9998.8,
+        "s01_p99_ms": 3.25,
+        "s02_msgs_sec": 1633.2,
+        "s02_drain_time_s": 6.12,
+        "s03_pipe_ops_sec": 2487313.9,
+        "s03_fork_cow_p99_ms": 8.06,
+        "s04_api_rps": 873.7,
+        "s04_p99_ms": 4.82,
+        "s05_s3_mibs": 2057.9,
+        "s06_stream_msgs_sec": 6727935.1,
+        "s07_fts_qps": 162.3,
+        "s07_idx_docs_sec": 347661.0,
+        "s08_spawn_500_ms": 233.0,
+        "s08_build_time_s": 0.37,
+        "s09_media_fps": 4.0,
+        "s09_media_time_s": 30.2,
+        "s10_vector_qps": 10.6,
+        "s10_vector_p99_ms": 2050.19,
+        "s11_telemetry_pts_sec": 1887726.3,
+        "s11_compression_ratio": 4.97,
+        "s12_cold_boot_ms": 0.9,
+        "s12_combined_ops_sec": 3717831.6,
+        "s12_survival_pct": 100.0
+      },
+      "fio_storage": {
+        "sync_fsync": {
+          "iops": 169.1,
+          "bw_mib_s": 0.66,
+          "p99_ms": 0.05
+        },
+        "io_uring_depth32": {
+          "iops": 360936.0,
+          "bw_mib_s": 1409.91,
+          "p50_us": 50.9,
+          "p99_us": 126.5
+        }
+      },
+      "memory_and_network": {
+        "sysbench_memory": {
+          "throughput_mib_s": 14349.19,
+          "ops_sec": 3673391.8
+        },
+        "tcp_loopback": {
+          "qps": 103768.9,
+          "p50_us": 9.29,
+          "p99_us": 12.01
+        }
+      },
+      "resilience_scenarios": {
+        "SCENARIO-014": {
+          "baseline": {
+            "conns_sec": 27625.7,
+            "p50_ms": 0.035,
+            "p99_ms": 0.054
+          },
+          "ferro_elevated": {
+            "conns_sec": 26441.6,
+            "p50_ms": 0.037,
+            "p99_ms": 0.048
+          },
+          "speedup": 0.96
+        },
+        "SCENARIO-015": {
+          "baseline": {
+            "fsync_stall_ms": 19.75,
+            "throughput_mb_s": 1980.9
+          },
+          "ferro_elevated": {
+            "fsync_stall_ms": 0.38,
+            "throughput_mb_s": 1319.3
+          }
+        },
+        "SCENARIO-016": {
+          "baseline": {
+            "p99_jitter_ms": 0.266
+          },
+          "ferro_elevated": {
+            "p99_jitter_ms": 0.228
+          }
+        },
+        "SCENARIO-017": {
+          "baseline": {
+            "redundant_writes": 50,
+            "elapsed_ms": 2150.1
+          },
+          "ferro_elevated": {
+            "redundant_writes": 1,
+            "elapsed_ms": 20.9
+          }
+        },
+        "SCENARIO-018": {
+          "baseline": {
+            "accepted": 6,
+            "dropped": 74,
+            "drop_rate_pct": 92.5
+          },
+          "ferro_elevated": {
+            "accepted": 80,
+            "dropped": 0,
+            "drop_rate_pct": 0.0
+          }
+        },
+        "SCENARIO-019": {
+          "baseline": {
+            "db_score": 170.9,
+            "worker_score": 136.7,
+            "target": "CRITICAL DATABASE"
+          },
+          "ferro_elevated": {
+            "db_score": 0,
+            "worker_score": 636.7,
+            "target": "ROGUE LEAK WORKER"
+          }
+        },
+        "SCENARIO-021": {
+          "baseline": {
+            "checkpoint_result": [
+              0,
+              7,
+              7
+            ],
+            "time_ms": 11.15
+          },
+          "ferro_elevated": {
+            "checkpoint_result": [
+              0,
+              0,
+              0
+            ],
+            "time_ms": 0.05,
+            "wal_size_after": 0
+          }
+        },
+        "SCENARIO-022": {
+          "emfile_hit": true,
+          "emergency_fd_recovered": true,
+          "restored_limit": 1024
+        }
+      },
+      "total_runtime_s": 118.41
+    },
+    "alpine-3-20": {
+      "metadata": {
+        "id": "alpine-3-20",
+        "name": "Alpine Linux 3.20",
+        "image": "bench-alpine:latest",
+        "libc": "musl libc 1.2.5",
+        "kernel_interception": "Standard POSIX syscalls"
+      },
+      "application_scenarios": {
+        "s01_tps_normal": 87860.5,
+        "s01_tps_highend": 6989.5,
+        "s01_p99_ms": 1.55,
+        "s02_msgs_sec": 1626.8,
+        "s02_drain_time_s": 6.15,
+        "s03_pipe_ops_sec": 2088193.8,
+        "s03_fork_cow_p99_ms": 7.11,
+        "s04_api_rps": 731.9,
+        "s04_p99_ms": 801.11,
+        "s05_s3_mibs": 2091.7,
+        "s06_stream_msgs_sec": 6690815.8,
+        "s07_fts_qps": 50.6,
+        "s07_idx_docs_sec": 225847.5,
+        "s08_spawn_500_ms": 163.2,
+        "s08_build_time_s": 0.33,
+        "s09_media_fps": 2.8,
+        "s09_media_time_s": 42.26,
+        "s10_vector_qps": 7.1,
+        "s10_vector_p99_ms": 1513.13,
+        "s11_telemetry_pts_sec": 1566594.8,
+        "s11_compression_ratio": 4.97,
+        "s12_cold_boot_ms": 0.8,
+        "s12_combined_ops_sec": 3391824.6,
+        "s12_survival_pct": 100.0
+      },
+      "fio_storage": {
+        "sync_fsync": {
+          "iops": 169.4,
+          "bw_mib_s": 0.66,
+          "p99_ms": 0.053
+        },
+        "io_uring_depth32": {
+          "iops": 359549.3,
+          "bw_mib_s": 1404.49,
+          "p50_us": 51.5,
+          "p99_us": 130.6
+        }
+      },
+      "memory_and_network": {
+        "sysbench_memory": {
+          "throughput_mib_s": 13477.02,
+          "ops_sec": 3450116.0
+        },
+        "tcp_loopback": {
+          "qps": 105675.2,
+          "p50_us": 8.8,
+          "p99_us": 12.98
+        }
+      },
+      "resilience_scenarios": {
+        "SCENARIO-014": {
+          "baseline": {
+            "conns_sec": 28230.8,
+            "p50_ms": 0.034,
+            "p99_ms": 0.054
+          },
+          "ferro_elevated": {
+            "conns_sec": 26365.9,
+            "p50_ms": 0.037,
+            "p99_ms": 0.057
+          },
+          "speedup": 0.93
+        },
+        "SCENARIO-015": {
+          "baseline": {
+            "fsync_stall_ms": 19.83,
+            "throughput_mb_s": 2044.1
+          },
+          "ferro_elevated": {
+            "fsync_stall_ms": 0.39,
+            "throughput_mb_s": 1359.9
+          }
+        },
+        "SCENARIO-016": {
+          "baseline": {
+            "p99_jitter_ms": 0.265
+          },
+          "ferro_elevated": {
+            "p99_jitter_ms": 0.196
+          }
+        },
+        "SCENARIO-017": {
+          "baseline": {
+            "redundant_writes": 50,
+            "elapsed_ms": 2345.6
+          },
+          "ferro_elevated": {
+            "redundant_writes": 1,
+            "elapsed_ms": 16.0
+          }
+        },
+        "SCENARIO-018": {
+          "baseline": {
+            "accepted": 7,
+            "dropped": 73,
+            "drop_rate_pct": 91.2
+          },
+          "ferro_elevated": {
+            "accepted": 80,
+            "dropped": 0,
+            "drop_rate_pct": 0.0
+          }
+        },
+        "SCENARIO-019": {
+          "baseline": {
+            "db_score": 170.9,
+            "worker_score": 136.7,
+            "target": "CRITICAL DATABASE"
+          },
+          "ferro_elevated": {
+            "db_score": 0,
+            "worker_score": 636.7,
+            "target": "ROGUE LEAK WORKER"
+          }
+        },
+        "SCENARIO-021": {
+          "baseline": {
+            "checkpoint_result": [
+              0,
+              7,
+              7
+            ],
+            "time_ms": 5.83
+          },
+          "ferro_elevated": {
+            "checkpoint_result": [
+              0,
+              0,
+              0
+            ],
+            "time_ms": 0.04,
+            "wal_size_after": 0
+          }
+        },
+        "SCENARIO-022": {
+          "emfile_hit": true,
+          "emergency_fd_recovered": true,
+          "restored_limit": 1024
+        }
+      },
+      "total_runtime_s": 207.08
+    },
+    "ubuntu-24-04": {
+      "metadata": {
+        "id": "ubuntu-24-04",
+        "name": "Ubuntu 24.04 LTS",
+        "image": "bench-ubuntu:latest",
+        "libc": "glibc 2.39 (ptmalloc)",
+        "kernel_interception": "Standard POSIX syscalls"
+      },
+      "application_scenarios": {
+        "s01_tps_normal": 64642.7,
+        "s01_tps_highend": 6517.5,
+        "s01_p99_ms": 1.51,
+        "s02_msgs_sec": 1653.4,
+        "s02_drain_time_s": 6.05,
+        "s03_pipe_ops_sec": 2186511.8,
+        "s03_fork_cow_p99_ms": 7.53,
+        "s04_api_rps": 907.0,
+        "s04_p99_ms": 4.33,
+        "s05_s3_mibs": 2141.1,
+        "s06_stream_msgs_sec": 6847790.7,
+        "s07_fts_qps": 61.4,
+        "s07_idx_docs_sec": 305107.0,
+        "s08_spawn_500_ms": 167.6,
+        "s08_build_time_s": 0.41,
+        "s09_media_fps": 3.1,
+        "s09_media_time_s": 38.7,
+        "s10_vector_qps": 9.5,
+        "s10_vector_p99_ms": 2853.43,
+        "s11_telemetry_pts_sec": 1877407.8,
+        "s11_compression_ratio": 4.97,
+        "s12_cold_boot_ms": 0.7,
+        "s12_combined_ops_sec": 3948700.5,
+        "s12_survival_pct": 100.0
+      },
+      "fio_storage": {
+        "sync_fsync": {
+          "iops": 170.0,
+          "bw_mib_s": 0.66,
+          "p99_ms": 0.045
+        },
+        "io_uring_depth32": {
+          "iops": 362393.6,
+          "bw_mib_s": 1415.6,
+          "p50_us": 50.9,
+          "p99_us": 125.4
+        }
+      },
+      "memory_and_network": {
+        "sysbench_memory": {
+          "throughput_mib_s": 14456.65,
+          "ops_sec": 3700901.3
+        },
+        "tcp_loopback": {
+          "qps": 103644.5,
+          "p50_us": 9.43,
+          "p99_us": 12.71
+        }
+      },
+      "resilience_scenarios": {
+        "SCENARIO-014": {
+          "baseline": {
+            "conns_sec": 30264.6,
+            "p50_ms": 0.032,
+            "p99_ms": 0.054
+          },
+          "ferro_elevated": {
+            "conns_sec": 24179.5,
+            "p50_ms": 0.038,
+            "p99_ms": 0.07
+          },
+          "speedup": 0.8
+        },
+        "SCENARIO-015": {
+          "baseline": {
+            "fsync_stall_ms": 20.15,
+            "throughput_mb_s": 2006.5
+          },
+          "ferro_elevated": {
+            "fsync_stall_ms": 0.37,
+            "throughput_mb_s": 1332.5
+          }
+        },
+        "SCENARIO-016": {
+          "baseline": {
+            "p99_jitter_ms": 0.254
+          },
+          "ferro_elevated": {
+            "p99_jitter_ms": 0.291
+          }
+        },
+        "SCENARIO-017": {
+          "baseline": {
+            "redundant_writes": 50,
+            "elapsed_ms": 2244.9
+          },
+          "ferro_elevated": {
+            "redundant_writes": 1,
+            "elapsed_ms": 15.7
+          }
+        },
+        "SCENARIO-018": {
+          "baseline": {
+            "accepted": 7,
+            "dropped": 73,
+            "drop_rate_pct": 91.2
+          },
+          "ferro_elevated": {
+            "accepted": 80,
+            "dropped": 0,
+            "drop_rate_pct": 0.0
+          }
+        },
+        "SCENARIO-019": {
+          "baseline": {
+            "db_score": 170.9,
+            "worker_score": 136.7,
+            "target": "CRITICAL DATABASE"
+          },
+          "ferro_elevated": {
+            "db_score": 0,
+            "worker_score": 636.7,
+            "target": "ROGUE LEAK WORKER"
+          }
+        },
+        "SCENARIO-021": {
+          "baseline": {
+            "checkpoint_result": [
+              0,
+              7,
+              7
+            ],
+            "time_ms": 6.27
+          },
+          "ferro_elevated": {
+            "checkpoint_result": [
+              0,
+              0,
+              0
+            ],
+            "time_ms": 0.06,
+            "wal_size_after": 0
+          }
+        },
+        "SCENARIO-022": {
+          "emfile_hit": true,
+          "emergency_fd_recovered": true,
+          "restored_limit": 1024
+        }
+      },
+      "total_runtime_s": 179.84
+    },
+    "debian-12": {
+      "metadata": {
+        "id": "debian-12",
+        "name": "Debian 12 Bookworm",
+        "image": "bench-debian:latest",
+        "libc": "glibc 2.36 (ptmalloc)",
+        "kernel_interception": "Standard POSIX syscalls"
+      },
+      "application_scenarios": {
+        "error": "Failed (code -1): TIMEOUT"
+      },
+      "fio_storage": {
+        "sync_fsync": {
+          "iops": 176.8,
+          "bw_mib_s": 0.69,
+          "p99_ms": 0.028
+        },
+        "io_uring_depth32": {
+          "iops": 296852.2,
+          "bw_mib_s": 1159.58,
+          "p50_us": 64.8,
+          "p99_us": 140.3
+        }
+      },
+      "memory_and_network": {
+        "sysbench_memory": {
+          "throughput_mib_s": 13531.54,
+          "ops_sec": 3464075.4
+        },
+        "tcp_loopback": {
+          "qps": 102015.8,
+          "p50_us": 9.36,
+          "p99_us": 13.03
+        }
+      },
+      "resilience_scenarios": {
+        "SCENARIO-014": {
+          "baseline": {
+            "conns_sec": 27252.0,
+            "p50_ms": 0.034,
+            "p99_ms": 0.066
+          },
+          "ferro_elevated": {
+            "conns_sec": 24837.8,
+            "p50_ms": 0.039,
+            "p99_ms": 0.064
+          },
+          "speedup": 0.91
+        },
+        "SCENARIO-015": {
+          "baseline": {
+            "fsync_stall_ms": 19.82,
+            "throughput_mb_s": 1960.4
+          },
+          "ferro_elevated": {
+            "fsync_stall_ms": 0.36,
+            "throughput_mb_s": 1267.7
+          }
+        },
+        "SCENARIO-016": {
+          "baseline": {
+            "p99_jitter_ms": 0.146
+          },
+          "ferro_elevated": {
+            "p99_jitter_ms": 0.172
+          }
+        },
+        "SCENARIO-017": {
+          "baseline": {
+            "redundant_writes": 50,
+            "elapsed_ms": 2344.3
+          },
+          "ferro_elevated": {
+            "redundant_writes": 1,
+            "elapsed_ms": 15.8
+          }
+        },
+        "SCENARIO-018": {
+          "baseline": {
+            "accepted": 6,
+            "dropped": 74,
+            "drop_rate_pct": 92.5
+          },
+          "ferro_elevated": {
+            "accepted": 80,
+            "dropped": 0,
+            "drop_rate_pct": 0.0
+          }
+        },
+        "SCENARIO-019": {
+          "baseline": {
+            "db_score": 170.9,
+            "worker_score": 136.7,
+            "target": "CRITICAL DATABASE"
+          },
+          "ferro_elevated": {
+            "db_score": 0,
+            "worker_score": 636.7,
+            "target": "ROGUE LEAK WORKER"
+          }
+        },
+        "SCENARIO-021": {
+          "baseline": {
+            "checkpoint_result": [
+              0,
+              7,
+              7
+            ],
+            "time_ms": 6.03
+          },
+          "ferro_elevated": {
+            "checkpoint_result": [
+              0,
+              0,
+              0
+            ],
+            "time_ms": 0.04,
+            "wal_size_after": 0
+          }
+        },
+        "SCENARIO-022": {
+          "emfile_hit": true,
+          "emergency_fd_recovered": true,
+          "restored_limit": 1024
+        }
+      },
+      "total_runtime_s": 317.89
+    },
+    "rocky-linux-9": {
+      "metadata": {
+        "id": "rocky-linux-9",
+        "name": "Rocky Linux 9 (RHEL 9)",
+        "image": "bench-rocky:latest",
+        "libc": "glibc 2.34 (ptmalloc)",
+        "kernel_interception": "Standard POSIX syscalls"
+      },
+      "application_scenarios": {
+        "s01_tps_normal": 81631.1,
+        "s01_tps_highend": 7450.9,
+        "s01_p99_ms": 5.96,
+        "s02_msgs_sec": 1653.2,
+        "s02_drain_time_s": 6.05,
+        "s03_pipe_ops_sec": 1384949.3,
+        "s03_fork_cow_p99_ms": 11.8,
+        "s04_api_rps": 897.0,
+        "s04_p99_ms": 1003.76,
+        "s05_s3_mibs": 2556.8,
+        "s06_stream_msgs_sec": 6768141.0,
+        "s07_fts_qps": 52.1,
+        "s07_idx_docs_sec": 293810.6,
+        "s08_spawn_500_ms": 432.3,
+        "s08_build_time_s": 0.43,
+        "s09_media_fps": 3.1,
+        "s09_media_time_s": 38.5,
+        "s10_vector_qps": 8.7,
+        "s10_vector_p99_ms": 2927.03,
+        "s11_telemetry_pts_sec": 1633456.2,
+        "s11_compression_ratio": 4.97,
+        "s12_cold_boot_ms": 6.0,
+        "s12_combined_ops_sec": 2735302.6,
+        "s12_survival_pct": 100.0
+      },
+      "fio_storage": {
+        "sync_fsync": {
+          "iops": 171.5,
+          "bw_mib_s": 0.67,
+          "p99_ms": 0.045
+        },
+        "io_uring_depth32": {
+          "iops": 357632.6,
+          "bw_mib_s": 1397.0,
+          "p50_us": 50.4,
+          "p99_us": 148.5
+        }
+      },
+      "memory_and_network": {
+        "sysbench_memory": {
+          "throughput_mib_s": 14413.66,
+          "ops_sec": 3689896.4
+        },
+        "tcp_loopback": {
+          "qps": 100096.9,
+          "p50_us": 9.43,
+          "p99_us": 13.1
+        }
+      },
+      "resilience_scenarios": {
+        "SCENARIO-014": {
+          "baseline": {
+            "conns_sec": 29245.0,
+            "p50_ms": 0.033,
+            "p99_ms": 0.048
+          },
+          "ferro_elevated": {
+            "conns_sec": 24594.2,
+            "p50_ms": 0.04,
+            "p99_ms": 0.057
+          },
+          "speedup": 0.84
+        },
+        "SCENARIO-015": {
+          "baseline": {
+            "fsync_stall_ms": 23.06,
+            "throughput_mb_s": 1863.6
+          },
+          "ferro_elevated": {
+            "fsync_stall_ms": 0.46,
+            "throughput_mb_s": 1316.6
+          }
+        },
+        "SCENARIO-016": {
+          "baseline": {
+            "p99_jitter_ms": 0.375
+          },
+          "ferro_elevated": {
+            "p99_jitter_ms": 0.193
+          }
+        },
+        "SCENARIO-017": {
+          "baseline": {
+            "redundant_writes": 50,
+            "elapsed_ms": 2551.2
+          },
+          "ferro_elevated": {
+            "redundant_writes": 1,
+            "elapsed_ms": 15.7
+          }
+        },
+        "SCENARIO-018": {
+          "baseline": {
+            "accepted": 6,
+            "dropped": 74,
+            "drop_rate_pct": 92.5
+          },
+          "ferro_elevated": {
+            "accepted": 80,
+            "dropped": 0,
+            "drop_rate_pct": 0.0
+          }
+        },
+        "SCENARIO-019": {
+          "baseline": {
+            "db_score": 170.9,
+            "worker_score": 136.7,
+            "target": "CRITICAL DATABASE"
+          },
+          "ferro_elevated": {
+            "db_score": 0,
+            "worker_score": 636.7,
+            "target": "ROGUE LEAK WORKER"
+          }
+        },
+        "SCENARIO-021": {
+          "baseline": {
+            "checkpoint_result": [
+              0,
+              7,
+              7
+            ],
+            "time_ms": 6.25
+          },
+          "ferro_elevated": {
+            "checkpoint_result": [
+              0,
+              0,
+              0
+            ],
+            "time_ms": 0.04,
+            "wal_size_after": 0
+          }
+        },
+        "SCENARIO-022": {
+          "emfile_hit": true,
+          "emergency_fd_recovered": true,
+          "restored_limit": 1024
+        }
+      },
+      "total_runtime_s": 195.94
+    }
+  }
+}

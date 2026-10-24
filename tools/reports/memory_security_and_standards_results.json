@@ -1,0 +1,123 @@
+{
+  "timestamp": "2026-10-24T08:51:17Z",
+  "spec_reference": "docs/MEMORY_SECURITY_AND_STANDARDS.md",
+  "commit": "9e9290b",
+  "evaluations": [
+    {
+      "pillar": "1. Safe Rust Core Userland",
+      "passed": true,
+      "total_files": 8,
+      "total_lines": 10513,
+      "crates": {
+        "ferro-core": {
+          "files": 2,
+          "lines_of_rust": 5597,
+          "unsafe_blocks": 29,
+          "safe_code_pct": 99.48
+        },
+        "ferro-init": {
+          "files": 2,
+          "lines_of_rust": 1246,
+          "unsafe_blocks": 13,
+          "safe_code_pct": 98.96
+        },
+        "ferro-pkg": {
+          "files": 3,
+          "lines_of_rust": 2790,
+          "unsafe_blocks": 0,
+          "safe_code_pct": 100.0
+        },
+        "ferro-io": {
+          "files": 1,
+          "lines_of_rust": 880,
+          "unsafe_blocks": 19,
+          "safe_code_pct": 97.84
+        }
+      }
+    },
+    {
+      "pillar": "2. Transparent Zero-on-Free",
+      "passed": true,
+      "duration_s": 8.97,
+      "mechanism": "compiler_fence + write_volatile + Drop trait",
+      "threat_vector_neutralized": "Cold-boot memory dump & heap token residual leakage (CWE-226)"
+    },
+    {
+      "pillar": "3. Hardened Memory Allocator",
+      "passed": true,
+      "allocation_ops_sec": 2649065.43,
+      "bandwidth_mib_s": 10347.91,
+      "features": [
+        "Segregated Out-of-band Metadata",
+        "Guard Pages",
+        "Free List Randomization"
+      ]
+    },
+    {
+      "pillar": "4. Binary Exploit Mitigations",
+      "passed": true,
+      "binaries_audited": [
+        {
+          "binary": "ferro-core",
+          "full_relro": true,
+          "stack_canary": true,
+          "nx": true,
+          "pie": true,
+          "compliant": true
+        },
+        {
+          "binary": "ferro-init",
+          "full_relro": true,
+          "stack_canary": true,
+          "nx": true,
+          "pie": true,
+          "compliant": true
+        },
+        {
+          "binary": "ferro-pkg",
+          "full_relro": true,
+          "stack_canary": true,
+          "nx": true,
+          "pie": true,
+          "compliant": true
+        },
+        {
+          "binary": "libferro_io.so",
+          "full_relro": true,
+          "stack_canary": true,
+          "nx": true,
+          "pie": true,
+          "compliant": true
+        }
+      ]
+    },
+    {
+      "pillar": "5. Landlock LSM Sandboxing",
+      "passed": true,
+      "landlock_armed": true,
+      "pr_set_no_new_privs": true
+    },
+    {
+      "pillar": "6. KSPP Baseline Configuration",
+      "passed": true,
+      "config_file": "/home/tarun-kumar/Desktop/sample os /etc/sysctl.d/99-ferro-kspp.conf",
+      "rules_enforced_count": 16
+    },
+    {
+      "pillar": "7. CIS Level 1 & 2 Conformance",
+      "passed": true,
+      "compliance_score_pct": 96.5,
+      "rules_evaluated": 10
+    },
+    {
+      "pillar": "8. FIPS 140-3 Crypto & SBOM",
+      "passed": true,
+      "crypto_throughput_mb_s": 1608.1,
+      "constant_time_comparison": true,
+      "spdx_sbom_generated": true,
+      "cyclonedx_sbom_generated": true
+    }
+  ],
+  "total_runtime_s": 10.84,
+  "overall_passed": true
+}

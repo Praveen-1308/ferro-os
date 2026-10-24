@@ -1,0 +1,194 @@
+{
+  "timestamp": "2026-10-24T03:22:17Z",
+  "host_kernel": "7.0.0-38-generic",
+  "evaluations": {
+    "ferro-os-server": {
+      "metadata": {
+        "id": "ferro-os-server",
+        "name": "FerroOS Server (Real)",
+        "image": "ferro-os-server:latest",
+        "category": "Rust-Centric Performance OS",
+        "libc": "glibc 2.36 + mimalloc 2.1 + libferro_io (io_uring)",
+        "kernel_interception": "io_uring + eBPF sockops"
+      },
+      "microbenchmarks": {
+        "fio": {
+          "iops": 0.0,
+          "bw_mib_s": 0.0,
+          "p95_ms": 0.0,
+          "p99_ms": 0.0,
+          "error": "TIMEOUT"
+        },
+        "sysbench_memory": {
+          "throughput_mib_s": 8700.33,
+          "ops_sec": 8909136.4,
+          "p95_lat_ms": 0.0
+        },
+        "loopback_socket": {
+          "qps": 99727.1,
+          "median_us": 9.5,
+          "p99_us": 14.21
+        }
+      },
+      "application_scenarios": {
+        "s01_tps_normal": 66528.0,
+        "s01_tps_highend": 9560.1,
+        "s01_p99_ms": 0.17,
+        "s02_msgs_sec": 1588.5,
+        "s02_drain_time_s": 6.3,
+        "s03_pipe_ops_sec": 2339049.6,
+        "s03_fork_cow_p99_ms": 8.33,
+        "s04_api_rps": 866.8,
+        "s04_p99_ms": 5.43,
+        "s05_s3_mibs": 2337.7,
+        "s06_stream_msgs_sec": 6579163.1,
+        "s07_fts_qps": 162.7,
+        "s07_idx_docs_sec": 356598.2,
+        "s08_spawn_500_ms": 229.0,
+        "s08_build_time_s": 0.38,
+        "s09_media_fps": 3.9,
+        "s09_media_time_s": 93.03,
+        "s10_vector_qps": 10.3,
+        "s10_vector_p99_ms": 2462.4,
+        "s11_telemetry_pts_sec": 1913527.3,
+        "s11_compression_ratio": 4.97,
+        "s12_cold_boot_ms": 1.0,
+        "s12_combined_ops_sec": 3456724.5,
+        "s12_survival_pct": 100.0
+      },
+      "total_runtime_s": 241.08
+    },
+    "alpine-3-20": {
+      "metadata": {
+        "id": "alpine-3-20",
+        "name": "Alpine Linux 3.20",
+        "image": "bench-alpine:latest",
+        "category": "Ultralight Container OS",
+        "libc": "musl libc 1.2.5",
+        "kernel_interception": "Standard POSIX syscalls"
+      },
+      "microbenchmarks": {
+        "fio": {
+          "iops": 0.0,
+          "bw_mib_s": 0.0,
+          "p95_ms": 0.0,
+          "p99_ms": 0.0,
+          "error": "TIMEOUT"
+        },
+        "sysbench_memory": {
+          "throughput_mib_s": 7624.41,
+          "ops_sec": 7807391.6,
+          "p95_lat_ms": 0.0
+        },
+        "loopback_socket": {
+          "qps": 97644.6,
+          "median_us": 9.62,
+          "p99_us": 13.59
+        }
+      },
+      "application_scenarios": {
+        "error": "Failed to execute 12 scenarios (code -1): TIMEOUT"
+      },
+      "total_runtime_s": 241.6
+    },
+    "ubuntu-24-04": {
+      "metadata": {
+        "id": "ubuntu-24-04",
+        "name": "Ubuntu 24.04 LTS",
+        "image": "bench-ubuntu:latest",
+        "category": "Enterprise Cloud Server",
+        "libc": "glibc 2.39 (ptmalloc)",
+        "kernel_interception": "Standard POSIX syscalls"
+      },
+      "microbenchmarks": {
+        "fio": {
+          "iops": 0.0,
+          "bw_mib_s": 0.0,
+          "p95_ms": 0.0,
+          "p99_ms": 0.0,
+          "error": "TIMEOUT"
+        },
+        "sysbench_memory": {
+          "throughput_mib_s": 8386.04,
+          "ops_sec": 8587309.0,
+          "p95_lat_ms": 0.0
+        },
+        "loopback_socket": {
+          "qps": 90138.6,
+          "median_us": 10.39,
+          "p99_us": 16.24
+        }
+      },
+      "application_scenarios": {
+        "error": "Failed to execute 12 scenarios (code -1): TIMEOUT"
+      },
+      "total_runtime_s": 241.63
+    },
+    "debian-12": {
+      "metadata": {
+        "id": "debian-12",
+        "name": "Debian 12 Bookworm",
+        "image": "bench-debian:latest",
+        "category": "Enterprise Reference Linux",
+        "libc": "glibc 2.36 (ptmalloc)",
+        "kernel_interception": "Standard POSIX syscalls"
+      },
+      "microbenchmarks": {
+        "fio": {
+          "iops": 0.0,
+          "bw_mib_s": 0.0,
+          "p95_ms": 0.0,
+          "p99_ms": 0.0,
+          "error": "TIMEOUT"
+        },
+        "sysbench_memory": {
+          "throughput_mib_s": 8468.78,
+          "ops_sec": 8672031.2,
+          "p95_lat_ms": 0.0
+        },
+        "loopback_socket": {
+          "qps": 96743.9,
+          "median_us": 9.48,
+          "p99_us": 15.36
+        }
+      },
+      "application_scenarios": {
+        "error": "Failed to execute 12 scenarios (code -1): TIMEOUT"
+      },
+      "total_runtime_s": 241.59
+    },
+    "rocky-linux-9": {
+      "metadata": {
+        "id": "rocky-linux-9",
+        "name": "Rocky Linux 9 (RHEL 9)",
+        "image": "bench-rocky:latest",
+        "category": "Enterprise RHEL Standard",
+        "libc": "glibc 2.34 (ptmalloc)",
+        "kernel_interception": "Standard POSIX syscalls"
+      },
+      "microbenchmarks": {
+        "fio": {
+          "iops": 0.0,
+          "bw_mib_s": 0.0,
+          "p95_ms": 0.0,
+          "p99_ms": 0.0,
+          "error": "TIMEOUT"
+        },
+        "sysbench_memory": {
+          "throughput_mib_s": 8485.12,
+          "ops_sec": 8688765.4,
+          "p95_lat_ms": 0.0
+        },
+        "loopback_socket": {
+          "qps": 96754.4,
+          "median_us": 9.32,
+          "p99_us": 13.74
+        }
+      },
+      "application_scenarios": {
+        "error": "Failed to execute 12 scenarios (code -1): TIMEOUT"
+      },
+      "total_runtime_s": 241.6
+    }
+  }
+}

@@ -1,0 +1,380 @@
+{
+  "timestamp": "2026-10-24T09:34:45Z",
+  "host_kernel": "7.0.0-38-generic",
+  "host_safety_ceiling": {
+    "cpus": 4.0,
+    "memory_gb": 6.0
+  },
+  "evaluations": {
+    "ferro-os-server": {
+      "execution_timestamp": "2026-10-24T09:34:53Z",
+      "total_suite_runtime_s": 8.01,
+      "scenario_1_slowloris": {
+        "attack_sockets_spawned": 100,
+        "slow_connections_neutralized": 100,
+        "legit_requests_completed": 500,
+        "legit_errors": 0,
+        "legit_drop_rate_pct": 0.0,
+        "legit_qps": 894.3,
+        "legit_p50_ms": 1.1,
+        "legit_p99_ms": 1.27
+      },
+      "scenario_2_fork_storm": {
+        "target_forks": 150,
+        "successfully_spawned": 150,
+        "spawn_errors": 0,
+        "spawn_time_ms": 28.85,
+        "parent_scheduler_latency_us": 73.43,
+        "reaped_cleanly": 150,
+        "reap_time_ms": 40.59,
+        "zombies_leaked": 0
+      },
+      "scenario_3_fd_exhaustion": {
+        "test_fd_limit": 512,
+        "fds_opened_before_emfile": 508,
+        "emfile_enforced_gracefully": true,
+        "critical_op_blocked_predictably": true,
+        "recovery_verified": true,
+        "recovery_time_ms": 1.13
+      },
+      "scenario_4_residual_secret_scraping": {
+        "heap_chunks_tested": 200,
+        "is_ferro_zeroize_active": true,
+        "plaintext_secrets_recovered": 0,
+        "residual_leak_rate_pct": 0.0,
+        "cwe_226_neutralized": true
+      },
+      "scenario_5_sandbox_traversal": {
+        "default_uid": 1000,
+        "is_least_privileged_user": true,
+        "paths_tested": 6,
+        "blocked_access_count": 6,
+        "containment_rate_pct": 100.0,
+        "path_breakdown": {
+          "/etc/shadow": "BLOCKED_EACCES",
+          "/proc/kcore": "BLOCKED_EACCES",
+          "/sys/kernel/debug/tracing": "DENIED_ENOENT",
+          "../../../../../../../../../../etc/shadow": "BLOCKED_EACCES",
+          "/root/.ssh/id_rsa": "BLOCKED_EACCES",
+          "/sys/kernel/security": "BLOCKED_21"
+        }
+      },
+      "scenario_6_io_starvation": {
+        "baseline_p50_ms": 5.88,
+        "baseline_p99_ms": 6.21,
+        "stressed_p50_ms": 10.42,
+        "stressed_p99_ms": 14.06,
+        "tail_latency_inflation_factor": 2.3,
+        "storage_churn_generated_mb": 201.9,
+        "io_recovery_time_ms": 10.18
+      },
+      "metadata": {
+        "runtime_s": 8.3,
+        "target_info": {
+          "id": "ferro-os-server",
+          "name": "FerroOS Server v2.0",
+          "image": "ferro-os-server:latest",
+          "libc": "glibc 2.36 + mimalloc 2.1 + pure-Rust libferro_io",
+          "profile": "Least-Privilege (UID 1000) + KSPP Sysctl + Zeroize"
+        },
+        "exit_code": 0
+      }
+    },
+    "alpine-3-20": {
+      "execution_timestamp": "2026-10-24T09:35:04Z",
+      "total_suite_runtime_s": 8.11,
+      "scenario_1_slowloris": {
+        "attack_sockets_spawned": 100,
+        "slow_connections_neutralized": 100,
+        "legit_requests_completed": 500,
+        "legit_errors": 0,
+        "legit_drop_rate_pct": 0.0,
+        "legit_qps": 882.2,
+        "legit_p50_ms": 1.11,
+        "legit_p99_ms": 1.35
+      },
+      "scenario_2_fork_storm": {
+        "target_forks": 150,
+        "successfully_spawned": 150,
+        "spawn_errors": 0,
+        "spawn_time_ms": 34.82,
+        "parent_scheduler_latency_us": 62.47,
+        "reaped_cleanly": 150,
+        "reap_time_ms": 40.58,
+        "zombies_leaked": 0
+      },
+      "scenario_3_fd_exhaustion": {
+        "test_fd_limit": 512,
+        "fds_opened_before_emfile": 508,
+        "emfile_enforced_gracefully": true,
+        "critical_op_blocked_predictably": false,
+        "recovery_verified": true,
+        "recovery_time_ms": 1.35
+      },
+      "scenario_4_residual_secret_scraping": {
+        "heap_chunks_tested": 200,
+        "is_ferro_zeroize_active": false,
+        "plaintext_secrets_recovered": 14,
+        "residual_leak_rate_pct": 7.0,
+        "cwe_226_neutralized": false
+      },
+      "scenario_5_sandbox_traversal": {
+        "default_uid": 0,
+        "is_least_privileged_user": false,
+        "paths_tested": 6,
+        "blocked_access_count": 4,
+        "containment_rate_pct": 66.7,
+        "path_breakdown": {
+          "/etc/shadow": "ACCESSIBLE_LEAK",
+          "/proc/kcore": "BLOCKED_EACCES",
+          "/sys/kernel/debug/tracing": "DENIED_ENOENT",
+          "../../../../../../../../../../etc/shadow": "ACCESSIBLE_LEAK",
+          "/root/.ssh/id_rsa": "DENIED_ENOENT",
+          "/sys/kernel/security": "BLOCKED_21"
+        }
+      },
+      "scenario_6_io_starvation": {
+        "baseline_p50_ms": 5.93,
+        "baseline_p99_ms": 6.31,
+        "stressed_p50_ms": 10.9,
+        "stressed_p99_ms": 14.38,
+        "tail_latency_inflation_factor": 2.3,
+        "storage_churn_generated_mb": 202.6,
+        "io_recovery_time_ms": 10.62
+      },
+      "metadata": {
+        "runtime_s": 8.5,
+        "target_info": {
+          "id": "alpine-3-20",
+          "name": "Alpine Linux 3.20",
+          "image": "bench-alpine:latest",
+          "libc": "musl libc 1.2.5",
+          "profile": "Standard Root (UID 0) + Musl Single-Arena"
+        },
+        "exit_code": 0
+      }
+    },
+    "ubuntu-24-04": {
+      "execution_timestamp": "2026-10-24T09:35:15Z",
+      "total_suite_runtime_s": 8.3,
+      "scenario_1_slowloris": {
+        "attack_sockets_spawned": 100,
+        "slow_connections_neutralized": 100,
+        "legit_requests_completed": 500,
+        "legit_errors": 0,
+        "legit_drop_rate_pct": 0.0,
+        "legit_qps": 879.7,
+        "legit_p50_ms": 1.11,
+        "legit_p99_ms": 1.38
+      },
+      "scenario_2_fork_storm": {
+        "target_forks": 150,
+        "successfully_spawned": 150,
+        "spawn_errors": 0,
+        "spawn_time_ms": 27.6,
+        "parent_scheduler_latency_us": 71.53,
+        "reaped_cleanly": 150,
+        "reap_time_ms": 40.83,
+        "zombies_leaked": 0
+      },
+      "scenario_3_fd_exhaustion": {
+        "test_fd_limit": 512,
+        "fds_opened_before_emfile": 508,
+        "emfile_enforced_gracefully": true,
+        "critical_op_blocked_predictably": false,
+        "recovery_verified": true,
+        "recovery_time_ms": 0.86
+      },
+      "scenario_4_residual_secret_scraping": {
+        "heap_chunks_tested": 200,
+        "is_ferro_zeroize_active": false,
+        "plaintext_secrets_recovered": 50,
+        "residual_leak_rate_pct": 25.0,
+        "cwe_226_neutralized": false
+      },
+      "scenario_5_sandbox_traversal": {
+        "default_uid": 0,
+        "is_least_privileged_user": false,
+        "paths_tested": 6,
+        "blocked_access_count": 4,
+        "containment_rate_pct": 66.7,
+        "path_breakdown": {
+          "/etc/shadow": "ACCESSIBLE_LEAK",
+          "/proc/kcore": "BLOCKED_EACCES",
+          "/sys/kernel/debug/tracing": "DENIED_ENOENT",
+          "../../../../../../../../../../etc/shadow": "ACCESSIBLE_LEAK",
+          "/root/.ssh/id_rsa": "DENIED_ENOENT",
+          "/sys/kernel/security": "BLOCKED_21"
+        }
+      },
+      "scenario_6_io_starvation": {
+        "baseline_p50_ms": 6.02,
+        "baseline_p99_ms": 6.32,
+        "stressed_p50_ms": 11.3,
+        "stressed_p99_ms": 14.38,
+        "tail_latency_inflation_factor": 2.3,
+        "storage_churn_generated_mb": 202.6,
+        "io_recovery_time_ms": 10.67
+      },
+      "metadata": {
+        "runtime_s": 8.7,
+        "target_info": {
+          "id": "ubuntu-24-04",
+          "name": "Ubuntu 24.04 LTS",
+          "image": "bench-ubuntu:latest",
+          "libc": "glibc 2.39 (ptmalloc)",
+          "profile": "Standard Root (UID 0) + Multi-Arena ptmalloc"
+        },
+        "exit_code": 0
+      }
+    },
+    "debian-12": {
+      "execution_timestamp": "2026-10-24T09:35:26Z",
+      "total_suite_runtime_s": 8.26,
+      "scenario_1_slowloris": {
+        "attack_sockets_spawned": 100,
+        "slow_connections_neutralized": 100,
+        "legit_requests_completed": 500,
+        "legit_errors": 0,
+        "legit_drop_rate_pct": 0.0,
+        "legit_qps": 880.6,
+        "legit_p50_ms": 1.11,
+        "legit_p99_ms": 1.37
+      },
+      "scenario_2_fork_storm": {
+        "target_forks": 150,
+        "successfully_spawned": 150,
+        "spawn_errors": 0,
+        "spawn_time_ms": 27.64,
+        "parent_scheduler_latency_us": 76.53,
+        "reaped_cleanly": 150,
+        "reap_time_ms": 40.54,
+        "zombies_leaked": 0
+      },
+      "scenario_3_fd_exhaustion": {
+        "test_fd_limit": 512,
+        "fds_opened_before_emfile": 508,
+        "emfile_enforced_gracefully": true,
+        "critical_op_blocked_predictably": false,
+        "recovery_verified": true,
+        "recovery_time_ms": 0.88
+      },
+      "scenario_4_residual_secret_scraping": {
+        "heap_chunks_tested": 200,
+        "is_ferro_zeroize_active": false,
+        "plaintext_secrets_recovered": 100,
+        "residual_leak_rate_pct": 50.0,
+        "cwe_226_neutralized": false
+      },
+      "scenario_5_sandbox_traversal": {
+        "default_uid": 0,
+        "is_least_privileged_user": false,
+        "paths_tested": 6,
+        "blocked_access_count": 4,
+        "containment_rate_pct": 66.7,
+        "path_breakdown": {
+          "/etc/shadow": "ACCESSIBLE_LEAK",
+          "/proc/kcore": "BLOCKED_EACCES",
+          "/sys/kernel/debug/tracing": "DENIED_ENOENT",
+          "../../../../../../../../../../etc/shadow": "ACCESSIBLE_LEAK",
+          "/root/.ssh/id_rsa": "DENIED_ENOENT",
+          "/sys/kernel/security": "BLOCKED_21"
+        }
+      },
+      "scenario_6_io_starvation": {
+        "baseline_p50_ms": 5.98,
+        "baseline_p99_ms": 13.15,
+        "stressed_p50_ms": 11.21,
+        "stressed_p99_ms": 14.68,
+        "tail_latency_inflation_factor": 1.1,
+        "storage_churn_generated_mb": 202.6,
+        "io_recovery_time_ms": 10.82
+      },
+      "metadata": {
+        "runtime_s": 8.6,
+        "target_info": {
+          "id": "debian-12",
+          "name": "Debian 12 Bookworm",
+          "image": "bench-debian:latest",
+          "libc": "glibc 2.36 (ptmalloc)",
+          "profile": "Standard Root (UID 0) + Multi-Arena ptmalloc"
+        },
+        "exit_code": 0
+      }
+    },
+    "rocky-linux-9": {
+      "execution_timestamp": "2026-10-24T09:35:38Z",
+      "total_suite_runtime_s": 8.2,
+      "scenario_1_slowloris": {
+        "attack_sockets_spawned": 100,
+        "slow_connections_neutralized": 100,
+        "legit_requests_completed": 500,
+        "legit_errors": 0,
+        "legit_drop_rate_pct": 0.0,
+        "legit_qps": 881.1,
+        "legit_p50_ms": 1.11,
+        "legit_p99_ms": 1.37
+      },
+      "scenario_2_fork_storm": {
+        "target_forks": 150,
+        "successfully_spawned": 150,
+        "spawn_errors": 0,
+        "spawn_time_ms": 31.06,
+        "parent_scheduler_latency_us": 8166.55,
+        "reaped_cleanly": 150,
+        "reap_time_ms": 32.57,
+        "zombies_leaked": 0
+      },
+      "scenario_3_fd_exhaustion": {
+        "test_fd_limit": 512,
+        "fds_opened_before_emfile": 508,
+        "emfile_enforced_gracefully": true,
+        "critical_op_blocked_predictably": false,
+        "recovery_verified": true,
+        "recovery_time_ms": 0.95
+      },
+      "scenario_4_residual_secret_scraping": {
+        "heap_chunks_tested": 200,
+        "is_ferro_zeroize_active": false,
+        "plaintext_secrets_recovered": 63,
+        "residual_leak_rate_pct": 31.5,
+        "cwe_226_neutralized": false
+      },
+      "scenario_5_sandbox_traversal": {
+        "default_uid": 0,
+        "is_least_privileged_user": false,
+        "paths_tested": 6,
+        "blocked_access_count": 4,
+        "containment_rate_pct": 66.7,
+        "path_breakdown": {
+          "/etc/shadow": "ACCESSIBLE_LEAK",
+          "/proc/kcore": "BLOCKED_EACCES",
+          "/sys/kernel/debug/tracing": "DENIED_ENOENT",
+          "../../../../../../../../../../etc/shadow": "ACCESSIBLE_LEAK",
+          "/root/.ssh/id_rsa": "DENIED_ENOENT",
+          "/sys/kernel/security": "BLOCKED_21"
+        }
+      },
+      "scenario_6_io_starvation": {
+        "baseline_p50_ms": 5.95,
+        "baseline_p99_ms": 6.33,
+        "stressed_p50_ms": 11.27,
+        "stressed_p99_ms": 11.89,
+        "tail_latency_inflation_factor": 1.9,
+        "storage_churn_generated_mb": 202.5,
+        "io_recovery_time_ms": 5.58
+      },
+      "metadata": {
+        "runtime_s": 8.5,
+        "target_info": {
+          "id": "rocky-linux-9",
+          "name": "Rocky Linux 9 (RHEL 9)",
+          "image": "bench-rocky:latest",
+          "libc": "glibc 2.34 (ptmalloc)",
+          "profile": "Standard Root (UID 0) + Enterprise RHEL Defaults"
+        },
+        "exit_code": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+FROM rockylinux:9
+RUN dnf install -y epel-release && \
+    dnf install -y --allowerasing python3 python3-pip gcc make sqlite-devel curl procps-ng fio sysbench && \
+    dnf clean all
