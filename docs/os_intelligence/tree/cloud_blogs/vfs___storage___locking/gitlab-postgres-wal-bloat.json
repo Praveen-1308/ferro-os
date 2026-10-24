@@ -1,0 +1,5 @@
+{
+  "raw_file": "docs/os_intelligence/raw/RAW_gitlab-postgres-wal-bloat.json",
+  "id": "GITLAB-POSTGRES-WAL-BLOAT",
+  "title": "GitLab Production Outage: PostgreSQL WAL Checkpoint Archival Disk Full Collapse"
+}

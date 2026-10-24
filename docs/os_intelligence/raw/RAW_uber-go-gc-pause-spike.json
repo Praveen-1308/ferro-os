@@ -1,0 +1,10 @@
+{
+  "id": "UBER-GO-GC-PAUSE-SPIKE",
+  "title": "Uber Microservice Dispatch: Go Runtime Stop-the-World GC Spikes p99 Latency to 450ms",
+  "source": "Uber Engineering Blog",
+  "source_url": "https://eng.uber.com/how-uber-optimized-go-services/",
+  "sub_url": "https://eng.uber.com/how-uber-optimized-go-services/",
+  "sub_content": "High allocation churn of temporary JSON buffers caused the Go garbage collector to freeze dispatch worker threads, causing client ride matching requests to timeout.",
+  "raw_text": "Uber engineers detail how memory fragmentation and GC pauses in Go microservices caused severe p99 tail latency spikes on Kubernetes clusters.",
+  "harvested_at": "2026-10-24T08:46:22.451396+00:00"
+}

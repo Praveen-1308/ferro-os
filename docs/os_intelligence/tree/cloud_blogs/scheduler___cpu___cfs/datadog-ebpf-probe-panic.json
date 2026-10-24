@@ -1,0 +1,5 @@
+{
+  "raw_file": "docs/os_intelligence/raw/RAW_datadog-ebpf-probe-panic.json",
+  "id": "DATADOG-EBPF-PROBE-PANIC",
+  "title": "Datadog Linux 5.15 Kernel Panic: eBPF BPF_PROG_RUN Pointer Invalidation"
+}

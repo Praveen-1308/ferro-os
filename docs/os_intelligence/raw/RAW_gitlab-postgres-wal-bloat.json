@@ -1,0 +1,10 @@
+{
+  "id": "GITLAB-POSTGRES-WAL-BLOAT",
+  "title": "GitLab Production Outage: PostgreSQL WAL Checkpoint Archival Disk Full Collapse",
+  "source": "GitLab Post-Mortem Incident 2017",
+  "source_url": "https://about.gitlab.com/blog/2017/02/01/gitlab-dot-com-database-incident/",
+  "sub_url": "https://about.gitlab.com/blog/2017/02/01/gitlab-dot-com-database-incident/",
+  "sub_content": "A replication lag spike prevented PostgreSQL WAL segment recycling, causing the pg_wal directory to consume 100% disk space, causing instant database crash and failover deadlock.",
+  "raw_text": "GitLab database crashed when WAL logs grew uncontrollably due to a stalled replica, causing disk exhaustion and complete web service downtime.",
+  "harvested_at": "2026-10-24T08:46:22.451392+00:00"
+}

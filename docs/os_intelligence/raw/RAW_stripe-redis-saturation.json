@@ -1,0 +1,10 @@
+{
+  "id": "STRIPE-REDIS-SATURATION",
+  "title": "Stripe Payments Outage: Redis Single-Threaded Event Loop Saturation During Surge",
+  "source": "Stripe Infrastructure Engineering",
+  "source_url": "https://stripe.com/blog/infrastructure-reliability",
+  "sub_url": "https://stripe.com/blog/rate-limiters",
+  "sub_content": "A high-volume traffic surge caused all API nodes to execute heavy multi-key EVAL scripts on a single Redis master, saturating the CPU thread and stalling payment webhooks for 8 seconds.",
+  "raw_text": "Stripe payment gateway experienced elevated error rates when hot key contention in central Redis cluster starved client read timeouts.",
+  "harvested_at": "2026-10-24T08:46:22.451389+00:00"
+}

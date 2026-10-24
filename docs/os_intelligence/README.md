@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 31 | **Last Sweep**: 2026-10-22 11:30:12 UTC
+**Active Tracked Incidents**: 37 | **Last Sweep**: 2026-10-24 08:46:22 UTC
 
 ---
 
@@ -44,6 +44,12 @@
 | `REDDIT-SYSADMIN-1xc328i` | **Linux Server Administration** | Hostname: TEMP-PHP-2014 | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xc328i.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xc328i.md) |
 | `REDDIT-SYSADMIN-1xc99ct` | **Linux Server Administration** | PHP2Shell was probed 4 days before disclosure. Is anyone doing a look-back hunt, not just patching? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xc99ct.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xc99ct.md) |
 | `REDDIT-SYSADMIN-1xcd912` | **Linux Server Administration** | Is AI causing impatience and removal of troubleshooting skills? Leading to burnout of sysadmins. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xcd912.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xcd912.md) |
+| `REDDIT-SYSADMIN-1xdcfgz` | **Linux Server Administration** | Is IT completely unappreciated? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xdcfgz.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xdcfgz.md) |
+| `NETFLIX-FUSE-DEADLOCK` | **FUSE / Linux Kernel** | Netflix Streaming Engine: Multi-threaded FUSE Kernel Lock Deadlock Under Burst Read | `VFS / Storage / Locking` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_netflix-fuse-deadlock.json) | [Read Dossier](incidents/INCIDENT_netflix-fuse-deadlock.md) |
+| `STRIPE-REDIS-SATURATION` | **Redis / Event Loop** | Stripe Payments Outage: Redis Single-Threaded Event Loop Saturation During Surge | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_stripe-redis-saturation.json) | [Read Dossier](incidents/INCIDENT_stripe-redis-saturation.md) |
+| `GITLAB-POSTGRES-WAL-BLOAT` | **PostgreSQL WAL** | GitLab Production Outage: PostgreSQL WAL Checkpoint Archival Disk Full Collapse | `VFS / Storage / Locking` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_gitlab-postgres-wal-bloat.json) | [Read Dossier](incidents/INCIDENT_gitlab-postgres-wal-bloat.md) |
+| `DATADOG-EBPF-PROBE-PANIC` | **Linux eBPF Kernel** | Datadog Linux 5.15 Kernel Panic: eBPF BPF_PROG_RUN Pointer Invalidation | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_datadog-ebpf-probe-panic.json) | [Read Dossier](incidents/INCIDENT_datadog-ebpf-probe-panic.md) |
+| `UBER-GO-GC-PAUSE-SPIKE` | **Go Runtime / Memory** | Uber Microservice Dispatch: Go Runtime Stop-the-World GC Spikes p99 Latency to 450ms | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_uber-go-gc-pause-spike.json) | [Read Dossier](incidents/INCIDENT_uber-go-gc-pause-spike.md) |
 
 ---
 

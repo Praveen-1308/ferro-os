@@ -1,0 +1,10 @@
+{
+  "id": "NETFLIX-FUSE-DEADLOCK",
+  "title": "Netflix Streaming Engine: Multi-threaded FUSE Kernel Lock Deadlock Under Burst Read",
+  "source": "Netflix Technology Blog",
+  "source_url": "https://netflixtechblog.com/debugging-a-fuse-deadlock-in-the-linux-kernel-c75cd7989b6d",
+  "sub_url": "https://netflixtechblog.com/debugging-a-fuse-deadlock-in-the-linux-kernel-c75cd7989b6d",
+  "sub_content": "Under high concurrency video chunk streaming, multiple reader threads contended on inode mutex locks inside the Linux kernel FUSE driver, causing cascading thread sleep freezes.",
+  "raw_text": "Netflix debugging team uncovers a kernel lock inversion deadlock in FUSE filesystems when processing parallel byte-range chunk requests across hundreds of worker threads.",
+  "harvested_at": "2026-10-24T08:46:22.451375+00:00"
+}

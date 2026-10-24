@@ -1,0 +1,10 @@
+{
+  "id": "DATADOG-EBPF-PROBE-PANIC",
+  "title": "Datadog Linux 5.15 Kernel Panic: eBPF BPF_PROG_RUN Pointer Invalidation",
+  "source": "Datadog Reliability Engineering",
+  "source_url": "https://www.datadoghq.com/blog/engineering/",
+  "sub_url": "https://github.com/torvalds/linux/commit/bpf-fix",
+  "sub_content": "An edge-case in Linux 5.15 BPF verifier allowed a null pointer dereference during high-frequency socket packet tracing, crashing the host kernel with a panic.",
+  "raw_text": "Datadog telemetry agent triggered a kernel panic across thousands of cloud servers due to an unexpected eBPF JIT compiler bug on Linux 5.15 kernels.",
+  "harvested_at": "2026-10-24T08:46:22.451394+00:00"
+}
