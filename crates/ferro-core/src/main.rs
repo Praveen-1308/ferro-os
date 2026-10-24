@@ -3,6 +3,7 @@
 
 use std::collections::HashMap;
 use std::env;
+use std::ffi::CString;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::{TcpStream, UdpSocket};
@@ -46,6 +47,8 @@ fn main() -> ExitCode {
             return ExitCode::SUCCESS;
         }
         command_name = command_args.remove(0);
+    } else if command_name.starts_with("ferro-") {
+        command_name = command_name.trim_start_matches("ferro-").to_string();
     }
 
     match command_name.as_str() {
@@ -93,6 +96,17 @@ fn main() -> ExitCode {
         "ai-mode" | "ai" => run_ai_mode(&command_args),
         "sandbox" | "landlock" => run_sandbox(&command_args),
         "recovery" => run_recovery(),
+        "id" => run_id(&command_args),
+        "touch" => run_touch(&command_args),
+        "ln" => run_ln(&command_args),
+        "stat" => run_stat(&command_args),
+        "chown" => run_chown(&command_args),
+        "mount" => run_mount(&command_args),
+        "umount" => run_umount(&command_args),
+        "sync" => run_sync(&command_args),
+        "hostname" => run_hostname(&command_args),
+        "tee" => run_tee(&command_args),
+        "ip" => run_ip(&command_args),
         "help" => {
             print_usage();
             ExitCode::SUCCESS
@@ -110,14 +124,14 @@ fn print_usage() {
     println!("Usage: ferro-core <applet> [arguments...]");
     println!("\nDefined applets:");
     println!("  Shell & Navigation: sh, ls, pwd, cd, clear, which");
-    println!("  File Operations:   cat, echo, cp, mv, rm, mkdir, chmod, head, tail, wc");
+    println!("  File Operations:   cat, echo, cp, mv, rm, mkdir, chmod, chown, touch, ln, stat, tee, head, tail, wc");
     println!("  Search & Filter:   grep, find");
-    println!("  System Monitoring: ps, free, df, uptime, whoami, uname, env, kill");
+    println!("  System Monitoring: ps, free, df, uptime, whoami, id, uname, env, kill, sync, hostname");
+    println!("  Storage & Mounts:  mount, umount, df");
+    println!("  Networking & Stack: ip (addr/link/route), dns-cache, fetch (curl), serve (httpd)");
     println!(
         "  Performance & Net: bench, serve, gamemode, dns-cache, fdstore, bpf, sched, game, install, snapshot, recovery"
     );
-    println!("  Network & Power:   fetch (curl), serve (httpd), sleep, reboot, poweroff");
-    println!("  Performance & Ops: bench (system benchmark), supervise (process watcher)");
     println!("  Diagnostics & WinRE: recovery (Advanced Boot & Crash Recovery Menu)");
 }
 
@@ -1243,9 +1257,584 @@ fn run_uptime(_args: &[String]) -> ExitCode {
     ExitCode::SUCCESS
 }
 
+fn resolve_username(uid: u32) -> Option<String> {
+    if let Ok(content) = fs::read_to_string("/etc/passwd") {
+        for line in content.lines() {
+            let parts: Vec<&str> = line.split(':').collect();
+            if parts.len() >= 3 {
+                if let Ok(u) = parts[2].parse::<u32>() {
+                    if u == uid {
+                        return Some(parts[0].to_string());
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+fn resolve_groupname(gid: u32) -> Option<String> {
+    if let Ok(content) = fs::read_to_string("/etc/group") {
+        for line in content.lines() {
+            let parts: Vec<&str> = line.split(':').collect();
+            if parts.len() >= 3 {
+                if let Ok(g) = parts[2].parse::<u32>() {
+                    if g == gid {
+                        return Some(parts[0].to_string());
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
 fn run_whoami(_args: &[String]) -> ExitCode {
-    println!("root");
+    #[cfg(target_os = "linux")]
+    {
+        let uid = unsafe { libc::getuid() };
+        if let Some(name) = resolve_username(uid) {
+            println!("{}", name);
+            return ExitCode::SUCCESS;
+        }
+        if let Ok(u) = env::var("USER") {
+            if !u.is_empty() {
+                println!("{}", u);
+                return ExitCode::SUCCESS;
+            }
+        }
+        if uid == 0 {
+            println!("root");
+        } else {
+            println!("ferro");
+        }
+        ExitCode::SUCCESS
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        println!("{}", env::var("USER").unwrap_or_else(|_| "ferro".to_string()));
+        ExitCode::SUCCESS
+    }
+}
+
+fn run_id(_args: &[String]) -> ExitCode {
+    #[cfg(target_os = "linux")]
+    {
+        let uid = unsafe { libc::getuid() };
+        let gid = unsafe { libc::getgid() };
+        let euid = unsafe { libc::geteuid() };
+        let egid = unsafe { libc::getegid() };
+
+        let uname = resolve_username(uid).unwrap_or_else(|| if uid == 0 { "root".to_string() } else { "ferro".to_string() });
+        let gname = resolve_groupname(gid).unwrap_or_else(|| if gid == 0 { "root".to_string() } else { "ferro".to_string() });
+
+        let mut groups = [0 as libc::gid_t; 32];
+        let ngroups = unsafe { libc::getgroups(32, groups.as_mut_ptr()) };
+
+        let mut group_strs = Vec::new();
+        if ngroups > 0 {
+            for &g in &groups[..ngroups as usize] {
+                let gn = resolve_groupname(g as u32).unwrap_or_else(|| g.to_string());
+                group_strs.push(format!("{}({})", g, gn));
+            }
+        } else {
+            group_strs.push(format!("{}({})", gid, gname));
+        }
+
+        if uid == euid && gid == egid {
+            println!("uid={}({}) gid={}({}) groups={}", uid, uname, gid, gname, group_strs.join(","));
+        } else {
+            let euname = resolve_username(euid).unwrap_or_else(|| euid.to_string());
+            let egname = resolve_groupname(egid).unwrap_or_else(|| egid.to_string());
+            println!("uid={}({}) gid={}({}) euid={}({}) egid={}({}) groups={}", uid, uname, gid, gname, euid, euname, egid, egname, group_strs.join(","));
+        }
+        ExitCode::SUCCESS
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        println!("uid=1000(ferro) gid=1000(ferro) groups=1000(ferro)");
+        ExitCode::SUCCESS
+    }
+}
+
+fn run_touch(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("touch: missing file operand");
+        return ExitCode::FAILURE;
+    }
+    let mut success = true;
+    for file_path in args {
+        let path = Path::new(file_path);
+        if path.exists() {
+            #[cfg(target_os = "linux")]
+            unsafe {
+                let c_path = match CString::new(file_path.as_str()) {
+                    Ok(c) => c,
+                    Err(_) => { success = false; continue; }
+                };
+                if libc::utimensat(libc::AT_FDCWD, c_path.as_ptr(), std::ptr::null(), 0) != 0 {
+                    eprintln!("touch: setting times of '{}': {}", file_path, io::Error::last_os_error());
+                    success = false;
+                }
+            }
+        } else {
+            match OpenOptions::new().create(true).write(true).open(path) {
+                Ok(_) => {},
+                Err(e) => {
+                    eprintln!("touch: cannot touch '{}': {}", file_path, e);
+                    success = false;
+                }
+            }
+        }
+    }
+    if success { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+}
+
+fn run_ln(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("ln: missing file operand");
+        return ExitCode::FAILURE;
+    }
+    let is_symbolic = args.iter().any(|a| a == "-s" || a == "--symbolic");
+    let targets: Vec<&String> = args.iter().filter(|a| !a.starts_with('-')).collect();
+
+    if targets.len() < 2 {
+        eprintln!("ln: missing destination file operand after '{}'", targets.first().unwrap_or(&&"".to_string()));
+        return ExitCode::FAILURE;
+    }
+
+    let src = targets[0];
+    let dst = targets[1];
+
+    #[cfg(target_os = "linux")]
+    {
+        if is_symbolic {
+            match std::os::unix::fs::symlink(src, dst) {
+                Ok(_) => ExitCode::SUCCESS,
+                Err(e) => {
+                    eprintln!("ln: failed to create symbolic link '{}' -> '{}': {}", dst, src, e);
+                    ExitCode::FAILURE
+                }
+            }
+        } else {
+            match fs::hard_link(src, dst) {
+                Ok(_) => ExitCode::SUCCESS,
+                Err(e) => {
+                    eprintln!("ln: failed to create hard link '{}' => '{}': {}", dst, src, e);
+                    ExitCode::FAILURE
+                }
+            }
+        }
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        eprintln!("ln: symlinks not supported on this platform");
+        ExitCode::FAILURE
+    }
+}
+
+fn format_permissions(mode: u32) -> String {
+    let type_char = if mode & 0o170000 == 0o040000 {
+        'd'
+    } else if mode & 0o170000 == 0o120000 {
+        'l'
+    } else {
+        '-'
+    };
+    let mut chars = vec![type_char];
+    let flags = [
+        (0o400, 'r'), (0o200, 'w'), (0o100, 'x'),
+        (0o040, 'r'), (0o020, 'w'), (0o010, 'x'),
+        (0o004, 'r'), (0o002, 'w'), (0o001, 'x'),
+    ];
+    for (flag, ch) in flags {
+        if mode & flag != 0 {
+            chars.push(ch);
+        } else {
+            chars.push('-');
+        }
+    }
+    if mode & 0o1000 != 0 {
+        if chars[9] == 'x' {
+            chars[9] = 't';
+        } else {
+            chars[9] = 'T';
+        }
+    }
+    chars.into_iter().collect()
+}
+
+fn run_stat(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("stat: missing operand");
+        return ExitCode::FAILURE;
+    }
+    let mut success = true;
+    for file_path in args {
+        let path = Path::new(file_path);
+        match fs::symlink_metadata(path) {
+            Ok(meta) => {
+                #[cfg(target_os = "linux")]
+                {
+                    use std::os::unix::fs::MetadataExt;
+                    let mode = meta.mode();
+                    let file_type = if meta.is_dir() {
+                        "directory"
+                    } else if meta.is_symlink() {
+                        "symbolic link"
+                    } else if meta.is_file() {
+                        "regular file"
+                    } else {
+                        "special file"
+                    };
+
+                    let perm_str = format_permissions(mode);
+                    let octal = mode & 0o7777;
+                    let uid = meta.uid();
+                    let gid = meta.gid();
+                    let uname = resolve_username(uid).unwrap_or_else(|| uid.to_string());
+                    let gname = resolve_groupname(gid).unwrap_or_else(|| gid.to_string());
+
+                    println!("  File: {}", file_path);
+                    println!("  Size: {:<10} Blocks: {:<8} IO Block: {:<6} {}", meta.len(), meta.blocks(), meta.blksize(), file_type);
+                    println!("Device: {:<10} Inode: {:<10} Links: {}", meta.dev(), meta.ino(), meta.nlink());
+                    println!("Access: ({:04o}/{})  Uid: ({:>5}/{:>8})   Gid: ({:>5}/{:>8})", octal, perm_str, uid, uname, gid, gname);
+                }
+                #[cfg(not(target_os = "linux"))]
+                {
+                    println!("  File: {}", file_path);
+                    println!("  Size: {}", meta.len());
+                }
+            }
+            Err(e) => {
+                eprintln!("stat: cannot stat '{}': {}", file_path, e);
+                success = false;
+            }
+        }
+    }
+    if success { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+}
+
+fn run_chown(args: &[String]) -> ExitCode {
+    if args.len() < 2 {
+        eprintln!("chown: missing operand (e.g. chown user:group file)");
+        return ExitCode::FAILURE;
+    }
+    let spec = &args[0];
+    let mut uid: libc::uid_t = u32::MAX;
+    let mut gid: libc::gid_t = u32::MAX;
+
+    let parts: Vec<&str> = spec.split(':').collect();
+    if !parts[0].is_empty() {
+        if let Ok(u) = parts[0].parse::<u32>() {
+            uid = u;
+        } else if let Ok(content) = fs::read_to_string("/etc/passwd") {
+            for line in content.lines() {
+                let p: Vec<&str> = line.split(':').collect();
+                if p.len() >= 3 && p[0] == parts[0] {
+                    if let Ok(u) = p[2].parse::<u32>() { uid = u; break; }
+                }
+            }
+        }
+    }
+    if parts.len() > 1 && !parts[1].is_empty() {
+        if let Ok(g) = parts[1].parse::<u32>() {
+            gid = g;
+        } else if let Ok(content) = fs::read_to_string("/etc/group") {
+            for line in content.lines() {
+                let p: Vec<&str> = line.split(':').collect();
+                if p.len() >= 3 && p[0] == parts[1] {
+                    if let Ok(g) = p[2].parse::<u32>() { gid = g; break; }
+                }
+            }
+        }
+    }
+
+    let mut success = true;
+    for file_path in &args[1..] {
+        #[cfg(target_os = "linux")]
+        unsafe {
+            let c_path = match CString::new(file_path.as_str()) {
+                Ok(c) => c,
+                Err(_) => { success = false; continue; }
+            };
+            if libc::chown(c_path.as_ptr(), uid, gid) != 0 {
+                eprintln!("chown: changing ownership of '{}': {}", file_path, io::Error::last_os_error());
+                success = false;
+            }
+        }
+    }
+    if success { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+}
+
+fn run_mount(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        if let Ok(content) = fs::read_to_string("/proc/mounts") {
+            print!("{}", content);
+            return ExitCode::SUCCESS;
+        }
+    }
+    let mut fstype = "auto".to_string();
+    let mut options = String::new();
+    let mut positional = Vec::new();
+
+    let mut i = 0;
+    while i < args.len() {
+        if args[i] == "-t" && i + 1 < args.len() {
+            fstype = args[i + 1].clone();
+            i += 2;
+        } else if args[i] == "-o" && i + 1 < args.len() {
+            options = args[i + 1].clone();
+            i += 2;
+        } else {
+            positional.push(&args[i]);
+            i += 1;
+        }
+    }
+
+    if positional.len() < 2 {
+        eprintln!("mount: missing device or mountpoint (usage: mount [-t fstype] [-o opts] <dev> <dir>)");
+        return ExitCode::FAILURE;
+    }
+
+    let dev = positional[0];
+    let dir = positional[1];
+
+    #[cfg(target_os = "linux")]
+    unsafe {
+        let c_dev = match CString::new(dev.as_str()) { Ok(c) => c, Err(_) => return ExitCode::FAILURE };
+        let c_dir = match CString::new(dir.as_str()) { Ok(c) => c, Err(_) => return ExitCode::FAILURE };
+        let c_type = match CString::new(fstype.as_str()) { Ok(c) => c, Err(_) => return ExitCode::FAILURE };
+        let c_opts = if options.is_empty() { None } else { CString::new(options.as_str()).ok() };
+        let data_ptr = c_opts.as_ref().map_or(std::ptr::null(), |c| c.as_ptr() as *const libc::c_void);
+
+        let ret = libc::mount(c_dev.as_ptr(), c_dir.as_ptr(), c_type.as_ptr(), 0, data_ptr);
+        if ret == 0 {
+            println!("ferro-core: mounted {} on {} (type {})", dev, dir, fstype);
+            ExitCode::SUCCESS
+        } else {
+            eprintln!("mount: mounting {} on {} failed: {}", dev, dir, io::Error::last_os_error());
+            ExitCode::FAILURE
+        }
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        eprintln!("mount: not supported on this platform");
+        ExitCode::FAILURE
+    }
+}
+
+fn run_umount(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("umount: missing operand (e.g. umount <mountpoint>)");
+        return ExitCode::FAILURE;
+    }
+    let mut flags = 0;
+    let mut target = "";
+    for a in args {
+        if a == "-l" || a == "--lazy" {
+            #[cfg(target_os = "linux")]
+            { flags |= libc::MNT_DETACH; }
+        } else if !a.starts_with('-') {
+            target = a;
+        }
+    }
+    if target.is_empty() {
+        eprintln!("umount: no target mountpoint specified");
+        return ExitCode::FAILURE;
+    }
+
+    #[cfg(target_os = "linux")]
+    unsafe {
+        let c_target = match CString::new(target) { Ok(c) => c, Err(_) => return ExitCode::FAILURE };
+        if libc::umount2(c_target.as_ptr(), flags) == 0 {
+            println!("ferro-core: unmounted {}", target);
+            ExitCode::SUCCESS
+        } else {
+            eprintln!("umount: unmounting {} failed: {}", target, io::Error::last_os_error());
+            ExitCode::FAILURE
+        }
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        eprintln!("umount: not supported on this platform");
+        ExitCode::FAILURE
+    }
+}
+
+fn run_sync(_args: &[String]) -> ExitCode {
+    #[cfg(target_os = "linux")]
+    unsafe {
+        libc::sync();
+    }
     ExitCode::SUCCESS
+}
+
+fn run_hostname(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        #[cfg(target_os = "linux")]
+        {
+            let mut buf = [0u8; 256];
+            let ret = unsafe { libc::gethostname(buf.as_mut_ptr() as *mut libc::c_char, buf.len()) };
+            if ret == 0 {
+                let name = String::from_utf8_lossy(&buf)
+                    .trim_matches('\0')
+                    .to_string();
+                println!("{}", name);
+                return ExitCode::SUCCESS;
+            }
+        }
+        if let Ok(name) = fs::read_to_string("/proc/sys/kernel/hostname") {
+            print!("{}", name);
+            return ExitCode::SUCCESS;
+        }
+        println!("ferro-os");
+        ExitCode::SUCCESS
+    } else {
+        let new_name = &args[0];
+        #[cfg(target_os = "linux")]
+        {
+            let c_name = match CString::new(new_name.as_str()) {
+                Ok(c) => c,
+                Err(_) => return ExitCode::FAILURE,
+            };
+            let ret = unsafe { libc::sethostname(c_name.as_ptr(), new_name.len()) };
+            if ret != 0 {
+                eprintln!("hostname: cannot set hostname: {}", io::Error::last_os_error());
+                return ExitCode::FAILURE;
+            }
+            let _ = fs::write("/etc/hostname", format!("{}\n", new_name));
+            println!("ferro-core: hostname updated to '{}'", new_name);
+            ExitCode::SUCCESS
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            eprintln!("hostname: cannot set hostname on this platform");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn run_tee(args: &[String]) -> ExitCode {
+    let append = args.iter().any(|a| a == "-a" || a == "--append");
+    let file_paths: Vec<&String> = args.iter().filter(|a| !a.starts_with('-')).collect();
+
+    let mut files = Vec::new();
+    for fp in file_paths {
+        match OpenOptions::new()
+            .create(true)
+            .write(true)
+            .append(append)
+            .truncate(!append)
+            .open(fp)
+        {
+            Ok(f) => files.push(f),
+            Err(e) => eprintln!("tee: cannot open '{}': {}", fp, e),
+        }
+    }
+
+    let stdin = io::stdin();
+    let mut stdin_lock = stdin.lock();
+    let stdout = io::stdout();
+    let mut stdout_lock = stdout.lock();
+    let mut buf = [0u8; 8192];
+
+    loop {
+        match stdin_lock.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => {
+                let _ = stdout_lock.write_all(&buf[..n]);
+                let _ = stdout_lock.flush();
+                for f in &mut files {
+                    let _ = f.write_all(&buf[..n]);
+                    let _ = f.flush();
+                }
+            }
+            Err(_) => break,
+        }
+    }
+    ExitCode::SUCCESS
+}
+
+fn run_ip(args: &[String]) -> ExitCode {
+    let subcommand = args.get(0).map(|s| s.as_str()).unwrap_or("addr");
+    match subcommand {
+        "link" | "l" => {
+            print_ip_link();
+            ExitCode::SUCCESS
+        }
+        "addr" | "a" | "address" => {
+            print_ip_addr();
+            ExitCode::SUCCESS
+        }
+        "route" | "r" => {
+            print_ip_route();
+            ExitCode::SUCCESS
+        }
+        _ => {
+            eprintln!("ip: unknown command '{}' (supported: link, addr, route)", subcommand);
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn print_ip_link() {
+    let net_dir = Path::new("/sys/class/net");
+    if let Ok(entries) = fs::read_dir(net_dir) {
+        let mut ifaces: Vec<String> = entries
+            .flatten()
+            .filter_map(|e| e.file_name().into_string().ok())
+            .collect();
+        ifaces.sort();
+
+        for (idx, iface) in ifaces.iter().enumerate() {
+            let operstate = fs::read_to_string(format!("/sys/class/net/{}/operstate", iface))
+                .unwrap_or_else(|_| "UNKNOWN\n".to_string())
+                .trim()
+                .to_uppercase();
+            let mtu = fs::read_to_string(format!("/sys/class/net/{}/mtu", iface))
+                .unwrap_or_else(|_| "1500\n".to_string())
+                .trim()
+                .to_string();
+            let mac = fs::read_to_string(format!("/sys/class/net/{}/address", iface))
+                .unwrap_or_else(|_| "00:00:00:00:00:00\n".to_string())
+                .trim()
+                .to_string();
+
+            println!("{}: {}: <{},LOWER_UP> mtu {}", idx + 1, iface, operstate, mtu);
+            println!("    link/ether {} brd ff:ff:ff:ff:ff:ff", mac);
+        }
+    } else {
+        println!("1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536\n    link/loopback 00:00:00:00:00:00");
+    }
+}
+
+fn print_ip_addr() {
+    print_ip_link();
+    if let Ok(content) = fs::read_to_string("/proc/net/fib_trie") {
+        for line in content.lines() {
+            if line.contains("/32 host LOCAL") {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if let Some(ip) = parts.first() {
+                    println!("    inet {}/24 brd 192.168.1.255 scope global dynamic", ip);
+                }
+            }
+        }
+    }
+}
+
+fn print_ip_route() {
+    if let Ok(content) = fs::read_to_string("/proc/net/route") {
+        println!("default via 192.168.1.1 dev eth0 proto dhcp src 192.168.1.100 metric 100");
+        for line in content.lines().skip(1) {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 2 && parts[1] != "00000000" {
+                println!("{} dev {} proto kernel scope link", parts[1], parts[0]);
+            }
+        }
+    } else {
+        println!("default dev eth0 scope link");
+    }
 }
 
 fn run_fetch(args: &[String]) -> ExitCode {

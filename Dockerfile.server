@@ -101,8 +101,12 @@ COPY --from=builder /build/target/release/ferro-init /usr/local/bin/ferro-init
 COPY --from=builder /build/target/release/ferro-core /usr/local/bin/ferro-core
 COPY --from=builder /build/target/release/ferro-pkg  /usr/local/bin/ferro-pkg
 RUN chmod +x /usr/local/bin/ferro-* && \
+    chmod 1777 /tmp && \
     ln -sf /usr/local/bin/ferro-core /bin/sh-ferro && \
-    ln -sf /usr/local/bin/ferro-pkg /usr/local/bin/rpk
+    ln -sf /usr/local/bin/ferro-pkg /usr/local/bin/rpk && \
+    for app in id stat touch chown mount umount sync hostname tee; do \
+        ln -sf /usr/local/bin/ferro-core /usr/local/bin/ferro-${app}; \
+    done
 
 # 6. Copy Server Suite & Sample Website
 COPY tools/ferro-server-suite.py /usr/local/bin/ferro-server-suite.py

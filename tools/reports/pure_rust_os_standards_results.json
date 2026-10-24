@@ -1,0 +1,8 @@
+{
+  "timestamp": "2026-10-24T10:20:05Z",
+  "duration_s": 0.33,
+  "pure_rust_primitives_verified": true,
+  "cloud_fhs_permissions_verified": true,
+  "container_least_privilege_verified": true,
+  "overall_status": "PASS"
+}

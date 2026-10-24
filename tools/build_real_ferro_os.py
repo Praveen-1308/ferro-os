@@ -89,15 +89,65 @@ def main():
     # Coreutils symlinks
     coreutils = [
         "sh", "ls", "cat", "echo", "pwd", "uname", "clear", "mkdir", "rm", "cp",
-        "mv", "chmod", "grep", "find", "head", "tail", "wc", "which", "env",
-        "sleep", "free", "df", "ps", "kill", "uptime", "whoami", "reboot",
-        "poweroff", "bench", "bpf", "sched", "install", "snapshot", "recovery"
+        "mv", "chmod", "chown", "touch", "ln", "stat", "id", "grep", "find",
+        "head", "tail", "wc", "which", "env", "sleep", "free", "df", "ps", "kill",
+        "uptime", "whoami", "sync", "hostname", "tee", "ip", "mount", "umount",
+        "reboot", "poweroff", "bench", "serve", "bpf", "sched", "install", "snapshot", "recovery"
     ]
     for app in coreutils:
         link_target = "/bin/ferro-core"
         link_name = os.path.join(rootfs, "bin", app)
         if not os.path.exists(link_name):
             os.symlink(link_target, link_name)
+
+    # 5b. Generate Standard Cloud / On-Premise FHS 3.0 Configuration Files & Permissions
+    print("\n[Stage 5b] Writing enterprise FHS 3.0 cloud identity & permission files...")
+    etc_dir = os.path.join(rootfs, "etc")
+    os.makedirs(etc_dir, exist_ok=True)
+    os.makedirs(os.path.join(rootfs, "home/ferro"), exist_ok=True)
+
+    # /etc/os-release (Standard Linux & Cloud Provider Identification)
+    with open(os.path.join(etc_dir, "os-release"), "w") as f:
+        f.write('NAME="FerroOS"\n'
+                'VERSION="2.0-server (Rust-Native)"\n'
+                'ID="ferro"\n'
+                'ID_LIKE="linux"\n'
+                'PRETTY_NAME="FerroOS 2.0 Server Edition (Rust Linux)"\n'
+                'HOME_URL="https://github.com/Praveen-1308/ferro-os"\n'
+                'SUPPORT_URL="https://github.com/Praveen-1308/ferro-os/issues"\n'
+                'BUG_REPORT_URL="https://github.com/Praveen-1308/ferro-os/issues"\n')
+
+    # /etc/hostname
+    with open(os.path.join(etc_dir, "hostname"), "w") as f:
+        f.write("ferro-os\n")
+
+    # /etc/passwd (Standard user accounts: root UID 0, ferro UID 1000)
+    with open(os.path.join(etc_dir, "passwd"), "w") as f:
+        f.write("root:x:0:0:root:/root:/bin/sh\n"
+                "ferro:x:1000:1000:Ferro Service User:/home/ferro:/bin/sh\n")
+
+    # /etc/group (Standard groups)
+    with open(os.path.join(etc_dir, "group"), "w") as f:
+        f.write("root:x:0:\n"
+                "shadow:x:42:\n"
+                "ferro:x:1000:\n")
+
+    # /etc/shadow (Restricted passwords - default locked)
+    with open(os.path.join(etc_dir, "shadow"), "w") as f:
+        f.write("root:*:19000:0:99999:7:::\n"
+                "ferro:*:19000:0:99999:7:::\n")
+
+    # /etc/resolv.conf (Standard DNS resolver)
+    with open(os.path.join(etc_dir, "resolv.conf"), "w") as f:
+        f.write("nameserver 1.1.1.1\nnameserver 8.8.8.8\n")
+
+    # Enforce Cloud / On-Premise Permissions
+    os.chmod(os.path.join(rootfs, "tmp"), 0o1777) # Sticky bit!
+    os.chmod(os.path.join(etc_dir, "passwd"), 0o644)
+    os.chmod(os.path.join(etc_dir, "group"), 0o644)
+    os.chmod(os.path.join(etc_dir, "shadow"), 0o600)
+    os.chmod(os.path.join(etc_dir, "resolv.conf"), 0o644)
+    os.chmod(os.path.join(etc_dir, "os-release"), 0o644)
 
     # 6. Copy required shared libraries
     print("\n[Stage 6] Resolving and copying essential runtime libraries...")
