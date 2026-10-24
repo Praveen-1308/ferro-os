@@ -517,7 +517,7 @@ pub unsafe extern "C" fn read(fd: c_int, buf: *mut c_void, count: size_t) -> ssi
     ensure_symbols_initialized();
     let real_fn: ReadFn = std::mem::transmute(REAL_READ.load(Ordering::Acquire));
 
-    if is_secure_execution() || count < 65536 {
+    if is_secure_execution() || count < 65536 || count > u32::MAX as size_t {
         return real_fn(fd, buf, count);
     }
 
@@ -568,7 +568,7 @@ pub unsafe extern "C" fn write(fd: c_int, buf: *const c_void, count: size_t) -> 
     ensure_symbols_initialized();
     let real_fn: WriteFn = std::mem::transmute(REAL_WRITE.load(Ordering::Acquire));
 
-    if is_secure_execution() || count < 65536 {
+    if is_secure_execution() || count < 65536 || count > u32::MAX as size_t {
         return real_fn(fd, buf, count);
     }
 
@@ -619,7 +619,7 @@ pub unsafe extern "C" fn pread(fd: c_int, buf: *mut c_void, count: size_t, offse
     ensure_symbols_initialized();
     let real_fn: PreadFn = std::mem::transmute(REAL_PREAD.load(Ordering::Acquire));
 
-    if is_secure_execution() || count < 65536 {
+    if is_secure_execution() || count < 65536 || count > u32::MAX as size_t {
         return real_fn(fd, buf, count, offset);
     }
 
@@ -675,7 +675,7 @@ pub unsafe extern "C" fn pwrite(fd: c_int, buf: *const c_void, count: size_t, of
     ensure_symbols_initialized();
     let real_fn: PwriteFn = std::mem::transmute(REAL_PWRITE.load(Ordering::Acquire));
 
-    if is_secure_execution() || count < 65536 {
+    if is_secure_execution() || count < 65536 || count > u32::MAX as size_t {
         return real_fn(fd, buf, count, offset);
     }
 

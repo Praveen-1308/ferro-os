@@ -264,14 +264,79 @@ fn parse_tokens(line: &str) -> Vec<String> {
     tokens
 }
 
+fn split_pipeline_quote_aware(line: &str) -> Vec<String> {
+    let mut parts = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    let mut quote_char = ' ';
+
+    for c in line.chars() {
+        match c {
+            '"' | '\'' if !in_quotes => {
+                in_quotes = true;
+                quote_char = c;
+                current.push(c);
+            }
+            c if in_quotes && c == quote_char => {
+                in_quotes = false;
+                current.push(c);
+            }
+            '|' if !in_quotes => {
+                parts.push(current.trim().to_string());
+                current.clear();
+            }
+            _ => {
+                current.push(c);
+            }
+        }
+    }
+    if !current.trim().is_empty() {
+        parts.push(current.trim().to_string());
+    }
+    parts
+}
+
+fn extract_redirection_quote_aware(line: &str) -> (String, Option<(String, bool)>) {
+    let mut clean_cmd = String::new();
+    let mut in_quotes = false;
+    let mut quote_char = ' ';
+    let chars: Vec<char> = line.chars().collect();
+    let mut i = 0;
+
+    while i < chars.len() {
+        let c = chars[i];
+        if (c == '"' || c == '\'') && !in_quotes {
+            in_quotes = true;
+            quote_char = c;
+            clean_cmd.push(c);
+            i += 1;
+        } else if in_quotes && c == quote_char {
+            in_quotes = false;
+            clean_cmd.push(c);
+            i += 1;
+        } else if !in_quotes && c == '>' {
+            let is_append = i + 1 < chars.len() && chars[i + 1] == '>';
+            let target_start = if is_append { i + 2 } else { i + 1 };
+            let raw_target: String = chars[target_start..].iter().collect();
+            let target_file = raw_target.trim().trim_matches(|ch| ch == '"' || ch == '\'').to_string();
+            return (clean_cmd.trim().to_string(), Some((target_file, is_append)));
+        } else {
+            clean_cmd.push(c);
+            i += 1;
+        }
+    }
+    (clean_cmd.trim().to_string(), None)
+}
+
 fn execute_pipeline(line: &str) -> ExitCode {
-    // Check for pipe commands: cmd1 | cmd2 | cmd3
-    let pipe_parts: Vec<&str> = line.split('|').collect();
+    // Check for pipe commands: cmd1 | cmd2 | cmd3 (quote-aware)
+    let pipe_parts = split_pipeline_quote_aware(line);
     if pipe_parts.len() > 1 {
-        return execute_piped_commands(pipe_parts);
+        let pipe_refs: Vec<&str> = pipe_parts.iter().map(|s| s.as_str()).collect();
+        return execute_piped_commands(pipe_refs);
     }
 
-    // Single command execution with redirection check (> or >>)
+    // Single command execution with quote-aware redirection check (> or >>)
     execute_single_command(line)
 }
 
@@ -301,7 +366,13 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
             Stdio::piped()
         };
 
-        let mut command = Command::new(cmd);
+        let mut command = if is_internal_applet(cmd) {
+            let mut c = Command::new(env::current_exe().unwrap_or_else(|_| PathBuf::from("ferro-core")));
+            c.arg(cmd);
+            c
+        } else {
+            Command::new(cmd)
+        };
         command.args(args).stdin(stdin_cfg).stdout(stdout_cfg);
 
         match command.spawn() {
@@ -329,19 +400,23 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
     last_status
 }
 
-fn execute_single_command(raw_line: &str) -> ExitCode {
-    let mut line = raw_line.trim().to_string();
-    let mut redirect_out: Option<(String, bool)> = None; // (file_path, append_mode)
+fn is_internal_applet(cmd: &str) -> bool {
+    matches!(
+        cmd,
+        "sh" | "bash" | "ls" | "cat" | "echo" | "pwd" | "uname" | "clear" | "mkdir"
+            | "rm" | "cp" | "mv" | "chmod" | "chown" | "touch" | "ln" | "stat" | "id"
+            | "grep" | "find" | "head" | "tail" | "wc" | "which" | "env" | "sleep"
+            | "free" | "df" | "ps" | "kill" | "uptime" | "whoami" | "sync" | "hostname"
+            | "tee" | "ip" | "mount" | "umount" | "reboot" | "poweroff" | "bench"
+            | "serve" | "httpd" | "supervise" | "gamemode" | "dns-cache" | "dns"
+            | "fdstore" | "bpf" | "ebpf" | "sched" | "scx" | "game" | "proton"
+            | "win" | "win-run" | "wine" | "install" | "installer" | "snapshot" | "snap"
+            | "ai-mode" | "ai" | "sandbox" | "landlock" | "recovery" | "fetch" | "curl"
+    )
+}
 
-    if let Some(pos) = line.find(">>") {
-        let file = line[pos + 2..].trim().to_string();
-        line = line[..pos].trim().to_string();
-        redirect_out = Some((file, true));
-    } else if let Some(pos) = line.find('>') {
-        let file = line[pos + 1..].trim().to_string();
-        line = line[..pos].trim().to_string();
-        redirect_out = Some((file, false));
-    }
+fn execute_single_command(raw_line: &str) -> ExitCode {
+    let (line, redirect_out) = extract_redirection_quote_aware(raw_line);
 
     let tokens = parse_tokens(&line);
     if tokens.is_empty() {
@@ -374,15 +449,37 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
         _ => {}
     }
 
-    if redirect_out.is_none() {
-        match cmd.as_str() {
-            "echo" => return run_echo(args),
-            "pwd" => return run_pwd(args),
-            "uname" => return run_uname(args),
-            "clear" => return run_clear(args),
-            "whoami" => return run_whoami(args),
-            _ => {}
+    // Prioritize internal pure-Rust applets over untrusted external PATH binaries (resisting PATH hijacking)
+    if is_internal_applet(cmd) {
+        if let Some((ref filepath, append)) = redirect_out {
+            if let Ok(current_exe) = env::current_exe() {
+                let file_res = OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .append(append)
+                    .truncate(!append)
+                    .open(filepath);
+
+                match file_res {
+                    Ok(f) => {
+                        let mut command = Command::new(current_exe);
+                        command.arg(cmd).args(args).stdout(Stdio::from(f));
+                        match command.status() {
+                            Ok(status) => return if status.success() { ExitCode::SUCCESS } else { ExitCode::FAILURE },
+                            Err(e) => {
+                                eprintln!("sh: failed to execute internal applet '{}': {}", cmd, e);
+                                return ExitCode::FAILURE;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("sh: cannot open '{}' for writing: {}", filepath, e);
+                        return ExitCode::FAILURE;
+                    }
+                }
+            }
         }
+        return dispatch_internal_applet(cmd, args);
     }
 
     let mut command = Command::new(cmd);
@@ -2111,6 +2208,23 @@ fn create_reuseport_listener(addr_str: &str) -> io::Result<std::net::TcpListener
     std::net::TcpListener::bind(addr_str)
 }
 
+fn detect_mime_type(path: &Path) -> &'static str {
+    match path.extension().and_then(|e| e.to_str()).unwrap_or("") {
+        "html" | "htm" => "text/html; charset=utf-8",
+        "css" => "text/css; charset=utf-8",
+        "js" | "mjs" => "application/javascript; charset=utf-8",
+        "json" => "application/json",
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "svg" => "image/svg+xml",
+        "ico" => "image/x-icon",
+        "wasm" => "application/wasm",
+        "txt" => "text/plain; charset=utf-8",
+        _ => "application/octet-stream",
+    }
+}
+
 fn handle_http_client(stream: &mut std::net::TcpStream, root: &Path, shard_id: usize) {
     let t_start = Instant::now();
     let mut buffer = [0u8; 4096];
@@ -2154,15 +2268,32 @@ fn handle_http_client(stream: &mut std::net::TcpStream, root: &Path, shard_id: u
         }
         _ => {
             let rel_path = path.strip_prefix('/').unwrap_or(path);
-            let target_file = if rel_path.is_empty() { root.join("index.html") } else { root.join(rel_path) };
-            if target_file.is_file() {
-                if let Ok(contents) = fs::read(&target_file) {
-                    ("200 OK", "text/html", contents)
-                } else {
-                    ("500 Internal Server Error", "text/plain", b"500 Internal Server Error\n".to_vec())
-                }
+            let raw_path = rel_path.split('?').next().unwrap_or(rel_path);
+
+            // Defend against Path Traversal (CWE-22)
+            if raw_path.contains("..") || raw_path.contains('\0') || raw_path.contains('\\') {
+                ("403 Forbidden", "text/plain", b"403 Forbidden: Path traversal prohibited\n".to_vec())
             } else {
-                ("404 Not Found", "text/plain", format!("404 Not Found: {}\n", path).into_bytes())
+                let target_file = if raw_path.is_empty() { root.join("index.html") } else { root.join(raw_path) };
+
+                // Strictly ensure target path resolves inside webroot
+                let is_safe = match (target_file.canonicalize(), root.canonicalize()) {
+                    (Ok(canon_target), Ok(canon_root)) => canon_target.starts_with(&canon_root),
+                    _ => false,
+                };
+
+                if is_safe && target_file.is_file() {
+                    if let Ok(contents) = fs::read(&target_file) {
+                        let mime = detect_mime_type(&target_file);
+                        ("200 OK", mime, contents)
+                    } else {
+                        ("500 Internal Server Error", "text/plain", b"500 Internal Server Error\n".to_vec())
+                    }
+                } else if !is_safe && target_file.exists() {
+                    ("403 Forbidden", "text/plain", b"403 Forbidden: Access denied outside webroot\n".to_vec())
+                } else {
+                    ("404 Not Found", "text/plain", format!("404 Not Found: {}\n", path).into_bytes())
+                }
             }
         }
     };
@@ -2862,8 +2993,17 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                                 dt.as_secs_f64() * 1000.0
                             );
 
-                            // Cache with 60s default TTL
+                            // Cache with bounded capacity (max 10,000 entries) & 60s TTL (CWE-400 DoS defense)
                             let mut w_cache = cache.write().unwrap();
+                            if w_cache.len() >= 10_000 {
+                                let now = Instant::now();
+                                w_cache.retain(|_, v| v.expires_at > now);
+                                if w_cache.len() >= 10_000 {
+                                    if let Some(old_key) = w_cache.keys().next().cloned() {
+                                        w_cache.remove(&old_key);
+                                    }
+                                }
+                            }
                             w_cache.insert(
                                 domain,
                                 DnsCacheEntry {
