@@ -1,3 +1,11 @@
+/*
+ * NOTICE: LEGACY C REFERENCE IMPLEMENTATION.
+ * SUPERSEDED BY PURE-RUST cdylib: `crates/ferro-io` (target/release/libferro_io.so).
+ * All official builds and container environments exclusively utilize the pure-Rust
+ * implementation providing memory-safe io_uring submission, SQPOLL acceleration,
+ * atomic FD classification, and zero-latency TCP loopback optimization.
+ */
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>

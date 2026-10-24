@@ -169,41 +169,137 @@ struct IoUring {
     pad2: c_uint,
 }
 
+type FnIoUringQueueInitParams = unsafe extern "C" fn(c_uint, *mut IoUring, *mut IoUringParams) -> c_int;
+type FnIoUringQueueInit = unsafe extern "C" fn(c_uint, *mut IoUring, c_uint) -> c_int;
+type FnIoUringQueueExit = unsafe extern "C" fn(*mut IoUring);
+type FnIoUringGetSqe = unsafe extern "C" fn(*mut IoUring) -> *mut IoUringSqe;
+type FnIoUringSubmitAndWait = unsafe extern "C" fn(*mut IoUring, c_uint) -> c_int;
+type FnIoUringGetCqe = unsafe extern "C" fn(
+    *mut IoUring,
+    *mut *mut IoUringCqe,
+    c_uint,
+    c_uint,
+    *mut libc::sigset_t,
+) -> c_int;
+
+static FN_QUEUE_INIT_PARAMS: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
+static FN_QUEUE_INIT: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
+static FN_QUEUE_EXIT: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
+static FN_GET_SQE: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
+static FN_SUBMIT_AND_WAIT: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
+static FN_GET_CQE: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
+static URING_RESOLVED: AtomicBool = AtomicBool::new(false);
+
 #[cfg(target_os = "linux")]
-#[link(name = "uring")]
-extern "C" {
-    fn io_uring_queue_init_params(entries: c_uint, ring: *mut IoUring, p: *mut IoUringParams) -> c_int;
-    fn io_uring_queue_init(entries: c_uint, ring: *mut IoUring, flags: c_uint) -> c_int;
-    fn io_uring_queue_exit(ring: *mut IoUring);
-    fn io_uring_get_sqe(ring: *mut IoUring) -> *mut IoUringSqe;
-    fn io_uring_submit_and_wait(ring: *mut IoUring, wait_nr: c_uint) -> c_int;
-    fn __io_uring_get_cqe(
-        ring: *mut IoUring,
-        cqe_ptr: *mut *mut IoUringCqe,
-        submit: c_uint,
-        wait_nr: c_uint,
-        sigmask: *mut libc::sigset_t,
-    ) -> c_int;
+unsafe fn resolve_uring_symbols() {
+    if URING_RESOLVED.swap(true, Ordering::SeqCst) {
+        return;
+    }
+
+    let mut handle = libc::RTLD_DEFAULT;
+    let libname = b"liburing.so.2\0";
+    let dl_h = libc::dlopen(libname.as_ptr() as *const libc::c_char, libc::RTLD_LAZY | libc::RTLD_LOCAL);
+    if !dl_h.is_null() {
+        handle = dl_h;
+    } else {
+        let libname1 = b"liburing.so\0";
+        let dl_h1 = libc::dlopen(libname1.as_ptr() as *const libc::c_char, libc::RTLD_LAZY | libc::RTLD_LOCAL);
+        if !dl_h1.is_null() {
+            handle = dl_h1;
+        }
+    }
+
+    let p1 = libc::dlsym(handle, b"io_uring_queue_init_params\0".as_ptr() as *const _);
+    if !p1.is_null() { FN_QUEUE_INIT_PARAMS.store(p1, Ordering::SeqCst); }
+
+    let p2 = libc::dlsym(handle, b"io_uring_queue_init\0".as_ptr() as *const _);
+    if !p2.is_null() { FN_QUEUE_INIT.store(p2, Ordering::SeqCst); }
+
+    let p3 = libc::dlsym(handle, b"io_uring_queue_exit\0".as_ptr() as *const _);
+    if !p3.is_null() { FN_QUEUE_EXIT.store(p3, Ordering::SeqCst); }
+
+    let p4 = libc::dlsym(handle, b"io_uring_get_sqe\0".as_ptr() as *const _);
+    if !p4.is_null() { FN_GET_SQE.store(p4, Ordering::SeqCst); }
+
+    let p5 = libc::dlsym(handle, b"io_uring_submit_and_wait\0".as_ptr() as *const _);
+    if !p5.is_null() { FN_SUBMIT_AND_WAIT.store(p5, Ordering::SeqCst); }
+
+    let p6 = libc::dlsym(handle, b"__io_uring_get_cqe\0".as_ptr() as *const _);
+    if !p6.is_null() { FN_GET_CQE.store(p6, Ordering::SeqCst); }
 }
 
 #[cfg(not(target_os = "linux"))]
-unsafe fn io_uring_queue_init_params(_entries: c_uint, _ring: *mut IoUring, _p: *mut IoUringParams) -> c_int { -1 }
-#[cfg(not(target_os = "linux"))]
-unsafe fn io_uring_queue_init(_entries: c_uint, _ring: *mut IoUring, _flags: c_uint) -> c_int { -1 }
-#[cfg(not(target_os = "linux"))]
-unsafe fn io_uring_queue_exit(_ring: *mut IoUring) {}
-#[cfg(not(target_os = "linux"))]
-unsafe fn io_uring_get_sqe(_ring: *mut IoUring) -> *mut IoUringSqe { std::ptr::null_mut() }
-#[cfg(not(target_os = "linux"))]
-unsafe fn io_uring_submit_and_wait(_ring: *mut IoUring, _wait_nr: c_uint) -> c_int { -1 }
-#[cfg(not(target_os = "linux"))]
+unsafe fn resolve_uring_symbols() {}
+
+unsafe fn io_uring_queue_init_params(entries: c_uint, ring: *mut IoUring, p: *mut IoUringParams) -> c_int {
+    resolve_uring_symbols();
+    let ptr = FN_QUEUE_INIT_PARAMS.load(Ordering::Acquire);
+    if !ptr.is_null() {
+        let f: FnIoUringQueueInitParams = std::mem::transmute(ptr);
+        f(entries, ring, p)
+    } else {
+        -1
+    }
+}
+
+unsafe fn io_uring_queue_init(entries: c_uint, ring: *mut IoUring, flags: c_uint) -> c_int {
+    resolve_uring_symbols();
+    let ptr = FN_QUEUE_INIT.load(Ordering::Acquire);
+    if !ptr.is_null() {
+        let f: FnIoUringQueueInit = std::mem::transmute(ptr);
+        f(entries, ring, flags)
+    } else {
+        -1
+    }
+}
+
+unsafe fn io_uring_queue_exit(ring: *mut IoUring) {
+    resolve_uring_symbols();
+    let ptr = FN_QUEUE_EXIT.load(Ordering::Acquire);
+    if !ptr.is_null() {
+        let f: FnIoUringQueueExit = std::mem::transmute(ptr);
+        f(ring);
+    }
+}
+
+unsafe fn io_uring_get_sqe(ring: *mut IoUring) -> *mut IoUringSqe {
+    resolve_uring_symbols();
+    let ptr = FN_GET_SQE.load(Ordering::Acquire);
+    if !ptr.is_null() {
+        let f: FnIoUringGetSqe = std::mem::transmute(ptr);
+        f(ring)
+    } else {
+        std::ptr::null_mut()
+    }
+}
+
+unsafe fn io_uring_submit_and_wait(ring: *mut IoUring, wait_nr: c_uint) -> c_int {
+    resolve_uring_symbols();
+    let ptr = FN_SUBMIT_AND_WAIT.load(Ordering::Acquire);
+    if !ptr.is_null() {
+        let f: FnIoUringSubmitAndWait = std::mem::transmute(ptr);
+        f(ring, wait_nr)
+    } else {
+        -1
+    }
+}
+
 unsafe fn __io_uring_get_cqe(
-    _ring: *mut IoUring,
-    _cqe_ptr: *mut *mut IoUringCqe,
-    _submit: c_uint,
-    _wait_nr: c_uint,
-    _sigmask: *mut libc::sigset_t,
-) -> c_int { -1 }
+    ring: *mut IoUring,
+    cqe_ptr: *mut *mut IoUringCqe,
+    submit: c_uint,
+    wait_nr: c_uint,
+    sigmask: *mut libc::sigset_t,
+) -> c_int {
+    resolve_uring_symbols();
+    let ptr = FN_GET_CQE.load(Ordering::Acquire);
+    if !ptr.is_null() {
+        let f: FnIoUringGetCqe = std::mem::transmute(ptr);
+        f(ring, cqe_ptr, submit, wait_nr, sigmask)
+    } else {
+        -1
+    }
+}
 
 #[inline(always)]
 unsafe fn io_uring_cq_advance(ring: *mut IoUring, nr: u32) {

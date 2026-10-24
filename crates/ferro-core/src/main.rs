@@ -13,6 +13,9 @@ use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::{Duration, Instant};
 
+pub mod bench_suite;
+pub mod dhcp;
+pub mod syslog;
 pub mod zeroize;
 
 #[cfg(target_os = "linux")]
@@ -108,6 +111,13 @@ fn main() -> ExitCode {
         "hostname" => run_hostname(&command_args),
         "tee" => run_tee(&command_args),
         "ip" => run_ip(&command_args),
+        "dhcp" | "ferro-net" | "udhcpc" => dhcp::run_dhcp(&command_args),
+        "ferrod" | "syslogd" => syslog::run_ferrod(&command_args),
+        "logger" => syslog::run_logger(&command_args),
+        "logs" | "log" | "journalctl" => syslog::run_logs(&command_args),
+        "dmesg" => syslog::run_dmesg(&command_args),
+        "hackbench" => bench_suite::run_hackbench(&command_args),
+        "bench-fsync" | "fsync-bench" => bench_suite::run_fsync_bench(&command_args),
         "help" => {
             print_usage();
             ExitCode::SUCCESS
@@ -129,9 +139,10 @@ fn print_usage() {
     println!("  Search & Filter:   grep, find");
     println!("  System Monitoring: ps, free, df, uptime, whoami, id, uname, env, kill, sync, hostname");
     println!("  Storage & Mounts:  mount, umount, df");
-    println!("  Networking & Stack: ip (addr/link/route), dns-cache, fetch (curl), serve (httpd)");
+    println!("  Networking & Stack: ip (addr/link/route), dhcp (ferro-net), dns-cache, fetch (curl), serve (httpd)");
+    println!("  Logging & Auditing: ferrod (syslogd), logger, logs (journalctl), dmesg");
     println!(
-        "  Performance & Net: bench, serve, gamemode, dns-cache, fdstore, bpf, sched, game, install, snapshot, recovery"
+        "  Performance & Net: bench (cpu/hackbench/fsync), hackbench, bench-fsync, serve, server-suite, gamemode, dns-cache, fdstore, bpf, sched, game, install, snapshot, recovery"
     );
     println!("  Diagnostics & WinRE: recovery (Advanced Boot & Crash Recovery Menu)");
 }
@@ -2041,6 +2052,18 @@ fn run_poweroff() -> ExitCode {
 }
 
 fn run_bench(args: &[String]) -> ExitCode {
+    if let Some(sub) = args.first() {
+        match sub.as_str() {
+            "hackbench" => return bench_suite::run_hackbench(&args[1..]),
+            "fsync" => return bench_suite::run_fsync_bench(&args[1..]),
+            "cpu" => return run_cpu_bench(&args[1..]),
+            _ => {}
+        }
+    }
+    run_cpu_bench(args)
+}
+
+fn run_cpu_bench(args: &[String]) -> ExitCode {
     use std::time::Instant;
 
     let threads_count = args

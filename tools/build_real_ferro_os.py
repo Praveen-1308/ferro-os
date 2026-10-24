@@ -41,18 +41,24 @@ def main():
     print("        FERRO-OS OFFICIAL BARE-METAL OPERATING SYSTEM BUILD PIPELINE            ")
     print("================================================================================")
 
-    # 1. Compile Rust crates
-    print("\n[Stage 1] Compiling Rust binaries (ferro-init, ferro-core, ferro-pkg)...")
-    run_cmd(["cargo", "build", "--release", "-p", "ferro-init", "-p", "ferro-core", "-p", "ferro-pkg"], cwd=workspace)
+    # 1. Compile Rust crates and pure-Rust libferro_io
+    print("\n[Stage 1] Compiling Rust binaries (ferro-init, ferro-core, ferro-pkg, ferro-io)...")
+    run_cmd(["cargo", "build", "--release", "-p", "ferro-init", "-p", "ferro-core", "-p", "ferro-pkg", "-p", "ferro-io"], cwd=workspace)
 
-    # 2. Compile libferro_io.so with real io_uring
-    print("\n[Stage 2] Compiling real libferro_io.so with liburing...")
-    libferro_src = os.path.join(workspace, "tools", "libferro_io.c")
+    # 2. Stage authoritative pure-Rust libferro_io.so
+    print("\n[Stage 2] Staging authoritative pure-Rust libferro_io.so...")
+    rust_libferro = os.path.join(workspace, "target", "release", "libferro_io.so")
     libferro_dst = os.path.join(build_out, "libferro_io.so")
-    run_cmd([
-        "gcc", "-shared", "-fPIC", "-O3", "-Wall", "-Wextra",
-        libferro_src, "-o", libferro_dst, "-ldl", "-lpthread", "-luring"
-    ])
+    if os.path.exists(rust_libferro):
+        shutil.copy2(rust_libferro, libferro_dst)
+        print(f"  • Successfully deployed pure-Rust libferro_io.so from {rust_libferro}")
+    else:
+        # Fallback to C compilation if Rust cdylib is unavailable
+        libferro_src = os.path.join(workspace, "tools", "libferro_io.c")
+        run_cmd([
+            "gcc", "-shared", "-fPIC", "-O3", "-Wall", "-Wextra",
+            libferro_src, "-o", libferro_dst, "-ldl", "-lpthread", "-luring"
+        ])
 
     # 3. Compile eBPF Bytecode with BTF
     print("\n[Stage 3] Compiling eBPF socket bypass bytecode (ferro_sockops.o)...")

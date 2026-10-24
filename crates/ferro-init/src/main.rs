@@ -80,6 +80,16 @@ mod linux_init {
         // 3b. Start FD Store Daemon (SCM_RIGHTS Zero-Downtime Socket Handover)
         let _ = fdstore::FdStoreServer::new().start();
 
+        // 3c. Start Pure-Rust System Logging Daemon (ferrod listening on /dev/log)
+        println!("[ferro-init] Spawning pure-Rust logging daemon (ferrod) on /dev/log...");
+        let _ = std::thread::Builder::new()
+            .name("ferrod".to_string())
+            .spawn(|| {
+                let _ = std::process::Command::new("/bin/ferro-core")
+                    .args(["ferrod"])
+                    .status();
+            });
+
         // 4. Detect Previous Crash / Dirty Shutdown
         let crash_detected = detect_crash_state();
 
@@ -797,6 +807,16 @@ mod linux_init {
                         let name = entry.file_name().to_string_lossy().to_string();
                         if name != "lo" {
                             bring_up_iface(sock, &name);
+                            // Auto-lease IP via pure-Rust DHCP client (ferro-net)
+                            println!("[ferro-init] Triggering pure-Rust DHCP auto-leasing on '{}'...", name);
+                            let iface_name = name.clone();
+                            let _ = std::thread::Builder::new()
+                                .name(format!("ferro-dhcp-{}", iface_name))
+                                .spawn(move || {
+                                    let _ = std::process::Command::new("/bin/ferro-core")
+                                        .args(["dhcp", "-i", &iface_name, "-t", "2"])
+                                        .status();
+                                });
                         }
                     }
                 }

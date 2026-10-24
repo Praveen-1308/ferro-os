@@ -89,7 +89,9 @@ def main():
         "mv", "chmod", "chown", "touch", "ln", "stat", "id", "grep", "find",
         "head", "tail", "wc", "which", "env", "sleep", "free", "df", "ps", "kill",
         "uptime", "whoami", "sync", "hostname", "tee", "ip", "mount", "umount",
-        "reboot", "poweroff", "bench", "serve", "dns-cache", "fdstore", "bpf",
+        "ferrod", "syslogd", "logger", "logs", "journalctl", "dmesg",
+        "dhcp", "ferro-net", "udhcpc", "hackbench", "bench-fsync",
+        "reboot", "poweroff", "bench", "serve", "server-suite", "dns-cache", "fdstore", "bpf",
         "sched", "install", "snapshot", "recovery"
     ]
     for app in applets:
