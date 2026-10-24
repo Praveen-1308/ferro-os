@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-10-24T11:08:30Z",
-  "duration_s": 0.33,
+  "timestamp": "2026-10-24T12:02:52Z",
+  "duration_s": 0.23,
   "pure_rust_primitives_verified": true,
   "cloud_fhs_permissions_verified": true,
   "container_least_privilege_verified": true,

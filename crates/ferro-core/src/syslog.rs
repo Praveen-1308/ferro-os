@@ -7,6 +7,8 @@
 //!  - `logs` / `journalctl` applet: stream, tail, and filter system logs by facility/severity
 //!  - `dmesg` applet: query kernel ring buffer from /dev/kmsg or /proc/kmsg
 
+#![allow(clippy::unnecessary_map_or)]
+
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::os::unix::fs::PermissionsExt;
@@ -99,7 +101,10 @@ impl SyslogEntry {
         if let Some(colon_pos) = remainder.find(':') {
             let potential_tag = remainder[..colon_pos].trim();
             // Tags typically don't have spaces and are shorter than 32 chars
-            if !potential_tag.contains(' ') && potential_tag.len() <= 32 && !potential_tag.is_empty() {
+            if !potential_tag.contains(' ')
+                && potential_tag.len() <= 32
+                && !potential_tag.is_empty()
+            {
                 tag = potential_tag.to_string();
                 message = remainder[colon_pos + 1..].trim().to_string();
             }
@@ -209,7 +214,10 @@ pub fn run_ferrod(args: &[String]) -> ExitCode {
     // Make socket accessible to all processes (0666) so non-root apps can log
     let _ = fs::set_permissions(&socket_path, fs::Permissions::from_mode(0o666));
 
-    println!("[ferrod] Listening on {} (mode 0666). Ready for system logs.", socket_path);
+    println!(
+        "[ferrod] Listening on {} (mode 0666). Ready for system logs.",
+        socket_path
+    );
 
     let running = Arc::new(AtomicBool::new(true));
     let r = running.clone();
@@ -238,7 +246,9 @@ pub fn run_ferrod(args: &[String]) -> ExitCode {
                 append_log_line(DEFAULT_LOG_FILE, &formatted);
                 append_log_line(RUN_LOG_FILE, &formatted);
             }
-            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock || e.kind() == io::ErrorKind::TimedOut => {
+            Err(ref e)
+                if e.kind() == io::ErrorKind::WouldBlock || e.kind() == io::ErrorKind::TimedOut =>
+            {
                 // Heartbeat / idle check
                 continue;
             }
@@ -249,7 +259,10 @@ pub fn run_ferrod(args: &[String]) -> ExitCode {
         }
     }
 
-    println!("[ferrod] Daemon shutting down. Processed {} log records.", count);
+    println!(
+        "[ferrod] Daemon shutting down. Processed {} log records.",
+        count
+    );
     let _ = fs::remove_file(&socket_path);
     ExitCode::SUCCESS
 }
@@ -263,7 +276,7 @@ fn append_log_line(path_str: &str, line: &str) {
 /// Client utility to send a syslog message to `/dev/log`
 pub fn send_syslog_message(socket_path: &str, tag: &str, pri: u8, msg: &str) -> ExitCode {
     let packet = format!("<{}>{}: {}\n", pri, tag, msg);
-    
+
     // Bind temporary client datagram socket
     let client_path = format!("/tmp/ferro_log_client_{}.sock", std::process::id());
     let _ = fs::remove_file(&client_path);
@@ -395,7 +408,9 @@ pub fn run_logs(args: &[String]) -> ExitCode {
             "--help" | "-h" => {
                 println!("FerroOS System Log Inspector (logs / journalctl)");
                 println!("Usage: logs [OPTIONS]");
-                println!("  -n, --lines <N>      Number of recent log lines to display (default: 50)");
+                println!(
+                    "  -n, --lines <N>      Number of recent log lines to display (default: 50)"
+                );
                 println!("  -f, --follow         Follow log output in real-time (like tail -f)");
                 println!("  -g, --grep <PAT>     Filter log entries matching pattern");
                 println!("  -l, --level <LVL>    Filter by severity (EMERG, ALERT, CRIT, ERR, WARNING, NOTICE, INFO, DEBUG)");
@@ -435,7 +450,7 @@ pub fn run_logs(args: &[String]) -> ExitCode {
     };
 
     let reader = BufReader::new(file);
-    let all_lines: Vec<String> = reader.lines().filter_map(|l| l.ok()).collect();
+    let all_lines: Vec<String> = reader.lines().map_while(Result::ok).collect();
 
     // Filter lines
     let filtered: Vec<&String> = all_lines
@@ -471,7 +486,7 @@ pub fn run_logs(args: &[String]) -> ExitCode {
             thread::sleep(Duration::from_millis(500));
             if let Ok(f) = File::open(log_path) {
                 let r = BufReader::new(f);
-                let current_lines: Vec<String> = r.lines().filter_map(|l| l.ok()).collect();
+                let current_lines: Vec<String> = r.lines().map_while(Result::ok).collect();
                 if current_lines.len() > last_len {
                     for line in &current_lines[last_len..] {
                         let pass_grep = grep_filter.as_ref().map_or(true, |g| line.contains(g));
@@ -531,7 +546,14 @@ pub fn run_dmesg(args: &[String]) -> ExitCode {
     }
 
     // Attempt 3: Fallback - kernel entries in /var/log/syslog or /run/ferro/syslog.log
-    println!("[dmesg] Direct /dev/kmsg restricted by container sandbox. Reading kernel log stream:");
-    let _ = run_logs(&["-g".to_string(), "kern".to_string(), "-n".to_string(), "100".to_string()]);
+    println!(
+        "[dmesg] Direct /dev/kmsg restricted by container sandbox. Reading kernel log stream:"
+    );
+    let _ = run_logs(&[
+        "-g".to_string(),
+        "kern".to_string(),
+        "-n".to_string(),
+        "100".to_string(),
+    ]);
     ExitCode::SUCCESS
 }

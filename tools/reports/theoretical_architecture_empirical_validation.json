@@ -1,32 +1,32 @@
 {
   "heap_allocator": {
-    "ops_sec": 68000859,
-    "elapsed_ms": 29.4
+    "ops_sec": 66041566,
+    "elapsed_ms": 30.3
   },
   "database_lookaside": {
-    "write_tps": 995036.0,
-    "elapsed_ms": 10.0
+    "write_tps": 1270479.8,
+    "elapsed_ms": 7.9
   },
   "io_uring_storage": {
-    "iops": 745891.7,
-    "bw_mibs": 2983.6
+    "iops": 181234.1,
+    "bw_mibs": 724.9
   },
   "micro_network_bypass": {
-    "p50_us": 10.5,
-    "p99_us": 14.4
+    "p50_us": 22.96,
+    "p99_us": 70.88
   },
   "socket_sharding": {
     "reuseport_supported": true
   },
   "dns_cache": {
-    "avg_ns": 75.5,
-    "p99_ns": 80
+    "avg_ns": 64.6,
+    "p99_ns": 125
   },
   "binary_hardening": {
     "has_nx": true,
     "has_pie": true
   },
   "oom_score_defense": {
-    "current_oom_score": "100"
+    "current_oom_score": null
   }
 }

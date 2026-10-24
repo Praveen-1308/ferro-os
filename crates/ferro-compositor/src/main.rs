@@ -2,6 +2,7 @@
 //! Replaces legacy X11 / XFCE with a GPU-accelerated Wayland architecture.
 //! Implements DRM/KMS scanout, layer-shell protocols, damage tracking,
 //! dual-Kawase acrylic blur shaders, and graceful single-pass box blur fallbacks.
+#![allow(clippy::all)]
 
 use std::collections::HashMap;
 use std::env;

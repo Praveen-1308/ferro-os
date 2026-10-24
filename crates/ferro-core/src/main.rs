@@ -137,7 +137,9 @@ fn print_usage() {
     println!("  Shell & Navigation: sh, ls, pwd, cd, clear, which");
     println!("  File Operations:   cat, echo, cp, mv, rm, mkdir, chmod, chown, touch, ln, stat, tee, head, tail, wc");
     println!("  Search & Filter:   grep, find");
-    println!("  System Monitoring: ps, free, df, uptime, whoami, id, uname, env, kill, sync, hostname");
+    println!(
+        "  System Monitoring: ps, free, df, uptime, whoami, id, uname, env, kill, sync, hostname"
+    );
     println!("  Storage & Mounts:  mount, umount, df");
     println!("  Networking & Stack: ip (addr/link/route), dhcp (ferro-net), dns-cache, fetch (curl), serve (httpd)");
     println!("  Logging & Auditing: ferrod (syslogd), logger, logs (journalctl), dmesg");
@@ -329,7 +331,10 @@ fn extract_redirection_quote_aware(line: &str) -> (String, Option<(String, bool)
             let is_append = i + 1 < chars.len() && chars[i + 1] == '>';
             let target_start = if is_append { i + 2 } else { i + 1 };
             let raw_target: String = chars[target_start..].iter().collect();
-            let target_file = raw_target.trim().trim_matches(|ch| ch == '"' || ch == '\'').to_string();
+            let target_file = raw_target
+                .trim()
+                .trim_matches(|ch| ch == '"' || ch == '\'')
+                .to_string();
             return (clean_cmd.trim().to_string(), Some((target_file, is_append)));
         } else {
             clean_cmd.push(c);
@@ -378,7 +383,8 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
         };
 
         let mut command = if is_internal_applet(cmd) {
-            let mut c = Command::new(env::current_exe().unwrap_or_else(|_| PathBuf::from("ferro-core")));
+            let mut c =
+                Command::new(env::current_exe().unwrap_or_else(|_| PathBuf::from("ferro-core")));
             c.arg(cmd);
             c
         } else {
@@ -414,15 +420,73 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
 fn is_internal_applet(cmd: &str) -> bool {
     matches!(
         cmd,
-        "sh" | "bash" | "ls" | "cat" | "echo" | "pwd" | "uname" | "clear" | "mkdir"
-            | "rm" | "cp" | "mv" | "chmod" | "chown" | "touch" | "ln" | "stat" | "id"
-            | "grep" | "find" | "head" | "tail" | "wc" | "which" | "env" | "sleep"
-            | "free" | "df" | "ps" | "kill" | "uptime" | "whoami" | "sync" | "hostname"
-            | "tee" | "ip" | "mount" | "umount" | "reboot" | "poweroff" | "bench"
-            | "serve" | "httpd" | "supervise" | "gamemode" | "dns-cache" | "dns"
-            | "fdstore" | "bpf" | "ebpf" | "sched" | "scx" | "game" | "proton"
-            | "win" | "win-run" | "wine" | "install" | "installer" | "snapshot" | "snap"
-            | "ai-mode" | "ai" | "sandbox" | "landlock" | "recovery" | "fetch" | "curl"
+        "sh" | "bash"
+            | "ls"
+            | "cat"
+            | "echo"
+            | "pwd"
+            | "uname"
+            | "clear"
+            | "mkdir"
+            | "rm"
+            | "cp"
+            | "mv"
+            | "chmod"
+            | "chown"
+            | "touch"
+            | "ln"
+            | "stat"
+            | "id"
+            | "grep"
+            | "find"
+            | "head"
+            | "tail"
+            | "wc"
+            | "which"
+            | "env"
+            | "sleep"
+            | "free"
+            | "df"
+            | "ps"
+            | "kill"
+            | "uptime"
+            | "whoami"
+            | "sync"
+            | "hostname"
+            | "tee"
+            | "ip"
+            | "mount"
+            | "umount"
+            | "reboot"
+            | "poweroff"
+            | "bench"
+            | "serve"
+            | "httpd"
+            | "supervise"
+            | "gamemode"
+            | "dns-cache"
+            | "dns"
+            | "fdstore"
+            | "bpf"
+            | "ebpf"
+            | "sched"
+            | "scx"
+            | "game"
+            | "proton"
+            | "win"
+            | "win-run"
+            | "wine"
+            | "install"
+            | "installer"
+            | "snapshot"
+            | "snap"
+            | "ai-mode"
+            | "ai"
+            | "sandbox"
+            | "landlock"
+            | "recovery"
+            | "fetch"
+            | "curl"
     )
 }
 
@@ -450,7 +514,10 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
         "true" | ":" => return ExitCode::SUCCESS,
         "false" => return ExitCode::FAILURE,
         "exit" => {
-            let code = args.first().and_then(|s| s.parse::<i32>().ok()).unwrap_or(0);
+            let code = args
+                .first()
+                .and_then(|s| s.parse::<i32>().ok())
+                .unwrap_or(0);
             std::process::exit(code);
         }
         "help" => {
@@ -476,7 +543,13 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
                         let mut command = Command::new(current_exe);
                         command.arg(cmd).args(args).stdout(Stdio::from(f));
                         match command.status() {
-                            Ok(status) => return if status.success() { ExitCode::SUCCESS } else { ExitCode::FAILURE },
+                            Ok(status) => {
+                                return if status.success() {
+                                    ExitCode::SUCCESS
+                                } else {
+                                    ExitCode::FAILURE
+                                }
+                            }
                             Err(e) => {
                                 eprintln!("sh: failed to execute internal applet '{}': {}", cmd, e);
                                 return ExitCode::FAILURE;
@@ -1421,7 +1494,10 @@ fn run_whoami(_args: &[String]) -> ExitCode {
     }
     #[cfg(not(target_os = "linux"))]
     {
-        println!("{}", env::var("USER").unwrap_or_else(|_| "ferro".to_string()));
+        println!(
+            "{}",
+            env::var("USER").unwrap_or_else(|_| "ferro".to_string())
+        );
         ExitCode::SUCCESS
     }
 }
@@ -1434,8 +1510,20 @@ fn run_id(_args: &[String]) -> ExitCode {
         let euid = unsafe { libc::geteuid() };
         let egid = unsafe { libc::getegid() };
 
-        let uname = resolve_username(uid).unwrap_or_else(|| if uid == 0 { "root".to_string() } else { "ferro".to_string() });
-        let gname = resolve_groupname(gid).unwrap_or_else(|| if gid == 0 { "root".to_string() } else { "ferro".to_string() });
+        let uname = resolve_username(uid).unwrap_or_else(|| {
+            if uid == 0 {
+                "root".to_string()
+            } else {
+                "ferro".to_string()
+            }
+        });
+        let gname = resolve_groupname(gid).unwrap_or_else(|| {
+            if gid == 0 {
+                "root".to_string()
+            } else {
+                "ferro".to_string()
+            }
+        });
 
         let mut groups = [0 as libc::gid_t; 32];
         let ngroups = unsafe { libc::getgroups(32, groups.as_mut_ptr()) };
@@ -1451,11 +1539,29 @@ fn run_id(_args: &[String]) -> ExitCode {
         }
 
         if uid == euid && gid == egid {
-            println!("uid={}({}) gid={}({}) groups={}", uid, uname, gid, gname, group_strs.join(","));
+            println!(
+                "uid={}({}) gid={}({}) groups={}",
+                uid,
+                uname,
+                gid,
+                gname,
+                group_strs.join(",")
+            );
         } else {
             let euname = resolve_username(euid).unwrap_or_else(|| euid.to_string());
             let egname = resolve_groupname(egid).unwrap_or_else(|| egid.to_string());
-            println!("uid={}({}) gid={}({}) euid={}({}) egid={}({}) groups={}", uid, uname, gid, gname, euid, euname, egid, egname, group_strs.join(","));
+            println!(
+                "uid={}({}) gid={}({}) euid={}({}) egid={}({}) groups={}",
+                uid,
+                uname,
+                gid,
+                gname,
+                euid,
+                euname,
+                egid,
+                egname,
+                group_strs.join(",")
+            );
         }
         ExitCode::SUCCESS
     }
@@ -1479,16 +1585,28 @@ fn run_touch(args: &[String]) -> ExitCode {
             unsafe {
                 let c_path = match CString::new(file_path.as_str()) {
                     Ok(c) => c,
-                    Err(_) => { success = false; continue; }
+                    Err(_) => {
+                        success = false;
+                        continue;
+                    }
                 };
                 if libc::utimensat(libc::AT_FDCWD, c_path.as_ptr(), std::ptr::null(), 0) != 0 {
-                    eprintln!("touch: setting times of '{}': {}", file_path, io::Error::last_os_error());
+                    eprintln!(
+                        "touch: setting times of '{}': {}",
+                        file_path,
+                        io::Error::last_os_error()
+                    );
                     success = false;
                 }
             }
         } else {
-            match OpenOptions::new().create(true).write(true).open(path) {
-                Ok(_) => {},
+            match OpenOptions::new()
+                .create(true)
+                .write(true)
+                .truncate(true)
+                .open(path)
+            {
+                Ok(_) => {}
                 Err(e) => {
                     eprintln!("touch: cannot touch '{}': {}", file_path, e);
                     success = false;
@@ -1496,7 +1614,11 @@ fn run_touch(args: &[String]) -> ExitCode {
             }
         }
     }
-    if success { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+    if success {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }
 
 fn run_ln(args: &[String]) -> ExitCode {
@@ -1508,7 +1630,10 @@ fn run_ln(args: &[String]) -> ExitCode {
     let targets: Vec<&String> = args.iter().filter(|a| !a.starts_with('-')).collect();
 
     if targets.len() < 2 {
-        eprintln!("ln: missing destination file operand after '{}'", targets.first().unwrap_or(&&"".to_string()));
+        eprintln!(
+            "ln: missing destination file operand after '{}'",
+            targets.first().unwrap_or(&&"".to_string())
+        );
         return ExitCode::FAILURE;
     }
 
@@ -1521,7 +1646,10 @@ fn run_ln(args: &[String]) -> ExitCode {
             match std::os::unix::fs::symlink(src, dst) {
                 Ok(_) => ExitCode::SUCCESS,
                 Err(e) => {
-                    eprintln!("ln: failed to create symbolic link '{}' -> '{}': {}", dst, src, e);
+                    eprintln!(
+                        "ln: failed to create symbolic link '{}' -> '{}': {}",
+                        dst, src, e
+                    );
                     ExitCode::FAILURE
                 }
             }
@@ -1529,7 +1657,10 @@ fn run_ln(args: &[String]) -> ExitCode {
             match fs::hard_link(src, dst) {
                 Ok(_) => ExitCode::SUCCESS,
                 Err(e) => {
-                    eprintln!("ln: failed to create hard link '{}' => '{}': {}", dst, src, e);
+                    eprintln!(
+                        "ln: failed to create hard link '{}' => '{}': {}",
+                        dst, src, e
+                    );
                     ExitCode::FAILURE
                 }
             }
@@ -1553,9 +1684,15 @@ fn format_permissions(mode: u32) -> String {
     };
     let mut chars = vec![type_char];
     let flags = [
-        (0o400, 'r'), (0o200, 'w'), (0o100, 'x'),
-        (0o040, 'r'), (0o020, 'w'), (0o010, 'x'),
-        (0o004, 'r'), (0o002, 'w'), (0o001, 'x'),
+        (0o400, 'r'),
+        (0o200, 'w'),
+        (0o100, 'x'),
+        (0o040, 'r'),
+        (0o020, 'w'),
+        (0o010, 'x'),
+        (0o004, 'r'),
+        (0o002, 'w'),
+        (0o001, 'x'),
     ];
     for (flag, ch) in flags {
         if mode & flag != 0 {
@@ -1606,9 +1743,23 @@ fn run_stat(args: &[String]) -> ExitCode {
                     let gname = resolve_groupname(gid).unwrap_or_else(|| gid.to_string());
 
                     println!("  File: {}", file_path);
-                    println!("  Size: {:<10} Blocks: {:<8} IO Block: {:<6} {}", meta.len(), meta.blocks(), meta.blksize(), file_type);
-                    println!("Device: {:<10} Inode: {:<10} Links: {}", meta.dev(), meta.ino(), meta.nlink());
-                    println!("Access: ({:04o}/{})  Uid: ({:>5}/{:>8})   Gid: ({:>5}/{:>8})", octal, perm_str, uid, uname, gid, gname);
+                    println!(
+                        "  Size: {:<10} Blocks: {:<8} IO Block: {:<6} {}",
+                        meta.len(),
+                        meta.blocks(),
+                        meta.blksize(),
+                        file_type
+                    );
+                    println!(
+                        "Device: {:<10} Inode: {:<10} Links: {}",
+                        meta.dev(),
+                        meta.ino(),
+                        meta.nlink()
+                    );
+                    println!(
+                        "Access: ({:04o}/{})  Uid: ({:>5}/{:>8})   Gid: ({:>5}/{:>8})",
+                        octal, perm_str, uid, uname, gid, gname
+                    );
                 }
                 #[cfg(not(unix))]
                 {
@@ -1622,7 +1773,11 @@ fn run_stat(args: &[String]) -> ExitCode {
             }
         }
     }
-    if success { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+    if success {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }
 
 fn run_chown(args: &[String]) -> ExitCode {
@@ -1642,7 +1797,10 @@ fn run_chown(args: &[String]) -> ExitCode {
             for line in content.lines() {
                 let p: Vec<&str> = line.split(':').collect();
                 if p.len() >= 3 && p[0] == parts[0] {
-                    if let Ok(u) = p[2].parse::<u32>() { uid = u; break; }
+                    if let Ok(u) = p[2].parse::<u32>() {
+                        uid = u;
+                        break;
+                    }
                 }
             }
         }
@@ -1654,7 +1812,10 @@ fn run_chown(args: &[String]) -> ExitCode {
             for line in content.lines() {
                 let p: Vec<&str> = line.split(':').collect();
                 if p.len() >= 3 && p[0] == parts[1] {
-                    if let Ok(g) = p[2].parse::<u32>() { gid = g; break; }
+                    if let Ok(g) = p[2].parse::<u32>() {
+                        gid = g;
+                        break;
+                    }
                 }
             }
         }
@@ -1666,10 +1827,17 @@ fn run_chown(args: &[String]) -> ExitCode {
         unsafe {
             let c_path = match CString::new(file_path.as_str()) {
                 Ok(c) => c,
-                Err(_) => { success = false; continue; }
+                Err(_) => {
+                    success = false;
+                    continue;
+                }
             };
             if libc::chown(c_path.as_ptr(), uid, gid) != 0 {
-                eprintln!("chown: changing ownership of '{}': {}", file_path, io::Error::last_os_error());
+                eprintln!(
+                    "chown: changing ownership of '{}': {}",
+                    file_path,
+                    io::Error::last_os_error()
+                );
                 success = false;
             }
         }
@@ -1680,7 +1848,11 @@ fn run_chown(args: &[String]) -> ExitCode {
             success = false;
         }
     }
-    if success { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+    if success {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }
 
 fn run_mount(args: &[String]) -> ExitCode {
@@ -1709,7 +1881,9 @@ fn run_mount(args: &[String]) -> ExitCode {
     }
 
     if positional.len() < 2 {
-        eprintln!("mount: missing device or mountpoint (usage: mount [-t fstype] [-o opts] <dev> <dir>)");
+        eprintln!(
+            "mount: missing device or mountpoint (usage: mount [-t fstype] [-o opts] <dev> <dir>)"
+        );
         return ExitCode::FAILURE;
     }
 
@@ -1718,18 +1892,38 @@ fn run_mount(args: &[String]) -> ExitCode {
 
     #[cfg(target_os = "linux")]
     unsafe {
-        let c_dev = match CString::new(dev.as_str()) { Ok(c) => c, Err(_) => return ExitCode::FAILURE };
-        let c_dir = match CString::new(dir.as_str()) { Ok(c) => c, Err(_) => return ExitCode::FAILURE };
-        let c_type = match CString::new(fstype.as_str()) { Ok(c) => c, Err(_) => return ExitCode::FAILURE };
-        let c_opts = if options.is_empty() { None } else { CString::new(options.as_str()).ok() };
-        let data_ptr = c_opts.as_ref().map_or(std::ptr::null(), |c| c.as_ptr() as *const libc::c_void);
+        let c_dev = match CString::new(dev.as_str()) {
+            Ok(c) => c,
+            Err(_) => return ExitCode::FAILURE,
+        };
+        let c_dir = match CString::new(dir.as_str()) {
+            Ok(c) => c,
+            Err(_) => return ExitCode::FAILURE,
+        };
+        let c_type = match CString::new(fstype.as_str()) {
+            Ok(c) => c,
+            Err(_) => return ExitCode::FAILURE,
+        };
+        let c_opts = if options.is_empty() {
+            None
+        } else {
+            CString::new(options.as_str()).ok()
+        };
+        let data_ptr = c_opts
+            .as_ref()
+            .map_or(std::ptr::null(), |c| c.as_ptr() as *const libc::c_void);
 
         let ret = libc::mount(c_dev.as_ptr(), c_dir.as_ptr(), c_type.as_ptr(), 0, data_ptr);
         if ret == 0 {
             println!("ferro-core: mounted {} on {} (type {})", dev, dir, fstype);
             ExitCode::SUCCESS
         } else {
-            eprintln!("mount: mounting {} on {} failed: {}", dev, dir, io::Error::last_os_error());
+            eprintln!(
+                "mount: mounting {} on {} failed: {}",
+                dev,
+                dir,
+                io::Error::last_os_error()
+            );
             ExitCode::FAILURE
         }
     }
@@ -1752,7 +1946,9 @@ fn run_umount(args: &[String]) -> ExitCode {
     for a in args {
         if a == "-l" || a == "--lazy" {
             #[cfg(target_os = "linux")]
-            { flags |= libc::MNT_DETACH; }
+            {
+                flags |= libc::MNT_DETACH;
+            }
         } else if !a.starts_with('-') {
             target = a;
         }
@@ -1764,12 +1960,19 @@ fn run_umount(args: &[String]) -> ExitCode {
 
     #[cfg(target_os = "linux")]
     unsafe {
-        let c_target = match CString::new(target) { Ok(c) => c, Err(_) => return ExitCode::FAILURE };
+        let c_target = match CString::new(target) {
+            Ok(c) => c,
+            Err(_) => return ExitCode::FAILURE,
+        };
         if libc::umount2(c_target.as_ptr(), flags) == 0 {
             println!("ferro-core: unmounted {}", target);
             ExitCode::SUCCESS
         } else {
-            eprintln!("umount: unmounting {} failed: {}", target, io::Error::last_os_error());
+            eprintln!(
+                "umount: unmounting {} failed: {}",
+                target,
+                io::Error::last_os_error()
+            );
             ExitCode::FAILURE
         }
     }
@@ -1794,11 +1997,10 @@ fn run_hostname(args: &[String]) -> ExitCode {
         #[cfg(target_os = "linux")]
         {
             let mut buf = [0u8; 256];
-            let ret = unsafe { libc::gethostname(buf.as_mut_ptr() as *mut libc::c_char, buf.len()) };
+            let ret =
+                unsafe { libc::gethostname(buf.as_mut_ptr() as *mut libc::c_char, buf.len()) };
             if ret == 0 {
-                let name = String::from_utf8_lossy(&buf)
-                    .trim_matches('\0')
-                    .to_string();
+                let name = String::from_utf8_lossy(&buf).trim_matches('\0').to_string();
                 println!("{}", name);
                 return ExitCode::SUCCESS;
             }
@@ -1819,7 +2021,10 @@ fn run_hostname(args: &[String]) -> ExitCode {
             };
             let ret = unsafe { libc::sethostname(c_name.as_ptr(), new_name.len()) };
             if ret != 0 {
-                eprintln!("hostname: cannot set hostname: {}", io::Error::last_os_error());
+                eprintln!(
+                    "hostname: cannot set hostname: {}",
+                    io::Error::last_os_error()
+                );
                 return ExitCode::FAILURE;
             }
             let _ = fs::write("/etc/hostname", format!("{}\n", new_name));
@@ -1877,7 +2082,7 @@ fn run_tee(args: &[String]) -> ExitCode {
 }
 
 fn run_ip(args: &[String]) -> ExitCode {
-    let subcommand = args.get(0).map(|s| s.as_str()).unwrap_or("addr");
+    let subcommand = args.first().map(|s| s.as_str()).unwrap_or("addr");
     match subcommand {
         "link" | "l" => {
             print_ip_link();
@@ -1892,7 +2097,10 @@ fn run_ip(args: &[String]) -> ExitCode {
             ExitCode::SUCCESS
         }
         _ => {
-            eprintln!("ip: unknown command '{}' (supported: link, addr, route)", subcommand);
+            eprintln!(
+                "ip: unknown command '{}' (supported: link, addr, route)",
+                subcommand
+            );
             ExitCode::FAILURE
         }
     }
@@ -1921,7 +2129,13 @@ fn print_ip_link() {
                 .trim()
                 .to_string();
 
-            println!("{}: {}: <{},LOWER_UP> mtu {}", idx + 1, iface, operstate, mtu);
+            println!(
+                "{}: {}: <{},LOWER_UP> mtu {}",
+                idx + 1,
+                iface,
+                operstate,
+                mtu
+            );
             println!("    link/ether {} brd ff:ff:ff:ff:ff:ff", mac);
         }
     } else {
@@ -2365,8 +2579,11 @@ fn run_serve(args: &[String]) -> ExitCode {
             // Pin worker to physical CPU core for Thread-Per-Core (Shared-Nothing)
             if !cores_clone.is_empty() {
                 let assigned_core = cores_clone[shard_id % cores_clone.len()];
-                if let Ok(_) = set_cpu_affinity(&[assigned_core]) {
-                    println!("[ferro-serve] Worker {} pinned to dedicated Core {}", shard_id, assigned_core);
+                if set_cpu_affinity(&[assigned_core]).is_ok() {
+                    println!(
+                        "[ferro-serve] Worker {} pinned to dedicated Core {}",
+                        shard_id, assigned_core
+                    );
                 }
             }
 
@@ -2497,15 +2714,24 @@ fn run_server_suite(_args: &[String]) -> ExitCode {
                         );
                         ("200 OK", data)
                     } else if req.starts_with("GET /api/health") {
-                        let data = format!("{{\"status\": \"HEALTHY\", \"uptime_sec\": {:.2}}}", start_time.elapsed().as_secs_f64());
+                        let data = format!(
+                            "{{\"status\": \"HEALTHY\", \"uptime_sec\": {:.2}}}",
+                            start_time.elapsed().as_secs_f64()
+                        );
                         ("200 OK", data)
                     } else if req.starts_with("POST /api/echo") {
                         let body_start = req.find("\r\n\r\n").map(|idx| idx + 4).unwrap_or(0);
                         let echo_payload = &req[body_start..];
-                        let data = format!("{{\"echo\": \"{}\", \"received\": true}}", echo_payload.trim());
+                        let data = format!(
+                            "{{\"echo\": \"{}\", \"received\": true}}",
+                            echo_payload.trim()
+                        );
                         ("200 OK", data)
                     } else {
-                        ("404 Not Found", "{\"error\": \"Endpoint not found\"}".to_string())
+                        (
+                            "404 Not Found",
+                            "{\"error\": \"Endpoint not found\"}".to_string(),
+                        )
                     };
 
                     let resp = format!(
@@ -2528,7 +2754,9 @@ fn run_server_suite(_args: &[String]) -> ExitCode {
                 return;
             }
         };
-        println!("[server-8081] Key-Value In-Memory Storage Engine listening on http://0.0.0.0:8081");
+        println!(
+            "[server-8081] Key-Value In-Memory Storage Engine listening on http://0.0.0.0:8081"
+        );
         for mut stream in listener.incoming().flatten() {
             let mut buf = [0u8; 4096];
             if let Ok(n) = stream.read(&mut buf) {
@@ -2536,27 +2764,48 @@ fn run_server_suite(_args: &[String]) -> ExitCode {
                     let req = String::from_utf8_lossy(&buf[..n]);
                     let (status, body) = if req.starts_with("GET /get?") {
                         let query = req.split_whitespace().nth(1).unwrap_or("");
-                        let key = query.split("key=").nth(1).unwrap_or("").split('&').next().unwrap_or("");
+                        let key = query
+                            .split("key=")
+                            .nth(1)
+                            .unwrap_or("")
+                            .split('&')
+                            .next()
+                            .unwrap_or("");
                         let store = kv_clone.read().unwrap();
                         if let Some(val) = store.get(key) {
-                            ("200 OK", format!("{{\"key\": \"{}\", \"value\": \"{}\"}}", key, val))
+                            (
+                                "200 OK",
+                                format!("{{\"key\": \"{}\", \"value\": \"{}\"}}", key, val),
+                            )
                         } else {
-                            ("404 Not Found", format!("{{\"error\": \"Key '{}' not found\"}}", key))
+                            (
+                                "404 Not Found",
+                                format!("{{\"error\": \"Key '{}' not found\"}}", key),
+                            )
                         }
                     } else if req.starts_with("GET /keys") {
                         let store = kv_clone.read().unwrap();
                         let keys: Vec<String> = store.keys().cloned().collect();
                         let total = keys.len();
-                        ("200 OK", format!("{{\"total_keys\": {}, \"keys\": {:?}}}", total, keys))
+                        (
+                            "200 OK",
+                            format!("{{\"total_keys\": {}, \"keys\": {:?}}}", total, keys),
+                        )
                     } else if req.starts_with("GET /health") {
                         let store = kv_clone.read().unwrap();
-                        ("200 OK", format!("{{\"status\": \"KV_RUNNING\", \"entries\": {}}}", store.len()))
+                        (
+                            "200 OK",
+                            format!(
+                                "{{\"status\": \"KV_RUNNING\", \"entries\": {}}}",
+                                store.len()
+                            ),
+                        )
                     } else if req.starts_with("POST /set") {
                         let body_start = req.find("\r\n\r\n").map(|idx| idx + 4).unwrap_or(0);
                         let post_body = &req[body_start..];
                         let mut key = String::new();
                         let mut val = String::new();
-                        for part in post_body.split(|c| c == ',' || c == '{' || c == '}' || c == '"' || c == ':') {
+                        for part in post_body.split([',', '{', '}', '"', ':']) {
                             let p = part.trim();
                             if !p.is_empty() {
                                 if key.is_empty() && p != "key" && p != "value" {
@@ -2571,10 +2820,16 @@ fn run_server_suite(_args: &[String]) -> ExitCode {
                             store.insert(key.clone(), val.clone());
                             ("200 OK", format!("{{\"status\": \"STORED\", \"key\": \"{}\", \"value\": \"{}\"}}", key, val))
                         } else {
-                            ("400 Bad Request", "{\"error\": \"Missing key\"}".to_string())
+                            (
+                                "400 Bad Request",
+                                "{\"error\": \"Missing key\"}".to_string(),
+                            )
                         }
                     } else {
-                        ("404 Not Found", "{\"error\": \"Endpoint not found\"}".to_string())
+                        (
+                            "404 Not Found",
+                            "{\"error\": \"Endpoint not found\"}".to_string(),
+                        )
                     };
 
                     let resp = format!(
@@ -2625,15 +2880,27 @@ fn read_system_meminfo() -> (f64, f64, f64) {
     if let Ok(content) = fs::read_to_string("/proc/meminfo") {
         for line in content.lines() {
             if line.starts_with("MemTotal:") {
-                total_kb = line.split_whitespace().nth(1).and_then(|s| s.parse::<f64>().ok()).unwrap_or(0.0);
+                total_kb = line
+                    .split_whitespace()
+                    .nth(1)
+                    .and_then(|s| s.parse::<f64>().ok())
+                    .unwrap_or(0.0);
             } else if line.starts_with("MemAvailable:") {
-                avail_kb = line.split_whitespace().nth(1).and_then(|s| s.parse::<f64>().ok()).unwrap_or(0.0);
+                avail_kb = line
+                    .split_whitespace()
+                    .nth(1)
+                    .and_then(|s| s.parse::<f64>().ok())
+                    .unwrap_or(0.0);
             }
         }
     }
     let total_mb = total_kb / 1024.0;
     let used_mb = (total_kb - avail_kb) / 1024.0;
-    let pct = if total_kb > 0.0 { (used_mb / total_mb) * 100.0 } else { 0.0 };
+    let pct = if total_kb > 0.0 {
+        (used_mb / total_mb) * 100.0
+    } else {
+        0.0
+    };
     (total_mb, used_mb, pct)
 }
 
@@ -3558,9 +3825,15 @@ fn run_bpf(args: &[String]) -> ExitCode {
             ExitCode::FAILURE
         }
         "load" => {
-            println!("================================================================================");
-            println!("  ⬡ FERRO-OS eBPF LOADER: Initializing Kernel Sockops & Bypass Engine          ");
-            println!("================================================================================");
+            println!(
+                "================================================================================"
+            );
+            println!(
+                "  ⬡ FERRO-OS eBPF LOADER: Initializing Kernel Sockops & Bypass Engine          "
+            );
+            println!(
+                "================================================================================"
+            );
 
             // 1. Ensure /sys/fs/bpf is mounted
             let bpf_path = Path::new("/sys/fs/bpf");
@@ -3611,7 +3884,14 @@ fn run_bpf(args: &[String]) -> ExitCode {
 
                     // 4. Attach to cgroup v2 root
                     let cgroup_attach = Command::new("bpftool")
-                        .args(["cgroup", "attach", "/sys/fs/cgroup", "sock_ops", "pinned", prog_pin])
+                        .args([
+                            "cgroup",
+                            "attach",
+                            "/sys/fs/cgroup",
+                            "sock_ops",
+                            "pinned",
+                            prog_pin,
+                        ])
                         .output();
 
                     match cgroup_attach {
@@ -3622,11 +3902,17 @@ fn run_bpf(args: &[String]) -> ExitCode {
                         }
                         Ok(ca_out) => {
                             let err_msg = String::from_utf8_lossy(&ca_out.stderr);
-                            println!("  ⚠️ Program loaded, but cgroup attach returned: {}", err_msg.trim());
+                            println!(
+                                "  ⚠️ Program loaded, but cgroup attach returned: {}",
+                                err_msg.trim()
+                            );
                             ExitCode::SUCCESS
                         }
                         Err(e) => {
-                            println!("  ⚠️ Program loaded, but failed to execute cgroup attach: {}", e);
+                            println!(
+                                "  ⚠️ Program loaded, but failed to execute cgroup attach: {}",
+                                e
+                            );
                             ExitCode::SUCCESS
                         }
                     }
@@ -3646,7 +3932,14 @@ fn run_bpf(args: &[String]) -> ExitCode {
             println!("[bpf] Detaching and unpinning FerroOS eBPF programs...");
             let prog_pin = "/sys/fs/bpf/ferro_sockops";
             let _ = Command::new("bpftool")
-                .args(["cgroup", "detach", "/sys/fs/cgroup", "sock_ops", "pinned", prog_pin])
+                .args([
+                    "cgroup",
+                    "detach",
+                    "/sys/fs/cgroup",
+                    "sock_ops",
+                    "pinned",
+                    prog_pin,
+                ])
                 .output();
             let _ = fs::remove_file(prog_pin);
             let _ = fs::remove_dir_all("/sys/fs/bpf/ferro_maps");
@@ -6077,7 +6370,10 @@ fn run_sandbox(args: &[String]) -> ExitCode {
                     add_path_rule("/bin", read_exec);
                     add_path_rule("/lib", read_exec);
                     add_path_rule("/lib64", read_exec);
-                    add_path_rule("/etc", LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR);
+                    add_path_rule(
+                        "/etc",
+                        LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR,
+                    );
 
                     add_path_rule(allowed_dir, fs_access);
 

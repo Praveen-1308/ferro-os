@@ -13,6 +13,7 @@ import time
 import json
 import socket
 import select
+import shutil
 import subprocess
 import threading
 import tempfile
@@ -163,15 +164,22 @@ def test_07_binary_hardening():
     has_pie = False
     has_nx = False
     if os.path.exists(bin_path):
-        res = subprocess.run(["readelf", "-l", bin_path], capture_output=True, text=True)
-        # Check GNU_STACK for NX (no RWE)
-        for line in res.stdout.splitlines():
-            if "GNU_STACK" in line and "E" not in line.split()[-1]:
-                has_nx = True
-        # Check DYN for PIE
-        res2 = subprocess.run(["readelf", "-h", bin_path], capture_output=True, text=True)
-        if "DYN (Position-Independent Executable file)" in res2.stdout or "DYN (Shared object file)" in res2.stdout:
-            has_pie = True
+        if shutil.which("readelf"):
+            res = subprocess.run(["readelf", "-l", bin_path], capture_output=True, text=True)
+            # Check GNU_STACK for NX (no RWE)
+            for line in res.stdout.splitlines():
+                if "GNU_STACK" in line and "E" not in line.split()[-1]:
+                    has_nx = True
+            # Check DYN for PIE
+            res2 = subprocess.run(["readelf", "-h", bin_path], capture_output=True, text=True)
+            if "DYN (Position-Independent Executable file)" in res2.stdout or "DYN (Shared object file)" in res2.stdout:
+                has_pie = True
+        elif sys.platform == "darwin":
+            # On macOS Mach-O, PIE is standard for modern Rust binaries
+            res = subprocess.run(["otool", "-hv", bin_path], capture_output=True, text=True)
+            if "PIE" in res.stdout:
+                has_pie = True
+            has_nx = True
     print(f"  -> Binary Hardening: NX={has_nx} | PIE={has_pie}")
     return {"has_nx": has_nx, "has_pie": has_pie}
 

@@ -38,16 +38,35 @@ def main():
         shutil.rmtree(ROOTFS)
     os.makedirs(ROOTFS)
 
-    # 1. Compile Release Rust Binaries via Docker Builder
+    # 1. Compile Release Rust Binaries
     print("\n[Stage 1] Compiling Pure-Rust Core Daemons...")
-    compile_cmd = [
-        "docker", "run", "--rm",
-        "-v", f"{WORKSPACE}:/build",
-        "-w", "/build",
-        "rust:1.80-slim-bookworm",
-        "cargo", "build", "--release", "-p", "ferro-init", "-p", "ferro-core", "-p", "ferro-pkg", "-p", "ferro-io"
-    ]
-    run(compile_cmd)
+    target_rel = os.path.join(WORKSPACE, "target/release")
+    ferro_bins = ["ferro-init", "ferro-core", "ferro-pkg"]
+    bins_exist = all(os.path.exists(os.path.join(target_rel, b)) for b in ferro_bins)
+    if bins_exist and sys.platform == "darwin":
+        # Check if existing binaries are Mach-O rather than Linux ELF
+        try:
+            with open(os.path.join(target_rel, "ferro-core"), "rb") as f:
+                if f.read(4) != b"\x7fELF":
+                    bins_exist = False
+        except Exception:
+            bins_exist = False
+
+    if sys.platform != "darwin" and shutil.which("cargo") and (not bins_exist or os.environ.get("FORCE_REBUILD") == "1"):
+        compile_cmd = ["cargo", "build", "--release", "-p", "ferro-init", "-p", "ferro-core", "-p", "ferro-pkg", "-p", "ferro-io"]
+        run(compile_cmd, cwd=WORKSPACE)
+    elif not bins_exist:
+        print("  • Cross-compiling native Linux ELF release binaries via container...")
+        compile_cmd = [
+            "docker", "run", "--rm",
+            "-v", f"{WORKSPACE}:/build",
+            "-w", "/build",
+            "rust:1.80-slim-bookworm",
+            "cargo", "build", "--release", "-p", "ferro-init", "-p", "ferro-core", "-p", "ferro-pkg", "-p", "ferro-io"
+        ]
+        run(compile_cmd)
+    else:
+        print("  • Found pre-compiled release binaries in target/release, proceeding...")
 
     # 2. Build FHS 3.0 Directory Hierarchy with UsrMerge
     print("\n[Stage 2] Generating FHS 3.0 UsrMerge Directory Hierarchy...")
@@ -76,6 +95,8 @@ def main():
 
     # Copy pure-Rust io_uring accelerator shim if compiled
     so_src = os.path.join(target_rel, "libferro_io.so")
+    if not os.path.exists(so_src):
+        so_src = os.path.join(target_rel, "libferro_io.dylib")
     if os.path.exists(so_src):
         shutil.copy2(so_src, os.path.join(ROOTFS, "usr/lib/libferro_io.so"))
 
@@ -146,12 +167,19 @@ def main():
     print("\n[Stage 6] Packaging Minimum System Shared Libraries...")
     libs = [
         "/lib/x86_64-linux-gnu/libc.so.6",
+        "/usr/lib/x86_64-linux-gnu/libc.so.6",
         "/lib/x86_64-linux-gnu/libm.so.6",
+        "/usr/lib/x86_64-linux-gnu/libm.so.6",
         "/lib/x86_64-linux-gnu/libdl.so.2",
+        "/usr/lib/x86_64-linux-gnu/libdl.so.2",
         "/lib/x86_64-linux-gnu/libpthread.so.0",
+        "/usr/lib/x86_64-linux-gnu/libpthread.so.0",
         "/lib/x86_64-linux-gnu/libgcc_s.so.1",
+        "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
         "/lib/x86_64-linux-gnu/liburing.so.2",
+        "/usr/lib/x86_64-linux-gnu/liburing.so.2",
         "/lib64/ld-linux-x86-64.so.2",
+        "/usr/lib64/ld-linux-x86-64.so.2",
     ]
     for lib in libs:
         if os.path.exists(lib):
@@ -193,13 +221,25 @@ def main():
                 "WORKDIR /home/ferro\n"
                 'CMD ["/usr/bin/sh"]\n')
 
-    run(["docker", "build", "-t", "ferro-os-pure:latest", "-f", dockerfile_pure, BUILD_OUT])
+    docker_available = False
+    if shutil.which("docker"):
+        res = subprocess.run(["docker", "info"], capture_output=True)
+        if res.returncode == 0:
+            docker_available = True
+            run(["docker", "build", "-t", "ferro-os-pure:latest", "-f", dockerfile_pure, BUILD_OUT])
+        else:
+            print("  • Note: Docker daemon not responding, skipping image build (RootFS archive ready).")
+    else:
+        print("  • Note: Docker CLI not found, skipping image build (RootFS archive ready).")
 
     print("\n" + "=" * 80)
     print("✅ PURE-RUST LINUX OPERATING SYSTEM BUILD COMPLETE!")
     print(f"   RootFS Location: {ROOTFS}")
     print(f"   Archive:         {archive_path} ({size_mb:.2f} MB)")
-    print(f"   Docker Image:    ferro-os-pure:latest (Zero GNU/APT dependencies)")
+    if docker_available:
+        print(f"   Docker Image:    ferro-os-pure:latest (Zero GNU/APT dependencies)")
+    else:
+        print(f"   Docker Image:    Ready to build from {archive_path}")
     print("=" * 80)
 
 if __name__ == "__main__":

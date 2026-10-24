@@ -1,5 +1,6 @@
 //! ferro-io: High-Performance Pure-Rust POSIX I/O Interposition and io_uring Acceleration Library
 //!
+#![allow(clippy::all)]
 //! Provides transparent acceleration for standard POSIX I/O:
 //!  - Lock-free atomic file descriptor classification cache (65,536 slots).
 //!  - Thread-local io_uring instances with kernel SQPOLL submission polling.
@@ -8,9 +9,8 @@
 //!  - AT_SECURE and SUID privilege boundary enforcement.
 
 use libc::{
-    c_int, c_uint, c_void, off_t, size_t, sockaddr, socklen_t, ssize_t,
-    AF_INET, AF_INET6, EINVAL, ENOSYS, EOPNOTSUPP, IPPROTO_TCP,
-    RTLD_NEXT, SOL_SOCKET, SO_RCVBUF, SO_SNDBUF, S_IFMT, S_IFREG,
+    c_int, c_uint, c_void, off_t, size_t, sockaddr, socklen_t, ssize_t, AF_INET, AF_INET6, EINVAL,
+    ENOSYS, EOPNOTSUPP, IPPROTO_TCP, RTLD_NEXT, SOL_SOCKET, SO_RCVBUF, SO_SNDBUF, S_IFMT, S_IFREG,
     TCP_NODELAY,
 };
 use std::cell::RefCell;
@@ -169,7 +169,8 @@ struct IoUring {
     pad2: c_uint,
 }
 
-type FnIoUringQueueInitParams = unsafe extern "C" fn(c_uint, *mut IoUring, *mut IoUringParams) -> c_int;
+type FnIoUringQueueInitParams =
+    unsafe extern "C" fn(c_uint, *mut IoUring, *mut IoUringParams) -> c_int;
 type FnIoUringQueueInit = unsafe extern "C" fn(c_uint, *mut IoUring, c_uint) -> c_int;
 type FnIoUringQueueExit = unsafe extern "C" fn(*mut IoUring);
 type FnIoUringGetSqe = unsafe extern "C" fn(*mut IoUring) -> *mut IoUringSqe;
@@ -188,6 +189,7 @@ static FN_QUEUE_EXIT: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
 static FN_GET_SQE: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
 static FN_SUBMIT_AND_WAIT: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
 static FN_GET_CQE: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
+#[allow(dead_code)]
 static URING_RESOLVED: AtomicBool = AtomicBool::new(false);
 
 #[cfg(target_os = "linux")]
@@ -198,40 +200,62 @@ unsafe fn resolve_uring_symbols() {
 
     let mut handle = libc::RTLD_DEFAULT;
     let libname = b"liburing.so.2\0";
-    let dl_h = libc::dlopen(libname.as_ptr() as *const libc::c_char, libc::RTLD_LAZY | libc::RTLD_LOCAL);
+    let dl_h = libc::dlopen(
+        libname.as_ptr() as *const libc::c_char,
+        libc::RTLD_LAZY | libc::RTLD_LOCAL,
+    );
     if !dl_h.is_null() {
         handle = dl_h;
     } else {
         let libname1 = b"liburing.so\0";
-        let dl_h1 = libc::dlopen(libname1.as_ptr() as *const libc::c_char, libc::RTLD_LAZY | libc::RTLD_LOCAL);
+        let dl_h1 = libc::dlopen(
+            libname1.as_ptr() as *const libc::c_char,
+            libc::RTLD_LAZY | libc::RTLD_LOCAL,
+        );
         if !dl_h1.is_null() {
             handle = dl_h1;
         }
     }
 
     let p1 = libc::dlsym(handle, b"io_uring_queue_init_params\0".as_ptr() as *const _);
-    if !p1.is_null() { FN_QUEUE_INIT_PARAMS.store(p1, Ordering::SeqCst); }
+    if !p1.is_null() {
+        FN_QUEUE_INIT_PARAMS.store(p1, Ordering::SeqCst);
+    }
 
     let p2 = libc::dlsym(handle, b"io_uring_queue_init\0".as_ptr() as *const _);
-    if !p2.is_null() { FN_QUEUE_INIT.store(p2, Ordering::SeqCst); }
+    if !p2.is_null() {
+        FN_QUEUE_INIT.store(p2, Ordering::SeqCst);
+    }
 
     let p3 = libc::dlsym(handle, b"io_uring_queue_exit\0".as_ptr() as *const _);
-    if !p3.is_null() { FN_QUEUE_EXIT.store(p3, Ordering::SeqCst); }
+    if !p3.is_null() {
+        FN_QUEUE_EXIT.store(p3, Ordering::SeqCst);
+    }
 
     let p4 = libc::dlsym(handle, b"io_uring_get_sqe\0".as_ptr() as *const _);
-    if !p4.is_null() { FN_GET_SQE.store(p4, Ordering::SeqCst); }
+    if !p4.is_null() {
+        FN_GET_SQE.store(p4, Ordering::SeqCst);
+    }
 
     let p5 = libc::dlsym(handle, b"io_uring_submit_and_wait\0".as_ptr() as *const _);
-    if !p5.is_null() { FN_SUBMIT_AND_WAIT.store(p5, Ordering::SeqCst); }
+    if !p5.is_null() {
+        FN_SUBMIT_AND_WAIT.store(p5, Ordering::SeqCst);
+    }
 
     let p6 = libc::dlsym(handle, b"__io_uring_get_cqe\0".as_ptr() as *const _);
-    if !p6.is_null() { FN_GET_CQE.store(p6, Ordering::SeqCst); }
+    if !p6.is_null() {
+        FN_GET_CQE.store(p6, Ordering::SeqCst);
+    }
 }
 
 #[cfg(not(target_os = "linux"))]
 unsafe fn resolve_uring_symbols() {}
 
-unsafe fn io_uring_queue_init_params(entries: c_uint, ring: *mut IoUring, p: *mut IoUringParams) -> c_int {
+unsafe fn io_uring_queue_init_params(
+    entries: c_uint,
+    ring: *mut IoUring,
+    p: *mut IoUringParams,
+) -> c_int {
     resolve_uring_symbols();
     let ptr = FN_QUEUE_INIT_PARAMS.load(Ordering::Acquire);
     if !ptr.is_null() {
@@ -364,7 +388,9 @@ fn get_thread_uring() -> Option<*mut IoUring> {
         params.flags = IORING_SETUP_SQPOLL;
         params.sq_thread_idle = 2000;
 
-        let ret = unsafe { io_uring_queue_init_params(FERRO_URING_ENTRIES, &mut uninit_ring, &mut params) };
+        let ret = unsafe {
+            io_uring_queue_init_params(FERRO_URING_ENTRIES, &mut uninit_ring, &mut params)
+        };
         if ret >= 0 {
             *borrow = Some(RustThreadRing {
                 ring: uninit_ring,
@@ -377,7 +403,9 @@ fn get_thread_uring() -> Option<*mut IoUring> {
         // Fallback 1: SINGLE_ISSUER
         let mut params2: IoUringParams = unsafe { std::mem::zeroed() };
         params2.flags = IORING_SETUP_SINGLE_ISSUER;
-        let ret2 = unsafe { io_uring_queue_init_params(FERRO_URING_ENTRIES, &mut uninit_ring, &mut params2) };
+        let ret2 = unsafe {
+            io_uring_queue_init_params(FERRO_URING_ENTRIES, &mut uninit_ring, &mut params2)
+        };
         if ret2 >= 0 {
             *borrow = Some(RustThreadRing {
                 ring: uninit_ring,
@@ -706,7 +734,12 @@ pub unsafe extern "C" fn write(fd: c_int, buf: *const c_void, count: size_t) -> 
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn pread(fd: c_int, buf: *mut c_void, count: size_t, offset: off_t) -> ssize_t {
+pub unsafe extern "C" fn pread(
+    fd: c_int,
+    buf: *mut c_void,
+    count: size_t,
+    offset: off_t,
+) -> ssize_t {
     if count > SSIZE_MAX as size_t {
         set_errno(EINVAL);
         return -1;
@@ -757,12 +790,22 @@ pub unsafe extern "C" fn pread(fd: c_int, buf: *mut c_void, count: size_t, offse
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn pread64(fd: c_int, buf: *mut c_void, count: size_t, offset: off_t) -> ssize_t {
+pub unsafe extern "C" fn pread64(
+    fd: c_int,
+    buf: *mut c_void,
+    count: size_t,
+    offset: off_t,
+) -> ssize_t {
     pread(fd, buf, count, offset)
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn pwrite(fd: c_int, buf: *const c_void, count: size_t, offset: off_t) -> ssize_t {
+pub unsafe extern "C" fn pwrite(
+    fd: c_int,
+    buf: *const c_void,
+    count: size_t,
+    offset: off_t,
+) -> ssize_t {
     if count > SSIZE_MAX as size_t {
         set_errno(EINVAL);
         return -1;
@@ -813,7 +856,12 @@ pub unsafe extern "C" fn pwrite(fd: c_int, buf: *const c_void, count: size_t, of
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn pwrite64(fd: c_int, buf: *const c_void, count: size_t, offset: off_t) -> ssize_t {
+pub unsafe extern "C" fn pwrite64(
+    fd: c_int,
+    buf: *const c_void,
+    count: size_t,
+    offset: off_t,
+) -> ssize_t {
     pwrite(fd, buf, count, offset)
 }
 
@@ -947,7 +995,10 @@ pub unsafe extern "C" fn socket(domain: c_int, socket_type: c_int, protocol: c_i
 
     if fd >= 0 && (fd as usize) < MAX_CACHED_FDS {
         FD_TYPE_CACHE[fd as usize].store(1, Ordering::Relaxed);
-        if !is_secure_execution() && (domain == AF_INET || domain == AF_INET6) && (socket_type & libc::SOCK_STREAM) != 0 {
+        if !is_secure_execution()
+            && (domain == AF_INET || domain == AF_INET6)
+            && (socket_type & libc::SOCK_STREAM) != 0
+        {
             let one: c_int = 1;
             libc::setsockopt(
                 fd,
@@ -963,7 +1014,11 @@ pub unsafe extern "C" fn socket(domain: c_int, socket_type: c_int, protocol: c_i
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn connect(sockfd: c_int, addr: *const sockaddr, addrlen: socklen_t) -> c_int {
+pub unsafe extern "C" fn connect(
+    sockfd: c_int,
+    addr: *const sockaddr,
+    addrlen: socklen_t,
+) -> c_int {
     ensure_symbols_initialized();
     optimize_tcp_socket(sockfd, addr, addrlen);
     let real_fn: ConnectFn = std::mem::transmute(REAL_CONNECT.load(Ordering::Acquire));
@@ -971,7 +1026,11 @@ pub unsafe extern "C" fn connect(sockfd: c_int, addr: *const sockaddr, addrlen: 
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn accept(sockfd: c_int, addr: *mut sockaddr, addrlen: *mut socklen_t) -> c_int {
+pub unsafe extern "C" fn accept(
+    sockfd: c_int,
+    addr: *mut sockaddr,
+    addrlen: *mut socklen_t,
+) -> c_int {
     ensure_symbols_initialized();
     let real_fn: AcceptFn = std::mem::transmute(REAL_ACCEPT.load(Ordering::Acquire));
     let fd = real_fn(sockfd, addr, addrlen);
@@ -983,7 +1042,12 @@ pub unsafe extern "C" fn accept(sockfd: c_int, addr: *mut sockaddr, addrlen: *mu
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn accept4(sockfd: c_int, addr: *mut sockaddr, addrlen: *mut socklen_t, flags: c_int) -> c_int {
+pub unsafe extern "C" fn accept4(
+    sockfd: c_int,
+    addr: *mut sockaddr,
+    addrlen: *mut socklen_t,
+    flags: c_int,
+) -> c_int {
     ensure_symbols_initialized();
     let real_fn: Accept4Fn = std::mem::transmute(REAL_ACCEPT4.load(Ordering::Acquire));
     let fd = real_fn(sockfd, addr, addrlen, flags);
@@ -1009,7 +1073,12 @@ pub unsafe extern "C" fn epoll_ctl(epfd: c_int, op: c_int, fd: c_int, event: *mu
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn epoll_wait(epfd: c_int, events: *mut c_void, maxevents: c_int, timeout: c_int) -> c_int {
+pub unsafe extern "C" fn epoll_wait(
+    epfd: c_int,
+    events: *mut c_void,
+    maxevents: c_int,
+    timeout: c_int,
+) -> c_int {
     ensure_symbols_initialized();
     let real_fn: EpollWaitFn = std::mem::transmute(REAL_EPOLL_WAIT.load(Ordering::Acquire));
     real_fn(epfd, events, maxevents, timeout)

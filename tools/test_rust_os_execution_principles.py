@@ -15,7 +15,7 @@ import shutil
 WORKSPACE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 FERRO_CORE = os.path.join(WORKSPACE, "target", "release", "ferro-core")
 FERRO_INIT = os.path.join(WORKSPACE, "target", "release", "ferro-init")
-LIBFERRO_IO = os.path.join(WORKSPACE, "target", "release", "libferro_io.so")
+LIBFERRO_IO = os.path.join(WORKSPACE, "target", "release", "libferro_io.dylib" if sys.platform == "darwin" else "libferro_io.so")
 
 PASSED = 0
 FAILED = 0
@@ -147,25 +147,31 @@ def test_libferro_io_library_and_interposition():
     log_test("libferro_io.so existence", True, f"({os.path.getsize(LIBFERRO_IO)} bytes)")
 
     # Verify exported symbols
-    nm_res = subprocess.run(["nm", "-D", LIBFERRO_IO], capture_output=True, text=True)
+    nm_cmd = ["nm", "-gU", LIBFERRO_IO] if sys.platform == "darwin" else ["nm", "-D", LIBFERRO_IO]
+    nm_res = subprocess.run(nm_cmd, capture_output=True, text=True)
     required_syms = ["read", "write", "fsync", "fdatasync", "socket", "connect", "accept"]
     all_found = True
     for s in required_syms:
-        if f" T {s}" not in nm_res.stdout:
+        if (f" T {s}" not in nm_res.stdout) and (f" T _{s}" not in nm_res.stdout):
             all_found = False
             log_test(f"Exported symbol '{s}'", False)
     if all_found:
         log_test("Authoritative POSIX I/O symbols exported", True, f"({len(required_syms)}/7 verified)")
 
-    # Test running a standard dynamic command with LD_PRELOAD
+    # Test running a standard dynamic command with LD_PRELOAD / DYLD_INSERT_LIBRARIES
+    preload_env = {"PATH": os.environ.get("PATH", "")}
+    if sys.platform == "darwin":
+        preload_env["DYLD_INSERT_LIBRARIES"] = LIBFERRO_IO
+    else:
+        preload_env["LD_PRELOAD"] = LIBFERRO_IO
     preload_res = subprocess.run(
         ["ls", "-la", "Cargo.toml"],
-        env={"LD_PRELOAD": LIBFERRO_IO, "PATH": os.environ.get("PATH", "")},
+        env=preload_env,
         capture_output=True,
         text=True,
         timeout=5
     )
-    log_test("Dynamic Binary Execution under libferro_io.so", preload_res.returncode == 0)
+    log_test("Dynamic Binary Execution under libferro_io", preload_res.returncode == 0)
 
 def test_fhs_and_security_standards():
     print("\n--- [Test Suite 6] Cloud & On-Premises Security Standards ---")

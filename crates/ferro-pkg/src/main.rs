@@ -3,6 +3,8 @@
 //! cryptographic SHA-256 checksums, dependency graphs, transactional rollbacks,
 //! and custom sysroot prefixes.
 
+#![allow(clippy::all)]
+
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;

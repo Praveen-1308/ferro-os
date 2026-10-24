@@ -80,11 +80,17 @@ pub fn run_hackbench(args: &[String]) -> ExitCode {
         println!("Groups:                 {}", num_groups);
         println!("Senders per group:      {}", senders_per_group);
         println!("Receivers per group:    {}", receivers_per_group);
-        println!("Total Worker Threads:   {}", total_senders + total_receivers);
+        println!(
+            "Total Worker Threads:   {}",
+            total_senders + total_receivers
+        );
         println!("Loops per sender:       {}", loops);
         println!("Message Payload Size:   {} bytes", datasize);
         println!("Total IPC Messages:     {}", total_messages);
-        println!("Total Data Transferred: {:.2} MB", total_bytes as f64 / (1024.0 * 1024.0));
+        println!(
+            "Total Data Transferred: {:.2} MB",
+            total_bytes as f64 / (1024.0 * 1024.0)
+        );
     }
 
     let start_time = Instant::now();
@@ -195,7 +201,10 @@ pub fn run_hackbench(args: &[String]) -> ExitCode {
         println!("Execution Time:         {:.4} seconds", elapsed_sec);
         println!("Message Rate:           {:.2} msgs/sec", msgs_per_sec);
         println!("IPC Throughput:         {:.2} MB/s", mb_per_sec);
-        println!("Integrity Status:       VERIFIED ({} bytes transferred)", total_received_bytes);
+        println!(
+            "Integrity Status:       VERIFIED ({} bytes transferred)",
+            total_received_bytes
+        );
     }
 
     ExitCode::SUCCESS
@@ -237,7 +246,9 @@ pub fn run_fsync_bench(args: &[String]) -> ExitCode {
             "--help" | "-h" => {
                 println!("FerroOS Pure-Rust Fsync Latency & Throughput Benchmark");
                 println!("Usage: bench-fsync [OPTIONS] [FILEPATH]");
-                println!("  -p, --path <PATH>     Test file target path (default: /tmp/bench_fsync.tmp)");
+                println!(
+                    "  -p, --path <PATH>     Test file target path (default: /tmp/bench_fsync.tmp)"
+                );
                 println!("  -n, --chunks <N>      Number of write chunks (default: 64)");
                 println!("  -s, --size-kb <KB>    Chunk size in Kilobytes (default: 1024)");
                 println!("  --json                Emit machine-readable JSON metrics");
@@ -299,14 +310,22 @@ pub fn run_fsync_bench(args: &[String]) -> ExitCode {
     // Calculate percentiles
     latencies_ms.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let p50 = latencies_ms[(latencies_ms.len() as f64 * 0.50) as usize];
-    let p95 = latencies_ms[(latencies_ms.len() as f64 * 0.95).min((latencies_ms.len() - 1) as f64) as usize];
-    let p99 = latencies_ms[(latencies_ms.len() as f64 * 0.99).min((latencies_ms.len() - 1) as f64) as usize];
+    let p95 = latencies_ms
+        [(latencies_ms.len() as f64 * 0.95).min((latencies_ms.len() - 1) as f64) as usize];
+    let p99 = latencies_ms
+        [(latencies_ms.len() as f64 * 0.99).min((latencies_ms.len() - 1) as f64) as usize];
     let max_lat = latencies_ms.last().copied().unwrap_or(0.0);
 
     if !json_output {
         eprintln!("=== BENCH_FSYNC COMPLETE ===");
-        eprintln!("Volume: {:.0} MB | Throughput: {:.2} MB/s", total_volume_mb, throughput_mb);
-        eprintln!("p50: {:.3} ms | p95: {:.3} ms | p99: {:.3} ms | max: {:.3} ms", p50, p95, p99, max_lat);
+        eprintln!(
+            "Volume: {:.0} MB | Throughput: {:.2} MB/s",
+            total_volume_mb, throughput_mb
+        );
+        eprintln!(
+            "p50: {:.3} ms | p95: {:.3} ms | p99: {:.3} ms | max: {:.3} ms",
+            p50, p95, p99, max_lat
+        );
         eprintln!("fsync_stall: {:.3} ms", fsync_stall_ms);
     }
 

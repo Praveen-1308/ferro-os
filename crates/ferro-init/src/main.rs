@@ -699,11 +699,11 @@ mod linux_init {
 
         // 2. Storage & Memory Writeback Tunings (Eradicates SCENARIO-015 Dirty Page Writeback Freezes)
         let vm_tunings = [
-            ("/proc/sys/vm/dirty_background_bytes", "67108864\n"),   // 64 MB
-            ("/proc/sys/vm/dirty_bytes", "268435456\n"),            // 256 MB
-            ("/proc/sys/vm/dirty_writeback_centisecs", "100\n"),     // 1 second
-            ("/proc/sys/vm/vfs_cache_pressure", "50\n"),             // Retain dentries/inodes
-            ("/proc/sys/vm/swappiness", "10\n"),                     // Prefer RAM retention
+            ("/proc/sys/vm/dirty_background_bytes", "67108864\n"), // 64 MB
+            ("/proc/sys/vm/dirty_bytes", "268435456\n"),           // 256 MB
+            ("/proc/sys/vm/dirty_writeback_centisecs", "100\n"),   // 1 second
+            ("/proc/sys/vm/vfs_cache_pressure", "50\n"),           // Retain dentries/inodes
+            ("/proc/sys/vm/swappiness", "10\n"),                   // Prefer RAM retention
         ];
         for (path, val) in vm_tunings {
             let _ = fs::write(path, val);
@@ -753,7 +753,9 @@ mod linux_init {
 
     fn spawn_psi_memory_watcher() {
         if Path::new("/proc/pressure/memory").exists() {
-            println!("[ferro-init] Starting Linux PSI (Pressure Stall Information) memory watchdog...");
+            println!(
+                "[ferro-init] Starting Linux PSI (Pressure Stall Information) memory watchdog..."
+            );
             let _ = std::thread::Builder::new()
                 .name("ferro-psi-mon".to_string())
                 .spawn(|| {
@@ -808,7 +810,10 @@ mod linux_init {
                         if name != "lo" {
                             bring_up_iface(sock, &name);
                             // Auto-lease IP via pure-Rust DHCP client (ferro-net)
-                            println!("[ferro-init] Triggering pure-Rust DHCP auto-leasing on '{}'...", name);
+                            println!(
+                                "[ferro-init] Triggering pure-Rust DHCP auto-leasing on '{}'...",
+                                name
+                            );
                             let iface_name = name.clone();
                             let _ = std::thread::Builder::new()
                                 .name(format!("ferro-dhcp-{}", iface_name))

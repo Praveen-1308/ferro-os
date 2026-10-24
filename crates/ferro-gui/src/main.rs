@@ -2,6 +2,8 @@
 //! Renders directly to /dev/fb0 (Linux framebuffer) with zero external C/X11 bloat.
 //! Supports double-buffered rendering, windows, status bar, and PPM snapshot export.
 
+#![allow(clippy::mixed_case_hex_literals)]
+
 use std::env;
 use std::fs::{self, File};
 use std::io::Write;

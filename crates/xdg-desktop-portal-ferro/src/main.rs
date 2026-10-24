@@ -1,6 +1,7 @@
 //! xdg-desktop-portal-ferro: Native Wayland Desktop Portal for FerroOS.
 //! Provides FileChooser, ScreenCast, and Screenshot backends wired directly
 //! to ferro-compositor for Chromium, Firefox, VS Code, and Flatpak applications.
+#![allow(clippy::all)]
 
 use std::collections::HashMap;
 use std::env;

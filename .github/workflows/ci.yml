@@ -37,7 +37,7 @@ jobs:
         run: cargo test --workspace --verbose
 
       - name: Workspace Clippy (cargo clippy)
-        run: cargo clippy --workspace -- -W clippy::all
+        run: cargo clippy --workspace -- -D warnings
 
   e2e-empirical-tests:
     name: Empirical E2E Real-World Test Suites
@@ -91,16 +91,26 @@ jobs:
       - name: Run Windows PE & MSI Compatibility Suite
         run: python3 tools/test_e2e_windows_compatibility.py
 
-      - name: Run $12 Server Challenge 50-50 Normalized Regression Suite
+      - name: Verify Real Pure-Rust Microservices & High-Performance HTTP Engine
         run: |
-          python3 tools/normalized_server.py &
+          echo "Starting real pure-Rust server-suite (ports 8080, 8081, 8082)..."
+          ferro-core server-suite &
           SRV_PID=$!
           sleep 2
-          curl -f -s http://127.0.0.1:9300/feed > /dev/null
-          curl -f -s http://127.0.0.1:9300/metrics > /dev/null
-          curl -f -s -X POST http://127.0.0.1:9300/posts/1/like > /dev/null
+          curl -f -s http://127.0.0.1:8080/api/health | grep -q "HEALTHY"
+          curl -f -s http://127.0.0.1:8080/api/status | grep -q "FerroOS"
+          curl -f -s "http://127.0.0.1:8081/set?key=cloud&val=github-actions" > /dev/null
+          curl -f -s "http://127.0.0.1:8081/get?key=cloud" | grep -q "github-actions"
+          curl -f -s http://127.0.0.1:8082/ > /dev/null
           kill $SRV_PID || true
-          echo "✅ 50-50 Normalized Server verified cleanly in CI!"
+
+          echo "Starting real pure-Rust static webserver (port 8089)..."
+          ferro-core serve 8089 . &
+          WEB_PID=$!
+          sleep 1
+          curl -f -s http://127.0.0.1:8089/Cargo.toml | grep -q "workspace"
+          kill $WEB_PID || true
+          echo "✅ Real pure-Rust microservices and web server verified cleanly on cloud infrastructure!"
 
   pure-rust-os-pipeline:
     name: Pure-Rust OS Cloud Runtime & Security Standards
@@ -143,10 +153,47 @@ jobs:
 
       - name: Verify Container Execution on Cloud Kernel (ferro-os-pure:latest)
         run: |
-          echo "Testing command execution on cloud runner:"
+          echo "Testing real command execution on cloud runner:"
           docker run --rm ferro-os-pure:latest /usr/bin/ferro-core whoami
           docker run --rm ferro-os-pure:latest /usr/bin/ferro-core id
-          docker run --rm ferro-os-pure:latest /usr/bin/ferro-core dhcp --test-synthetic
+          docker run --rm ferro-os-pure:latest /usr/bin/ferro-core uname -a
+          docker run --rm ferro-os-pure:latest /usr/bin/ferro-core ps
+          docker run --rm ferro-os-pure:latest /usr/bin/ferro-core free
+          docker run --rm ferro-os-pure:latest /usr/bin/ferro-core df -h
+          docker run --rm ferro-os-pure:latest /usr/bin/ferro-core dhcp --dry-run -t 1
+          docker run --rm ferro-os-pure:latest /usr/bin/sh -c "echo 'Real Cloud Container OS Execution Verified' && whoami && id && pwd"
           docker run --rm ferro-os-pure:latest /usr/bin/hackbench -g 2 -l 20 -s 64
           docker run --rm ferro-os-pure:latest /usr/bin/bench-fsync -n 4 -s 128
-          echo "✅ FerroOS pure-Rust OS successfully executed in GitHub Actions cloud environment!"
+          echo "✅ FerroOS pure-Rust OS container successfully executed on cloud Linux kernel!"
+
+  bare-metal-os-qemu-boot:
+    name: Bare-Metal Real OS Boot & Hardware QEMU Suite
+    runs-on: ubuntu-latest
+    needs: rust-check
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install QEMU & System Virtualization Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 cpio
+
+      - name: Compile Release Binaries & Pure-Rust cdylib
+        run: |
+          cargo build --release -p ferro-init -p ferro-core -p ferro-pkg -p ferro-io
+          echo "$GITHUB_WORKSPACE/target/release" >> $GITHUB_PATH
+
+      - name: Build Real FerroOS Distribution (Linux Kernel + Rust Initrd)
+        run: python3 tools/build_real_ferro_os.py
+
+      - name: Boot Real FerroOS in QEMU Serial Console
+        run: python3 tools/test_qemu_real_os.py
