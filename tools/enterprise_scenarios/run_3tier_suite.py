@@ -23,6 +23,7 @@ import time
 import json
 import socket
 import select
+import selectors
 import struct
 import random
 import hashlib
@@ -91,8 +92,8 @@ class MicroserviceGateway:
         time.sleep(0.1)
 
     def _reactor_loop(self):
-        ep = select.epoll()
-        ep.register(self.server_sock.fileno(), select.EPOLLIN)
+        sel = selectors.DefaultSelector()
+        sel.register(self.server_sock, selectors.EVENT_READ)
         clients = {}
 
         http_response = (
@@ -106,58 +107,59 @@ class MicroserviceGateway:
 
         while self.running:
             try:
-                events = ep.poll(0.01, maxevents=1024)
+                events = sel.select(timeout=0.01)
             except Exception:
                 continue
 
-            for fd, event in events:
-                if fd == self.server_sock.fileno():
+            for key, mask in events:
+                if key.fileobj == self.server_sock:
                     while True:
                         try:
                             client_sock, _ = self.server_sock.accept()
                             client_sock.setblocking(False)
                             client_sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                            cfd = client_sock.fileno()
-                            ep.register(cfd, select.EPOLLIN | select.EPOLLERR | select.EPOLLHUP)
-                            clients[cfd] = client_sock
+                            sel.register(client_sock, selectors.EVENT_READ)
+                            clients[client_sock.fileno()] = client_sock
                         except (BlockingIOError, InterruptedError):
                             break
                         except Exception:
                             break
-                elif event & (select.EPOLLERR | select.EPOLLHUP):
-                    if fd in clients:
-                        try:
-                            ep.unregister(fd)
-                            clients[fd].close()
-                        except Exception: pass
-                        del clients[fd]
-                elif event & select.EPOLLIN:
-                    client = clients.get(fd)
-                    if not client: continue
+                elif mask & selectors.EVENT_READ:
+                    client = key.fileobj
+                    cfd = client.fileno()
                     try:
                         data = client.recv(4096)
                         if data:
                             client.sendall(http_response)
                         else:
-                            ep.unregister(fd)
-                            client.close()
-                            del clients[fd]
+                            try:
+                                sel.unregister(client)
+                                client.close()
+                            except Exception:
+                                pass
+                            clients.pop(cfd, None)
                     except (BlockingIOError, InterruptedError):
                         pass
                     except Exception:
                         try:
-                            ep.unregister(fd)
+                            sel.unregister(client)
                             client.close()
-                        except Exception: pass
-                        if fd in clients: del clients[fd]
+                        except Exception:
+                            pass
+                        clients.pop(cfd, None)
 
         # Teardown
         for fd, sock in list(clients.items()):
             try:
-                ep.unregister(fd)
+                sel.unregister(sock)
                 sock.close()
-            except Exception: pass
-        ep.close()
+            except Exception:
+                pass
+        try:
+            sel.unregister(self.server_sock)
+            sel.close()
+        except Exception:
+            pass
         if self.server_sock:
             try: self.server_sock.close()
             except Exception: pass
@@ -599,7 +601,7 @@ def run_level_3_ultimate(gateway_port=18080):
     baseline_rss_before_ramp = get_current_rss_mb()
 
     for tier in concurrency_tiers:
-        ep = select.epoll()
+        sel = selectors.DefaultSelector()
         sockets = {}
         latencies = []
         errors = 0
@@ -614,8 +616,8 @@ def run_level_3_ultimate(gateway_port=18080):
                 s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 s.connect_ex(("127.0.0.1", gateway_port))
                 fn = s.fileno()
-                ep.register(fn, select.EPOLLOUT | select.EPOLLERR | select.EPOLLHUP)
-                sockets[fn] = (s, time.perf_counter(), False)
+                sel.register(s, selectors.EVENT_WRITE, data=[time.perf_counter(), False])
+                sockets[fn] = s
                 return True
             except Exception:
                 return False
@@ -630,37 +632,33 @@ def run_level_3_ultimate(gateway_port=18080):
                     errors += 1
                     break
             try:
-                events = ep.poll(0.005, maxevents=1024)
+                events = sel.select(timeout=0.005)
             except Exception:
                 continue
 
             now = time.perf_counter()
-            for fn, ev in events:
-                if fn not in sockets: continue
-                s, t_conn, is_sent = sockets[fn]
-
-                if ev & (select.EPOLLERR | select.EPOLLHUP):
-                    errors += 1
-                    try:
-                        ep.unregister(fn)
-                        s.close()
-                    except Exception: pass
-                    del sockets[fn]
+            for key, mask in events:
+                s = key.fileobj
+                fn = s.fileno()
+                if fn not in sockets:
                     continue
+                meta = key.data
+                t_conn, is_sent = meta[0], meta[1]
 
-                if not is_sent and (ev & select.EPOLLOUT):
+                if not is_sent and (mask & selectors.EVENT_WRITE):
                     try:
                         s.sendall(req_bytes)
-                        ep.modify(fn, select.EPOLLIN | select.EPOLLERR | select.EPOLLHUP)
-                        sockets[fn] = (s, t_conn, True)
+                        meta[1] = True
+                        sel.modify(s, selectors.EVENT_READ, data=meta)
                     except Exception:
                         errors += 1
                         try:
-                            ep.unregister(fn)
+                            sel.unregister(s)
                             s.close()
-                        except Exception: pass
-                        del sockets[fn]
-                elif ev & select.EPOLLIN:
+                        except Exception:
+                            pass
+                        sockets.pop(fn, None)
+                elif mask & selectors.EVENT_READ:
                     try:
                         d = s.recv(2048)
                         if d:
@@ -672,19 +670,24 @@ def run_level_3_ultimate(gateway_port=18080):
                     except Exception:
                         errors += 1
                     try:
-                        ep.unregister(fn)
+                        sel.unregister(s)
                         s.close()
-                    except Exception: pass
-                    del sockets[fn]
+                    except Exception:
+                        pass
+                    sockets.pop(fn, None)
 
         stalled_unhandled = len(sockets)
         errors += stalled_unhandled
-        for fn, (s, _, _) in list(sockets.items()):
+        for fn, s in list(sockets.items()):
             try:
-                ep.unregister(fn)
+                sel.unregister(s)
                 s.close()
-            except Exception: pass
-        ep.close()
+            except Exception:
+                pass
+        try:
+            sel.close()
+        except Exception:
+            pass
 
         elapsed = time.time() - t_tier_start
         total_attempts = completed + errors
