@@ -13,7 +13,7 @@
 [![Status: Open Experimental](https://img.shields.io/badge/Status-Open%20Experimental-blue.svg)](LICENSE)
 [![Benchmarks](https://img.shields.io/badge/Enterprise%20Benchmarks-12%2F12%20%231%20Sweep-brightgreen.svg)](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)
 
-**[🌐 Live Documentation Portal](https://praveen-1308.github.io/ferro-os/)** • **[📖 How to Use FerroOS Guide](HOW_TO_USE.md)** • **[📊 Interactive Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)** • **[⚡ Enterprise Showcases](#-master-performance-benchmarks)** • **[🚀 Quick Start](#-quick-start)** • **[💬 Discussions](https://github.com/Praveen-1308/ferro-os/discussions)**
+**[🌐 Live Documentation Portal](https://praveen-1308.github.io/ferro-os/)** • **[🏛️ Theoretical Architecture Spec](docs/THEORETICAL_ARCHITECTURE.md)** • **[📖 How to Use FerroOS Guide](HOW_TO_USE.md)** • **[📊 Interactive Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)** • **[⚡ Enterprise Showcases](#-master-performance-benchmarks)** • **[🚀 Quick Start](#-quick-start)** • **[💬 Discussions](https://github.com/Praveen-1308/ferro-os/discussions)**
 
 ---
 
@@ -54,6 +54,20 @@ FerroOS is a high-performance, ultra-lean hybrid operating system core built on 
   Features autonomous crash detection, boot-failure monitoring via monotonic counters, and atomic $O(1)$ subvolume rollbacks (`@`, `@home`, `@var`, `@snapshots`) while keeping diagnostic telemetry permanently preserved in an independent `@var` volume.
 * **Universal Windows Application Subsystem (`ferro win-run`)**:  
   Seamless execution of 64-bit Windows applications, installers (`.msi`), and 3D games (DirectX 11/12 mapped to Mesa Vulkan via DXVK/VKD3D, Wine64, and Box64 dynamic recompiler) under a strict 6.00 GB container ceiling.
+
+---
+
+## 🏛️ Theoretical Architecture, Design Motivations & Expectations
+
+For a comprehensive systems engineering document detailing the theoretical foundations, targeted bottlenecks, and expected performance advantages of FerroOS, inspect the master architectural compendium:
+
+👉 **[`docs/THEORETICAL_ARCHITECTURE.md`](docs/THEORETICAL_ARCHITECTURE.md)**
+
+### Compendium Highlights:
+* **The "Linux System Tax"**: In-depth analysis of the 5 targeted bottlenecks across POSIX syscall transitions, allocator lock contention, coarse scheduling, synchronous journaling, and single-threaded DNS resolution.
+* **Why We Wanted Each Optimization**: The architectural motivation behind every proposed tuning (e.g. `mimalloc 2.1` thread-local size classes, `io_uring` kernel polling rings, small 4KB initial socket buffers, `SO_REUSEPORT` 4-tuple sharding, and `sched_ext` 500µs deterministic preemption).
+* **Engineering Expectations**: The theoretical mechanisms and expected performance, latency, and resilience gains across the computing stack.
+* **Master Subsystem Matrix**: Complete side-by-side mapping comparing traditional Linux defaults to FerroOS theoretical designs and target performance expectations.
 
 ---
 
