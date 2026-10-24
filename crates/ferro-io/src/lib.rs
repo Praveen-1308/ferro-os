@@ -9,12 +9,28 @@
 
 use libc::{
     c_int, c_uint, c_void, off_t, size_t, sockaddr, socklen_t, ssize_t,
-    AF_INET, AF_INET6, EINVAL, ENOSYS, EOPNOTSUPP, IPPROTO_TCP, POSIX_FADV_RANDOM,
+    AF_INET, AF_INET6, EINVAL, ENOSYS, EOPNOTSUPP, IPPROTO_TCP,
     RTLD_NEXT, SOL_SOCKET, SO_RCVBUF, SO_SNDBUF, S_IFMT, S_IFREG,
     TCP_NODELAY,
 };
 use std::cell::RefCell;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicPtr, AtomicU8, Ordering};
+
+#[cfg(target_os = "linux")]
+#[inline(always)]
+unsafe fn set_errno(err: c_int) {
+    *libc::__errno_location() = err;
+}
+
+#[cfg(target_os = "macos")]
+#[inline(always)]
+unsafe fn set_errno(err: c_int) {
+    *libc::__error() = err;
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[inline(always)]
+unsafe fn set_errno(_err: c_int) {}
 
 const SSIZE_MAX: usize = isize::MAX as usize;
 
@@ -153,6 +169,7 @@ struct IoUring {
     pad2: c_uint,
 }
 
+#[cfg(target_os = "linux")]
 #[link(name = "uring")]
 extern "C" {
     fn io_uring_queue_init_params(entries: c_uint, ring: *mut IoUring, p: *mut IoUringParams) -> c_int;
@@ -168,6 +185,25 @@ extern "C" {
         sigmask: *mut libc::sigset_t,
     ) -> c_int;
 }
+
+#[cfg(not(target_os = "linux"))]
+unsafe fn io_uring_queue_init_params(_entries: c_uint, _ring: *mut IoUring, _p: *mut IoUringParams) -> c_int { -1 }
+#[cfg(not(target_os = "linux"))]
+unsafe fn io_uring_queue_init(_entries: c_uint, _ring: *mut IoUring, _flags: c_uint) -> c_int { -1 }
+#[cfg(not(target_os = "linux"))]
+unsafe fn io_uring_queue_exit(_ring: *mut IoUring) {}
+#[cfg(not(target_os = "linux"))]
+unsafe fn io_uring_get_sqe(_ring: *mut IoUring) -> *mut IoUringSqe { std::ptr::null_mut() }
+#[cfg(not(target_os = "linux"))]
+unsafe fn io_uring_submit_and_wait(_ring: *mut IoUring, _wait_nr: c_uint) -> c_int { -1 }
+#[cfg(not(target_os = "linux"))]
+unsafe fn __io_uring_get_cqe(
+    _ring: *mut IoUring,
+    _cqe_ptr: *mut *mut IoUringCqe,
+    _submit: c_uint,
+    _wait_nr: c_uint,
+    _sigmask: *mut libc::sigset_t,
+) -> c_int { -1 }
 
 #[inline(always)]
 unsafe fn io_uring_cq_advance(ring: *mut IoUring, nr: u32) {
@@ -371,7 +407,10 @@ fn is_secure_execution() -> bool {
         let is_sec = if libc::getuid() != libc::geteuid() || libc::getgid() != libc::getegid() {
             1
         } else {
+            #[cfg(target_os = "linux")]
             let aux = libc::getauxval(libc::AT_SECURE);
+            #[cfg(not(target_os = "linux"))]
+            let aux = 0;
             if aux != 0 {
                 1
             } else {
@@ -397,7 +436,8 @@ fn is_uring_eligible_fd(fd: c_int, count: size_t) -> bool {
         let mut st: libc::stat = std::mem::zeroed();
         if libc::fstat(fd, &mut st) == 0 && (st.st_mode & S_IFMT) == S_IFREG {
             FD_TYPE_CACHE[fd as usize].store(2, Ordering::Relaxed);
-            libc::posix_fadvise(fd, 0, 0, POSIX_FADV_RANDOM);
+            #[cfg(target_os = "linux")]
+            libc::posix_fadvise(fd, 0, 0, libc::POSIX_FADV_RANDOM);
             true
         } else {
             FD_TYPE_CACHE[fd as usize].store(1, Ordering::Relaxed);
@@ -470,7 +510,7 @@ unsafe fn optimize_tcp_socket(fd: c_int, addr: *const sockaddr, addrlen: socklen
 #[no_mangle]
 pub unsafe extern "C" fn read(fd: c_int, buf: *mut c_void, count: size_t) -> ssize_t {
     if count > SSIZE_MAX as size_t {
-        *libc::__errno_location() = EINVAL;
+        set_errno(EINVAL);
         return -1;
     }
 
@@ -506,7 +546,7 @@ pub unsafe extern "C" fn read(fd: c_int, buf: *mut c_void, count: size_t) -> ssi
                             return res as ssize_t;
                         }
                         if res != -EINVAL && res != -ENOSYS && res != -EOPNOTSUPP {
-                            *libc::__errno_location() = -res;
+                            set_errno(-res as c_int);
                             return -1;
                         }
                     }
@@ -521,7 +561,7 @@ pub unsafe extern "C" fn read(fd: c_int, buf: *mut c_void, count: size_t) -> ssi
 #[no_mangle]
 pub unsafe extern "C" fn write(fd: c_int, buf: *const c_void, count: size_t) -> ssize_t {
     if count > SSIZE_MAX as size_t {
-        *libc::__errno_location() = EINVAL;
+        set_errno(EINVAL);
         return -1;
     }
 
@@ -557,7 +597,7 @@ pub unsafe extern "C" fn write(fd: c_int, buf: *const c_void, count: size_t) -> 
                             return res as ssize_t;
                         }
                         if res != -EINVAL && res != -ENOSYS && res != -EOPNOTSUPP {
-                            *libc::__errno_location() = -res;
+                            set_errno(-res as c_int);
                             return -1;
                         }
                     }
@@ -572,7 +612,7 @@ pub unsafe extern "C" fn write(fd: c_int, buf: *const c_void, count: size_t) -> 
 #[no_mangle]
 pub unsafe extern "C" fn pread(fd: c_int, buf: *mut c_void, count: size_t, offset: off_t) -> ssize_t {
     if count > SSIZE_MAX as size_t {
-        *libc::__errno_location() = EINVAL;
+        set_errno(EINVAL);
         return -1;
     }
 
@@ -608,7 +648,7 @@ pub unsafe extern "C" fn pread(fd: c_int, buf: *mut c_void, count: size_t, offse
                             return res as ssize_t;
                         }
                         if res != -EINVAL && res != -ENOSYS && res != -EOPNOTSUPP {
-                            *libc::__errno_location() = -res;
+                            set_errno(-res as c_int);
                             return -1;
                         }
                     }
@@ -628,7 +668,7 @@ pub unsafe extern "C" fn pread64(fd: c_int, buf: *mut c_void, count: size_t, off
 #[no_mangle]
 pub unsafe extern "C" fn pwrite(fd: c_int, buf: *const c_void, count: size_t, offset: off_t) -> ssize_t {
     if count > SSIZE_MAX as size_t {
-        *libc::__errno_location() = EINVAL;
+        set_errno(EINVAL);
         return -1;
     }
 
@@ -664,7 +704,7 @@ pub unsafe extern "C" fn pwrite(fd: c_int, buf: *const c_void, count: size_t, of
                             return res as ssize_t;
                         }
                         if res != -EINVAL && res != -ENOSYS && res != -EOPNOTSUPP {
-                            *libc::__errno_location() = -res;
+                            set_errno(-res as c_int);
                             return -1;
                         }
                     }
@@ -715,7 +755,7 @@ pub unsafe extern "C" fn fdatasync(fd: c_int) -> c_int {
                             return 0;
                         }
                         if res != -EINVAL && res != -ENOSYS && res != -EOPNOTSUPP {
-                            *libc::__errno_location() = -res;
+                            set_errno(-res as c_int);
                             return -1;
                         }
                     }
@@ -761,7 +801,7 @@ pub unsafe extern "C" fn fsync(fd: c_int) -> c_int {
                             return 0;
                         }
                         if res != -EINVAL && res != -ENOSYS && res != -EOPNOTSUPP {
-                            *libc::__errno_location() = -res;
+                            set_errno(-res as c_int);
                             return -1;
                         }
                     }

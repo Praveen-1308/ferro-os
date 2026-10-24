@@ -1406,7 +1406,7 @@ fn run_ln(args: &[String]) -> ExitCode {
     let src = targets[0];
     let dst = targets[1];
 
-    #[cfg(target_os = "linux")]
+    #[cfg(unix)]
     {
         if is_symbolic {
             match std::os::unix::fs::symlink(src, dst) {
@@ -1426,8 +1426,9 @@ fn run_ln(args: &[String]) -> ExitCode {
             }
         }
     }
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(not(unix))]
     {
+        let _ = (src, dst, is_symbolic);
         eprintln!("ln: symlinks not supported on this platform");
         ExitCode::FAILURE
     }
@@ -1474,7 +1475,7 @@ fn run_stat(args: &[String]) -> ExitCode {
         let path = Path::new(file_path);
         match fs::symlink_metadata(path) {
             Ok(meta) => {
-                #[cfg(target_os = "linux")]
+                #[cfg(unix)]
                 {
                     use std::os::unix::fs::MetadataExt;
                     let mode = meta.mode();
@@ -1500,7 +1501,7 @@ fn run_stat(args: &[String]) -> ExitCode {
                     println!("Device: {:<10} Inode: {:<10} Links: {}", meta.dev(), meta.ino(), meta.nlink());
                     println!("Access: ({:04o}/{})  Uid: ({:>5}/{:>8})   Gid: ({:>5}/{:>8})", octal, perm_str, uid, uname, gid, gname);
                 }
-                #[cfg(not(target_os = "linux"))]
+                #[cfg(not(unix))]
                 {
                     println!("  File: {}", file_path);
                     println!("  Size: {}", meta.len());
@@ -1552,7 +1553,7 @@ fn run_chown(args: &[String]) -> ExitCode {
 
     let mut success = true;
     for file_path in &args[1..] {
-        #[cfg(target_os = "linux")]
+        #[cfg(unix)]
         unsafe {
             let c_path = match CString::new(file_path.as_str()) {
                 Ok(c) => c,
@@ -1562,6 +1563,12 @@ fn run_chown(args: &[String]) -> ExitCode {
                 eprintln!("chown: changing ownership of '{}': {}", file_path, io::Error::last_os_error());
                 success = false;
             }
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = (file_path, uid, gid);
+            eprintln!("chown: not supported on this platform");
+            success = false;
         }
     }
     if success { ExitCode::SUCCESS } else { ExitCode::FAILURE }
@@ -1619,6 +1626,7 @@ fn run_mount(args: &[String]) -> ExitCode {
     }
     #[cfg(not(target_os = "linux"))]
     {
+        let _ = (dev, dir, fstype, options);
         eprintln!("mount: not supported on this platform");
         ExitCode::FAILURE
     }
@@ -1629,6 +1637,7 @@ fn run_umount(args: &[String]) -> ExitCode {
         eprintln!("umount: missing operand (e.g. umount <mountpoint>)");
         return ExitCode::FAILURE;
     }
+    #[allow(unused_mut)]
     let mut flags = 0;
     let mut target = "";
     for a in args {
@@ -1657,6 +1666,7 @@ fn run_umount(args: &[String]) -> ExitCode {
     }
     #[cfg(not(target_os = "linux"))]
     {
+        let _ = (target, flags);
         eprintln!("umount: not supported on this platform");
         ExitCode::FAILURE
     }
@@ -1709,6 +1719,7 @@ fn run_hostname(args: &[String]) -> ExitCode {
         }
         #[cfg(not(target_os = "linux"))]
         {
+            let _ = new_name;
             eprintln!("hostname: cannot set hostname on this platform");
             ExitCode::FAILURE
         }
@@ -5576,29 +5587,44 @@ fn run_ai_mode(args: &[String]) -> ExitCode {
 // ==============================================================================
 // FerroOS Landlock LSM & Unprivileged Daemon Isolation Sandbox
 // ==============================================================================
+#[allow(dead_code)]
 #[repr(C)]
 struct LandlockRulesetAttr {
     handled_access_fs: u64,
 }
 
+#[allow(dead_code)]
 #[repr(C)]
 struct LandlockPathBeneathAttr {
     allowed_access: u64,
     parent_fd: i32,
 }
 
+#[allow(dead_code)]
 const SYS_LANDLOCK_CREATE_RULESET: libc::c_long = 444;
+#[allow(dead_code)]
 const SYS_LANDLOCK_ADD_RULE: libc::c_long = 445;
+#[allow(dead_code)]
 const SYS_LANDLOCK_RESTRICT_SELF: libc::c_long = 446;
+#[allow(dead_code)]
 const LANDLOCK_RULE_PATH_BENEATH: u32 = 1;
+#[allow(dead_code)]
 const LANDLOCK_ACCESS_FS_EXECUTE: u64 = 1 << 0;
+#[allow(dead_code)]
 const LANDLOCK_ACCESS_FS_WRITE_FILE: u64 = 1 << 1;
+#[allow(dead_code)]
 const LANDLOCK_ACCESS_FS_READ_FILE: u64 = 1 << 2;
+#[allow(dead_code)]
 const LANDLOCK_ACCESS_FS_READ_DIR: u64 = 1 << 3;
+#[allow(dead_code)]
 const LANDLOCK_ACCESS_FS_REMOVE_DIR: u64 = 1 << 4;
+#[allow(dead_code)]
 const LANDLOCK_ACCESS_FS_REMOVE_FILE: u64 = 1 << 5;
+#[allow(dead_code)]
 const LANDLOCK_ACCESS_FS_MAKE_DIR: u64 = 1 << 7;
+#[allow(dead_code)]
 const LANDLOCK_ACCESS_FS_MAKE_REG: u64 = 1 << 8;
+#[allow(dead_code)]
 const LANDLOCK_ACCESS_FS_TRUNCATE: u64 = 1 << 14;
 
 fn run_sandbox(args: &[String]) -> ExitCode {
