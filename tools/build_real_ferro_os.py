@@ -178,18 +178,27 @@ def main():
     print("\n[Stage 6] Resolving and copying essential runtime libraries...")
     libs_to_copy = [
         "/lib/x86_64-linux-gnu/libc.so.6",
+        "/usr/lib/x86_64-linux-gnu/libc.so.6",
         "/lib/x86_64-linux-gnu/libm.so.6",
+        "/usr/lib/x86_64-linux-gnu/libm.so.6",
         "/lib/x86_64-linux-gnu/libdl.so.2",
+        "/usr/lib/x86_64-linux-gnu/libdl.so.2",
         "/lib/x86_64-linux-gnu/libpthread.so.0",
+        "/usr/lib/x86_64-linux-gnu/libpthread.so.0",
         "/lib/x86_64-linux-gnu/libgcc_s.so.1",
+        "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
         "/lib/x86_64-linux-gnu/liburing.so.2",
+        "/usr/lib/x86_64-linux-gnu/liburing.so.2",
         "/lib64/ld-linux-x86-64.so.2",
+        "/usr/lib64/ld-linux-x86-64.so.2",
+        "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
     ]
     for lib in libs_to_copy:
         if os.path.exists(lib):
             real_file = os.path.realpath(lib)
             basename = os.path.basename(lib)
             target_dir = os.path.join(rootfs, "lib64" if "ld-linux" in lib else "lib/x86_64-linux-gnu")
+            os.makedirs(target_dir, exist_ok=True)
             target_path = os.path.join(target_dir, basename)
             if not os.path.exists(target_path):
                 shutil.copy2(real_file, target_path)
@@ -201,6 +210,20 @@ def main():
                     os.symlink(real_basename, target_path)
                 except FileExistsError:
                     pass
+
+    # Ensure dynamic linker is accessible at both /lib64/ld-linux-x86-64.so.2 and /lib/ld-linux-x86-64.so.2
+    for cand in ["/lib64/ld-linux-x86-64.so.2", "/usr/lib64/ld-linux-x86-64.so.2", "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2"]:
+        if os.path.exists(cand):
+            real_cand = os.path.realpath(cand)
+            for dst_dir in ["lib64", "lib", "usr/lib"]:
+                d = os.path.join(rootfs, dst_dir)
+                os.makedirs(d, exist_ok=True)
+                target = os.path.join(d, "ld-linux-x86-64.so.2")
+                if not os.path.exists(target):
+                    try:
+                        shutil.copy2(real_cand, target)
+                    except Exception:
+                        pass
 
     # Copy also to standard /lib for safety
     for f in os.listdir(os.path.join(rootfs, "lib/x86_64-linux-gnu")):
