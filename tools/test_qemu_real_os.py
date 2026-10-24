@@ -8,6 +8,7 @@ and verifies real kernel, init, and coreutils execution.
 import os
 import sys
 import time
+import select
 import subprocess
 
 def test_boot():
@@ -60,19 +61,24 @@ def test_boot():
 
     try:
         while time.time() - start_time < 60:
-            line = proc.stdout.readline()
-            if not line:
-                if proc.poll() is not None:
-                    break
-                time.sleep(0.05)
-                continue
+            if proc.poll() is not None:
+                break
 
-            full_log.append(line)
-            sys.stdout.write(line)
-            sys.stdout.flush()
+            r, _, _ = select.select([proc.stdout], [], [], 0.2)
+            if r:
+                chunk = os.read(proc.stdout.fileno(), 1024).decode("utf-8", errors="replace")
+                if not chunk:
+                    if proc.poll() is not None:
+                        break
+                    time.sleep(0.05)
+                    continue
 
-            if "ferro-os:/" in line or "Welcome to FerroOS Shell" in line or "Initializing FerroOS PID 1" in line:
-                if not shell_reached:
+                full_log.append(chunk)
+                sys.stdout.write(chunk)
+                sys.stdout.flush()
+
+                accumulated = "".join(full_log)
+                if ("ferro-os:/" in accumulated or "Welcome to FerroOS Shell" in accumulated or "Initializing FerroOS PID 1" in accumulated) and not shell_reached:
                     shell_reached = True
                     time.sleep(0.5)
                     send_line("uname -a")
@@ -85,8 +91,8 @@ def test_boot():
                     time.sleep(0.5)
                     send_line("poweroff")
 
-            if "reboot: Power down" in line or proc.poll() is not None:
-                break
+                if "reboot: Power down" in accumulated:
+                    break
 
         try:
             proc.wait(timeout=3)
