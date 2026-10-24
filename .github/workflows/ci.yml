@@ -196,7 +196,7 @@ jobs:
           echo "$GITHUB_WORKSPACE/target/release" >> $GITHUB_PATH
 
       - name: Build Real FerroOS Distribution (Linux Kernel + Rust Initrd)
-        run: python3 tools/build_real_ferro_os.py
+        run: sudo env "PATH=$PATH" python3 tools/build_real_ferro_os.py
 
       - name: Boot Real FerroOS in QEMU Serial Console
         run: python3 tools/test_qemu_real_os.py

@@ -1,18 +1,18 @@
 {
-  "timestamp": "2026-10-24 12:14:02 UTC",
+  "timestamp": "2026-10-24 12:20:48 UTC",
   "package_manager": "rpk (ferro-pkg v0.2.0)",
   "package_name": "python3-runtime",
-  "sha256": "6127c9bafe5a7b1e4f7a96ef628c4c9b36822704598de5bf3277dc2dbdb8fd2b",
-  "package_size_kb": 1.5283203125,
+  "sha256": "b2943b5b77f0bc2a53c54e6d4cdbabb73f478ded55d18c80bbee6e80258cfb81",
+  "package_size_kb": 1.5263671875,
   "status": "QUALIFIED_AND_VERIFIED",
   "programs_executed": {
     "01_hello": {
       "exit": 0,
-      "stdout": "\ud83d\ude80 [FerroOS-Python] Language Runtime Initialized Successfully!\n   Python Version : 3.14.6\n   Platform Target: Darwin arm64\n   Process PID    : 5692\n   Execution Mode : Pure-Rust Native POSIX Userland (Zero GNU / BusyBox)"
+      "stdout": "\ud83d\ude80 [FerroOS-Python] Language Runtime Initialized Successfully!\n   Python Version : 3.14.6\n   Platform Target: Darwin arm64\n   Process PID    : 6542\n   Execution Mode : Pure-Rust Native POSIX Userland (Zero GNU / BusyBox)"
     },
     "02_microtransactions": {
       "exit": 0,
-      "stdout": "\u26a1 [FerroOS-Python] Processed 10,000 Micro-Transactions in 2.62 ms\n   Throughput Rate: 3,812,852 ops/second\n   Integrity Hash : 7cf3fcbfd5faaa9cbd17f93b75d0b87c... (VERIFIED)"
+      "stdout": "\u26a1 [FerroOS-Python] Processed 10,000 Micro-Transactions in 2.62 ms\n   Throughput Rate: 3,817,523 ops/second\n   Integrity Hash : 7cf3fcbfd5faaa9cbd17f93b75d0b87c... (VERIFIED)"
     },
     "03_system_audit": {
       "exit": 0,

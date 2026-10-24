@@ -263,7 +263,11 @@ def main():
         sys.exit(1)
         
     kernel_dst = os.path.join(build_out, "vmlinuz")
-    shutil.copy2(found_kernel, kernel_dst)
+    try:
+        shutil.copy2(found_kernel, kernel_dst)
+    except PermissionError:
+        run_cmd(["sudo", "cp", found_kernel, kernel_dst])
+        run_cmd(["sudo", "chmod", "644", kernel_dst])
     k_size = os.path.getsize(kernel_dst)
     print(f"  * Copied Kernel: {found_kernel} -> {kernel_dst} ({k_size / 1024 / 1024:.2f} MB)")
 

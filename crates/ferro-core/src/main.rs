@@ -488,6 +488,21 @@ fn is_internal_applet(cmd: &str) -> bool {
             | "recovery"
             | "fetch"
             | "curl"
+            | "hackbench"
+            | "bench-fsync"
+            | "fsync-bench"
+            | "dhcp"
+            | "ferro-net"
+            | "udhcpc"
+            | "ferrod"
+            | "syslogd"
+            | "logger"
+            | "logs"
+            | "log"
+            | "journalctl"
+            | "dmesg"
+            | "server-suite"
+            | "server"
     )
 }
 
@@ -629,6 +644,42 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "uptime" => run_uptime(args),
         "whoami" => run_whoami(args),
         "fetch" | "curl" => run_fetch(args),
+        "id" => run_id(args),
+        "touch" => run_touch(args),
+        "ln" => run_ln(args),
+        "stat" => run_stat(args),
+        "chown" => run_chown(args),
+        "sync" => run_sync(args),
+        "hostname" => run_hostname(args),
+        "tee" => run_tee(args),
+        "ip" => run_ip(args),
+        "mount" => run_mount(args),
+        "umount" => run_umount(args),
+        "reboot" => run_reboot(),
+        "poweroff" => run_poweroff(),
+        "bench" => run_bench(args),
+        "hackbench" => bench_suite::run_hackbench(args),
+        "bench-fsync" | "fsync-bench" => bench_suite::run_fsync_bench(args),
+        "dhcp" | "ferro-net" | "udhcpc" => dhcp::run_dhcp(args),
+        "ferrod" | "syslogd" => syslog::run_ferrod(args),
+        "logger" => syslog::run_logger(args),
+        "logs" | "log" | "journalctl" => syslog::run_logs(args),
+        "dmesg" => syslog::run_dmesg(args),
+        "serve" | "httpd" => run_serve(args),
+        "server-suite" | "server" => run_server_suite(args),
+        "supervise" => run_supervise(args),
+        "gamemode" => run_gamemode(args),
+        "dns-cache" | "dns" => run_dns_cache(args),
+        "fdstore" => run_fdstore(args),
+        "bpf" | "ebpf" => run_bpf(args),
+        "sched" | "scx" => run_sched(args),
+        "game" | "proton" => run_game(args),
+        "win" | "win-run" | "wine" => run_win_run(args),
+        "install" | "installer" => run_install(args),
+        "snapshot" | "snap" => run_snapshot(args),
+        "ai-mode" | "ai" => run_ai_mode(args),
+        "sandbox" | "landlock" => run_sandbox(args),
+        "recovery" => run_recovery(),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
             ExitCode::FAILURE
@@ -2801,6 +2852,35 @@ fn run_server_suite(_args: &[String]) -> ExitCode {
                                 store.len()
                             ),
                         )
+                    } else if req.starts_with("GET /set?") {
+                        let query = req.split_whitespace().nth(1).unwrap_or("");
+                        let key = query
+                            .split("key=")
+                            .nth(1)
+                            .unwrap_or("")
+                            .split('&')
+                            .next()
+                            .unwrap_or("");
+                        let val = query
+                            .split("val=")
+                            .nth(1)
+                            .unwrap_or("")
+                            .split('&')
+                            .next()
+                            .unwrap_or("");
+                        if !key.is_empty() {
+                            let mut store = kv_clone.write().unwrap();
+                            store.insert(key.to_string(), val.to_string());
+                            (
+                                "200 OK",
+                                format!("{{\"status\": \"STORED\", \"key\": \"{}\", \"value\": \"{}\"}}", key, val),
+                            )
+                        } else {
+                            (
+                                "400 Bad Request",
+                                "{\"error\": \"Missing key\"}".to_string(),
+                            )
+                        }
                     } else if req.starts_with("POST /set") {
                         let body_start = req.find("\r\n\r\n").map(|idx| idx + 4).unwrap_or(0);
                         let post_body = &req[body_start..];
