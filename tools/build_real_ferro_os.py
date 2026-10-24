@@ -353,6 +353,12 @@ LABEL ferro
             iso_dir
         ]
         run_cmd(xorriso_cmd)
+        if shutil.which("isohybrid"):
+            try:
+                run_cmd(["isohybrid", iso_output], check=False)
+                print("  * Applied isohybrid MBR table for direct USB drive booting (dd/Rufus/Etcher).")
+            except Exception as e:
+                print(f"  • isohybrid note: {e}")
         iso_size = os.path.getsize(iso_output)
         print(f"  * Generated Bootable ISO: {iso_output} ({iso_size / 1024 / 1024:.2f} MB)")
     else:

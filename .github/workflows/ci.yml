@@ -188,7 +188,7 @@ jobs:
       - name: Install QEMU & System Virtualization Packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 cpio
+          sudo apt-get install -y qemu-system-x86 cpio isolinux syslinux-utils xorriso
 
       - name: Compile Release Binaries & Pure-Rust cdylib
         run: |
@@ -202,3 +202,10 @@ jobs:
 
       - name: Boot Real FerroOS in QEMU Serial Console
         run: python3 tools/test_qemu_real_os.py
+
+      - name: Upload Bootable Bare-Metal FerroOS ISO Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ferro-os-bare-metal-live-iso
+          path: build_out/ferro-os-live.iso
+          if-no-files-found: warn
