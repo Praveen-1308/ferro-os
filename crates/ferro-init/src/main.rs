@@ -768,6 +768,19 @@ mod linux_init {
         }
     }
 
+    unsafe fn bring_up_iface(sock: libc::c_int, name: &str) {
+        let mut ifr: libc::ifreq = std::mem::zeroed();
+        let bytes = name.as_bytes();
+        let len = bytes.len().min(15);
+        for i in 0..len {
+            ifr.ifr_name[i] = bytes[i] as libc::c_char;
+        }
+        ifr.ifr_ifru.ifru_flags = (libc::IFF_UP | libc::IFF_RUNNING) as libc::c_short;
+        if libc::ioctl(sock, libc::SIOCSIFFLAGS, &ifr) == 0 {
+            println!("[ferro-init] Network interface '{}' brought UP.", name);
+        }
+    }
+
     fn init_network() {
         let resolv_path = Path::new("/etc/resolv.conf");
         if !resolv_path.exists() {
@@ -777,15 +790,16 @@ mod linux_init {
         unsafe {
             let sock = libc::socket(libc::AF_INET, libc::SOCK_DGRAM, 0);
             if sock >= 0 {
-                let mut ifr: libc::ifreq = std::mem::zeroed();
-                let ifname = b"lo\0";
-                std::ptr::copy_nonoverlapping(
-                    ifname.as_ptr() as *const libc::c_char,
-                    ifr.ifr_name.as_mut_ptr(),
-                    ifname.len(),
-                );
-                ifr.ifr_ifru.ifru_flags = (libc::IFF_UP | libc::IFF_RUNNING) as libc::c_short;
-                libc::ioctl(sock, libc::SIOCSIFFLAGS, &ifr);
+                bring_up_iface(sock, "lo");
+
+                if let Ok(entries) = fs::read_dir("/sys/class/net") {
+                    for entry in entries.flatten() {
+                        let name = entry.file_name().to_string_lossy().to_string();
+                        if name != "lo" {
+                            bring_up_iface(sock, &name);
+                        }
+                    }
+                }
                 libc::close(sock);
             }
         }
