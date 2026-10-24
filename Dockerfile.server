@@ -108,9 +108,7 @@ RUN chmod +x /usr/local/bin/ferro-* && \
         ln -sf /usr/local/bin/ferro-core /usr/local/bin/ferro-${app}; \
     done
 
-# 6. Copy Server Suite & Sample Website
-COPY tools/ferro-server-suite.py /usr/local/bin/ferro-server-suite.py
-RUN chmod +x /usr/local/bin/ferro-server-suite.py
+# 6. Copy Sample Website for Static Web Service
 COPY tools/index.html /var/www/index.html
 
 # 7. Server Entrypoint
