@@ -13,6 +13,7 @@ Welcome to the FerroOS practical playbook! This guide provides simple, copy-past
 5. [1-Click Windows 10/11 WSL2 Appliance (< 1 MB)](#5-1-click-windows-1011-wsl2-appliance--1-mb)
 6. [Bare-Metal Bootable ISO & Instant Snapshot Rollbacks](#6-bare-metal-bootable-iso--instant-snapshot-rollbacks)
 7. [How to Customize & Modify FerroOS for Your Needs](#7-how-to-customize--modify-ferroos-for-your-needs)
+8. [Hybrid Package Management (`rpk`) & Enterprise Profiles](#8-hybrid-package-management-rpk--enterprise-profiles)
 
 ---
 
@@ -241,6 +242,53 @@ cargo build --release -p ferro-core -p ferro-init -p ferro-pkg
 
 # Rebuild the server container
 docker build -f Dockerfile.server -t ferro-os-server:latest .
+```
+
+---
+
+## 8. Hybrid Package Management (`rpk`) & Enterprise Profiles
+
+FerroOS includes `rpk` (`ferro-pkg`), an autonomous hybrid package manager engineered to combine pure-Rust microsecond performance with Debian's 60,000+ package ecosystem.
+
+### A. Automatic APT Fallback
+Install standard packages without configuring repositories or complex package lists:
+```bash
+# Automatically searches native .rpk recipes, seamlessly falling back to Debian APT
+rpk install htop
+rpk install curl
+rpk install postgresql-client
+```
+
+### B. Instant Capability Profiles
+Rather than micro-managing hundreds of individual packages, enable enterprise profiles with a single command:
+```bash
+# SRE & Forensics: Installs strace, tcpdump, lsof, fuser, iproute2, ping, dig, iostat
+rpk install @sre-forensics
+
+# C Runtime Compatibility: Installs 40+ legacy C runtime shared libraries
+rpk install @c-compat-libs
+
+# Full C/C++ Developer Toolchain: Installs gcc, g++, make, cmake, binutils, libc6-dev
+rpk install @c-toolchain
+
+# Legacy SysV Init Compatibility: Shims for legacy service & chkconfig commands
+rpk install @legacy-sysv-compat
+```
+
+### C. Atomic Pre-Update Snapshots & Instant Rollback
+Every installation or profile update automatically creates a transactional recovery snapshot:
+```bash
+# If an update or package introduces an unexpected conflict:
+rpk rollback
+
+# View transaction logs and snapshot status
+rpk list
+```
+
+### D. Security-Only Upgrades
+Safely apply security patches without touching minor version runtime pins:
+```bash
+rpk upgrade --security
 ```
 
 ---

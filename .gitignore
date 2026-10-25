@@ -20,3 +20,4 @@ tools/observability/*.csv
 tools/datasets/*.db
 tools/stack/flash_data/
 *.o
+.agents/
