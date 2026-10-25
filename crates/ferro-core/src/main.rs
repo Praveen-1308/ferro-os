@@ -50,13 +50,36 @@ fn main() -> ExitCode {
             print_usage();
             return ExitCode::SUCCESS;
         }
+        if command_args[0] == "--install-symlinks" || command_args[0] == "-install-symlinks" {
+            let target_dir = command_args.get(1).map(|s| s.as_str()).unwrap_or("/bin");
+            return install_symlinks(target_dir);
+        }
+        if command_args[0] == "--has-applet" || command_args[0] == "has-applet" {
+            if let Some(target_app) = command_args.get(1) {
+                if is_internal_applet(target_app) {
+                    println!("yes");
+                    return ExitCode::SUCCESS;
+                } else {
+                    println!("no");
+                    return ExitCode::FAILURE;
+                }
+            }
+            return ExitCode::FAILURE;
+        }
+        if command_args[0] == "--list-applets" || command_args[0] == "list-applets" {
+            for app in ALL_APPLETS {
+                print!("{} ", app);
+            }
+            println!();
+            return ExitCode::SUCCESS;
+        }
         command_name = command_args.remove(0);
     } else if command_name.starts_with("ferro-") {
         command_name = command_name.trim_start_matches("ferro-").to_string();
     }
 
     match command_name.as_str() {
-        "sh" => run_sh(&command_args),
+        "sh" | "bash" => run_sh(&command_args),
         "ls" => run_ls(&command_args),
         "cat" => run_cat(&command_args),
         "echo" => run_echo(&command_args),
@@ -202,15 +225,71 @@ fn is_exit_success(code: &ExitCode) -> bool {
     s.contains("(0)") || s.contains("SUCCESS")
 }
 
+fn split_compound_statements_quote_aware(script: &str) -> Vec<String> {
+    let mut stmts = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    let mut quote_char = ' ';
+
+    for c in script.chars() {
+        match c {
+            '"' | '\'' if !in_quotes => {
+                in_quotes = true;
+                quote_char = c;
+                current.push(c);
+            }
+            c if in_quotes && c == quote_char => {
+                in_quotes = false;
+                current.push(c);
+            }
+            ';' | '\n' if !in_quotes => {
+                let trimmed = current.trim();
+                if !trimmed.is_empty() {
+                    stmts.push(trimmed.to_string());
+                }
+                current.clear();
+            }
+            _ => {
+                current.push(c);
+            }
+        }
+    }
+    let trimmed = current.trim();
+    if !trimmed.is_empty() {
+        stmts.push(trimmed.to_string());
+    }
+    stmts
+}
+
 fn execute_compound_script(script: &str) -> ExitCode {
     let mut final_code = ExitCode::SUCCESS;
-    for stmt in script.split(&[';', '\n'][..]) {
+    for stmt in split_compound_statements_quote_aware(script) {
         let trimmed = stmt.trim();
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
 
-        if trimmed.contains("&&") {
+        if trimmed.contains("||") {
+            let subcmds: Vec<&str> = trimmed.split("||").collect();
+            let mut any_ok = false;
+            for sub in subcmds {
+                let s_trim = sub.trim();
+                if s_trim.is_empty() {
+                    continue;
+                }
+                let res = execute_pipeline(s_trim);
+                if is_exit_success(&res) {
+                    any_ok = true;
+                    final_code = ExitCode::SUCCESS;
+                    break;
+                } else {
+                    final_code = res;
+                }
+            }
+            if any_ok {
+                continue;
+            }
+        } else if trimmed.contains("&&") {
             let subcmds: Vec<&str> = trimmed.split("&&").collect();
             let mut sub_ok = true;
             for sub in subcmds {
@@ -362,7 +441,8 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
     let mut prev_stdout = None;
 
     for (i, part) in pipe_parts.iter().enumerate() {
-        let tokens = parse_tokens(part.trim());
+        let mut tokens = parse_tokens(part.trim());
+        tokens.retain(|t| !t.starts_with("2>") && !t.starts_with("1>") && t != ">/dev/null" && t != "2>/dev/null");
         if tokens.is_empty() {
             continue;
         }
@@ -418,96 +498,61 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
     last_status
 }
 
+pub const ALL_APPLETS: &[&str] = &[
+    "sh", "bash", "ls", "cat", "echo", "pwd", "uname", "clear", "mkdir", "rm", "cp",
+    "mv", "chmod", "chown", "touch", "ln", "stat", "id", "grep", "find",
+    "head", "tail", "wc", "which", "env", "sleep", "free", "df", "ps", "kill",
+    "uptime", "whoami", "sync", "hostname", "tee", "ip", "mount", "umount",
+    "reboot", "poweroff", "bench", "serve", "httpd", "supervise", "gamemode",
+    "dns-cache", "dns", "fdstore", "bpf", "ebpf", "sched", "scx", "game",
+    "proton", "win", "win-run", "wine", "install", "installer", "snapshot", "snap",
+    "ai-mode", "ai", "sandbox", "landlock", "recovery", "fetch", "curl",
+    "hackbench", "bench-fsync", "fsync-bench", "dhcp", "ferro-net", "udhcpc",
+    "ferrod", "syslogd", "logger", "logs", "log", "journalctl", "dmesg",
+    "server-suite", "server"
+];
+
 fn is_internal_applet(cmd: &str) -> bool {
-    matches!(
-        cmd,
-        "sh" | "bash"
-            | "ls"
-            | "cat"
-            | "echo"
-            | "pwd"
-            | "uname"
-            | "clear"
-            | "mkdir"
-            | "rm"
-            | "cp"
-            | "mv"
-            | "chmod"
-            | "chown"
-            | "touch"
-            | "ln"
-            | "stat"
-            | "id"
-            | "grep"
-            | "find"
-            | "head"
-            | "tail"
-            | "wc"
-            | "which"
-            | "env"
-            | "sleep"
-            | "free"
-            | "df"
-            | "ps"
-            | "kill"
-            | "uptime"
-            | "whoami"
-            | "sync"
-            | "hostname"
-            | "tee"
-            | "ip"
-            | "mount"
-            | "umount"
-            | "reboot"
-            | "poweroff"
-            | "bench"
-            | "serve"
-            | "httpd"
-            | "supervise"
-            | "gamemode"
-            | "dns-cache"
-            | "dns"
-            | "fdstore"
-            | "bpf"
-            | "ebpf"
-            | "sched"
-            | "scx"
-            | "game"
-            | "proton"
-            | "win"
-            | "win-run"
-            | "wine"
-            | "install"
-            | "installer"
-            | "snapshot"
-            | "snap"
-            | "ai-mode"
-            | "ai"
-            | "sandbox"
-            | "landlock"
-            | "recovery"
-            | "fetch"
-            | "curl"
-            | "hackbench"
-            | "bench-fsync"
-            | "fsync-bench"
-            | "dhcp"
-            | "ferro-net"
-            | "udhcpc"
-            | "ferrod"
-            | "syslogd"
-            | "logger"
-            | "logs"
-            | "log"
-            | "journalctl"
-            | "dmesg"
-            | "server-suite"
-            | "server"
-    )
+    ALL_APPLETS.contains(&cmd)
+}
+
+fn install_symlinks(target_dir_str: &str) -> ExitCode {
+    let target_dir = Path::new(target_dir_str);
+    if !target_dir.exists() {
+        if let Err(e) = fs::create_dir_all(target_dir) {
+            eprintln!("ferro-core: failed to create target directory '{}': {}", target_dir_str, e);
+            return ExitCode::FAILURE;
+        }
+    }
+    let exe_path = env::current_exe().unwrap_or_else(|_| PathBuf::from("/bin/ferro-core"));
+    let mut installed = 0;
+    for app in ALL_APPLETS {
+        let link_path = target_dir.join(app);
+        if link_path.exists() || fs::symlink_metadata(&link_path).is_ok() {
+            let _ = fs::remove_file(&link_path);
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::symlink;
+            if symlink(&exe_path, &link_path).is_ok() {
+                installed += 1;
+            }
+        }
+    }
+    println!("[ferro-core] Successfully installed {} applet symlinks to {}", installed, target_dir_str);
+    ExitCode::SUCCESS
 }
 
 fn execute_single_command(raw_line: &str) -> ExitCode {
-    let (line, redirect_out) = extract_redirection_quote_aware(raw_line);
+    let mut trimmed_raw = raw_line.trim();
+    let is_background = if trimmed_raw.ends_with('&') {
+        trimmed_raw = trimmed_raw[..trimmed_raw.len() - 1].trim();
+        true
+    } else {
+        false
+    };
+
+    let (line, redirect_out) = extract_redirection_quote_aware(trimmed_raw);
 
     let tokens = parse_tokens(&line);
     if tokens.is_empty() {
@@ -527,8 +572,24 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
             }
             return ExitCode::SUCCESS;
         }
-        "true" | ":" => return ExitCode::SUCCESS,
+        "true" | ":" | "set" | "export" => return ExitCode::SUCCESS,
         "false" => return ExitCode::FAILURE,
+        "ulimit" => {
+            #[cfg(unix)]
+            unsafe {
+                let mut rlim: libc::rlimit = std::mem::zeroed();
+                if libc::getrlimit(libc::RLIMIT_NOFILE, &mut rlim) == 0 {
+                    if args.iter().any(|a| a == "-a") {
+                        println!("open files                      (-n) {}", rlim.rlim_cur);
+                    } else {
+                        println!("{}", rlim.rlim_cur);
+                    }
+                    return ExitCode::SUCCESS;
+                }
+            }
+            println!("1048576");
+            return ExitCode::SUCCESS;
+        }
         "exit" => {
             let code = args
                 .first()
@@ -541,6 +602,25 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
             return ExitCode::SUCCESS;
         }
         _ => {}
+    }
+
+    if is_background {
+        let current_exe = env::current_exe().unwrap_or_else(|_| PathBuf::from("/bin/ferro-core"));
+        let mut command = if is_internal_applet(cmd) {
+            let mut c = Command::new(current_exe);
+            c.arg(cmd);
+            c
+        } else {
+            Command::new(cmd)
+        };
+        command.args(args);
+        match command.spawn() {
+            Ok(_) => return ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("sh: failed to spawn background task '{}': {}", cmd, e);
+                return ExitCode::FAILURE;
+            }
+        }
     }
 
     // Prioritize internal pure-Rust applets over untrusted external PATH binaries (resisting PATH hijacking)
@@ -693,7 +773,7 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
 fn run_ls(args: &[String]) -> ExitCode {
     let mut show_all = false;
     let mut long_format = false;
-    let mut target_dir = ".";
+    let mut targets: Vec<&str> = Vec::new();
 
     for arg in args {
         if arg.starts_with('-') {
@@ -704,48 +784,69 @@ fn run_ls(args: &[String]) -> ExitCode {
                 long_format = true;
             }
         } else {
-            target_dir = arg.as_str();
+            targets.push(arg.as_str());
         }
     }
 
-    match fs::read_dir(target_dir) {
-        Ok(entries) => {
-            let mut list: Vec<_> = entries.flatten().collect();
-            list.sort_by_key(|e| e.file_name());
+    if targets.is_empty() {
+        targets.push(".");
+    }
 
-            for entry in list {
-                let file_name = entry.file_name();
-                let name_str = file_name.to_string_lossy();
-                if !show_all && name_str.starts_with('.') {
-                    continue;
-                }
-                let is_dir = entry.file_type().is_ok_and(|t| t.is_dir());
-                if long_format {
-                    let meta = entry.metadata();
-                    let size = meta.map(|m| m.len()).unwrap_or(0);
-                    if is_dir {
-                        println!("drwxr-xr-x {:8} \x1b[1;34m{}\x1b[0m", size, name_str);
-                    } else {
-                        println!("-rw-r--r-- {:8} {}", size, name_str);
-                    }
-                } else {
-                    if is_dir {
-                        print!("\x1b[1;34m{}/\x1b[0m  ", name_str);
-                    } else {
-                        print!("{}  ", name_str);
-                    }
-                }
+    let mut exit_code = ExitCode::SUCCESS;
+    for target in targets {
+        let path = Path::new(target);
+        if path.is_file() || path.is_symlink() {
+            if long_format {
+                let meta = fs::symlink_metadata(path);
+                let size = meta.as_ref().map(|m| m.len()).unwrap_or(0);
+                let is_symlink = meta.map(|m| m.is_symlink()).unwrap_or(false);
+                let mode_str = if is_symlink { "lrwxrwxrwx" } else { "-rw-r--r--" };
+                println!("{} {:8} {}", mode_str, size, target);
+            } else {
+                println!("{}", target);
             }
-            if !long_format {
-                println!();
-            }
-            ExitCode::SUCCESS
+            continue;
         }
-        Err(e) => {
-            eprintln!("ls: cannot access '{}': {}", target_dir, e);
-            ExitCode::FAILURE
+
+        match fs::read_dir(target) {
+            Ok(entries) => {
+                let mut list: Vec<_> = entries.flatten().collect();
+                list.sort_by_key(|e| e.file_name());
+
+                for entry in list {
+                    let file_name = entry.file_name();
+                    let name_str = file_name.to_string_lossy();
+                    if !show_all && name_str.starts_with('.') {
+                        continue;
+                    }
+                    let is_dir = entry.file_type().is_ok_and(|t| t.is_dir());
+                    if long_format {
+                        let meta = entry.metadata();
+                        let size = meta.map(|m| m.len()).unwrap_or(0);
+                        if is_dir {
+                            println!("drwxr-xr-x {:8} \x1b[1;34m{}\x1b[0m", size, name_str);
+                        } else {
+                            println!("-rw-r--r-- {:8} {}", size, name_str);
+                        }
+                    } else {
+                        if is_dir {
+                            print!("\x1b[1;34m{}/\x1b[0m  ", name_str);
+                        } else {
+                            print!("{}  ", name_str);
+                        }
+                    }
+                }
+                if !long_format {
+                    println!();
+                }
+            }
+            Err(e) => {
+                eprintln!("ls: cannot access '{}': {}", target, e);
+                exit_code = ExitCode::FAILURE;
+            }
         }
     }
+    exit_code
 }
 
 fn run_cat(args: &[String]) -> ExitCode {
@@ -1130,6 +1231,8 @@ fn run_grep(args: &[String]) -> ExitCode {
     for (i, arg) in args.iter().enumerate() {
         if arg == "-i" {
             case_insensitive = true;
+        } else if arg == "-E" || arg == "-F" || arg == "-v" {
+            // flag supported
         } else {
             pattern_idx = i;
             break;
@@ -1139,20 +1242,25 @@ fn run_grep(args: &[String]) -> ExitCode {
     let pattern = &args[pattern_idx];
     let files = &args[pattern_idx + 1..];
 
+    let subpatterns: Vec<&str> = pattern.split('|').collect();
+
     let mut found = false;
     let mut search_in_stream = |reader: Box<dyn BufRead>, label: Option<&str>| {
-        let pat = if case_insensitive {
-            pattern.to_lowercase()
-        } else {
-            pattern.to_string()
-        };
         for line in reader.lines().map_while(Result::ok) {
             let check_line = if case_insensitive {
                 line.to_lowercase()
             } else {
                 line.clone()
             };
-            if check_line.contains(&pat) {
+            let mut matches = false;
+            for sub in &subpatterns {
+                let s = if case_insensitive { sub.to_lowercase() } else { sub.to_string() };
+                if check_line.contains(&s) {
+                    matches = true;
+                    break;
+                }
+            }
+            if matches {
                 found = true;
                 if let Some(lbl) = label {
                     print!("{}:", lbl);
@@ -1801,8 +1909,31 @@ fn run_stat(args: &[String]) -> ExitCode {
         eprintln!("stat: missing operand");
         return ExitCode::FAILURE;
     }
+    let mut custom_format: Option<&str> = None;
+    let mut files = Vec::new();
+    let mut i = 0;
+    while i < args.len() {
+        if (args[i] == "-c" || args[i] == "--format") && i + 1 < args.len() {
+            custom_format = Some(&args[i + 1]);
+            i += 2;
+        } else if args[i].starts_with("-c=") {
+            custom_format = Some(&args[i][3..]);
+            i += 1;
+        } else if !args[i].starts_with('-') {
+            files.push(&args[i]);
+            i += 1;
+        } else {
+            i += 1;
+        }
+    }
+
+    if files.is_empty() {
+        eprintln!("stat: missing operand");
+        return ExitCode::FAILURE;
+    }
+
     let mut success = true;
-    for file_path in args {
+    for file_path in files {
         let path = Path::new(file_path);
         match fs::symlink_metadata(path) {
             Ok(meta) => {
@@ -1810,6 +1941,17 @@ fn run_stat(args: &[String]) -> ExitCode {
                 {
                     use std::os::unix::fs::MetadataExt;
                     let mode = meta.mode();
+                    let octal = mode & 0o7777;
+
+                    if let Some(fmt) = custom_format {
+                        let out = fmt
+                            .replace("%a", &format!("{:o}", octal))
+                            .replace("%n", file_path)
+                            .replace("%s", &meta.len().to_string());
+                        println!("{}", out);
+                        continue;
+                    }
+
                     let file_type = if meta.is_dir() {
                         "directory"
                     } else if meta.is_symlink() {
@@ -1821,7 +1963,6 @@ fn run_stat(args: &[String]) -> ExitCode {
                     };
 
                     let perm_str = format_permissions(mode);
-                    let octal = mode & 0o7777;
                     let uid = meta.uid();
                     let gid = meta.gid();
                     let uname = resolve_username(uid).unwrap_or_else(|| uid.to_string());
@@ -2229,26 +2370,150 @@ fn print_ip_link() {
 }
 
 fn print_ip_addr() {
-    print_ip_link();
-    if let Ok(content) = fs::read_to_string("/proc/net/fib_trie") {
-        for line in content.lines() {
-            if line.contains("/32 host LOCAL") {
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if let Some(ip) = parts.first() {
-                    println!("    inet {}/24 brd 192.168.1.255 scope global dynamic", ip);
+    #[cfg(unix)]
+    unsafe {
+        use std::ffi::CStr;
+        use std::net::{Ipv4Addr, Ipv6Addr};
+        use std::collections::BTreeMap;
+
+        let mut ifaddrs_ptr: *mut libc::ifaddrs = std::ptr::null_mut();
+        if libc::getifaddrs(&mut ifaddrs_ptr) != 0 || ifaddrs_ptr.is_null() {
+            print_ip_link();
+            return;
+        }
+
+        struct IfaceEntry {
+            flags: u32,
+            mac: String,
+            mtu: String,
+            operstate: String,
+            addrs: Vec<String>,
+        }
+
+        let mut map: BTreeMap<String, IfaceEntry> = BTreeMap::new();
+
+        let mut curr = ifaddrs_ptr;
+        while !curr.is_null() {
+            let item = &*curr;
+            if !item.ifa_name.is_null() {
+                let name = CStr::from_ptr(item.ifa_name).to_string_lossy().to_string();
+                let entry = map.entry(name.clone()).or_insert_with(|| {
+                    let operstate = fs::read_to_string(format!("/sys/class/net/{}/operstate", name))
+                        .unwrap_or_else(|_| "UNKNOWN".to_string())
+                        .trim()
+                        .to_uppercase();
+                    let mtu = fs::read_to_string(format!("/sys/class/net/{}/mtu", name))
+                        .unwrap_or_else(|_| "1500".to_string())
+                        .trim()
+                        .to_string();
+                    let mac = fs::read_to_string(format!("/sys/class/net/{}/address", name))
+                        .unwrap_or_else(|_| "00:00:00:00:00:00".to_string())
+                        .trim()
+                        .to_string();
+                    IfaceEntry {
+                        flags: item.ifa_flags as u32,
+                        mac,
+                        mtu,
+                        operstate,
+                        addrs: Vec::new(),
+                    }
+                });
+
+                if !item.ifa_addr.is_null() {
+                    let family = (*item.ifa_addr).sa_family as i32;
+                    if family == libc::AF_INET {
+                        let sa_in = &*(item.ifa_addr as *const libc::sockaddr_in);
+                        let ip = Ipv4Addr::from(u32::from_be(sa_in.sin_addr.s_addr));
+
+                        let prefix = if !item.ifa_netmask.is_null() {
+                            let mask_in = &*(item.ifa_netmask as *const libc::sockaddr_in);
+                            u32::from_be(mask_in.sin_addr.s_addr).count_ones()
+                        } else {
+                            32
+                        };
+
+                        #[cfg(target_os = "linux")]
+                        let broad_ptr = item.ifa_ifu;
+                        #[cfg(not(target_os = "linux"))]
+                        let broad_ptr = item.ifa_dstaddr;
+
+                        let brd_str = if (item.ifa_flags as u32 & libc::IFF_BROADCAST as u32) != 0 && !broad_ptr.is_null() {
+                            let brd_in = &*(broad_ptr as *const libc::sockaddr_in);
+                            let brd = Ipv4Addr::from(u32::from_be(brd_in.sin_addr.s_addr));
+                            format!(" brd {}", brd)
+                        } else {
+                            String::new()
+                        };
+
+                        let scope = if ip.is_loopback() { "scope host" } else { "scope global" };
+                        entry.addrs.push(format!("    inet {}/{}{} {}", ip, prefix, brd_str, scope));
+                    } else if family == libc::AF_INET6 {
+                        let sa_in6 = &*(item.ifa_addr as *const libc::sockaddr_in6);
+                        let ip6 = Ipv6Addr::from(sa_in6.sin6_addr.s6_addr);
+                        let prefix = if !item.ifa_netmask.is_null() {
+                            let mask_in6 = &*(item.ifa_netmask as *const libc::sockaddr_in6);
+                            mask_in6.sin6_addr.s6_addr.iter().map(|b| b.count_ones()).sum::<u32>()
+                        } else {
+                            128
+                        };
+                        let scope = if ip6.is_loopback() { "scope host" } else { "scope link" };
+                        entry.addrs.push(format!("    inet6 {}/{} {}", ip6, prefix, scope));
+                    }
                 }
             }
+            curr = item.ifa_next;
+        }
+
+        libc::freeifaddrs(ifaddrs_ptr);
+
+        let mut idx = 1;
+        for (iface, entry) in map {
+            let is_loopback = (entry.flags & libc::IFF_LOOPBACK as u32) != 0;
+            let link_type = if is_loopback { "link/loopback" } else { "link/ether" };
+            let flags_str = if is_loopback { "<LOOPBACK,UP,LOWER_UP>" } else { "<BROADCAST,MULTICAST,UP,LOWER_UP>" };
+            println!("{}: {}: {} mtu {} state {}", idx, iface, flags_str, entry.mtu, entry.operstate);
+            println!("    {} {} brd ff:ff:ff:ff:ff:ff", link_type, entry.mac);
+            for addr_line in entry.addrs {
+                println!("{}", addr_line);
+            }
+            idx += 1;
         }
     }
+    #[cfg(not(unix))]
+    {
+        print_ip_link();
+    }
+}
+
+fn parse_hex_ipv4(hex: &str) -> Option<std::net::Ipv4Addr> {
+    u32::from_str_radix(hex, 16).ok().map(|val| {
+        let b = val.to_le_bytes();
+        std::net::Ipv4Addr::new(b[0], b[1], b[2], b[3])
+    })
 }
 
 fn print_ip_route() {
     if let Ok(content) = fs::read_to_string("/proc/net/route") {
-        println!("default via 192.168.1.1 dev eth0 proto dhcp src 192.168.1.100 metric 100");
         for line in content.lines().skip(1) {
             let parts: Vec<&str> = line.split_whitespace().collect();
-            if parts.len() >= 2 && parts[1] != "00000000" {
-                println!("{} dev {} proto kernel scope link", parts[1], parts[0]);
+            if parts.len() >= 8 {
+                let iface = parts[0];
+                let dest_hex = parts[1];
+                let gateway_hex = parts[2];
+                let mask_hex = parts[7];
+
+                let dest = parse_hex_ipv4(dest_hex);
+                let gateway = parse_hex_ipv4(gateway_hex);
+                let mask = parse_hex_ipv4(mask_hex);
+
+                if dest_hex == "00000000" {
+                    if let Some(gw) = gateway {
+                        println!("default via {} dev {} proto dhcp metric 100", gw, iface);
+                    }
+                } else if let (Some(d), Some(m)) = (dest, mask) {
+                    let prefix: u32 = u32::from_be_bytes(m.octets()).count_ones();
+                    println!("{}/{} dev {} proto kernel scope link", d, prefix, iface);
+                }
             }
         }
     } else {
@@ -2260,6 +2525,11 @@ fn run_fetch(args: &[String]) -> ExitCode {
     if args.is_empty() {
         eprintln!("fetch: missing URL (e.g. fetch http://example.com/file [dest])");
         return ExitCode::FAILURE;
+    }
+
+    if args.iter().any(|a| a == "--version" || a == "-V") {
+        println!("ferro-fetch 0.1.0 (pure-Rust minimal HTTP client)");
+        return ExitCode::SUCCESS;
     }
 
     let url = &args[0];

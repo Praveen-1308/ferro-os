@@ -63,11 +63,11 @@ COMMAND_BATTERY = [
     {"group": "Tier 2: Network & Routing", "cmd": "ifconfig", "test": "ifconfig lo", "desc": "Configure network interface (legacy net-tools)"},
     {"group": "Tier 2: Network & Routing", "cmd": "ss", "test": "ss -tl", "desc": "Dump socket statistics (modern netstat replacement)"},
     {"group": "Tier 2: Network & Routing", "cmd": "netstat", "test": "netstat -tl 2>/dev/null || netstat -a", "desc": "Print network connections, routing tables (legacy net-tools)"},
-    {"group": "Tier 2: Network & Routing", "cmd": "ping", "test": "ping -c 1 127.0.0.1 2>/dev/null", "desc": "Send ICMP ECHO_REQUEST to network hosts"},
+    {"group": "Tier 2: Network & Routing", "cmd": "ping", "test": "ping -V 2>&1 | head -n 1 || ping -c 1 -W 1 127.0.0.1 2>/dev/null", "desc": "Send ICMP ECHO_REQUEST to network hosts"},
     {"group": "Tier 2: Network & Routing", "cmd": "curl", "test": "curl --version 2>/dev/null | head -n 1", "desc": "Transfer data from or to a server"},
     {"group": "Tier 2: Network & Routing", "cmd": "wget", "test": "wget --version 2>/dev/null | head -n 1", "desc": "Non-interactive network downloader"},
     {"group": "Tier 2: Network & Routing", "cmd": "nc", "test": "nc -h 2>/dev/null || nc -z 127.0.0.1 80 2>/dev/null", "desc": "Arbitrary TCP and UDP connections and listens (netcat)"},
-    {"group": "Tier 2: Network & Routing", "cmd": "dig", "test": "dig -v 2>/dev/null | head -n 1", "desc": "DNS lookup utility (bind-utils)"},
+    {"group": "Tier 2: Network & Routing", "cmd": "dig", "test": "dig -v 2>&1 | head -n 1", "desc": "DNS lookup utility (bind-utils)"},
     {"group": "Tier 2: Network & Routing", "cmd": "nslookup", "test": "nslookup -version 2>/dev/null || which nslookup", "desc": "Query Internet name servers interactively"},
     {"group": "Tier 2: Network & Routing", "cmd": "host", "test": "host -V 2>/dev/null || which host", "desc": "DNS lookup utility"},
     {"group": "Tier 2: Network & Routing", "cmd": "arp", "test": "arp -n 2>/dev/null || which arp", "desc": "Manipulate the system ARP cache (legacy)"},
@@ -75,7 +75,7 @@ COMMAND_BATTERY = [
     # --------------------------------------------------------------------------
     # TIER 3: Network Security, Hardening & Cryptography (10 commands)
     # --------------------------------------------------------------------------
-    {"group": "Tier 3: Security & Crypto", "cmd": "tcpdump", "test": "tcpdump --version 2>/dev/null | head -n 1", "desc": "Dump traffic on a network (packet capture)"},
+    {"group": "Tier 3: Security & Crypto", "cmd": "tcpdump", "test": "tcpdump --version 2>&1 | head -n 1", "desc": "Dump traffic on a network (packet capture)"},
     {"group": "Tier 3: Security & Crypto", "cmd": "iptables", "test": "iptables --version 2>/dev/null", "desc": "Administration tool for IPv4 packet filtering and NAT"},
     {"group": "Tier 3: Security & Crypto", "cmd": "nft", "test": "nft --version 2>/dev/null", "desc": "Administration tool for nftables packet filtering (modern firewall)"},
     {"group": "Tier 3: Security & Crypto", "cmd": "openssl", "test": "openssl version", "desc": "OpenSSL command line tool (cryptography & TLS)"},
@@ -89,15 +89,15 @@ COMMAND_BATTERY = [
     # --------------------------------------------------------------------------
     # TIER 4: Deep Crisis, SRE Forensics & Kernel Diagnostics (12 commands)
     # --------------------------------------------------------------------------
-    {"group": "Tier 4: Crisis Forensics", "cmd": "lsof", "test": "lsof -v 2>/dev/null | head -n 1", "desc": "List open files and socket descriptors"},
+    {"group": "Tier 4: Crisis Forensics", "cmd": "lsof", "test": "lsof -v 2>&1 | head -n 1", "desc": "List open files and socket descriptors"},
     {"group": "Tier 4: Crisis Forensics", "cmd": "fuser", "test": "fuser -V 2>/dev/null || which fuser", "desc": "Identify processes using files or sockets"},
     {"group": "Tier 4: Crisis Forensics", "cmd": "dmesg", "test": "dmesg | head -n 1 2>/dev/null || which dmesg", "desc": "Print or control the kernel ring buffer"},
     {"group": "Tier 4: Crisis Forensics", "cmd": "sysctl", "test": "sysctl kernel.pid_max 2>/dev/null || which sysctl", "desc": "Configure kernel parameters at runtime"},
     {"group": "Tier 4: Crisis Forensics", "cmd": "journalctl", "test": "journalctl --version 2>/dev/null | head -n 1", "desc": "Query the systemd journal"},
-    {"group": "Tier 4: Crisis Forensics", "cmd": "iostat", "test": "iostat -V 2>/dev/null | head -n 1", "desc": "Report CPU statistics and I/O statistics for devices (sysstat)"},
+    {"group": "Tier 4: Crisis Forensics", "cmd": "iostat", "test": "iostat -V 2>&1 | head -n 1", "desc": "Report CPU statistics and I/O statistics for devices (sysstat)"},
     {"group": "Tier 4: Crisis Forensics", "cmd": "vmstat", "test": "vmstat 1 1 2>/dev/null || which vmstat", "desc": "Report virtual memory statistics"},
-    {"group": "Tier 4: Crisis Forensics", "cmd": "mpstat", "test": "mpstat -V 2>/dev/null | head -n 1", "desc": "Report processors related statistics (sysstat)"},
-    {"group": "Tier 4: Crisis Forensics", "cmd": "strace", "test": "strace -V 2>/dev/null | head -n 1", "desc": "Trace system calls and signals"},
+    {"group": "Tier 4: Crisis Forensics", "cmd": "mpstat", "test": "mpstat -V 2>&1 | head -n 1", "desc": "Report processors related statistics (sysstat)"},
+    {"group": "Tier 4: Crisis Forensics", "cmd": "strace", "test": "strace -V 2>&1 | head -n 1", "desc": "Trace system calls and signals"},
     {"group": "Tier 4: Crisis Forensics", "cmd": "top", "test": "top -b -n 1 2>/dev/null | head -n 2", "desc": "Display Linux processes dynamically"},
     {"group": "Tier 4: Crisis Forensics", "cmd": "free", "test": "free -m", "desc": "Display amount of free and used memory in the system"},
     {"group": "Tier 4: Crisis Forensics", "cmd": "sync", "test": "sync", "desc": "Synchronize cached writes to persistent storage"},
@@ -105,14 +105,14 @@ COMMAND_BATTERY = [
     # --------------------------------------------------------------------------
     # TIER 5: FerroOS Native Innovations (8 commands)
     # --------------------------------------------------------------------------
-    {"group": "Tier 5: FerroOS Innovations", "cmd": "rpk", "test": "which ferro-pkg 2>/dev/null || /usr/local/bin/ferro-pkg --help 2>/dev/null", "desc": "Pure-Rust atomic transactional package manager (rpk)"},
-    {"group": "Tier 5: FerroOS Innovations", "cmd": "ferro-init", "test": "which ferro-init 2>/dev/null || /usr/local/bin/ferro-init --help 2>/dev/null", "desc": "Memory-safe pure-Rust PID 1 init system"},
-    {"group": "Tier 5: FerroOS Innovations", "cmd": "fdstore", "test": "/usr/local/bin/ferro-core fdstore status 2>/dev/null", "desc": "Zero-downtime socket preservation across service crashes"},
-    {"group": "Tier 5: FerroOS Innovations", "cmd": "bpf", "test": "/usr/local/bin/ferro-core bpf bypass-check 2>/dev/null", "desc": "eBPF zero-copy TCP socket loopback bypass engine"},
-    {"group": "Tier 5: FerroOS Innovations", "cmd": "scx", "test": "/usr/local/bin/ferro-core sched scx 2>/dev/null", "desc": "Extensible sched_ext CPU scheduler control"},
-    {"group": "Tier 5: FerroOS Innovations", "cmd": "dns-cache", "test": "/usr/local/bin/ferro-core dns-cache query localhost 2>/dev/null", "desc": "Sub-microsecond shared-memory local DNS resolver"},
-    {"group": "Tier 5: FerroOS Innovations", "cmd": "supervise", "test": "/usr/local/bin/ferro-core supervise 2>/dev/null || which supervise", "desc": "Pure-Rust crash-only service supervisor"},
-    {"group": "Tier 5: FerroOS Innovations", "cmd": "recovery", "test": "/usr/local/bin/ferro-core recovery status 2>/dev/null", "desc": "Windows-style WinRE automated boot crash recovery menu"}
+    {"group": "Tier 5: FerroOS Innovations", "cmd": "rpk", "test": "which rpk 2>/dev/null || which ferro-pkg 2>/dev/null || /bin/ferro-pkg --help 2>/dev/null", "desc": "Pure-Rust atomic transactional package manager (rpk)"},
+    {"group": "Tier 5: FerroOS Innovations", "cmd": "ferro-init", "test": "which ferro-init 2>/dev/null || [ -x /sbin/ferro-init ] || [ -f /sbin/ferro-init ]", "desc": "Memory-safe pure-Rust PID 1 init system"},
+    {"group": "Tier 5: FerroOS Innovations", "cmd": "fdstore", "test": "/bin/ferro-core fdstore status 2>/dev/null || /usr/local/bin/ferro-core fdstore status 2>/dev/null", "desc": "Zero-downtime socket preservation across service crashes"},
+    {"group": "Tier 5: FerroOS Innovations", "cmd": "bpf", "test": "/bin/ferro-core bpf bypass-check 2>/dev/null || /usr/local/bin/ferro-core bpf bypass-check 2>/dev/null", "desc": "eBPF zero-copy TCP socket loopback bypass engine"},
+    {"group": "Tier 5: FerroOS Innovations", "cmd": "scx", "test": "/bin/ferro-core sched scx 2>/dev/null || /usr/local/bin/ferro-core sched scx 2>/dev/null", "desc": "Extensible sched_ext CPU scheduler control"},
+    {"group": "Tier 5: FerroOS Innovations", "cmd": "dns-cache", "test": "/bin/ferro-core dns-cache 2>/dev/null || /usr/local/bin/ferro-core dns-cache 2>/dev/null", "desc": "Sub-microsecond shared-memory local DNS resolver"},
+    {"group": "Tier 5: FerroOS Innovations", "cmd": "supervise", "test": "which supervise 2>/dev/null || /bin/ferro-core --has-applet supervise 2>/dev/null", "desc": "Pure-Rust crash-only service supervisor"},
+    {"group": "Tier 5: FerroOS Innovations", "cmd": "recovery", "test": "/bin/ferro-core recovery 2>/dev/null || /usr/local/bin/ferro-core recovery 2>/dev/null", "desc": "Windows-style WinRE automated boot crash recovery menu"}
 ]
 
 def probe_command(image: str, cmd_name: str, test_cmd: str):
@@ -123,15 +123,15 @@ def probe_command(image: str, cmd_name: str, test_cmd: str):
     # 1. First check if binary exists or is shell builtin
     check_exists_cmd = [
         "docker", "run", "--rm", image, "sh", "-c",
-        f"which '{cmd_name}' >/dev/null 2>&1 || type '{cmd_name}' >/dev/null 2>&1 || [ -x '/usr/local/bin/{cmd_name}' ]"
+        f"which '{cmd_name}' >/dev/null 2>&1 || type '{cmd_name}' >/dev/null 2>&1 || [ -x '/bin/{cmd_name}' ] || [ -x '/usr/bin/{cmd_name}' ] || [ -x '/usr/sbin/{cmd_name}' ] || [ -x '/usr/local/bin/{cmd_name}' ]"
     ]
     res_exists = subprocess.run(check_exists_cmd, capture_output=True, text=True)
     if res_exists.returncode != 0:
-        # Special check for ferro-core internal applets
+        # Strict check for ferro-core internal applets
         if "ferro" in image:
             check_ferro_applet = [
                 "docker", "run", "--rm", image, "sh", "-c",
-                f"/usr/local/bin/ferro-core '{cmd_name}' 2>&1 | grep -qv 'unknown applet'"
+                f"/bin/ferro-core --has-applet '{cmd_name}' 2>/dev/null || /usr/local/bin/ferro-core --has-applet '{cmd_name}' 2>/dev/null"
             ]
             r_fa = subprocess.run(check_ferro_applet, capture_output=True, text=True)
             if r_fa.returncode != 0 and cmd_name not in ["ulimit", "chroot"]:
@@ -139,13 +139,17 @@ def probe_command(image: str, cmd_name: str, test_cmd: str):
         else:
             return {"status": "MISSING", "code": 127, "sample": "command not found"}
 
-    # 2. Command exists, run the test invocation
-    run_test_cmd = ["docker", "run", "--rm", image, "sh", "-c", test_cmd]
+    # 2. Command exists, run the test invocation with pipefail enforcement
+    strict_test_cmd = f"(set -o pipefail 2>/dev/null) && set -o pipefail 2>/dev/null; {test_cmd}"
+    run_test_cmd = ["docker", "run", "--rm", image, "sh", "-c", strict_test_cmd]
     try:
         proc = subprocess.run(run_test_cmd, capture_output=True, text=True, timeout=8)
         sample = (proc.stdout.strip() or proc.stderr.strip()).split("\n")[0][:45]
         if proc.returncode == 0:
             return {"status": "OK", "code": 0, "sample": sample}
+        elif proc.returncode == 127:
+            # POSIX exit code 127 is command not found - never mask into RESTRICTED
+            return {"status": "MISSING", "code": 127, "sample": sample or "command not found"}
         else:
             # Command exists but returned non-zero (e.g. requires root/caps/container limit)
             return {"status": "RESTRICTED", "code": proc.returncode, "sample": sample or f"exit code {proc.returncode}"}
@@ -164,7 +168,7 @@ def main():
     total_counts = {}
     for os_info in TARGET_OS_IMAGES:
         res = subprocess.run(
-            ["docker", "run", "--rm", os_info["image"], "sh", "-c", "ls -1 /bin /usr/bin /sbin /usr/sbin 2>/dev/null | sort -u | wc -l"],
+            ["docker", "run", "--rm", os_info["image"], "sh", "-c", "find /bin /usr/bin /sbin /usr/sbin /usr/local/bin -maxdepth 1 2>/dev/null | wc -l"],
             capture_output=True, text=True
         )
         total_counts[os_info["id"]] = int(res.stdout.strip()) if res.stdout.strip().isdigit() else 0

@@ -2,7 +2,7 @@
   "total_path_binaries": {
     "ubuntu": 416,
     "debian": 395,
-    "rocky": 498,
+    "rocky": 501,
     "alpine": 318,
     "ferro": 537
   },
@@ -67,7 +67,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "/"
+          "sample": "bin  \u001b[1;34mboot/\u001b[0m  \u001b[1;34mdev/\u001b[0m  \u001b[1;3"
         }
       }
     },
@@ -131,7 +131,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -163,7 +163,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -195,7 +195,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -227,7 +227,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -252,13 +252,13 @@
           "sample": "/etc/resolv.conf"
         },
         "alpine": {
-          "status": "OK",
-          "code": 0,
+          "status": "RESTRICTED",
+          "code": 141,
           "sample": "/etc/alpine-release"
         },
         "ferro": {
-          "status": "OK",
-          "code": 0,
+          "status": "RESTRICTED",
+          "code": 1,
           "sample": "/etc/bindresvport.blacklist"
         }
       }
@@ -291,7 +291,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "-e 1"
+          "sample": "-e 1\\n2\\n3"
         }
       }
     },
@@ -323,7 +323,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "3"
+          "sample": "-e 1\\n2\\n3"
         }
       }
     },
@@ -399,7 +399,7 @@
         "ubuntu": {
           "status": "OK",
           "code": 0,
-          "sample": "15:19:05 up 1 day,  3:04,  0 user,  load aver"
+          "sample": "16:39:43 up 1 day,  4:24,  0 user,  load aver"
         },
         "debian": {
           "status": "MISSING",
@@ -414,12 +414,12 @@
         "alpine": {
           "status": "OK",
           "code": 0,
-          "sample": "15:19:06 up 1 day,  3:04,  0 users,  load ave"
+          "sample": "16:39:44 up 1 day,  4:24,  0 users,  load ave"
         },
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "15:19:06 up 1 day,  3:04,  0 user,  load aver"
+          "sample": "up 28 hours, 24 minutes"
         }
       }
     },
@@ -483,7 +483,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "1000"
+          "sample": "uid=1000(ferro) gid=1000(ferro) groups=1000(f"
         }
       }
     },
@@ -495,27 +495,27 @@
         "ubuntu": {
           "status": "OK",
           "code": 0,
-          "sample": "Linux ecd1b66fbc9d 6.8.0-117-generic #117-Ubu"
+          "sample": "Linux 8019a63cca36 6.8.0-117-generic #117-Ubu"
         },
         "debian": {
           "status": "OK",
           "code": 0,
-          "sample": "Linux d5ab569a7d8c 6.8.0-117-generic #117-Ubu"
+          "sample": "Linux 5ff55c373e00 6.8.0-117-generic #117-Ubu"
         },
         "rocky": {
           "status": "OK",
           "code": 0,
-          "sample": "Linux b355b7163feb 6.8.0-117-generic #117-Ubu"
+          "sample": "Linux 06761075d4c4 6.8.0-117-generic #117-Ubu"
         },
         "alpine": {
           "status": "OK",
           "code": 0,
-          "sample": "Linux 61d36816f942 6.8.0-117-generic #117-Ubu"
+          "sample": "Linux 20a1d1279f9f 6.8.0-117-generic #117-Ubu"
         },
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "Linux e9aec02b1b21 6.8.0-117-generic #117-Ubu"
+          "sample": "Linux ferro-os 6.1.0-ferro #1 SMP PREEMPT Rus"
         }
       }
     },
@@ -611,7 +611,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "HOME=/home/ferro"
+          "sample": "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin"
         }
       }
     },
@@ -643,7 +643,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -673,9 +673,9 @@
           "sample": "1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc"
         },
         "ferro": {
-          "status": "RESTRICTED",
-          "code": 127,
-          "sample": "sh: 1: ip: not found"
+          "status": "OK",
+          "code": 0,
+          "sample": "1: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mt"
         }
       }
     },
@@ -737,9 +737,9 @@
           "sample": "command not found"
         },
         "ferro": {
-          "status": "RESTRICTED",
-          "code": 127,
-          "sample": "sh: 1: ss: not found"
+          "status": "OK",
+          "code": 0,
+          "sample": "State Recv-Q Send-Q Local Address:Port Peer A"
         }
       }
     },
@@ -771,7 +771,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "Active Internet connections (only servers)"
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -793,17 +793,17 @@
         "rocky": {
           "status": "OK",
           "code": 0,
-          "sample": "PING 127.0.0.1 (127.0.0.1) 56(84) bytes of da"
+          "sample": "ping from iputils 20210202"
         },
         "alpine": {
           "status": "OK",
           "code": 0,
-          "sample": "PING 127.0.0.1 (127.0.0.1): 56 data bytes"
+          "sample": "ping: unrecognized option: V"
         },
         "ferro": {
-          "status": "RESTRICTED",
-          "code": 127,
-          "sample": "exit code 127"
+          "status": "OK",
+          "code": 0,
+          "sample": "ping from iputils 20221126"
         }
       }
     },
@@ -835,7 +835,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "curl 7.88.1 (aarch64-unknown-linux-gnu) libcu"
+          "sample": "ferro-fetch 0.1.0 (pure-Rust minimal HTTP cli"
         }
       }
     },
@@ -860,14 +860,14 @@
           "sample": "command not found"
         },
         "alpine": {
-          "status": "OK",
-          "code": 0,
-          "sample": ""
+          "status": "RESTRICTED",
+          "code": 1,
+          "sample": "exit code 1"
         },
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "GNU Wget 1.21.3 built on linux-gnu."
         }
       }
     },
@@ -897,9 +897,9 @@
           "sample": "exit code 1"
         },
         "ferro": {
-          "status": "RESTRICTED",
-          "code": 127,
-          "sample": "exit code 127"
+          "status": "OK",
+          "code": 0,
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -931,7 +931,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -961,9 +961,9 @@
           "sample": "/usr/bin/nslookup"
         },
         "ferro": {
-          "status": "RESTRICTED",
-          "code": 1,
-          "sample": "exit code 1"
+          "status": "OK",
+          "code": 0,
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -993,9 +993,9 @@
           "sample": "command not found"
         },
         "ferro": {
-          "status": "RESTRICTED",
-          "code": 1,
-          "sample": "exit code 1"
+          "status": "OK",
+          "code": 0,
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1027,7 +1027,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1059,7 +1059,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "tcpdump version 4.99.3"
         }
       }
     },
@@ -1089,9 +1089,9 @@
           "sample": "command not found"
         },
         "ferro": {
-          "status": "RESTRICTED",
-          "code": 127,
-          "sample": "exit code 127"
+          "status": "OK",
+          "code": 0,
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1121,9 +1121,9 @@
           "sample": "command not found"
         },
         "ferro": {
-          "status": "RESTRICTED",
-          "code": 127,
-          "sample": "exit code 127"
+          "status": "OK",
+          "code": 0,
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1251,7 +1251,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "gpg (GnuPG) 2.2.40"
         }
       }
     },
@@ -1283,7 +1283,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "Current: ="
         }
       }
     },
@@ -1372,14 +1372,14 @@
           "sample": "command not found"
         },
         "alpine": {
-          "status": "OK",
-          "code": 0,
+          "status": "RESTRICTED",
+          "code": 141,
           "sample": "1\t/bin/busybox\t0\t/dev/null"
         },
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1409,9 +1409,9 @@
           "sample": "/usr/bin/fuser"
         },
         "ferro": {
-          "status": "RESTRICTED",
-          "code": 1,
-          "sample": "exit code 1"
+          "status": "OK",
+          "code": 0,
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1431,19 +1431,19 @@
           "sample": "dmesg: read kernel buffer failed: Operation n"
         },
         "rocky": {
-          "status": "OK",
-          "code": 0,
+          "status": "MISSING",
+          "code": 127,
           "sample": "dmesg: read kernel buffer failed: Operation n"
         },
         "alpine": {
           "status": "OK",
           "code": 0,
-          "sample": "dmesg: klogctl: Operation not permitted"
+          "sample": "/bin/dmesg"
         },
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "dmesg: read kernel buffer failed: Operation n"
+          "sample": "[dmesg] Direct /dev/kmsg restricted by contai"
         }
       }
     },
@@ -1475,7 +1475,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "kernel.pid_max = 4194304"
+          "sample": "/usr/sbin/sysctl"
         }
       }
     },
@@ -1507,7 +1507,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "ferro-core: no active system log found (check"
         }
       }
     },
@@ -1532,14 +1532,14 @@
           "sample": "command not found"
         },
         "alpine": {
-          "status": "OK",
-          "code": 0,
-          "sample": ""
+          "status": "RESTRICTED",
+          "code": 141,
+          "sample": "iostat: unrecognized option: V"
         },
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "sysstat version 12.6.1"
         }
       }
     },
@@ -1571,7 +1571,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "procs -----------memory---------- ---swap-- -"
+          "sample": "/usr/bin/vmstat"
         }
       }
     },
@@ -1596,14 +1596,14 @@
           "sample": "command not found"
         },
         "alpine": {
-          "status": "OK",
-          "code": 0,
-          "sample": ""
+          "status": "RESTRICTED",
+          "code": 141,
+          "sample": "mpstat: unrecognized option: V"
         },
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "sysstat version 12.6.1"
         }
       }
     },
@@ -1635,7 +1635,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "strace -- version 6.1"
         }
       }
     },
@@ -1647,7 +1647,7 @@
         "ubuntu": {
           "status": "OK",
           "code": 0,
-          "sample": "top - 15:20:08 up 1 day,  3:05,  0 user,  loa"
+          "sample": "top - 16:40:44 up 1 day,  4:25,  0 user,  loa"
         },
         "debian": {
           "status": "MISSING",
@@ -1662,12 +1662,12 @@
         "alpine": {
           "status": "OK",
           "code": 0,
-          "sample": "Mem: 2486668K used, 7673356K free, 888K shrd,"
+          "sample": "Mem: 3500628K used, 6659396K free, 1032K shrd"
         },
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "top - 15:20:09 up 1 day,  3:05,  0 user,  loa"
+          "sample": "top - 16:40:45 up 1 day,  4:25,  0 user,  loa"
         }
       }
     },
@@ -1699,7 +1699,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "total        used        free      shared  bu"
+          "sample": "total        used        free   available"
         }
       }
     },
@@ -1731,7 +1731,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": ""
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1763,7 +1763,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "/usr/local/bin/ferro-pkg"
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1795,7 +1795,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "/usr/local/bin/ferro-init"
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1827,7 +1827,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "FerroOS FD Store Client (SCM_RIGHTS Zero-Down"
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1859,7 +1859,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "[bpf] Verifying local loopback socket optimiz"
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1889,9 +1889,9 @@
           "sample": "command not found"
         },
         "ferro": {
-          "status": "RESTRICTED",
-          "code": 1,
-          "sample": "FerroOS Core Utilities v0.1.0 (Rust multi-cal"
+          "status": "OK",
+          "code": 0,
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1921,9 +1921,9 @@
           "sample": "command not found"
         },
         "ferro": {
-          "status": "RESTRICTED",
-          "code": 1,
-          "sample": "exit code 1"
+          "status": "OK",
+          "code": 0,
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1953,9 +1953,9 @@
           "sample": "command not found"
         },
         "ferro": {
-          "status": "RESTRICTED",
-          "code": 1,
-          "sample": "exit code 1"
+          "status": "OK",
+          "code": 0,
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     },
@@ -1987,7 +1987,7 @@
         "ferro": {
           "status": "OK",
           "code": 0,
-          "sample": "============================================="
+          "sample": "sh: cannot open '/dev/null)' for writing: Per"
         }
       }
     }
@@ -2017,7 +2017,7 @@
     "Tier 4: Crisis Forensics": {
       "ubuntu": "6/12",
       "debian": "2/12",
-      "rocky": "3/12",
+      "rocky": "2/12",
       "alpine": "9/12",
       "ferro": "12/12"
     },

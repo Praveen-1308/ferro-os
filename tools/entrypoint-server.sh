@@ -10,6 +10,9 @@ echo "  • Allocator:       mimalloc 2.1 (228.34M ops/s, Atomic Exchange Queues
 echo "  • I/O Subsystem:   libferro_io.so (Transparent io_uring + 4KB Fast Bypass)"
 echo "================================================================================"
 
+# 0. Populate userspace applet symlinks across PATH
+/usr/local/bin/ferro-core --install-symlinks /bin || true
+
 # 1. Start Native Pure-Rust Microservices Suite (Ports 8080 Telemetry, 8081 State Storage, 8082 Static)
 /usr/local/bin/ferro-core server-suite &
 
@@ -23,7 +26,4 @@ echo "--> [OK] FerroOS Microservices Active on Ports 8080 (API), 8081 (Cache), 8
 echo "--> Ready for enterprise production workloads."
 
 # Keep container running with active server child processes
-while true; do
-    sleep 3600 &
-    wait $!
-done
+sleep 86400000
