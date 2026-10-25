@@ -51,8 +51,16 @@ fn main() -> ExitCode {
             return ExitCode::SUCCESS;
         }
         if command_args[0] == "--install-symlinks" || command_args[0] == "-install-symlinks" {
-            let target_dir = command_args.get(1).map(|s| s.as_str()).unwrap_or("/bin");
-            return install_symlinks(target_dir);
+            let mut force = false;
+            let mut target_dir = "/bin";
+            for arg in &command_args[1..] {
+                if arg == "--force" || arg == "-f" {
+                    force = true;
+                } else if !arg.starts_with('-') {
+                    target_dir = arg.as_str();
+                }
+            }
+            return install_symlinks(target_dir, force);
         }
         if command_args[0] == "--has-applet" || command_args[0] == "has-applet" {
             if let Some(target_app) = command_args.get(1) {
@@ -516,7 +524,7 @@ fn is_internal_applet(cmd: &str) -> bool {
     ALL_APPLETS.contains(&cmd)
 }
 
-fn install_symlinks(target_dir_str: &str) -> ExitCode {
+fn install_symlinks(target_dir_str: &str, force: bool) -> ExitCode {
     let target_dir = Path::new(target_dir_str);
     if !target_dir.exists() {
         if let Err(e) = fs::create_dir_all(target_dir) {
@@ -526,9 +534,15 @@ fn install_symlinks(target_dir_str: &str) -> ExitCode {
     }
     let exe_path = env::current_exe().unwrap_or_else(|_| PathBuf::from("/bin/ferro-core"));
     let mut installed = 0;
+    let mut preserved = 0;
     for app in ALL_APPLETS {
         let link_path = target_dir.join(app);
-        if link_path.exists() || fs::symlink_metadata(&link_path).is_ok() {
+        if let Ok(meta) = fs::symlink_metadata(&link_path) {
+            if !meta.file_type().is_symlink() && !force {
+                // CMP-002 Safeguard: Preserve real binaries (standard GNU/Debian utilities)
+                preserved += 1;
+                continue;
+            }
             let _ = fs::remove_file(&link_path);
         }
         #[cfg(unix)]
@@ -539,7 +553,11 @@ fn install_symlinks(target_dir_str: &str) -> ExitCode {
             }
         }
     }
-    println!("[ferro-core] Successfully installed {} applet symlinks to {}", installed, target_dir_str);
+    if preserved > 0 {
+        println!("[ferro-core] Successfully installed {} applet symlinks to {} (preserved {} native binaries)", installed, target_dir_str, preserved);
+    } else {
+        println!("[ferro-core] Successfully installed {} applet symlinks to {}", installed, target_dir_str);
+    }
     ExitCode::SUCCESS
 }
 

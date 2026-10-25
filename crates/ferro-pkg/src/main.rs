@@ -17,8 +17,12 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use tar::{Archive, Builder};
 
+pub mod apt;
 pub mod msi;
 pub mod pe;
+pub mod profile;
+pub mod safeguards;
+pub mod transaction;
 
 const DEFAULT_DB_PATH: &str = "/var/lib/rpk/db.json";
 
@@ -181,11 +185,9 @@ impl PackageDatabase {
 
     pub fn save(&self, root: &Path) -> io::Result<()> {
         let db_path = Self::get_db_path(root);
-        if let Some(parent) = db_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
         let data = serde_json::to_string_pretty(self)?;
-        fs::write(db_path, data)
+        safeguards::privileged_write_file(&db_path, &data)?;
+        Ok(())
     }
 }
 
@@ -264,27 +266,35 @@ fn main() -> ExitCode {
         }
         "install" => {
             if filtered_args.len() < 2 {
-                eprintln!("rpk install: missing package archive (.rpk or .tar.gz)");
+                eprintln!("rpk install: missing package name, profile (@name), or archive (.rpk)");
                 return ExitCode::FAILURE;
             }
-            let archive_path = &filtered_args[1];
-            let allow_nodeps = filtered_args.iter().any(|a| a == "--nodeps");
-            let allow_multiarch = filtered_args
-                .iter()
-                .any(|a| a == "--multiarch" || a == "--allow-foreign");
-            let mut verify_sha = None;
-            for idx in 2..filtered_args.len() {
-                if filtered_args[idx] == "--sha256" && idx + 1 < filtered_args.len() {
-                    verify_sha = Some(filtered_args[idx + 1].clone());
-                }
+            cmd_dispatch_install(&filtered_args[1..], &root_path)
+        }
+        "search" => {
+            if filtered_args.len() < 2 {
+                eprintln!("rpk search: missing search query");
+                return ExitCode::FAILURE;
             }
-            cmd_install(
-                archive_path,
-                &root_path,
-                allow_nodeps,
-                allow_multiarch,
-                verify_sha.as_deref(),
-            )
+            cmd_search(&filtered_args[1], &root_path)
+        }
+        "update" => cmd_update(&root_path),
+        "upgrade" => {
+            let security_only = filtered_args.iter().any(|a| a == "--security" || a == "-s");
+            cmd_upgrade(security_only, &root_path)
+        }
+        "rollback" => {
+            let tx_id = filtered_args.get(1).map(|s| s.as_str());
+            cmd_rollback(tx_id, &root_path)
+        }
+        "history" | "transactions" => cmd_history(&root_path),
+        "profile" | "profiles" => cmd_profile(&filtered_args[1..], &root_path),
+        "check-elf" | "elf-info" => {
+            if filtered_args.len() < 2 {
+                eprintln!("rpk check-elf: missing binary path");
+                return ExitCode::FAILURE;
+            }
+            cmd_check_elf(&filtered_args[1])
         }
         "remove" => {
             if filtered_args.len() < 2 {
@@ -340,15 +350,23 @@ fn main() -> ExitCode {
 }
 
 fn print_usage() {
-    println!("rpk - Rust Package Keeper for FerroOS v0.2.0 (Multi-Arch & Secure)");
+    println!("rpk - Rust Package Keeper for FerroOS v0.3.0 (Hybrid Apt + Multi-Arch & Secure)");
     println!("Usage: rpk [options] <command> [args]");
     println!("\nGlobal Options:");
     println!("  --root <path>         Operate inside a custom sysroot/directory prefix");
     println!("\nCommands:");
-    println!("  list                  List all installed packages");
+    println!("  list                  List all installed packages and capability profiles");
     println!("  info <package>        Show detailed package information");
-    println!("  install <pkg> [opts]  Install a package (.rpk or .tar.gz)");
-    println!("                        Options: --nodeps, --multiarch, --sha256 <hash>");
+    println!("  install <pkg> [opts]  Install a native .rpk, capability profile (@name), or Debian package");
+    println!("                        Options: --nodeps, --multiarch, --sha256 <hash>, --force");
+    println!("  search <query>        Search native recipes and Debian Bookworm packages");
+    println!("  update                Synchronize local package indexes and apt repositories");
+    println!("  upgrade [opts]        Upgrade installed packages (atomic with Btrfs/JSON rollback)");
+    println!("                        Options: --security (target Debian security advisories)");
+    println!("  rollback [tx_id]      Revert most recent update/installation or specified transaction");
+    println!("  history               Show package transaction history and snapshot status");
+    println!("  profile [list|info]   Inspect available capability profile packs");
+    println!("  check-elf <file>      Audit ELF binary glibc requirements (CMP-003 safeguard)");
     println!("  remove <package>      Uninstall a package and remove files");
     println!("  verify <package>      Verify that all package files exist on disk");
     println!("  check                 Verify system-wide dependency integrity");
@@ -373,25 +391,40 @@ fn cmd_list(root: &Path) -> ExitCode {
             "[rpk] No packages currently installed (root: {}).",
             root.display()
         );
-        return ExitCode::SUCCESS;
-    }
-
-    println!(
-        "{:<20} {:<12} {:<10} {}",
-        "PACKAGE", "VERSION", "ARCH", "DESCRIPTION"
-    );
-    println!("{:-<20} {:-<12} {:-<10} {:-<35}", "", "", "", "");
-    for (name, pkg) in &db.packages {
+    } else {
         println!(
             "{:<20} {:<12} {:<10} {}",
-            name, pkg.metadata.version, pkg.metadata.architecture, pkg.metadata.description
+            "PACKAGE", "VERSION", "ARCH", "DESCRIPTION"
         );
+        println!("{:-<20} {:-<12} {:-<10} {:-<35}", "", "", "", "");
+        for (name, pkg) in &db.packages {
+            println!(
+                "{:<20} {:<12} {:<10} {}",
+                name, pkg.metadata.version, pkg.metadata.architecture, pkg.metadata.description
+            );
+        }
+        println!("\nTotal native packages installed: {}", db.packages.len());
     }
-    println!("\nTotal installed: {} packages", db.packages.len());
+
+    // Display available capability profiles (Section 4)
+    println!("\n⬡ Available Capability Profiles (Section 4):");
+    for prof in profile::list_profiles() {
+        println!("  • {:<22} - {}", prof.name, prof.title);
+    }
     ExitCode::SUCCESS
 }
 
 fn cmd_info(pkg_name: &str, root: &Path) -> ExitCode {
+    if let Some(prof) = profile::find_profile(pkg_name) {
+        println!("Capability Profile: {}", prof.name);
+        println!("Title:              {}", prof.title);
+        println!("Description:        {}", prof.description);
+        println!("Bundled Packages:   {}", prof.packages.len());
+        println!("Provides Shims:     {}", prof.has_shims);
+        println!("Packages List:      {:?}", prof.packages);
+        return ExitCode::SUCCESS;
+    }
+
     let db = PackageDatabase::load(root);
     if let Some(pkg) = db.packages.get(pkg_name) {
         println!("Package:      {}", pkg.metadata.name);
@@ -416,7 +449,19 @@ fn cmd_info(pkg_name: &str, root: &Path) -> ExitCode {
         }
         ExitCode::SUCCESS
     } else {
-        eprintln!("rpk: package '{}' is not installed", pkg_name);
+        // Fallback: check Debian substrate via apt-cache show
+        if apt::is_apt_available() {
+            let mut cmd = std::process::Command::new("apt-cache");
+            cmd.arg("show").arg(pkg_name);
+            if let Ok(output) = cmd.output() {
+                if output.status.success() {
+                    let text = String::from_utf8_lossy(&output.stdout);
+                    println!("[Debian Substrate Package Info]\n{}", text.trim());
+                    return ExitCode::SUCCESS;
+                }
+            }
+        }
+        eprintln!("rpk: package '{}' is not installed or found", pkg_name);
         ExitCode::FAILURE
     }
 }
@@ -500,11 +545,171 @@ fn cmd_check(root: &Path) -> ExitCode {
     }
 }
 
-fn cmd_install(
+fn cmd_dispatch_install(args: &[String], root: &Path) -> ExitCode {
+    let mut allow_nodeps = false;
+    let mut allow_multiarch = false;
+    let mut allow_foreign_glibc = false;
+    let mut verify_sha = None;
+    let mut targets = Vec::new();
+
+    let mut i = 0;
+    while i < args.len() {
+        if args[i] == "--nodeps" {
+            allow_nodeps = true;
+            i += 1;
+        } else if args[i] == "--multiarch" || args[i] == "--allow-foreign" {
+            allow_multiarch = true;
+            i += 1;
+        } else if args[i] == "--allow-foreign-glibc" || args[i] == "--force" || args[i] == "-f" {
+            allow_foreign_glibc = true;
+            i += 1;
+        } else if args[i] == "--sha256" && i + 1 < args.len() {
+            verify_sha = Some(args[i + 1].clone());
+            i += 2;
+        } else if args[i].starts_with('-') {
+            i += 1;
+        } else {
+            targets.push(args[i].clone());
+            i += 1;
+        }
+    }
+
+    if targets.is_empty() {
+        eprintln!("rpk install: missing package name, profile (@name), or archive (.rpk)");
+        return ExitCode::FAILURE;
+    }
+
+    if targets.len() == 1 {
+        let target = &targets[0];
+        // 1. Profile installation (@c-compat-libs, etc.)
+        if target.starts_with('@') || profile::find_profile(target).is_some() {
+            return cmd_install_profile(target, root);
+        }
+
+        // 2. Existing local archive file
+        let path = Path::new(target);
+        if path.is_file() {
+            return cmd_install_native(
+                target,
+                root,
+                allow_nodeps,
+                allow_multiarch,
+                allow_foreign_glibc,
+                verify_sha.as_deref(),
+            );
+        }
+
+        // 3. Search local recipe / package paths
+        let candidates = [
+            PathBuf::from(format!("{}.rpk", target)),
+            PathBuf::from("build_out").join(format!("{}.rpk", target)),
+            root.join("var/lib/ferro-pkg/repo").join(format!("{}.rpk", target)),
+            root.join("var/lib/rpk/repo").join(format!("{}.rpk", target)),
+        ];
+
+        for cand in &candidates {
+            if cand.is_file() {
+                println!("[rpk] Found local native recipe: {}", cand.display());
+                return cmd_install_native(
+                    &cand.to_string_lossy(),
+                    root,
+                    allow_nodeps,
+                    allow_multiarch,
+                    allow_foreign_glibc,
+                    verify_sha.as_deref(),
+                );
+            }
+        }
+
+        // 4. Fallback to Debian APT (PKG-002)
+        return cmd_install_apt(&[target.clone()], root);
+    }
+
+    // Multiple packages: route to APT fallback
+    cmd_install_apt(&targets, root)
+}
+
+fn cmd_install_profile(profile_name: &str, root: &Path) -> ExitCode {
+    if let Some(prof) = profile::find_profile(profile_name) {
+        match profile::install_capability_profile(prof, root) {
+            Ok(_) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("❌ rpk install {}: {}", profile_name, e);
+                ExitCode::FAILURE
+            }
+        }
+    } else {
+        eprintln!("❌ rpk install: unknown capability profile '{}'.", profile_name);
+        println!("Available profiles:");
+        for p in profile::list_profiles() {
+            println!("  • {} ({})", p.name, p.title);
+        }
+        ExitCode::FAILURE
+    }
+}
+
+fn cmd_install_apt(packages: &[String], root: &Path) -> ExitCode {
+    if !apt::is_apt_available() {
+        eprintln!(
+            "rpk: error: package '{}' not found locally, and 'apt-get' is not available on this system.",
+            packages.join(" ")
+        );
+        return ExitCode::FAILURE;
+    }
+
+    let tx_id = transaction::generate_tx_id();
+    let timestamp = transaction::current_timestamp_iso();
+
+    // PKG-003: Check Btrfs snapshot
+    let btrfs_snapshot = if transaction::is_btrfs_root(root) {
+        transaction::create_btrfs_snapshot(root, &tx_id).ok()
+    } else {
+        None
+    };
+
+    match apt::apt_install(packages, root) {
+        Ok(newly_installed) => {
+            // Save transaction record
+            let record = transaction::TransactionRecord {
+                id: tx_id.clone(),
+                timestamp,
+                action: "install".to_string(),
+                target: packages.join(" "),
+                is_profile: false,
+                profile_name: None,
+                btrfs_snapshot,
+                newly_installed_apt_packages: newly_installed,
+                upgraded_apt_packages: Vec::new(),
+                installed_rpk_packages: Vec::new(),
+                installed_files: Vec::new(),
+                installed_shims: Vec::new(),
+                rolled_back: false,
+            };
+            let _ = transaction::save_transaction(root, &record);
+
+            // CMP-004: Always invoke ldconfig & check shared library resolution
+            let _ = safeguards::run_ldconfig(root);
+            let _ = safeguards::verify_shared_libraries(&[
+                root.join("usr/local/bin/ferro-core"),
+                root.join("usr/local/bin/ferro-pkg"),
+            ]);
+
+            println!("✅ [rpk] Installation complete (Transaction: {}).", tx_id);
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("❌ rpk install: {}", e);
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn cmd_install_native(
     archive_path: &str,
     root: &Path,
     allow_nodeps: bool,
     allow_multiarch: bool,
+    allow_foreign_glibc: bool,
     explicit_sha: Option<&str>,
 ) -> ExitCode {
     println!("[rpk] Processing package archive '{}'...", archive_path);
@@ -538,6 +743,14 @@ fn cmd_install(
             archive_hash
         );
     }
+
+    // PKG-003: Check if root filesystem supports Btrfs snapshots
+    let tx_id = transaction::generate_tx_id();
+    let btrfs_snapshot = if transaction::is_btrfs_root(root) {
+        transaction::create_btrfs_snapshot(root, &tx_id).ok()
+    } else {
+        None
+    };
 
     // 2. Open Tar Archive
     let file = match File::open(archive_path) {
@@ -785,6 +998,12 @@ fn cmd_install(
             break;
         } else {
             if dest.is_file() {
+                // CMP-003 Safeguard: Check ELF glibc symbol version requirements
+                if let Err(e) = safeguards::verify_elf_glibc_compat(&dest, allow_foreign_glibc) {
+                    extraction_failed = true;
+                    failure_reason = e;
+                    break;
+                }
                 installed_files.push(clean_path.to_string());
                 unpacked_paths_for_rollback.push(dest);
             }
@@ -861,7 +1080,7 @@ fn cmd_install(
         pkg_name.clone(),
         InstalledPackage {
             metadata: meta,
-            installed_files,
+            installed_files: installed_files.clone(),
             installed_at: "system".to_string(),
         },
     );
@@ -870,14 +1089,346 @@ fn cmd_install(
         eprintln!("rpk: warning: failed to update package database: {}", e);
     }
 
+    // PKG-003: Record transaction manifest
+    let record = transaction::TransactionRecord {
+        id: tx_id.clone(),
+        timestamp: transaction::current_timestamp_iso(),
+        action: "install".to_string(),
+        target: pkg_name.clone(),
+        is_profile: false,
+        profile_name: None,
+        btrfs_snapshot,
+        newly_installed_apt_packages: Vec::new(),
+        upgraded_apt_packages: Vec::new(),
+        installed_rpk_packages: vec![pkg_name.clone()],
+        installed_files: installed_files.clone(),
+        installed_shims: Vec::new(),
+        rolled_back: false,
+    };
+    let _ = transaction::save_transaction(root, &record);
+
+    // CMP-004: Always invoke ldconfig & check shared library resolution
+    let _ = safeguards::run_ldconfig(root);
+    let _ = safeguards::verify_shared_libraries(&[
+        root.join("usr/local/bin/ferro-core"),
+        root.join("usr/local/bin/ferro-pkg"),
+    ]);
+
     println!(
-        "✅ [rpk] Successfully installed {} v{} [{}] (root: {})",
+        "✅ [rpk] Successfully installed {} v{} [{}] (root: {}) (Transaction: {})",
         pkg_name,
         version,
         arch,
-        root.display()
+        root.display(),
+        tx_id
     );
     ExitCode::SUCCESS
+}
+
+fn cmd_search(query: &str, root: &Path) -> ExitCode {
+    println!("🔍 [rpk search] Searching for '{}' across FerroOS & Debian substrate...", query);
+    println!("================================================================================");
+
+    // 1. Search native packages in DB and local recipes
+    let db = PackageDatabase::load(root);
+    let mut native_matches = Vec::new();
+    let q_lower = query.to_lowercase();
+    for (name, pkg) in &db.packages {
+        if name.to_lowercase().contains(&q_lower) || pkg.metadata.description.to_lowercase().contains(&q_lower) {
+            native_matches.push((name.clone(), pkg.metadata.version.clone(), pkg.metadata.description.clone(), "installed"));
+        }
+    }
+
+    // Check capability profiles
+    for prof in profile::list_profiles() {
+        if prof.name.to_lowercase().contains(&q_lower)
+            || prof.title.to_lowercase().contains(&q_lower)
+            || prof.description.to_lowercase().contains(&q_lower)
+        {
+            native_matches.push((
+                prof.name.to_string(),
+                "capability-pack".to_string(),
+                prof.title.to_string(),
+                "profile",
+            ));
+        }
+    }
+
+    if !native_matches.is_empty() {
+        println!("  ⬡ FERRO-OS NATIVE CAPABILITY PACKS & RECIPES");
+        println!("  {:<24} {:<16} {}", "PACKAGE", "VERSION", "DESCRIPTION");
+        println!("  {:-<24} {:-<16} {:-<35}", "", "", "");
+        for (pkg, ver, desc, status) in &native_matches {
+            let badge = if *status == "installed" {
+                " [installed]"
+            } else if *status == "profile" {
+                " [profile]"
+            } else {
+                ""
+            };
+            println!("  {:<24} {:<16} {}{}", pkg, ver, desc, badge);
+        }
+        println!();
+    }
+
+    // 2. Search Debian substrate via apt-cache
+    if apt::is_apt_available() {
+        match apt::apt_search(query) {
+            Ok(results) => {
+                println!("  ⬡ DEBIAN 12 (BOOKWORM) SUBSTRATE PACKAGES ({} results)", results.len());
+                println!("  {:<28} {}", "DEBIAN PACKAGE", "DESCRIPTION");
+                println!("  {:-<28} {:-<45}", "", "");
+                for (pkg, desc) in results.iter().take(30) {
+                    println!("  {:<28} {}", pkg, desc);
+                }
+                if results.len() > 30 {
+                    println!(
+                        "  ... and {} more results (narrow query to refine).",
+                        results.len() - 30
+                    );
+                }
+            }
+            Err(e) => {
+                eprintln!("  ⚠️ apt-cache search error: {}", e);
+            }
+        }
+    }
+
+    ExitCode::SUCCESS
+}
+
+fn cmd_update(_root: &Path) -> ExitCode {
+    if !apt::is_apt_available() {
+        println!("[rpk update] Local package repository metadata synchronized.");
+        return ExitCode::SUCCESS;
+    }
+
+    match apt::apt_update() {
+        Ok(_) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("❌ rpk update: {}", e);
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn cmd_upgrade(security_only: bool, root: &Path) -> ExitCode {
+    if !apt::is_apt_available() {
+        println!("[rpk upgrade] FerroOS packages are up to date.");
+        return ExitCode::SUCCESS;
+    }
+
+    let tx_id = transaction::generate_tx_id();
+    let timestamp = transaction::current_timestamp_iso();
+
+    // PKG-003: Check Btrfs snapshot
+    let btrfs_snapshot = if transaction::is_btrfs_root(root) {
+        transaction::create_btrfs_snapshot(root, &tx_id).ok()
+    } else {
+        println!("ℹ️  Root filesystem is non-Btrfs (container/ext4); using lightweight JSON transaction tracking.");
+        None
+    };
+
+    match apt::apt_upgrade(security_only) {
+        Ok((newly_installed, upgraded)) => {
+            // Save transaction record
+            let record = transaction::TransactionRecord {
+                id: tx_id.clone(),
+                timestamp,
+                action: if security_only {
+                    "upgrade-security".to_string()
+                } else {
+                    "upgrade".to_string()
+                },
+                target: if security_only {
+                    "Debian Security Updates".to_string()
+                } else {
+                    "Full System Upgrade".to_string()
+                },
+                is_profile: false,
+                profile_name: None,
+                btrfs_snapshot,
+                newly_installed_apt_packages: newly_installed,
+                upgraded_apt_packages: upgraded,
+                installed_rpk_packages: Vec::new(),
+                installed_files: Vec::new(),
+                installed_shims: Vec::new(),
+                rolled_back: false,
+            };
+            let _ = transaction::save_transaction(root, &record);
+
+            // CMP-004: Always invoke ldconfig & check shared library resolution
+            let _ = safeguards::run_ldconfig(root);
+            let _ = safeguards::verify_shared_libraries(&[
+                root.join("usr/local/bin/ferro-core"),
+                root.join("usr/local/bin/ferro-pkg"),
+            ]);
+
+            println!("✅ [rpk] Upgrade complete (Transaction: {}).", tx_id);
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("❌ rpk upgrade: {}", e);
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn cmd_rollback(tx_id: Option<&str>, root: &Path) -> ExitCode {
+    match transaction::execute_rollback(tx_id, root) {
+        Ok(report) => {
+            println!(
+                "✅ Rollback report: Transaction {} restored successfully in {} ms.",
+                report.tx_id, report.elapsed_ms
+            );
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("❌ rpk rollback: {}", e);
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn cmd_history(root: &Path) -> ExitCode {
+    let txs = transaction::list_transactions(root);
+    if txs.is_empty() {
+        println!(
+            "[rpk history] No transactions currently recorded (root: {}).",
+            root.display()
+        );
+        return ExitCode::SUCCESS;
+    }
+
+    println!("================================================================================");
+    println!("  ⬡ RPK TRANSACTION HISTORY & SNAPSHOT REGISTRY");
+    println!("================================================================================");
+    println!(
+        "{:<18} {:<16} {:<12} {:<30} {}",
+        "TRANSACTION ID", "ACTION", "STATUS", "TARGET", "SNAPSHOT"
+    );
+    println!(
+        "{:-<18} {:-<16} {:-<12} {:-<30} {:-<20}",
+        "", "", "", "", ""
+    );
+
+    for tx in txs.iter().rev() {
+        let status = if tx.rolled_back {
+            "ROLLED BACK"
+        } else {
+            "ACTIVE"
+        };
+        let snap = tx.btrfs_snapshot.as_deref().unwrap_or("JSON Manifest");
+        let target_disp = if tx.target.len() > 28 {
+            format!("{}...", &tx.target[..25])
+        } else {
+            tx.target.clone()
+        };
+        println!(
+            "{:<18} {:<16} {:<12} {:<30} {}",
+            tx.id, tx.action, status, target_disp, snap
+        );
+    }
+    println!("\nTotal transactions recorded: {}", txs.len());
+    ExitCode::SUCCESS
+}
+
+fn cmd_profile(args: &[String], root: &Path) -> ExitCode {
+    let subcmd = args.first().map(|s| s.as_str()).unwrap_or("list");
+    match subcmd {
+        "list" => {
+            println!("================================================================================");
+            println!("  ⬡ FERRO-OS CAPABILITY PROFILES & FEATURE PACKS");
+            println!("================================================================================");
+            println!("{:<24} {:<38} {}", "PROFILE", "NAME", "BUNDLED PACKAGES");
+            println!("{:-<24} {:-<38} {:-<18}", "", "", "");
+
+            for p in profile::list_profiles() {
+                let pkg_summary = format!(
+                    "{} packages{}",
+                    p.packages.len(),
+                    if p.has_shims { " + shims" } else { "" }
+                );
+                println!("{:<24} {:<38} {}", p.name, p.title, pkg_summary);
+            }
+            println!(
+                "\nInstall any profile with: rpk install <profile>  (e.g. 'rpk install @c-compat-libs')"
+            );
+            ExitCode::SUCCESS
+        }
+        "info" => {
+            if args.len() < 2 {
+                eprintln!("rpk profile info: missing profile name");
+                return ExitCode::FAILURE;
+            }
+            if let Some(p) = profile::find_profile(&args[1]) {
+                println!("Profile:      {}", p.name);
+                println!("Title:        {}", p.title);
+                println!("Description:  {}", p.description);
+                println!("Total pkgs:   {}", p.packages.len());
+                println!("Has Shims:    {}", p.has_shims);
+                println!("Packages:     {:?}", p.packages);
+                ExitCode::SUCCESS
+            } else {
+                eprintln!("rpk profile info: unknown profile '{}'", args[1]);
+                ExitCode::FAILURE
+            }
+        }
+        "install" => {
+            if args.len() < 2 {
+                eprintln!("rpk profile install: missing profile name");
+                return ExitCode::FAILURE;
+            }
+            cmd_install_profile(&args[1], root)
+        }
+        _ => {
+            eprintln!(
+                "rpk profile: unknown subcommand '{}'. Use 'list' or 'info'.",
+                subcmd
+            );
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn cmd_check_elf(file_path: &str) -> ExitCode {
+    let p = Path::new(file_path);
+    if !p.exists() {
+        eprintln!("rpk check-elf: file '{}' not found", file_path);
+        return ExitCode::FAILURE;
+    }
+
+    println!("🔍 [CMP-003 Guard] Inspecting ELF Binary: {}", file_path);
+    let host = safeguards::get_host_glibc_version();
+    println!("  • Host glibc version:  {}", host);
+
+    match safeguards::scan_elf_glibc_requirements(p) {
+        Ok(Some(req)) => {
+            println!("  • Required glibc:      {}", req);
+            if req > host {
+                eprintln!(
+                    "  ❌ FAIL: Binary requires GLIBC_{} which exceeds host glibc ({})!",
+                    req, host
+                );
+                eprintln!("     Execution will fail with symbol resolution error.");
+                ExitCode::FAILURE
+            } else {
+                println!(
+                    "  ✅ PASS: Binary glibc requirement (GLIBC_{}) is satisfied by host ({}).",
+                    req, host
+                );
+                ExitCode::SUCCESS
+            }
+        }
+        Ok(None) => {
+            println!("  ℹ️  File is not an ELF binary or does not require versioned GLIBC symbols.");
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("  ❌ Error inspecting file: {}", e);
+            ExitCode::FAILURE
+        }
+    }
 }
 
 fn cmd_remove(pkg_name: &str, root: &Path) -> ExitCode {
@@ -1649,5 +2200,89 @@ mod tests {
         assert_eq!(analysis.image_base, 0x00400000);
         assert_eq!(analysis.sections.len(), 1);
         assert_eq!(analysis.sections[0].name, ".rdata");
+    }
+
+    #[test]
+    fn test_rpk_profile_listing_and_lookup() {
+        let profiles = profile::list_profiles();
+        assert!(profiles.len() >= 4);
+
+        let c_compat = profile::find_profile("@c-compat-libs").expect("Found @c-compat-libs");
+        assert!(c_compat.packages.len() >= 40);
+        assert!(c_compat.packages.contains(&"libnsl2"));
+        assert!(c_compat.packages.contains(&"libtirpc3"));
+        assert!(c_compat.packages.contains(&"libcrypt1"));
+
+        let c_tool = profile::find_profile("@c-toolchain").expect("Found @c-toolchain");
+        assert!(c_tool.packages.contains(&"gcc"));
+        assert!(c_tool.packages.contains(&"make"));
+
+        let sre = profile::find_profile("@sre-forensics").expect("Found @sre-forensics");
+        assert!(sre.packages.contains(&"strace"));
+        assert!(sre.packages.contains(&"tcpdump"));
+        assert!(sre.packages.contains(&"lsof"));
+
+        let sysv = profile::find_profile("@legacy-sysv-compat").expect("Found @legacy-sysv-compat");
+        assert!(sysv.has_shims);
+    }
+
+    #[test]
+    fn test_rpk_search_command() {
+        let temp_dir = env::temp_dir().join("ferro_search_test");
+        let _ = fs::create_dir_all(&temp_dir);
+        let code = cmd_search("lib", &temp_dir);
+        assert_eq!(format!("{:?}", code), format!("{:?}", ExitCode::SUCCESS));
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_rpk_history_empty_and_populated() {
+        let temp_dir = env::temp_dir().join("ferro_history_test");
+        let _ = fs::remove_dir_all(&temp_dir);
+        let _ = fs::create_dir_all(&temp_dir);
+
+        let code = cmd_history(&temp_dir);
+        assert_eq!(format!("{:?}", code), format!("{:?}", ExitCode::SUCCESS));
+
+        let rec = transaction::TransactionRecord {
+            id: "tx_9999".to_string(),
+            timestamp: "2026-10-25T00:00:00Z".to_string(),
+            action: "install".to_string(),
+            target: "@c-toolchain".to_string(),
+            is_profile: true,
+            profile_name: Some("c-toolchain".to_string()),
+            btrfs_snapshot: None,
+            newly_installed_apt_packages: vec!["gcc".to_string(), "make".to_string()],
+            upgraded_apt_packages: Vec::new(),
+            installed_rpk_packages: Vec::new(),
+            installed_files: Vec::new(),
+            installed_shims: Vec::new(),
+            rolled_back: false,
+        };
+        transaction::save_transaction(&temp_dir, &rec).unwrap();
+
+        let code_pop = cmd_history(&temp_dir);
+        assert_eq!(format!("{:?}", code_pop), format!("{:?}", ExitCode::SUCCESS));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_legacy_sysv_shims_generation() {
+        let temp_dir = env::temp_dir().join("ferro_shims_test");
+        let _ = fs::remove_dir_all(&temp_dir);
+        let _ = fs::create_dir_all(&temp_dir);
+
+        let shims = profile::install_legacy_sysv_shims(&temp_dir).expect("Shims written");
+        assert_eq!(shims.len(), 3);
+        assert!(temp_dir.join("usr/local/bin/service").exists());
+        assert!(temp_dir.join("usr/local/bin/chkconfig").exists());
+        assert!(temp_dir.join("usr/local/bin/update-rc.d").exists());
+
+        let service_content = fs::read_to_string(temp_dir.join("usr/local/bin/service")).unwrap();
+        assert!(service_content.contains("ferro-core"));
+        assert!(service_content.contains("--status-all"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
     }
 }

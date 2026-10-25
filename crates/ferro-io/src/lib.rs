@@ -521,6 +521,77 @@ fn ensure_symbols_initialized() {
     INITIALIZING.store(false, Ordering::Release);
 }
 
+#[cfg(target_os = "linux")]
+unsafe fn is_bypassed_process() -> bool {
+    // CMP-001 Safeguard: Read /proc/self/comm using raw kernel syscalls to prevent recursion
+    // into interposed libc wrappers.
+    let fd = libc::syscall(
+        libc::SYS_openat,
+        libc::AT_FDCWD,
+        b"/proc/self/comm\0".as_ptr() as *const libc::c_char,
+        libc::O_RDONLY | libc::O_CLOEXEC,
+        0,
+    ) as c_int;
+    if fd < 0 {
+        return false;
+    }
+    let mut buf = [0u8; 64];
+    let n = libc::syscall(
+        libc::SYS_read,
+        fd,
+        buf.as_mut_ptr() as *mut libc::c_void,
+        buf.len(),
+    );
+    libc::syscall(libc::SYS_close, fd);
+    if n <= 0 {
+        return false;
+    }
+    let len = (n as usize).min(buf.len());
+    let bytes = &buf[..len];
+    let mut end = bytes.len();
+    while end > 0 && (bytes[end - 1] == b'\n' || bytes[end - 1] == b'\r' || bytes[end - 1] == b' ') {
+        end -= 1;
+    }
+    let trimmed = &bytes[..end];
+
+    // Process-name exclusion list:
+    // Debuggers, profilers, compilers, linkers, package managers, and alloc-sensitive tools
+    const BYPASS_LIST: &[&[u8]] = &[
+        b"strace",
+        b"gdb",
+        b"lldb",
+        b"valgrind",
+        b"perf",
+        b"dpkg",
+        b"dpkg-deb",
+        b"apt",
+        b"apt-get",
+        b"apt-cache",
+        b"gcc",
+        b"g++",
+        b"cc",
+        b"c++",
+        b"clang",
+        b"clang++",
+        b"ld",
+        b"ld.bfd",
+        b"ld.gold",
+        b"ld.lld",
+        b"as",
+        b"make",
+        b"ninja",
+        b"cargo",
+        b"rustc",
+    ];
+
+    BYPASS_LIST.iter().any(|&item| item == trimmed)
+}
+
+#[cfg(not(target_os = "linux"))]
+unsafe fn is_bypassed_process() -> bool {
+    false
+}
+
 fn is_secure_execution() -> bool {
     let cached = IS_SECURE.load(Ordering::Relaxed);
     if cached >= 0 {
@@ -535,7 +606,7 @@ fn is_secure_execution() -> bool {
             let aux = libc::getauxval(libc::AT_SECURE);
             #[cfg(not(target_os = "linux"))]
             let aux = 0;
-            if aux != 0 {
+            if aux != 0 || is_bypassed_process() {
                 1
             } else {
                 0
