@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 37 | **Last Sweep**: 2026-10-24 08:46:22 UTC
+**Active Tracked Incidents**: 39 | **Last Sweep**: 2026-10-25 09:02:36 UTC
 
 ---
 
@@ -50,6 +50,8 @@
 | `GITLAB-POSTGRES-WAL-BLOAT` | **PostgreSQL WAL** | GitLab Production Outage: PostgreSQL WAL Checkpoint Archival Disk Full Collapse | `VFS / Storage / Locking` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_gitlab-postgres-wal-bloat.json) | [Read Dossier](incidents/INCIDENT_gitlab-postgres-wal-bloat.md) |
 | `DATADOG-EBPF-PROBE-PANIC` | **Linux eBPF Kernel** | Datadog Linux 5.15 Kernel Panic: eBPF BPF_PROG_RUN Pointer Invalidation | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_datadog-ebpf-probe-panic.json) | [Read Dossier](incidents/INCIDENT_datadog-ebpf-probe-panic.md) |
 | `UBER-GO-GC-PAUSE-SPIKE` | **Go Runtime / Memory** | Uber Microservice Dispatch: Go Runtime Stop-the-World GC Spikes p99 Latency to 450ms | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_uber-go-gc-pause-spike.json) | [Read Dossier](incidents/INCIDENT_uber-go-gc-pause-spike.md) |
+| `REDDIT-SYSADMIN-1xefcqf` | **Linux Server Administration** | Has anyone left IT support after years in the industry and moved into a completely different role? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xefcqf.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xefcqf.md) |
+| `REDDIT-SYSADMIN-1xe41b9` | **Linux Server Administration** | PHP2Shell: notes from the field | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xe41b9.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xe41b9.md) |
 
 ---
 
