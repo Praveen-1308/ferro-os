@@ -1291,7 +1291,32 @@ fn run_tail(args: &[String]) -> ExitCode {
 }
 
 fn run_wc(args: &[String]) -> ExitCode {
-    let file = args.first();
+    let mut count_lines = false;
+    let mut count_words = false;
+    let mut count_bytes = false;
+    let mut file: Option<&str> = None;
+
+    for arg in args {
+        if arg.starts_with('-') && arg.len() > 1 && !arg.starts_with("--") {
+            for ch in arg[1..].chars() {
+                match ch {
+                    'l' => count_lines = true,
+                    'w' => count_words = true,
+                    'c' | 'm' => count_bytes = true,
+                    _ => {}
+                }
+            }
+        } else if !arg.starts_with('-') && file.is_none() {
+            file = Some(arg.as_str());
+        }
+    }
+
+    if !count_lines && !count_words && !count_bytes {
+        count_lines = true;
+        count_words = true;
+        count_bytes = true;
+    }
+
     let reader: Box<dyn BufRead> = if let Some(path) = file {
         match File::open(path) {
             Ok(f) => Box::new(BufReader::new(f)),
@@ -1314,13 +1339,21 @@ fn run_wc(args: &[String]) -> ExitCode {
         bytes += line.len() + 1;
     }
 
-    println!(
-        " {:5} {:5} {:5} {}",
-        lines,
-        words,
-        bytes,
-        file.map_or("", |s| s.as_str())
-    );
+    let mut parts = Vec::new();
+    if count_lines {
+        parts.push(format!("{}", lines));
+    }
+    if count_words {
+        parts.push(format!("{}", words));
+    }
+    if count_bytes {
+        parts.push(format!("{}", bytes));
+    }
+    if let Some(f) = file {
+        parts.push(f.to_string());
+    }
+
+    println!("{}", parts.join(" "));
     ExitCode::SUCCESS
 }
 

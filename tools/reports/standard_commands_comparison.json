@@ -1,0 +1,847 @@
+{
+  "command_counts": {
+    "Ubuntu 24.04": 416,
+    "Debian 12": 395,
+    "FerroOS": 537
+  },
+  "total_tested": 29,
+  "ubuntu_pass": 29,
+  "debian_pass": 26,
+  "ferro_pass": 29,
+  "results": [
+    {
+      "name": "uname",
+      "cmd": "uname -s",
+      "desc": "Kernel / OS System Name",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "Linux",
+        "stderr": "",
+        "elapsed_ms": 242.25,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "Linux",
+        "stderr": "",
+        "elapsed_ms": 198.56,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "Linux",
+        "stderr": "",
+        "elapsed_ms": 197.74,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "uname-machine",
+      "cmd": "uname -m",
+      "desc": "Hardware Architecture",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "aarch64",
+        "stderr": "",
+        "elapsed_ms": 189.33,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "aarch64",
+        "stderr": "",
+        "elapsed_ms": 204.15,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "aarch64",
+        "stderr": "",
+        "elapsed_ms": 188.18,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "whoami",
+      "cmd": "whoami",
+      "desc": "Active Execution Username",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "root",
+        "stderr": "",
+        "elapsed_ms": 192.52,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "root",
+        "stderr": "",
+        "elapsed_ms": 194.12,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "ferro",
+        "stderr": "",
+        "elapsed_ms": 187.88,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "id",
+      "cmd": "id -u",
+      "desc": "Numeric User ID",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "0",
+        "stderr": "",
+        "elapsed_ms": 218.59,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "0",
+        "stderr": "",
+        "elapsed_ms": 199.99,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "1000",
+        "stderr": "",
+        "elapsed_ms": 192.15,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "pwd",
+      "cmd": "pwd",
+      "desc": "Current Working Directory",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "/",
+        "stderr": "",
+        "elapsed_ms": 234.31,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "/",
+        "stderr": "",
+        "elapsed_ms": 198.58,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "/home/ferro",
+        "stderr": "",
+        "elapsed_ms": 164.83,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "hostname",
+      "cmd": "hostname",
+      "desc": "System Network Node Name",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "983db22736f2",
+        "stderr": "",
+        "elapsed_ms": 189.18,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "b12f089995a7",
+        "stderr": "",
+        "elapsed_ms": 205.26,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "ccd89f95270a",
+        "stderr": "",
+        "elapsed_ms": 202.37,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "which",
+      "cmd": "which sh",
+      "desc": "Locate Shell Binary in PATH",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "/usr/bin/sh",
+        "stderr": "",
+        "elapsed_ms": 213.37,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "/usr/bin/sh",
+        "stderr": "",
+        "elapsed_ms": 199.89,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "/usr/bin/sh",
+        "stderr": "",
+        "elapsed_ms": 186.53,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "echo",
+      "cmd": "echo 'FerroOS Standard POSIX Verification'",
+      "desc": "Write Text to Standard Output",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "FerroOS Standard POSIX Verification",
+        "stderr": "",
+        "elapsed_ms": 191.65,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "FerroOS Standard POSIX Verification",
+        "stderr": "",
+        "elapsed_ms": 215.45,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "FerroOS Standard POSIX Verification",
+        "stderr": "",
+        "elapsed_ms": 186.77,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "mkdir",
+      "cmd": "mkdir -p /tmp/ferro_test_dir && ls -d /tmp/ferro_test_dir",
+      "desc": "Create Directory Tree",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "/tmp/ferro_test_dir",
+        "stderr": "",
+        "elapsed_ms": 181.83,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "/tmp/ferro_test_dir",
+        "stderr": "",
+        "elapsed_ms": 197.56,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "/tmp/ferro_test_dir",
+        "stderr": "",
+        "elapsed_ms": 181.39,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "touch-stat",
+      "cmd": "touch /tmp/testfile.txt && stat /tmp/testfile.txt",
+      "desc": "Touch File & Inspect Inode Stat",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "File: /tmp/testfile.txt\n  Size: 0         \tBlocks: 0          IO Block: 4096   regular empty file\nDevice: 0,42\tInode: 5006443     Links: 1\nAccess: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)\nAccess: 2026-10-25 15:08:10.967713081 +0000\nModify: 2026-10-25 15:08:10.967713081 +0000\nChange: 2026-10-25 15:08:10.967713081 +0000\n Birth: 2026-10-25 15:08:10.967713081 +0000",
+        "stderr": "",
+        "elapsed_ms": 209.14,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "File: /tmp/testfile.txt\n  Size: 0         \tBlocks: 0          IO Block: 4096   regular empty file\nDevice: 0,42\tInode: 5006443     Links: 1\nAccess: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)\nAccess: 2026-10-25 15:08:11.181756835 +0000\nModify: 2026-10-25 15:08:11.181756835 +0000\nChange: 2026-10-25 15:08:11.181756835 +0000\n Birth: 2026-10-25 15:08:11.181756835 +0000",
+        "stderr": "",
+        "elapsed_ms": 209.09,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "File: /tmp/testfile.txt\n  Size: 0         \tBlocks: 0          IO Block: 4096   regular empty file\nDevice: 0,42\tInode: 5006439     Links: 1\nAccess: (0644/-rw-r--r--)  Uid: ( 1000/   ferro)   Gid: ( 1000/   ferro)\nAccess: 2026-10-25 15:08:11.383798278 +0000\nModify: 2026-10-25 15:08:11.383798278 +0000\nChange: 2026-10-25 15:08:11.383798278 +0000\n Birth: 2026-10-25 15:08:11.383798278 +0000",
+        "stderr": "",
+        "elapsed_ms": 203.04,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "cat",
+      "cmd": "echo 'data-payload-123' > /tmp/data.txt && cat /tmp/data.txt",
+      "desc": "Concatenate & Display File",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "data-payload-123",
+        "stderr": "",
+        "elapsed_ms": 201.39,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "data-payload-123",
+        "stderr": "",
+        "elapsed_ms": 196.23,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "data-payload-123",
+        "stderr": "",
+        "elapsed_ms": 179.98,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "cp",
+      "cmd": "echo 'data-payload-123' > /tmp/data.txt && cp /tmp/data.txt /tmp/data_copy.txt && cat /tmp/data_copy.txt",
+      "desc": "Copy File Content",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "data-payload-123",
+        "stderr": "",
+        "elapsed_ms": 187.7,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "data-payload-123",
+        "stderr": "",
+        "elapsed_ms": 199.87,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "data-payload-123",
+        "stderr": "",
+        "elapsed_ms": 196.51,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "mv",
+      "cmd": "echo 'data-payload-123' > /tmp/data_copy.txt && mv /tmp/data_copy.txt /tmp/data_renamed.txt && ls /tmp/data_renamed.txt",
+      "desc": "Move / Rename File",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "/tmp/data_renamed.txt",
+        "stderr": "",
+        "elapsed_ms": 195.97,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "/tmp/data_renamed.txt",
+        "stderr": "",
+        "elapsed_ms": 186.35,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "/tmp/data_renamed.txt",
+        "stderr": "",
+        "elapsed_ms": 175.54,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "chmod",
+      "cmd": "echo 'data-payload-123' > /tmp/data_renamed.txt && chmod 755 /tmp/data_renamed.txt && ls -l /tmp/data_renamed.txt",
+      "desc": "Change File Mode Bits",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "-rwxr-xr-x 1 root root 17 Oct 25 15:08 /tmp/data_renamed.txt",
+        "stderr": "",
+        "elapsed_ms": 223.94,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "-rwxr-xr-x 1 root root 17 Oct 25 15:08 /tmp/data_renamed.txt",
+        "stderr": "",
+        "elapsed_ms": 191.16,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "-rwxr-xr-x 1 ferro ferro 17 Oct 25 15:08 /tmp/data_renamed.txt",
+        "stderr": "",
+        "elapsed_ms": 199.23,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "rm",
+      "cmd": "echo 'data-payload-123' > /tmp/data_renamed.txt && rm -f /tmp/data_renamed.txt && ls /tmp/data_renamed.txt 2>&1 || true",
+      "desc": "Remove File from Filesystem",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "ls: cannot access '/tmp/data_renamed.txt': No such file or directory",
+        "stderr": "",
+        "elapsed_ms": 183.25,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "ls: cannot access '/tmp/data_renamed.txt': No such file or directory",
+        "stderr": "",
+        "elapsed_ms": 182.33,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "ls: cannot access '/tmp/data_renamed.txt': No such file or directory",
+        "stderr": "",
+        "elapsed_ms": 183.49,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "grep",
+      "cmd": "echo -e 'alpha\\nbeta\\ngamma' | grep 'beta'",
+      "desc": "Pattern Matching Regular Expression",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "beta",
+        "stderr": "",
+        "elapsed_ms": 191.92,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "beta",
+        "stderr": "",
+        "elapsed_ms": 228.64,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "beta",
+        "stderr": "",
+        "elapsed_ms": 192.34,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "head",
+      "cmd": "echo -e 'line1\\nline2\\nline3\\nline4' | head -n 2",
+      "desc": "Output First Part of Files",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "-e line1\nline2",
+        "stderr": "",
+        "elapsed_ms": 194.34,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "-e line1\nline2",
+        "stderr": "",
+        "elapsed_ms": 177.64,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "-e line1\nline2",
+        "stderr": "",
+        "elapsed_ms": 184.32,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "tail",
+      "cmd": "echo -e 'line1\\nline2\\nline3\\nline4' | tail -n 2",
+      "desc": "Output Last Part of Files",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "line3\nline4",
+        "stderr": "",
+        "elapsed_ms": 188.07,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "line3\nline4",
+        "stderr": "",
+        "elapsed_ms": 198.3,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "line3\nline4",
+        "stderr": "",
+        "elapsed_ms": 192.63,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "wc-lines",
+      "cmd": "echo -e 'a\\nb\\nc' | wc -l",
+      "desc": "Print Line Counts",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "3",
+        "stderr": "",
+        "elapsed_ms": 189.09,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "3",
+        "stderr": "",
+        "elapsed_ms": 228.99,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "3",
+        "stderr": "",
+        "elapsed_ms": 198.71,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "wc-words",
+      "cmd": "echo 'one two three four five' | wc -w",
+      "desc": "Print Word Counts",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "5",
+        "stderr": "",
+        "elapsed_ms": 192.38,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "5",
+        "stderr": "",
+        "elapsed_ms": 187.3,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "5",
+        "stderr": "",
+        "elapsed_ms": 191.34,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "ps",
+      "cmd": "ps",
+      "desc": "Snapshot of Current Processes",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "PID TTY          TIME CMD\n      1 ?        00:00:00 sh\n      7 ?        00:00:00 ps",
+        "stderr": "",
+        "elapsed_ms": 188.57,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 127,
+        "stdout": "",
+        "stderr": "sh: 1: ps: not found",
+        "elapsed_ms": 183.94,
+        "status": "FAIL"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "PID TTY          TIME CMD\n      1 ?        00:00:00 sh\n      7 ?        00:00:00 ps",
+        "stderr": "",
+        "elapsed_ms": 178.91,
+        "status": "PASS"
+      },
+      "concordant": false
+    },
+    {
+      "name": "df",
+      "cmd": "df -h /",
+      "desc": "Report File System Disk Space Usage",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "Filesystem      Size  Used Avail Use% Mounted on\noverlay          98G   25G   69G  27% /",
+        "stderr": "",
+        "elapsed_ms": 195.66,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "Filesystem      Size  Used Avail Use% Mounted on\noverlay          98G   25G   69G  27% /",
+        "stderr": "",
+        "elapsed_ms": 199.27,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "Filesystem      Size  Used Avail Use% Mounted on\noverlay          98G   25G   69G  27% /",
+        "stderr": "",
+        "elapsed_ms": 197.5,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "free",
+      "cmd": "free -m",
+      "desc": "Display Amount of Free and Used Memory",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "total        used        free      shared  buff/cache   available\nMem:            9921         580        7550           0        1979        9340\nSwap:              0           0           0",
+        "stderr": "",
+        "elapsed_ms": 240.95,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 127,
+        "stdout": "",
+        "stderr": "sh: 1: free: not found",
+        "elapsed_ms": 197.87,
+        "status": "FAIL"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "total        used        free      shared  buff/cache   available\nMem:            9921         581        7549           0        1979        9340\nSwap:              0           0           0",
+        "stderr": "",
+        "elapsed_ms": 190.13,
+        "status": "PASS"
+      },
+      "concordant": false
+    },
+    {
+      "name": "uptime",
+      "cmd": "uptime",
+      "desc": "Show How Long System Has Been Running",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "15:08:19 up 1 day,  2:53,  0 user,  load average: 0.70, 0.22, 0.08",
+        "stderr": "",
+        "elapsed_ms": 177.58,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 127,
+        "stdout": "",
+        "stderr": "sh: 1: uptime: not found",
+        "elapsed_ms": 178.55,
+        "status": "FAIL"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "15:08:19 up 1 day,  2:53,  0 user,  load average: 0.70, 0.22, 0.08",
+        "stderr": "",
+        "elapsed_ms": 190.9,
+        "status": "PASS"
+      },
+      "concordant": false
+    },
+    {
+      "name": "sync",
+      "cmd": "sync",
+      "desc": "Synchronize Cached Writes to Persistent Storage",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "elapsed_ms": 211.35,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "elapsed_ms": 201.88,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "elapsed_ms": 191.84,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "true",
+      "cmd": "true && echo 'TRUE_PASS'",
+      "desc": "Return Successful Exit Status",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "TRUE_PASS",
+        "stderr": "",
+        "elapsed_ms": 186.91,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "TRUE_PASS",
+        "stderr": "",
+        "elapsed_ms": 190.47,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "TRUE_PASS",
+        "stderr": "",
+        "elapsed_ms": 194.88,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "false",
+      "cmd": "false || echo 'FALSE_PASS'",
+      "desc": "Return Failure Exit Status",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "FALSE_PASS",
+        "stderr": "",
+        "elapsed_ms": 189.73,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "FALSE_PASS",
+        "stderr": "",
+        "elapsed_ms": 193.25,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "FALSE_PASS",
+        "stderr": "",
+        "elapsed_ms": 179.27,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "sleep",
+      "cmd": "sleep 0.05 && echo 'SLEEP_PASS'",
+      "desc": "Delay for Specified Interval",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "SLEEP_PASS",
+        "stderr": "",
+        "elapsed_ms": 240.21,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "SLEEP_PASS",
+        "stderr": "",
+        "elapsed_ms": 249.5,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "SLEEP_PASS",
+        "stderr": "",
+        "elapsed_ms": 245.24,
+        "status": "PASS"
+      },
+      "concordant": true
+    },
+    {
+      "name": "sh-subshell",
+      "cmd": "sh -c 'VAR=123 && echo $VAR'",
+      "desc": "POSIX Subshell Invocation & Variable Expansion",
+      "ubuntu": {
+        "exit_code": 0,
+        "stdout": "123",
+        "stderr": "",
+        "elapsed_ms": 189.35,
+        "status": "PASS"
+      },
+      "debian": {
+        "exit_code": 0,
+        "stdout": "123",
+        "stderr": "",
+        "elapsed_ms": 196.6,
+        "status": "PASS"
+      },
+      "ferro": {
+        "exit_code": 0,
+        "stdout": "123",
+        "stderr": "",
+        "elapsed_ms": 181.63,
+        "status": "PASS"
+      },
+      "concordant": true
+    }
+  ],
+  "applet_results": {
+    "uname": {
+      "exit_code": 0,
+      "stdout": "Linux",
+      "stderr": "",
+      "elapsed_ms": 236.64,
+      "status": "PASS"
+    },
+    "whoami": {
+      "exit_code": 0,
+      "stdout": "root",
+      "stderr": "",
+      "elapsed_ms": 190.11,
+      "status": "PASS"
+    },
+    "pwd": {
+      "exit_code": 0,
+      "stdout": "/home/ferro",
+      "stderr": "",
+      "elapsed_ms": 184.24,
+      "status": "PASS"
+    },
+    "echo": {
+      "exit_code": 0,
+      "stdout": "FerroOS Rust Core Hello",
+      "stderr": "",
+      "elapsed_ms": 190.07,
+      "status": "PASS"
+    },
+    "wc": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "wc: -w: No such file or directory (os error 2)",
+      "elapsed_ms": 193.81,
+      "status": "FAIL"
+    },
+    "ps": {
+      "exit_code": 0,
+      "stdout": "PID TTY          TIME CMD\n1     ?        00:00:00 /usr/local/bin/ferro-core ps",
+      "stderr": "",
+      "elapsed_ms": 190.12,
+      "status": "PASS"
+    },
+    "uptime": {
+      "exit_code": 0,
+      "stdout": "up 26 hours, 53 minutes",
+      "stderr": "",
+      "elapsed_ms": 176.29,
+      "status": "PASS"
+    }
+  }
+}
