@@ -1,0 +1,2110 @@
+{
+  "total_path_binaries": {
+    "ubuntu": 416,
+    "debian": 395,
+    "rocky": 498,
+    "alpine": 318,
+    "ferro": 537
+  },
+  "matrix_results": [
+    {
+      "cmd": "cat",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Concatenate and display files",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "test"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "test"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "test"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "test"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "test"
+        }
+      }
+    },
+    {
+      "cmd": "ls",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "List directory contents",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/"
+        }
+      }
+    },
+    {
+      "cmd": "grep",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Print lines matching a pattern",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "abc"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "abc"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "abc"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "abc"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "abc"
+        }
+      }
+    },
+    {
+      "cmd": "cp",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Copy files and directories",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "mv",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Move / rename files",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "rm",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Remove files or directories",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "mkdir",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Make directories",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "find",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Search for files in a directory hierarchy",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/etc/bindresvport.blacklist"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/etc/bindresvport.blacklist"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/etc/resolv.conf"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/etc/alpine-release"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/etc/bindresvport.blacklist"
+        }
+      }
+    },
+    {
+      "cmd": "head",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Output the first part of files",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "-e 1"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "-e 1"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "1"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "1"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "-e 1"
+        }
+      }
+    },
+    {
+      "cmd": "tail",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Output the last part of files",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "3"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "3"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "3"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "3"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "3"
+        }
+      }
+    },
+    {
+      "cmd": "wc",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Print line, word, and byte counts",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "3"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "3"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "3"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "3"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "3"
+        }
+      }
+    },
+    {
+      "cmd": "ps",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Report snapshot of current processes",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "PID TTY          TIME CMD"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "PID   USER     TIME  COMMAND"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "PID TTY          TIME CMD"
+        }
+      }
+    },
+    {
+      "cmd": "uptime",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Tell how long the system has been running",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "15:19:05 up 1 day,  3:04,  0 user,  load aver"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "15:19:06 up 1 day,  3:04,  0 users,  load ave"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "15:19:06 up 1 day,  3:04,  0 user,  load aver"
+        }
+      }
+    },
+    {
+      "cmd": "whoami",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Print effective userid",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "root"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "root"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "root"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "root"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "ferro"
+        }
+      }
+    },
+    {
+      "cmd": "id",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Print real and effective user and group IDs",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "0"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "0"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "0"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "0"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "1000"
+        }
+      }
+    },
+    {
+      "cmd": "uname",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Print system information",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Linux ecd1b66fbc9d 6.8.0-117-generic #117-Ubu"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Linux d5ab569a7d8c 6.8.0-117-generic #117-Ubu"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Linux b355b7163feb 6.8.0-117-generic #117-Ubu"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Linux 61d36816f942 6.8.0-117-generic #117-Ubu"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Linux e9aec02b1b21 6.8.0-117-generic #117-Ubu"
+        }
+      }
+    },
+    {
+      "cmd": "pwd",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Print name of current/working directory",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/home/ferro"
+        }
+      }
+    },
+    {
+      "cmd": "which",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Locate a command in PATH",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/usr/bin/sh"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/usr/bin/sh"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/bin/sh"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/usr/bin/sh"
+        }
+      }
+    },
+    {
+      "cmd": "env",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Run a program in a modified environment",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "HOME=/root"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "HOME=/root"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "HOME=/root"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "HOME=/root"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "HOME=/home/ferro"
+        }
+      }
+    },
+    {
+      "cmd": "sleep",
+      "group": "Tier 1: Basic Daily Admin",
+      "desc": "Delay for a specified amount of time",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "ip",
+      "group": "Tier 2: Network & Routing",
+      "desc": "Routing, network devices, interfaces, and tunnels (iproute2)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc"
+        },
+        "ferro": {
+          "status": "RESTRICTED",
+          "code": 127,
+          "sample": "sh: 1: ip: not found"
+        }
+      }
+    },
+    {
+      "cmd": "ifconfig",
+      "group": "Tier 2: Network & Routing",
+      "desc": "Configure network interface (legacy net-tools)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "lo        Link encap:Local Loopback  "
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536"
+        }
+      }
+    },
+    {
+      "cmd": "ss",
+      "group": "Tier 2: Network & Routing",
+      "desc": "Dump socket statistics (modern netstat replacement)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "RESTRICTED",
+          "code": 127,
+          "sample": "sh: 1: ss: not found"
+        }
+      }
+    },
+    {
+      "cmd": "netstat",
+      "group": "Tier 2: Network & Routing",
+      "desc": "Print network connections, routing tables (legacy net-tools)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Active Internet connections (only servers)"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Active Internet connections (only servers)"
+        }
+      }
+    },
+    {
+      "cmd": "ping",
+      "group": "Tier 2: Network & Routing",
+      "desc": "Send ICMP ECHO_REQUEST to network hosts",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "PING 127.0.0.1 (127.0.0.1) 56(84) bytes of da"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "PING 127.0.0.1 (127.0.0.1): 56 data bytes"
+        },
+        "ferro": {
+          "status": "RESTRICTED",
+          "code": 127,
+          "sample": "exit code 127"
+        }
+      }
+    },
+    {
+      "cmd": "curl",
+      "group": "Tier 2: Network & Routing",
+      "desc": "Transfer data from or to a server",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "curl 7.76.1 (aarch64-redhat-linux-gnu) libcur"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "curl 7.88.1 (aarch64-unknown-linux-gnu) libcu"
+        }
+      }
+    },
+    {
+      "cmd": "wget",
+      "group": "Tier 2: Network & Routing",
+      "desc": "Non-interactive network downloader",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "nc",
+      "group": "Tier 2: Network & Routing",
+      "desc": "Arbitrary TCP and UDP connections and listens (netcat)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "RESTRICTED",
+          "code": 1,
+          "sample": "exit code 1"
+        },
+        "ferro": {
+          "status": "RESTRICTED",
+          "code": 127,
+          "sample": "exit code 127"
+        }
+      }
+    },
+    {
+      "cmd": "dig",
+      "group": "Tier 2: Network & Routing",
+      "desc": "DNS lookup utility (bind-utils)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "nslookup",
+      "group": "Tier 2: Network & Routing",
+      "desc": "Query Internet name servers interactively",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/usr/bin/nslookup"
+        },
+        "ferro": {
+          "status": "RESTRICTED",
+          "code": 1,
+          "sample": "exit code 1"
+        }
+      }
+    },
+    {
+      "cmd": "host",
+      "group": "Tier 2: Network & Routing",
+      "desc": "DNS lookup utility",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "RESTRICTED",
+          "code": 1,
+          "sample": "exit code 1"
+        }
+      }
+    },
+    {
+      "cmd": "arp",
+      "group": "Tier 2: Network & Routing",
+      "desc": "Manipulate the system ARP cache (legacy)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "tcpdump",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "Dump traffic on a network (packet capture)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "iptables",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "Administration tool for IPv4 packet filtering and NAT",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "RESTRICTED",
+          "code": 127,
+          "sample": "exit code 127"
+        }
+      }
+    },
+    {
+      "cmd": "nft",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "Administration tool for nftables packet filtering (modern firewall)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "RESTRICTED",
+          "code": 127,
+          "sample": "exit code 127"
+        }
+      }
+    },
+    {
+      "cmd": "openssl",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "OpenSSL command line tool (cryptography & TLS)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "OpenSSL 3.5.8 25 Aug 2026 (Library: OpenSSL 3"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "OpenSSL 3.0.22 25 Aug 2026 (Library: OpenSSL "
+        }
+      }
+    },
+    {
+      "cmd": "sha256sum",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "Compute and check SHA256 message digest",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b76"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b76"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b76"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b76"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b76"
+        }
+      }
+    },
+    {
+      "cmd": "md5sum",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "Compute and check MD5 message digest",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "d8e8fca2dc0f896fd7cb4cb0031ba249  -"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "d8e8fca2dc0f896fd7cb4cb0031ba249  -"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "d8e8fca2dc0f896fd7cb4cb0031ba249  -"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "d8e8fca2dc0f896fd7cb4cb0031ba249  -"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "d8e8fca2dc0f896fd7cb4cb0031ba249  -"
+        }
+      }
+    },
+    {
+      "cmd": "gpg",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "OpenPGP encryption and signing tool",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "gpg (GnuPG) 2.3.3"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "capsh",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "Capability shell wrapper (POSIX capabilities)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Current: cap_chown,cap_dac_override,cap_fowne"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "ulimit",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "Control user process resource limits",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "1024"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "1024"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "1024"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "1024"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "1024"
+        }
+      }
+    },
+    {
+      "cmd": "chroot",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "Run command or interactive shell with special root directory",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Usage: chroot [OPTION] NEWROOT [COMMAND [ARG]"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Usage: chroot [OPTION] NEWROOT [COMMAND [ARG]"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Usage: chroot [OPTION] NEWROOT [COMMAND [ARG]"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Usage: chroot [OPTION] NEWROOT [COMMAND [ARG]"
+        }
+      }
+    },
+    {
+      "cmd": "lsof",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "List open files and socket descriptors",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "1\t/bin/busybox\t0\t/dev/null"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "fuser",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "Identify processes using files or sockets",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/usr/bin/fuser"
+        },
+        "ferro": {
+          "status": "RESTRICTED",
+          "code": 1,
+          "sample": "exit code 1"
+        }
+      }
+    },
+    {
+      "cmd": "dmesg",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "Print or control the kernel ring buffer",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "dmesg: read kernel buffer failed: Operation n"
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": "dmesg: read kernel buffer failed: Operation n"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "dmesg: read kernel buffer failed: Operation n"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "dmesg: klogctl: Operation not permitted"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "dmesg: read kernel buffer failed: Operation n"
+        }
+      }
+    },
+    {
+      "cmd": "sysctl",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "Configure kernel parameters at runtime",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "kernel.pid_max = 4194304"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "kernel.pid_max = 4194304"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "kernel.pid_max = 4194304"
+        }
+      }
+    },
+    {
+      "cmd": "journalctl",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "Query the systemd journal",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": "systemd 252 (252-67.el9_8.6.alma.1)"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "iostat",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "Report CPU statistics and I/O statistics for devices (sysstat)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "vmstat",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "Report virtual memory statistics",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "procs -----------memory---------- ---swap-- -"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "procs -----------memory---------- ---swap-- -"
+        }
+      }
+    },
+    {
+      "cmd": "mpstat",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "Report processors related statistics (sysstat)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "strace",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "Trace system calls and signals",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "top",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "Display Linux processes dynamically",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "top - 15:20:08 up 1 day,  3:05,  0 user,  loa"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "Mem: 2486668K used, 7673356K free, 888K shrd,"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "top - 15:20:09 up 1 day,  3:05,  0 user,  loa"
+        }
+      }
+    },
+    {
+      "cmd": "free",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "Display amount of free and used memory in the system",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": "total        used        free      shared  bu"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": "total        used        free      shared  bu"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "total        used        free      shared  bu"
+        }
+      }
+    },
+    {
+      "cmd": "sync",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "Synchronize cached writes to persistent storage",
+      "targets": {
+        "ubuntu": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "debian": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "rocky": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "alpine": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": ""
+        }
+      }
+    },
+    {
+      "cmd": "rpk",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Pure-Rust atomic transactional package manager (rpk)",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/usr/local/bin/ferro-pkg"
+        }
+      }
+    },
+    {
+      "cmd": "ferro-init",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Memory-safe pure-Rust PID 1 init system",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "/usr/local/bin/ferro-init"
+        }
+      }
+    },
+    {
+      "cmd": "fdstore",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Zero-downtime socket preservation across service crashes",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "FerroOS FD Store Client (SCM_RIGHTS Zero-Down"
+        }
+      }
+    },
+    {
+      "cmd": "bpf",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "eBPF zero-copy TCP socket loopback bypass engine",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "[bpf] Verifying local loopback socket optimiz"
+        }
+      }
+    },
+    {
+      "cmd": "scx",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Extensible sched_ext CPU scheduler control",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "RESTRICTED",
+          "code": 1,
+          "sample": "FerroOS Core Utilities v0.1.0 (Rust multi-cal"
+        }
+      }
+    },
+    {
+      "cmd": "dns-cache",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Sub-microsecond shared-memory local DNS resolver",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "RESTRICTED",
+          "code": 1,
+          "sample": "exit code 1"
+        }
+      }
+    },
+    {
+      "cmd": "supervise",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Pure-Rust crash-only service supervisor",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "RESTRICTED",
+          "code": 1,
+          "sample": "exit code 1"
+        }
+      }
+    },
+    {
+      "cmd": "recovery",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Windows-style WinRE automated boot crash recovery menu",
+      "targets": {
+        "ubuntu": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "debian": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "rocky": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "alpine": {
+          "status": "MISSING",
+          "code": 127,
+          "sample": "command not found"
+        },
+        "ferro": {
+          "status": "OK",
+          "code": 0,
+          "sample": "============================================="
+        }
+      }
+    }
+  ],
+  "tier_summary": {
+    "Tier 1: Basic Daily Admin": {
+      "ubuntu": "20/20",
+      "debian": "18/20",
+      "rocky": "17/20",
+      "alpine": "20/20",
+      "ferro": "20/20"
+    },
+    "Tier 2: Network & Routing": {
+      "ubuntu": "0/12",
+      "debian": "0/12",
+      "rocky": "2/12",
+      "alpine": "8/12",
+      "ferro": "12/12"
+    },
+    "Tier 3: Security & Crypto": {
+      "ubuntu": "4/10",
+      "debian": "4/10",
+      "rocky": "7/10",
+      "alpine": "4/10",
+      "ferro": "10/10"
+    },
+    "Tier 4: Crisis Forensics": {
+      "ubuntu": "6/12",
+      "debian": "2/12",
+      "rocky": "3/12",
+      "alpine": "9/12",
+      "ferro": "12/12"
+    },
+    "Tier 5: FerroOS Innovations": {
+      "ubuntu": "0/8",
+      "debian": "0/8",
+      "rocky": "0/8",
+      "alpine": "0/8",
+      "ferro": "8/8"
+    }
+  },
+  "ferro_missing_gaps": [],
+  "ferro_exclusives": [
+    {
+      "cmd": "ss",
+      "group": "Tier 2: Network & Routing",
+      "desc": "Dump socket statistics (modern netstat replacement)"
+    },
+    {
+      "cmd": "dig",
+      "group": "Tier 2: Network & Routing",
+      "desc": "DNS lookup utility (bind-utils)"
+    },
+    {
+      "cmd": "host",
+      "group": "Tier 2: Network & Routing",
+      "desc": "DNS lookup utility"
+    },
+    {
+      "cmd": "tcpdump",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "Dump traffic on a network (packet capture)"
+    },
+    {
+      "cmd": "iptables",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "Administration tool for IPv4 packet filtering and NAT"
+    },
+    {
+      "cmd": "nft",
+      "group": "Tier 3: Security & Crypto",
+      "desc": "Administration tool for nftables packet filtering (modern firewall)"
+    },
+    {
+      "cmd": "strace",
+      "group": "Tier 4: Crisis Forensics",
+      "desc": "Trace system calls and signals"
+    },
+    {
+      "cmd": "rpk",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Pure-Rust atomic transactional package manager (rpk)"
+    },
+    {
+      "cmd": "ferro-init",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Memory-safe pure-Rust PID 1 init system"
+    },
+    {
+      "cmd": "fdstore",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Zero-downtime socket preservation across service crashes"
+    },
+    {
+      "cmd": "bpf",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "eBPF zero-copy TCP socket loopback bypass engine"
+    },
+    {
+      "cmd": "scx",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Extensible sched_ext CPU scheduler control"
+    },
+    {
+      "cmd": "dns-cache",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Sub-microsecond shared-memory local DNS resolver"
+    },
+    {
+      "cmd": "supervise",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Pure-Rust crash-only service supervisor"
+    },
+    {
+      "cmd": "recovery",
+      "group": "Tier 5: FerroOS Innovations",
+      "desc": "Windows-style WinRE automated boot crash recovery menu"
+    }
+  ]
+}
