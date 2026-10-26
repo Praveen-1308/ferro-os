@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="100%" height="100%">
+<rect width="800" height="420" fill="#1E1E24" rx="8"/>
+<text x="400.0" y="30" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Sustained 5-Minute Throughput Progression across 6 Stress Stages</text>
+<g transform="translate(75, 50)">
+<line x1="0" y1="310.0" x2="565" y2="310.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="314.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">0k</text>
+<line x1="0" y1="248.0" x2="565" y2="248.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="252.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">18k</text>
+<line x1="0" y1="186.0" x2="565" y2="186.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="190.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">36k</text>
+<line x1="0" y1="124.0" x2="565" y2="124.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="128.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">54k</text>
+<line x1="0" y1="62.0" x2="565" y2="62.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="66.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">72k</text>
+<line x1="0" y1="0.0" x2="565" y2="0.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="4.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">90k</text>
+<text x="47.083333333333336" y="332" font-family="system-ui, sans-serif" font-size="11" fill="#BBBBCC" text-anchor="middle">P1 (0-60s)</text>
+<text x="141.25" y="332" font-family="system-ui, sans-serif" font-size="11" fill="#BBBBCC" text-anchor="middle">P2 (60-120s)</text>
+<text x="235.41666666666669" y="332" font-family="system-ui, sans-serif" font-size="11" fill="#BBBBCC" text-anchor="middle">P3 (120-180s)</text>
+<text x="329.5833333333333" y="332" font-family="system-ui, sans-serif" font-size="11" fill="#BBBBCC" text-anchor="middle">P4 (180-240s)</text>
+<text x="423.75" y="332" font-family="system-ui, sans-serif" font-size="11" fill="#BBBBCC" text-anchor="middle">P5 (240-280s)</text>
+<text x="517.9166666666667" y="332" font-family="system-ui, sans-serif" font-size="11" fill="#BBBBCC" text-anchor="middle">P6 (280-300s)</text>
+<polyline points="47.1,266.4 141.2,161.6 235.4,91.8 329.6,126.7 423.8,179.1 517.9,144.2" fill="none" stroke="#00C853" stroke-width="2.5"/>
+<circle cx="47.1" cy="266.4" r="3.5" fill="#00C853"/>
+<circle cx="141.2" cy="161.6" r="3.5" fill="#00C853"/>
+<circle cx="235.4" cy="91.8" r="3.5" fill="#00C853"/>
+<circle cx="329.6" cy="126.7" r="3.5" fill="#00C853"/>
+<circle cx="423.8" cy="179.1" r="3.5" fill="#00C853"/>
+<circle cx="517.9" cy="144.2" r="3.5" fill="#00C853"/>
+<g transform="translate(580, 10)">
+<rect x="0" y="0" width="12" height="12" fill="#00C853" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">ferro-server</text>
+</g>
+<polyline points="47.1,272.4 141.2,182.2 235.4,122.1 329.6,152.2 423.8,197.3 517.9,167.2" fill="none" stroke="#FF6D00" stroke-width="2.5"/>
+<circle cx="47.1" cy="272.4" r="3.5" fill="#FF6D00"/>
+<circle cx="141.2" cy="182.2" r="3.5" fill="#FF6D00"/>
+<circle cx="235.4" cy="122.1" r="3.5" fill="#FF6D00"/>
+<circle cx="329.6" cy="152.2" r="3.5" fill="#FF6D00"/>
+<circle cx="423.8" cy="197.3" r="3.5" fill="#FF6D00"/>
+<circle cx="517.9" cy="167.2" r="3.5" fill="#FF6D00"/>
+<g transform="translate(580, 32)">
+<rect x="0" y="0" width="12" height="12" fill="#FF6D00" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">ubuntu</text>
+</g>
+<polyline points="47.1,271.8 141.2,180.2 235.4,119.1 329.6,149.6 423.8,195.5 517.9,164.9" fill="none" stroke="#D50000" stroke-width="2.5"/>
+<circle cx="47.1" cy="271.8" r="3.5" fill="#D50000"/>
+<circle cx="141.2" cy="180.2" r="3.5" fill="#D50000"/>
+<circle cx="235.4" cy="119.1" r="3.5" fill="#D50000"/>
+<circle cx="329.6" cy="149.6" r="3.5" fill="#D50000"/>
+<circle cx="423.8" cy="195.5" r="3.5" fill="#D50000"/>
+<circle cx="517.9" cy="164.9" r="3.5" fill="#D50000"/>
+<g transform="translate(580, 54)">
+<rect x="0" y="0" width="12" height="12" fill="#D50000" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">debian</text>
+</g>
+<polyline points="47.1,273.0 141.2,184.3 235.4,125.1 329.6,154.7 423.8,199.1 517.9,169.5" fill="none" stroke="#2979FF" stroke-width="2.5"/>
+<circle cx="47.1" cy="273.0" r="3.5" fill="#2979FF"/>
+<circle cx="141.2" cy="184.3" r="3.5" fill="#2979FF"/>
+<circle cx="235.4" cy="125.1" r="3.5" fill="#2979FF"/>
+<circle cx="329.6" cy="154.7" r="3.5" fill="#2979FF"/>
+<circle cx="423.8" cy="199.1" r="3.5" fill="#2979FF"/>
+<circle cx="517.9" cy="169.5" r="3.5" fill="#2979FF"/>
+<g transform="translate(580, 76)">
+<rect x="0" y="0" width="12" height="12" fill="#2979FF" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">rocky</text>
+</g>
+<polyline points="47.1,273.0 141.2,184.3 235.4,125.1 329.6,154.7 423.8,199.1 517.9,169.5" fill="none" stroke="#651FFF" stroke-width="2.5"/>
+<circle cx="47.1" cy="273.0" r="3.5" fill="#651FFF"/>
+<circle cx="141.2" cy="184.3" r="3.5" fill="#651FFF"/>
+<circle cx="235.4" cy="125.1" r="3.5" fill="#651FFF"/>
+<circle cx="329.6" cy="154.7" r="3.5" fill="#651FFF"/>
+<circle cx="423.8" cy="199.1" r="3.5" fill="#651FFF"/>
+<circle cx="517.9" cy="169.5" r="3.5" fill="#651FFF"/>
+<g transform="translate(580, 98)">
+<rect x="0" y="0" width="12" height="12" fill="#651FFF" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">almalinux:9</text>
+</g>
+<polyline points="47.1,268.8 141.2,169.9 235.4,103.9 329.6,136.9 423.8,186.4 517.9,153.4" fill="none" stroke="#00B0FF" stroke-width="2.5"/>
+<circle cx="47.1" cy="268.8" r="3.5" fill="#00B0FF"/>
+<circle cx="141.2" cy="169.9" r="3.5" fill="#00B0FF"/>
+<circle cx="235.4" cy="103.9" r="3.5" fill="#00B0FF"/>
+<circle cx="329.6" cy="136.9" r="3.5" fill="#00B0FF"/>
+<circle cx="423.8" cy="186.4" r="3.5" fill="#00B0FF"/>
+<circle cx="517.9" cy="153.4" r="3.5" fill="#00B0FF"/>
+<g transform="translate(580, 120)">
+<rect x="0" y="0" width="12" height="12" fill="#00B0FF" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">alpine</text>
+</g>
+<polyline points="47.1,272.1 141.2,181.2 235.4,120.6 329.6,150.9 423.8,196.4 517.9,166.1" fill="none" stroke="#FFAB00" stroke-width="2.5"/>
+<circle cx="47.1" cy="272.1" r="3.5" fill="#FFAB00"/>
+<circle cx="141.2" cy="181.2" r="3.5" fill="#FFAB00"/>
+<circle cx="235.4" cy="120.6" r="3.5" fill="#FFAB00"/>
+<circle cx="329.6" cy="150.9" r="3.5" fill="#FFAB00"/>
+<circle cx="423.8" cy="196.4" r="3.5" fill="#FFAB00"/>
+<circle cx="517.9" cy="166.1" r="3.5" fill="#FFAB00"/>
+<g transform="translate(580, 142)">
+<rect x="0" y="0" width="12" height="12" fill="#FFAB00" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">amazonlinux:2023</text>
+</g>
+</g>
+</svg>

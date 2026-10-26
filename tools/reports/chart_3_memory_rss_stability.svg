@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="100%" height="100%">
+<rect width="800" height="420" fill="#1E1E24" rx="8"/>
+<text x="400.0" y="30" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Memory RSS & Dirty Page Reclamation (300s Continuous Ramp)</text>
+<g transform="translate(75, 50)">
+<line x1="0" y1="310.0" x2="565" y2="310.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="314.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">0 MB</text>
+<line x1="0" y1="232.5" x2="565" y2="232.5" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="236.5" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">40 MB</text>
+<line x1="0" y1="155.0" x2="565" y2="155.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="159.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">80 MB</text>
+<line x1="0" y1="77.5" x2="565" y2="77.5" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="81.5" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">120 MB</text>
+<line x1="0" y1="0.0" x2="565" y2="0.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="4.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">160 MB</text>
+<line x1="0.0" y1="0" x2="0.0" y2="310" stroke="#33333F" stroke-width="1"/>
+<text x="0.0" y="332" font-family="monospace" font-size="11" fill="#BBBBCC" text-anchor="middle">0s</text>
+<line x1="113.0" y1="0" x2="113.0" y2="310" stroke="#33333F" stroke-width="1"/>
+<text x="113.0" y="332" font-family="monospace" font-size="11" fill="#BBBBCC" text-anchor="middle">60s</text>
+<line x1="226.0" y1="0" x2="226.0" y2="310" stroke="#33333F" stroke-width="1"/>
+<text x="226.0" y="332" font-family="monospace" font-size="11" fill="#BBBBCC" text-anchor="middle">120s</text>
+<line x1="339.0" y1="0" x2="339.0" y2="310" stroke="#33333F" stroke-width="1"/>
+<text x="339.0" y="332" font-family="monospace" font-size="11" fill="#BBBBCC" text-anchor="middle">180s</text>
+<line x1="452.0" y1="0" x2="452.0" y2="310" stroke="#33333F" stroke-width="1"/>
+<text x="452.0" y="332" font-family="monospace" font-size="11" fill="#BBBBCC" text-anchor="middle">240s</text>
+<line x1="565.0" y1="0" x2="565.0" y2="310" stroke="#33333F" stroke-width="1"/>
+<text x="565.0" y="332" font-family="monospace" font-size="11" fill="#BBBBCC" text-anchor="middle">300s</text>
+<polyline points="0.0,174.8 19.5,169.9 39.0,165.0 58.4,161.1 77.9,158.2 97.4,155.8 116.9,152.7 136.4,148.0 155.9,141.5 175.3,133.4 194.8,124.7 214.3,116.3 233.8,109.3 253.3,103.7 272.8,99.1 292.2,94.5 311.7,88.8 331.2,81.5 350.7,72.4 370.2,62.3 389.7,52.3 409.1,43.3 428.6,35.9 448.1,29.7 467.6,24.1 487.1,17.9 506.6,10.2 526.0,0.8 545.5,0.0 565.0,0.0" fill="none" stroke="#00C853" stroke-width="2.2"/>
+<g transform="translate(580, 10)">
+<rect x="0" y="0" width="12" height="12" fill="#00C853" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">ferro-server</text>
+</g>
+<polyline points="0.0,82.2 19.5,75.6 39.0,68.3 58.4,61.5 77.9,55.5 97.4,49.6 116.9,42.9 136.4,34.5 155.9,24.0 175.3,11.8 194.8,0.0 214.3,0.0 233.8,0.0 253.3,0.0 272.8,0.0 292.2,0.0 311.7,0.0 331.2,0.0 350.7,0.0 370.2,0.0 389.7,0.0 409.1,0.0 428.6,0.0 448.1,0.0 467.6,0.0 487.1,0.0 506.6,0.0 526.0,0.0 545.5,0.0 565.0,0.0" fill="none" stroke="#FF6D00" stroke-width="2.2"/>
+<g transform="translate(580, 32)">
+<rect x="0" y="0" width="12" height="12" fill="#FF6D00" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">ubuntu</text>
+</g>
+<polyline points="0.0,86.8 19.5,80.4 39.0,73.1 58.4,66.5 77.9,60.6 97.4,54.9 116.9,48.4 136.4,40.2 155.9,29.9 175.3,17.9 194.8,5.1 214.3,0.0 233.8,0.0 253.3,0.0 272.8,0.0 292.2,0.0 311.7,0.0 331.2,0.0 350.7,0.0 370.2,0.0 389.7,0.0 409.1,0.0 428.6,0.0 448.1,0.0 467.6,0.0 487.1,0.0 506.6,0.0 526.0,0.0 545.5,0.0 565.0,0.0" fill="none" stroke="#D50000" stroke-width="2.2"/>
+<g transform="translate(580, 54)">
+<rect x="0" y="0" width="12" height="12" fill="#D50000" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">debian</text>
+</g>
+<polyline points="0.0,79.1 19.5,72.5 39.0,65.0 58.4,58.2 77.9,52.0 97.4,46.1 116.9,39.2 136.4,30.7 155.9,20.1 175.3,7.7 194.8,0.0 214.3,0.0 233.8,0.0 253.3,0.0 272.8,0.0 292.2,0.0 311.7,0.0 331.2,0.0 350.7,0.0 370.2,0.0 389.7,0.0 409.1,0.0 428.6,0.0 448.1,0.0 467.6,0.0 487.1,0.0 506.6,0.0 526.0,0.0 545.5,0.0 565.0,0.0" fill="none" stroke="#2979FF" stroke-width="2.2"/>
+<g transform="translate(580, 76)">
+<rect x="0" y="0" width="12" height="12" fill="#2979FF" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">rocky</text>
+</g>
+<polyline points="0.0,79.1 19.5,72.5 39.0,65.0 58.4,58.2 77.9,52.0 97.4,46.1 116.9,39.2 136.4,30.7 155.9,20.1 175.3,7.7 194.8,0.0 214.3,0.0 233.8,0.0 253.3,0.0 272.8,0.0 292.2,0.0 311.7,0.0 331.2,0.0 350.7,0.0 370.2,0.0 389.7,0.0 409.1,0.0 428.6,0.0 448.1,0.0 467.6,0.0 487.1,0.0 506.6,0.0 526.0,0.0 545.5,0.0 565.0,0.0" fill="none" stroke="#651FFF" stroke-width="2.2"/>
+<g transform="translate(580, 98)">
+<rect x="0" y="0" width="12" height="12" fill="#651FFF" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">almalinux:9</text>
+</g>
+<polyline points="0.0,120.9 19.5,115.1 39.0,108.7 58.4,103.2 77.9,98.5 97.4,94.0 116.9,88.8 136.4,82.0 155.9,73.2 175.3,62.7 194.8,51.4 214.3,40.6 233.8,30.9 253.3,22.6 272.8,15.2 292.2,7.8 311.7,0.0 331.2,0.0 350.7,0.0 370.2,0.0 389.7,0.0 409.1,0.0 428.6,0.0 448.1,0.0 467.6,0.0 487.1,0.0 506.6,0.0 526.0,0.0 545.5,0.0 565.0,0.0" fill="none" stroke="#00B0FF" stroke-width="2.2"/>
+<g transform="translate(580, 120)">
+<rect x="0" y="0" width="12" height="12" fill="#00B0FF" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">alpine</text>
+</g>
+<polyline points="0.0,83.7 19.5,77.2 39.0,69.9 58.4,63.2 77.9,57.2 97.4,51.4 116.9,44.7 136.4,36.4 155.9,26.0 175.3,13.8 194.8,0.9 214.3,0.0 233.8,0.0 253.3,0.0 272.8,0.0 292.2,0.0 311.7,0.0 331.2,0.0 350.7,0.0 370.2,0.0 389.7,0.0 409.1,0.0 428.6,0.0 448.1,0.0 467.6,0.0 487.1,0.0 506.6,0.0 526.0,0.0 545.5,0.0 565.0,0.0" fill="none" stroke="#FFAB00" stroke-width="2.2"/>
+<g transform="translate(580, 142)">
+<rect x="0" y="0" width="12" height="12" fill="#FFAB00" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">amazonlinux:2023</text>
+</g>
+</g>
+</svg>
