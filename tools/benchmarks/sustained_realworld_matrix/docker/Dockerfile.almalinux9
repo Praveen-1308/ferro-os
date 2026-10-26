@@ -1,0 +1,19 @@
+FROM almalinux:9
+
+RUN dnf install -y epel-release && \
+    dnf install -y \
+        bash \
+        curl \
+        procps-ng \
+        python3 \
+        python3-pip \
+        python3-psutil \
+        gcc \
+        make \
+        sqlite \
+        sqlite-devel \
+        fio \
+        sysbench && \
+    dnf clean all
+
+CMD ["sleep", "infinity"]

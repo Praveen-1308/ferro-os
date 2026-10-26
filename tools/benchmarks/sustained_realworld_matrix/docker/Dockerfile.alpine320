@@ -1,0 +1,18 @@
+FROM alpine:3.20
+
+RUN apk update && apk add --no-cache \
+    bash \
+    curl \
+    procps \
+    python3 \
+    py3-pip \
+    py3-psutil \
+    gcc \
+    musl-dev \
+    make \
+    sqlite \
+    sqlite-dev \
+    fio \
+    sysbench
+
+CMD ["sleep", "infinity"]

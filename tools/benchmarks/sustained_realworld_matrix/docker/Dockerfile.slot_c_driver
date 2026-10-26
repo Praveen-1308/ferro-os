@@ -1,0 +1,65 @@
+# docker/Dockerfile.slot_c_driver
+# Authoritative outside-world traffic generator, chaos injector, and telemetry verifier
+# Bounded by Container Slot C limits: --cpus=1.0 --memory=2g --memory-swap=2g
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+# 1. Install base dependencies, compiler toolchain, and network inspection tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    curl \
+    wget \
+    jq \
+    unzip \
+    ca-certificates \
+    libluajit-5.1-dev \
+    libssl-dev \
+    zlib1g-dev \
+    redis-tools \
+    postgresql-client \
+    python3 \
+    python3-pip \
+    python3-venv \
+    net-tools \
+    iproute2 \
+    iptables \
+    tcpdump \
+    fio \
+    nghttp2-client \
+    libcap2-bin \
+    && rm -rf /var/lib/apt/lists/*
+
+# 2. Build wrk2 from source with LuaJIT acceleration
+RUN git clone https://github.com/giltene/wrk2.git /tmp/wrk2 \
+    && cd /tmp/wrk2 \
+    && make -j$(nproc) \
+    && cp wrk /usr/local/bin/wrk2 \
+    && rm -rf /tmp/wrk2
+
+# 3. Install k6 load generator binary
+RUN curl -sL https://github.com/grafana/k6/releases/download/v0.50.0/k6-v0.50.0-linux-amd64.tar.gz -o /tmp/k6.tar.gz \
+    && tar -xzf /tmp/k6.tar.gz -C /tmp \
+    && cp /tmp/k6-v0.50.0-linux-amd64/k6 /usr/local/bin/k6 \
+    && rm -rf /tmp/k6*
+
+# 4. Install Python client libraries for PostgreSQL, Redis, HTTP/2, and cryptography
+RUN pip3 install --no-cache-dir --break-system-packages \
+    requests \
+    aiohttp \
+    redis \
+    psycopg2-binary \
+    cryptography \
+    pyjwt
+
+# 5. Set up working directory and entrypoint
+WORKDIR /bench/drivers
+COPY payloads/drivers/ /bench/drivers/
+
+# Enforce safe non-root execution where appropriate, or root with raw-socket capability
+RUN setcap cap_net_raw+ep /usr/local/bin/wrk2 || true
+
+ENTRYPOINT ["/bin/bash"]

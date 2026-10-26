@@ -21,3 +21,8 @@ tools/datasets/*.db
 tools/stack/flash_data/
 *.o
 .agents/
+*.db-shm
+*.db-wal
+tools/benchmarks/**/sample_*.jpg
+tools/benchmarks/**/sample_*.png
+tools/benchmarks/**/enterprise_seed.db
