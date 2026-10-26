@@ -1,0 +1,18 @@
+{
+  "ubuntu": {
+    "slab_alloc_sec": 0.1974,
+    "slab_mem_mb": 15.26,
+    "crypto_us_req": 1.65,
+    "wal_p50_ms": 0.008,
+    "wal_p95_ms": 0.015,
+    "wal_p99_ms": 0.032
+  },
+  "ferro_os": {
+    "slab_alloc_sec": 0.1581,
+    "slab_mem_mb": 15.26,
+    "crypto_us_req": 1.7,
+    "wal_p50_ms": 0.007,
+    "wal_p95_ms": 0.009,
+    "wal_p99_ms": 0.046
+  }
+}

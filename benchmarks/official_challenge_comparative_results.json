@@ -1,0 +1,73 @@
+{
+  "timestamp": 1793003410.002217,
+  "ubuntu": [
+    {
+      "vus": 200,
+      "reqs_total": 439,
+      "req_per_sec": 16.28239654474935,
+      "p95_ms": 2.9699999999999998,
+      "p99_ms": 5.888239999999988,
+      "error_pct": 0.0,
+      "passed": true,
+      "mem_mb": 27.04,
+      "cpu_pct": 0.65
+    },
+    {
+      "vus": 500,
+      "reqs_total": 1100,
+      "req_per_sec": 40.76855999812613,
+      "p95_ms": 3.976199999999998,
+      "p99_ms": 4.96204,
+      "error_pct": 0.0,
+      "passed": true,
+      "mem_mb": 30.01,
+      "cpu_pct": 1.26
+    },
+    {
+      "vus": 800,
+      "reqs_total": 1733,
+      "req_per_sec": 64.22887033239941,
+      "p95_ms": 4.0468,
+      "p99_ms": 5.776479999999998,
+      "error_pct": 0.0,
+      "passed": true,
+      "mem_mb": 34.22,
+      "cpu_pct": 1.64
+    }
+  ],
+  "ferro_os": [
+    {
+      "vus": 200,
+      "reqs_total": 437,
+      "req_per_sec": 16.274206299138235,
+      "p95_ms": 3.1068,
+      "p99_ms": 5.838319999999987,
+      "error_pct": 0.0,
+      "passed": true,
+      "mem_mb": 28.66,
+      "cpu_pct": 0.75
+    },
+    {
+      "vus": 500,
+      "reqs_total": 1104,
+      "req_per_sec": 40.88648718634528,
+      "p95_ms": 3.7171499999999993,
+      "p99_ms": 4.774239999999999,
+      "error_pct": 0.0,
+      "passed": true,
+      "mem_mb": 31.78,
+      "cpu_pct": 0.96
+    },
+    {
+      "vus": 800,
+      "reqs_total": 1761,
+      "req_per_sec": 65.25307726064395,
+      "p95_ms": 4.964,
+      "p99_ms": 7.156999999999996,
+      "error_pct": 0.0,
+      "passed": true,
+      "mem_mb": 36.21,
+      "cpu_pct": 1.14
+    }
+  ]
+}

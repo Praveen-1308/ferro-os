@@ -462,7 +462,7 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
 }
 
 pub const ALL_APPLETS: &[&str] = &[
-    "sh", "bash", "[", "test", "ls", "cat", "echo", "pwd", "uname", "clear", "mkdir", "rm", "cp",
+    "sh", "bash", "exec", "[", "test", "ls", "cat", "echo", "pwd", "uname", "clear", "mkdir", "rm", "cp",
     "mv", "chmod", "chown", "touch", "ln", "stat", "id", "grep", "find",
     "head", "tail", "wc", "which", "env", "sleep", "free", "df", "ps", "kill",
     "uptime", "whoami", "sync", "hostname", "tee", "ip", "mount", "umount",
@@ -554,6 +554,13 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
             return ExitCode::SUCCESS;
         }
         "true" | ":" | "set" | "break" | "continue" => return ExitCode::SUCCESS,
+        "exec" => {
+            if args.is_empty() {
+                return ExitCode::SUCCESS;
+            }
+            let sub_cmd = args.join(" ");
+            return execute_single_command(&sub_cmd);
+        }
         "export" => {
             if let Some(first_arg) = args.first() {
                 if let Some((k, v)) = shell::is_assignment(first_arg) {
