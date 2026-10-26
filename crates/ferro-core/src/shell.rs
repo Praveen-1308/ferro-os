@@ -9,6 +9,10 @@ use std::env;
 use std::fs;
 use std::path::Path;
 use std::process::ExitCode;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+static LOOP_BREAK: AtomicBool = AtomicBool::new(false);
+static LOOP_CONTINUE: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug, Clone)]
 pub struct ShellContext {
@@ -332,8 +336,21 @@ pub fn split_statements(script: &str) -> Vec<String> {
     let mut current = String::new();
     let mut in_quotes = false;
     let mut quote_char = ' ';
+    let mut in_comment = false;
 
     for c in script.chars() {
+        if in_comment {
+            if c == '\n' {
+                in_comment = false;
+                let trimmed = current.trim();
+                if !trimmed.is_empty() && !trimmed.starts_with('#') {
+                    stmts.push(trimmed.to_string());
+                }
+                current.clear();
+            }
+            continue;
+        }
+
         match c {
             '"' | '\'' if !in_quotes => {
                 in_quotes = true;
@@ -344,9 +361,12 @@ pub fn split_statements(script: &str) -> Vec<String> {
                 in_quotes = false;
                 current.push(c);
             }
+            '#' if !in_quotes && (current.trim().is_empty() || current.ends_with(char::is_whitespace)) => {
+                in_comment = true;
+            }
             ';' | '\n' if !in_quotes => {
                 let trimmed = current.trim();
-                if !trimmed.is_empty() {
+                if !trimmed.is_empty() && !trimmed.starts_with('#') {
                     stmts.push(trimmed.to_string());
                 }
                 current.clear();
@@ -357,7 +377,7 @@ pub fn split_statements(script: &str) -> Vec<String> {
         }
     }
     let trimmed = current.trim();
-    if !trimmed.is_empty() {
+    if !trimmed.is_empty() && !trimmed.starts_with('#') {
         stmts.push(trimmed.to_string());
     }
     stmts
@@ -380,6 +400,22 @@ where
         if stmt.is_empty() || stmt.starts_with('#') {
             i += 1;
             continue;
+        }
+
+        if LOOP_BREAK.load(Ordering::SeqCst) || LOOP_CONTINUE.load(Ordering::SeqCst) {
+            break;
+        }
+
+        if stmt == "break" || stmt.starts_with("break ") || stmt.starts_with("break;") {
+            LOOP_BREAK.store(true, Ordering::SeqCst);
+            last_code = ExitCode::SUCCESS;
+            set_last_status(0);
+            break;
+        } else if stmt == "continue" || stmt.starts_with("continue ") || stmt.starts_with("continue;") {
+            LOOP_CONTINUE.store(true, Ordering::SeqCst);
+            last_code = ExitCode::SUCCESS;
+            set_last_status(0);
+            break;
         }
 
         // 1. `if` block parsing
@@ -418,6 +454,12 @@ where
             for item in items {
                 set_var(&var_name, &item);
                 last_code = execute_script(&body, exec_pipeline);
+                if LOOP_BREAK.swap(false, Ordering::SeqCst) {
+                    break;
+                }
+                if LOOP_CONTINUE.swap(false, Ordering::SeqCst) {
+                    continue;
+                }
             }
             set_last_status(exit_code_to_i32(&last_code));
             continue;
@@ -436,6 +478,12 @@ where
                     break;
                 }
                 last_code = execute_script(&body, exec_pipeline);
+                if LOOP_BREAK.swap(false, Ordering::SeqCst) {
+                    break;
+                }
+                if LOOP_CONTINUE.swap(false, Ordering::SeqCst) {
+                    continue;
+                }
                 loop_count += 1;
             }
             set_last_status(exit_code_to_i32(&last_code));
@@ -641,7 +689,7 @@ fn parse_if_block(
                 section = Section::Else;
                 idx += 1;
                 continue;
-            } else if line == "fi" {
+            } else if line == "fi" || line.starts_with("fi ") || line.starts_with("fi&") || line.starts_with("fi;") {
                 if matches!(section, Section::ElifBody) {
                     elifs.push((current_elif_cond.clone(), current_elif_body.join("; ")));
                 }
@@ -678,23 +726,29 @@ fn parse_for_block(stmts: &[String], start: usize) -> (String, Vec<String>, Stri
     let first = &stmts[start];
     let rest = first.trim_start_matches("for ").trim();
 
-    let mut var_name = String::new();
-    let mut raw_items = Vec::new();
-    let mut body = Vec::new();
-
-    if let Some(in_pos) = rest.find(" in ") {
-        var_name = rest[..in_pos].trim().to_string();
+    let (var_name, raw_items) = if let Some(in_pos) = rest.find(" in ") {
+        let name = rest[..in_pos].trim().to_string();
         let items_part = rest[in_pos + 4..].trim();
-        if let Some(do_pos) = items_part.find("; do") {
-            raw_items = items_part[..do_pos].split_whitespace().map(String::from).collect();
+        let items: Vec<String> = if let Some(do_pos) = items_part.find("; do") {
+            items_part[..do_pos].split_whitespace().map(String::from).collect()
         } else if let Some(do_pos) = items_part.find(" do") {
-            raw_items = items_part[..do_pos].split_whitespace().map(String::from).collect();
+            items_part[..do_pos].split_whitespace().map(String::from).collect()
         } else {
-            raw_items = items_part.split_whitespace().map(String::from).collect();
-        }
-    } else if let Some(first_word) = rest.split_whitespace().next() {
-        var_name = first_word.to_string();
-    }
+            items_part.split_whitespace().map(String::from).collect()
+        };
+        (name, items)
+    } else {
+        // POSIX shorthand: `for var do` or `for var; do` defaults to iterating over "$@"
+        let name_part = if let Some(do_pos) = rest.find(" do") {
+            &rest[..do_pos]
+        } else if let Some(semi_pos) = rest.find(';') {
+            &rest[..semi_pos]
+        } else {
+            rest
+        };
+        (name_part.trim().to_string(), vec!["$@".to_string()])
+    };
+    let mut body = Vec::new();
 
     let mut depth = 0;
     let mut idx = start + 1;
@@ -719,10 +773,13 @@ fn parse_for_block(stmts: &[String], start: usize) -> (String, Vec<String>, Stri
             } else if line == "done" {
                 idx += 1;
                 break;
+            } else if line.starts_with("done ") || line.starts_with("done&") || line.starts_with("done;") {
+                idx += 1;
+                break;
             }
         }
 
-        if line == "done" && depth > 0 {
+        if (line == "done" || line.starts_with("done ") || line.starts_with("done&")) && depth > 0 {
             depth -= 1;
         }
 
@@ -777,10 +834,13 @@ fn parse_while_block(stmts: &[String], start: usize) -> (String, String, usize) 
             } else if line == "done" {
                 idx += 1;
                 break;
+            } else if line.starts_with("done ") || line.starts_with("done&") || line.starts_with("done;") {
+                idx += 1;
+                break;
             }
         }
 
-        if line == "done" && depth > 0 {
+        if (line == "done" || line.starts_with("done ") || line.starts_with("done&")) && depth > 0 {
             depth -= 1;
         }
 

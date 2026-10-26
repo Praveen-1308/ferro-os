@@ -375,6 +375,9 @@ fn extract_redirection_quote_aware(line: &str) -> (String, Option<(String, bool)
                 .trim()
                 .trim_matches(|ch| ch == '"' || ch == '\'')
                 .to_string();
+            if target_file.starts_with("&2") || target_file.starts_with("&1") || target_file == "." || target_file.is_empty() {
+                return (clean_cmd.trim().to_string(), None);
+            }
             return (clean_cmd.trim().to_string(), Some((target_file, is_append)));
         } else {
             clean_cmd.push(c);
@@ -550,7 +553,7 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
             }
             return ExitCode::SUCCESS;
         }
-        "true" | ":" | "set" => return ExitCode::SUCCESS,
+        "true" | ":" | "set" | "break" | "continue" => return ExitCode::SUCCESS,
         "export" => {
             if let Some(first_arg) = args.first() {
                 if let Some((k, v)) = shell::is_assignment(first_arg) {
