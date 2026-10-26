@@ -1,0 +1,93 @@
+name: AI Incident-to-Test Closed Loop & Verification CI
+
+on:
+  schedule:
+    - cron: '30 4 * * *'  # Runs daily at 04:30 UTC (right after os_radar_cron at 04:00)
+  workflow_dispatch:
+    inputs:
+      target_scenario:
+        description: 'Specific Synthesized Scenario File (leave empty for all)'
+        required: false
+        default: ''
+  push:
+    paths:
+      - 'tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/**'
+      - 'tools/intelligence/incident_test_synthesizer.py'
+      - 'tools/intelligence/test_execution_guard.py'
+
+concurrency:
+  group: ai-incident-ci
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  synthesize-and-verify:
+    name: AI Incident Synthesis & Guarded Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Pre-flight AST Synthesis & Safety Gate
+        run: |
+          echo "=== 1. Running AI Incident Test Synthesizer ==="
+          python3 tools/intelligence/incident_test_synthesizer.py
+
+      - name: Execute Guarded Verification (Fail-Safe Circuit Breaker)
+        id: exec_guard
+        continue-on-error: true
+        env:
+          GITHUB_RUN_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: |
+          echo "=== 2. Running Guarded Incident Verification ==="
+          if [ -n "${{ inputs.target_scenario }}" ]; then
+            python3 tools/intelligence/test_execution_guard.py --file "${{ inputs.target_scenario }}" --timeout 15
+          else
+            python3 tools/intelligence/test_execution_guard.py --timeout 15
+          fi
+
+      - name: Publish Verification Summary to GitHub Step Summary
+        run: |
+          echo "## 🛡️ AI Incident-to-Test Automated Verification Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Action Run**: [Run #${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- **Execution Guard**: \`test_execution_guard.py\` (POSIX Process-Group Isolation & Circuit Breaker)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Fail-Safe Gate**: \`continue-on-error: true\` (CI protected against unexpected hangs or panics)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "tools/reports/ai_incident_runs/ai_synthesized_verification_summary.json" ]; then
+            echo "| Scenario | Verdict | Exit Code | Duration |" >> $GITHUB_STEP_SUMMARY
+            echo "| :--- | :--- | :---: | :---: |" >> $GITHUB_STEP_SUMMARY
+            python3 -c '
+          import json
+          with open("tools/reports/ai_incident_runs/ai_synthesized_verification_summary.json") as f:
+              data = json.load(f)
+          for item in data[:15]:
+              print(f"| \`{item[\"scenario_file\"]}\` | {item[\"verdict\"]} | {item[\"exit_code\"]} | {item[\"duration_s\"]}s |")
+          ' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "*Showing first 15 verified incidents. Full dataset archived in repository.*" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Commit & Push Verified Dossiers & Reports
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/os_intelligence/ tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ tools/reports/ai_incident_runs/
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore(ai-ci): archive verified incident test scenarios & execution reports [skip ci]"
+            git pull --rebase origin main || true
+            git push origin main || true
+          fi

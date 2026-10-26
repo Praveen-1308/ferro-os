@@ -8,7 +8,11 @@
     "comments": 42,
     "subsystem": "VFS / Storage / Locking",
     "analyzed_at": "2026-10-22T10:55:46.541832+00:00",
-    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_lwn-982144.md"
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_lwn-982144.md",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-LWN_982144",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-lwn_982144.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "K8S-119284",
@@ -19,7 +23,11 @@
     "comments": 68,
     "subsystem": "Scheduler / CPU / CFS",
     "analyzed_at": "2026-10-22T10:55:46.654064+00:00",
-    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_k8s-119284.md"
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_k8s-119284.md",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-K8S_119284",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-k8s_119284.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "RFC-793-PORT",
@@ -30,7 +38,11 @@
     "comments": 89,
     "subsystem": "VFS / Storage / Locking",
     "analyzed_at": "2026-10-22T10:55:47.762487+00:00",
-    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_rfc-793-port.md"
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_rfc-793-port.md",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-RFC_793_PORT",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-rfc_793_port.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "CF-POSTMORTEM-2024",
@@ -55,7 +67,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_cf-postmortem-2024.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_cf-postmortem-2024.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_cf-postmortem-2024.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-CF_POSTMORTEM_2024",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-cf_postmortem_2024.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "AWS-POSTGRES-AURORA-OOM",
@@ -80,7 +96,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_aws-postgres-aurora-oom.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_aws-postgres-aurora-oom.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_aws-postgres-aurora-oom.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-AWS_POSTGRES_AURORA_",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-aws_postgres_aurora_.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "REDIS-COW-SPIKE",
@@ -105,7 +125,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_redis-cow-spike.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_redis-cow-spike.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_redis-cow-spike.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-REDIS_COW_SPIKE",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-redis_cow_spike.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-48851069",
@@ -131,7 +155,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-48851069.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-48851069.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-48851069.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_48851069",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_48851069.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-48873837",
@@ -157,7 +185,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-48873837.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-48873837.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-48873837.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_48873837",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_48873837.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-48841546",
@@ -183,7 +215,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-48841546.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-48841546.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-48841546.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_48841546",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_48841546.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-30451967",
@@ -209,7 +245,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-30451967.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-30451967.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-30451967.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_30451967",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_30451967.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-31336430",
@@ -235,7 +275,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-31336430.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-31336430.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-31336430.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_31336430",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_31336430.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-44295831",
@@ -261,7 +305,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-44295831.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-44295831.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-44295831.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_44295831",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_44295831.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-22349110",
@@ -287,7 +335,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-22349110.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-22349110.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-22349110.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_22349110",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_22349110.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-8551516",
@@ -313,7 +365,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-8551516.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-8551516.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-8551516.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_8551516",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_8551516.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-8532851",
@@ -339,7 +395,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-8532851.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-8532851.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-8532851.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_8532851",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_8532851.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-33786159",
@@ -365,7 +425,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-33786159.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-33786159.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-33786159.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_33786159",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_33786159.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-7644910",
@@ -391,7 +455,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-7644910.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-7644910.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-7644910.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_7644910",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_7644910.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-36005879",
@@ -417,7 +485,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-36005879.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-36005879.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-36005879.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_36005879",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_36005879.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-36009768",
@@ -443,7 +515,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-36009768.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-36009768.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-36009768.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_36009768",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_36009768.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-36019197",
@@ -469,7 +545,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-36019197.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-36019197.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-36019197.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_36019197",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_36019197.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-47511866",
@@ -495,7 +575,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-47511866.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-47511866.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-47511866.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_47511866",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_47511866.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-954033",
@@ -521,7 +605,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-954033.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-954033.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-954033.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_954033",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_954033.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-47847354",
@@ -547,7 +635,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-47847354.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-47847354.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-47847354.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_47847354",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_47847354.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-47136294",
@@ -573,7 +665,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-47136294.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-47136294.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-47136294.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_47136294",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_47136294.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-46899939",
@@ -599,7 +695,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-46899939.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-46899939.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-46899939.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_46899939",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_46899939.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-49046973",
@@ -625,7 +725,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-49046973.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-49046973.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-49046973.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_49046973",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_49046973.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-27812145",
@@ -651,7 +755,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-27812145.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-27812145.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-27812145.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_27812145",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_27812145.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "HN-36895220",
@@ -677,7 +785,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-36895220.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_hn-36895220.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-36895220.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-HN_36895220",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-hn_36895220.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "REDDIT-SYSADMIN-1xc328i",
@@ -703,7 +815,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xc328i.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xc328i.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xc328i.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-REDDIT_SYSADMIN_1XC3",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-reddit_sysadmin_1xc3.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "REDDIT-SYSADMIN-1xc99ct",
@@ -729,7 +845,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xc99ct.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xc99ct.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xc99ct.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-REDDIT_SYSADMIN_1XC9",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-reddit_sysadmin_1xc9.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "REDDIT-SYSADMIN-1xcd912",
@@ -755,7 +875,11 @@
       "minimal_mitigation": "Tune cgroup quotas and pin thread pools."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xcd912.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xcd912.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xcd912.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-REDDIT_SYSADMIN_1XCD",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-reddit_sysadmin_1xcd.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "REDDIT-SYSADMIN-1xdcfgz",
@@ -781,7 +905,11 @@
       "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xdcfgz.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xdcfgz.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xdcfgz.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-REDDIT_SYSADMIN_1XDC",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-reddit_sysadmin_1xdc.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "NETFLIX-FUSE-DEADLOCK",
@@ -807,7 +935,11 @@
       "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_netflix-fuse-deadlock.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_netflix-fuse-deadlock.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_netflix-fuse-deadlock.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-NETFLIX_FUSE_DEADLOC",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-netflix_fuse_deadloc.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "STRIPE-REDIS-SATURATION",
@@ -833,7 +965,11 @@
       "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_stripe-redis-saturation.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_stripe-redis-saturation.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_stripe-redis-saturation.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-STRIPE_REDIS_SATURAT",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-stripe_redis_saturat.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "GITLAB-POSTGRES-WAL-BLOAT",
@@ -859,7 +995,11 @@
       "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_gitlab-postgres-wal-bloat.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_gitlab-postgres-wal-bloat.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_gitlab-postgres-wal-bloat.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-GITLAB_POSTGRES_WAL_",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-gitlab_postgres_wal_.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "DATADOG-EBPF-PROBE-PANIC",
@@ -885,7 +1025,11 @@
       "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_datadog-ebpf-probe-panic.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_datadog-ebpf-probe-panic.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_datadog-ebpf-probe-panic.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-DATADOG_EBPF_PROBE_P",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-datadog_ebpf_probe_p.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "UBER-GO-GC-PAUSE-SPIKE",
@@ -911,7 +1055,11 @@
       "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_uber-go-gc-pause-spike.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_uber-go-gc-pause-spike.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_uber-go-gc-pause-spike.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-UBER_GO_GC_PAUSE_SPI",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-uber_go_gc_pause_spi.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "REDDIT-SYSADMIN-1xefcqf",
@@ -937,7 +1085,11 @@
       "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xefcqf.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xefcqf.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xefcqf.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-REDDIT_SYSADMIN_1XEF",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-reddit_sysadmin_1xef.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   },
   {
     "id": "REDDIT-SYSADMIN-1xe41b9",
@@ -963,6 +1115,10 @@
       "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xe41b9.md",
-    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xe41b9.json"
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xe41b9.json",
+    "test_synthesized": true,
+    "synthesized_scenario_id": "AI-SCEN-REDDIT_SYSADMIN_1XE4",
+    "synthesized_scenario_path": "/Users/praveenkumar/rust os/tools/benchmarks/sustained_realworld_matrix/scenarios/synthesized_incidents/ai-scen-reddit_sysadmin_1xe4.py",
+    "analysis_status": "SYNTHESIZED_READY_FOR_CI"
   }
 ]
