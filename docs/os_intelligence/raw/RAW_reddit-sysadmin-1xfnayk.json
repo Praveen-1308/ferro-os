@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xfnayk",
+  "title": "if your blacklist checker uses Google or Cloudflare DNS, Spamhaus results are probably wrong",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xfnayk/if_your_blacklist_checker_uses_google_or/",
+  "sub_url": "http://2.0.0.127.zen.spamhaus.org",
+  "sub_content": null,
+  "raw_text": "if your blacklist checker uses Google or Cloudflare DNS, Spamhaus results are probably wrong <!-- SC_OFF --><div class=\"md\"><p>Ran into this while chasing a bug report and it surprised me, so sharing.</p> <p>Spamhaus doesn&#39;t answer queries that come through big public resolvers. Google returns an empty answer, which your software reads as &quot;not listed&quot;. So a Postfix reject_rbl_client zen.spamhaus.org on a box that resolves through 8.8.8.8 lets everything through, and nothing ever logs an error.</p> <p>10-second test, run on your mail server:</p> <p>dig +short <a href=\"http://2.0.0.127.zen.spamhaus.org\">2.0.0.127.zen.spamhaus.org</a></p> <p>That&#39;s Spamhaus&#39;s permanent test entry; it should always return 127.0.0.2. Empty or 127.255.255.x means your lookups aren&#39;t working.</p> <p>Fix: run a local recursive resolver (Unbound takes five minutes) and point the mail server at it. If you&#39;re non-commercial, a free Spamhaus DQS key also works.</p> <p>How I found it: I maintain a small self-hosted blacklist monitor, and a user reported an IP that was on Spamhaus but showed clean. Same cause. It now tests every list against its test address first and shows &quot;no",
+  "harvested_at": "2026-10-26T09:56:50.500748+00:00"
+}

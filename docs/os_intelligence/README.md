@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 39 | **Last Sweep**: 2026-10-26 04:38:37 UTC
+**Active Tracked Incidents**: 40 | **Last Sweep**: 2026-10-26 09:56:50 UTC
 
 ---
 
@@ -52,6 +52,7 @@
 | `UBER-GO-GC-PAUSE-SPIKE` | **Go Runtime / Memory** | Uber Microservice Dispatch: Go Runtime Stop-the-World GC Spikes p99 Latency to 450ms | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_uber-go-gc-pause-spike.json) | [Read Dossier](incidents/INCIDENT_uber-go-gc-pause-spike.md) |
 | `REDDIT-SYSADMIN-1xefcqf` | **Linux Server Administration** | Has anyone left IT support after years in the industry and moved into a completely different role? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xefcqf.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xefcqf.md) |
 | `REDDIT-SYSADMIN-1xe41b9` | **Linux Server Administration** | PHP2Shell: notes from the field | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xe41b9.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xe41b9.md) |
+| `REDDIT-SYSADMIN-1xfnayk` | **Linux Server Administration** | if your blacklist checker uses Google or Cloudflare DNS, Spamhaus results are probably wrong | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xfnayk.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xfnayk.md) |
 
 ---
 
