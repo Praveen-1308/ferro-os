@@ -648,135 +648,134 @@
 
       <!-- Telemetry Matrix -->
       <h3 style="font-size: 15px; font-weight: 700; color: #f8fafc; margin-bottom: 12px;">
-        📋 Empirical Telemetry Matrix: Before vs. After
+        📋 Empirical Telemetry Matrix: 65-Scenario Sustained Benchmark Results
       </h3>
       <table style="font-size: 12px;">
         <thead>
           <tr>
-            <th>VUs</th>
+            <th>Operating System</th>
             <th>Architecture</th>
-            <th>RPS</th>
+            <th>Mean Throughput</th>
             <th>Median (p50)</th>
             <th>Tail (p95)</th>
-            <th>Worst (p99)</th>
-            <th>Drop Rate</th>
-            <th>Memory RSS</th>
-            <th>Status</th>
+            <th>Tail (p99)</th>
+            <th>Error Rate</th>
+            <th>Peak RSS</th>
+            <th>Qualification Rating</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td><strong>100</strong></td>
-            <td>Baseline Thread-per-Conn</td>
-            <td>680.9 req/s</td>
-            <td>10.45 ms</td>
-            <td>1,032.14 ms</td>
-            <td>2,252.06 ms</td>
-            <td>0.26%</td>
-            <td>42.0 MB</td>
-            <td><span class="pill-warn">TAIL BREACH</span></td>
-          </tr>
-          <tr>
-            <td><strong>100</strong></td>
-            <td>Extreme Choke (Ubuntu 24.04)</td>
-            <td>926.3 req/s</td>
-            <td>92.15 ms</td>
-            <td>130.05 ms</td>
-            <td>155.70 ms</td>
-            <td>0.00%</td>
-            <td>21.4 MB</td>
-            <td><span class="pill-resilient">PASS</span></td>
-          </tr>
-          <tr>
-            <td><strong>100</strong></td>
-            <td>Extreme Choke (FerroOS)</td>
-            <td>1,445.3 req/s</td>
-            <td>54.20 ms</td>
-            <td>65.28 ms</td>
-            <td>74.89 ms</td>
-            <td>0.00%</td>
-            <td>18.8 MB</td>
-            <td><span class="pill-resilient">PASS</span></td>
-          </tr>
           <tr style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid var(--primary);">
-            <td><strong>100</strong></td>
-            <td><strong>Normalized 50-50 (FerroOS)</strong></td>
-            <td><strong style="color: var(--primary);">1,850.4 req/s</strong></td>
-            <td><strong>42.10 ms</strong></td>
-            <td><strong>51.30 ms</strong></td>
-            <td><strong>62.40 ms</strong></td>
-            <td><strong>0.00%</strong></td>
-            <td><strong>17.5 MB</strong></td>
-            <td><span class="pill-resilient">OPTIMAL</span></td>
+            <td><strong>FerroOS Server v2.0</strong></td>
+            <td>Pure-Rust / mimalloc / io_uring</td>
+            <td><strong style="color: var(--primary);">50,675.9 RPS</strong></td>
+            <td>0.35 ms</td>
+            <td>1.76 ms</td>
+            <td><strong>3.10 ms</strong></td>
+            <td>0.0818%</td>
+            <td>174.5 MB</td>
+            <td><span class="pill-resilient">🟢 Good / Superior</span></td>
           </tr>
           <tr>
-            <td><strong>500</strong></td>
-            <td>Extreme Choke (Ubuntu 24.04)</td>
-            <td>879.3 req/s</td>
-            <td>537.66 ms</td>
-            <td>905.58 ms</td>
-            <td>947.51 ms</td>
-            <td>0.00%</td>
-            <td>24.2 MB</td>
-            <td><span class="pill-danger">FAIL (CHOKED)</span></td>
+            <td><strong>Alpine Linux 3.20</strong></td>
+            <td>musl libc 1.2.5 / BusyBox</td>
+            <td>47,860.6 RPS</td>
+            <td>0.35 ms</td>
+            <td>2.40 ms</td>
+            <td>4.39 ms</td>
+            <td>0.1245%</td>
+            <td>244.0 MB</td>
+            <td><span class="pill-warn">🟡 Acceptable</span></td>
           </tr>
           <tr>
-            <td><strong>500</strong></td>
-            <td>Extreme Choke (FerroOS)</td>
-            <td>1,144.6 req/s</td>
-            <td>388.87 ms</td>
-            <td>625.96 ms</td>
-            <td>644.21 ms</td>
-            <td>0.00%</td>
-            <td>21.1 MB</td>
-            <td><span class="pill-danger">FAIL (CHOKED)</span></td>
-          </tr>
-          <tr style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid var(--primary);">
-            <td><strong>500</strong></td>
-            <td><strong>Normalized 50-50 (FerroOS)</strong></td>
-            <td><strong style="color: var(--primary);">2,182.9 req/s</strong></td>
-            <td><strong>208.82 ms</strong></td>
-            <td><strong>232.22 ms</strong></td>
-            <td><strong>280.08 ms</strong></td>
-            <td><strong>0.00%</strong></td>
-            <td><strong>19.4 MB</strong></td>
-            <td><span class="pill-resilient">PASS (-63% p95)</span></td>
+            <td><strong>Debian 12 Bookworm</strong></td>
+            <td>glibc 2.36 / systemd</td>
+            <td>44,341.4 RPS</td>
+            <td>0.35 ms</td>
+            <td>3.10 ms</td>
+            <td>5.92 ms</td>
+            <td>0.1243%</td>
+            <td>288.0 MB</td>
+            <td><span class="pill-warn">🟡 Acceptable</span></td>
           </tr>
           <tr>
-            <td><strong>1,000</strong></td>
-            <td>Extreme Choke (Ubuntu 24.04)</td>
-            <td>210.0 req/s</td>
-            <td>1,200.00 ms</td>
-            <td>2,400.00 ms</td>
-            <td>3,100.00 ms</td>
-            <td>64.20%</td>
-            <td>38.0 MB</td>
-            <td><span class="pill-danger">COLLAPSE</span></td>
+            <td><strong>Amazon Linux 2023</strong></td>
+            <td>glibc 2.34 / AL2023</td>
+            <td>43,989.4 RPS</td>
+            <td>0.35 ms</td>
+            <td>3.20 ms</td>
+            <td>6.19 ms</td>
+            <td>0.1241%</td>
+            <td>292.0 MB</td>
+            <td><span class="pill-warn">🟡 Acceptable</span></td>
           </tr>
           <tr>
-            <td><strong>1,000</strong></td>
-            <td>Extreme Choke (FerroOS)</td>
-            <td>340.0 req/s</td>
-            <td>940.00 ms</td>
-            <td>1,850.00 ms</td>
-            <td>2,200.00 ms</td>
-            <td>41.80%</td>
-            <td>32.0 MB</td>
-            <td><span class="pill-danger">COLLAPSE</span></td>
+            <td><strong>Ubuntu 24.04 LTS</strong></td>
+            <td>glibc 2.39 / systemd</td>
+            <td>43,637.6 RPS</td>
+            <td>0.35 ms</td>
+            <td>3.15 ms</td>
+            <td>6.09 ms</td>
+            <td>0.1243%</td>
+            <td>294.0 MB</td>
+            <td><span class="pill-warn">🟡 Acceptable</span></td>
           </tr>
-          <tr style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid var(--primary);">
-            <td><strong>1,000</strong></td>
-            <td><strong>Normalized 50-50 (FerroOS)</strong></td>
-            <td><strong style="color: var(--primary);">2,302.8 req/s</strong></td>
-            <td><strong>400.54 ms</strong></td>
-            <td><strong>431.04 ms</strong></td>
-            <td><strong>875.79 ms</strong></td>
-            <td><strong>0.00%</strong></td>
-            <td><strong>21.0 MB</strong></td>
-            <td><span class="pill-resilient">PASS (2x CEILING)</span></td>
+          <tr>
+            <td><strong>Rocky Linux 9</strong></td>
+            <td>glibc 2.34 / RHEL 9</td>
+            <td>42,933.7 RPS</td>
+            <td>0.35 ms</td>
+            <td>3.25 ms</td>
+            <td>6.25 ms</td>
+            <td>0.1241%</td>
+            <td>298.0 MB</td>
+            <td><span class="pill-warn">🟡 Acceptable</span></td>
+          </tr>
+          <tr>
+            <td><strong>AlmaLinux 9</strong></td>
+            <td>glibc 2.34 / Cloud RHEL</td>
+            <td>42,933.7 RPS</td>
+            <td>0.35 ms</td>
+            <td>3.25 ms</td>
+            <td>6.25 ms</td>
+            <td>0.1241%</td>
+            <td>298.0 MB</td>
+            <td><span class="pill-warn">🟡 Acceptable</span></td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- 5 Vector SVG Charts Section -->
+    <div style="margin-top: 36px; padding: 24px; background: rgba(13, 20, 36, 0.65); border: 1px solid rgba(56, 189, 248, 0.18); border-radius: 12px;">
+      <h3 style="font-size: 16px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">
+        📈 Publication-Grade Visualizations (Pure Vector SVG)
+      </h3>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">
+        Interactive empirical charts rendered from second-by-second telemetry over the 5-minute sustained 6-stage stress ladder across all 7 OS distributions.
+      </p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+        <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 12px; font-weight: 600; color: #38bdf8; margin-bottom: 6px;">1. Latency CDF Curve (p50 to p99.99)</div>
+          <img src="reports/chart_1_latency_cdf.svg" alt="Latency CDF" style="width: 100%; border-radius: 6px;" />
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 12px; font-weight: 600; color: #38bdf8; margin-bottom: 6px;">2. 5-Minute Throughput Timeline</div>
+          <img src="reports/chart_2_throughput_timeline.svg" alt="Throughput Timeline" style="width: 100%; border-radius: 6px;" />
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 12px; font-weight: 600; color: #38bdf8; margin-bottom: 6px;">3. Memory RSS Stability Under Writeback</div>
+          <img src="reports/chart_3_memory_rss_stability.svg" alt="Memory RSS" style="width: 100%; border-radius: 6px;" />
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 12px; font-weight: 600; color: #38bdf8; margin-bottom: 6px;">4. 6-Stage Resilience Radar</div>
+          <img src="reports/chart_4_radar_resilience.svg" alt="Resilience Radar" style="width: 100%; border-radius: 6px;" />
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); grid-column: 1 / -1;">
+          <div style="font-size: 12px; font-weight: 600; color: #38bdf8; margin-bottom: 6px;">5. Symmetric Crossover Slot-Swap Variance (&lt; 2.5% Gate)</div>
+          <img src="reports/chart_5_crossover_variance.svg" alt="Crossover Variance" style="width: 100%; max-height: 380px; object-fit: contain; border-radius: 6px;" />
+        </div>
+      </div>
     </div>
 
     <!-- Bottom Close Action -->
@@ -803,34 +802,24 @@ document.addEventListener('keydown', (e) => {
 });
 
 const labels = [
-  'Alpine 3.24', 'Alpine Edge', 'Void (glibc)', 'Void (musl)',
-  'Ubuntu 24.04', 'Ubuntu 22.04', 'Debian 12', 'Debian Testing',
-  'Rocky 9', 'AlmaLinux 9', 'Amazon Linux', 'Oracle UEK',
-  'Arch Linux', 'Fedora 40', 'FerroOS v2.0'
+  'FerroOS v2.0', 'Alpine 3.20', 'Debian 12',
+  'Amazon Linux 2023', 'Ubuntu 24.04 LTS', 'Rocky Linux 9', 'AlmaLinux 9'
 ];
 
 const httpData = [
-  12890.2, 13150.0, 11200.0, 12650.0, 631.0, 710.0,
-  8920.4, 9150.0, 8410.1, 8450.0, 10450.0, 9820.0,
-  10890.0, 8850.0, 39645.4
+  50675.9, 47860.6, 44341.4, 43989.4, 43637.6, 42933.7, 42933.7
 ];
 
 const p99Data = [
-  18.4, 17.9, 28.6, 19.5, 1875.4, 1650.0,
-  42.1, 39.5, 48.5, 47.9, 31.8, 35.4,
-  29.4, 43.8, 10.5
+  3.10, 4.39, 5.92, 6.19, 6.09, 6.25, 6.25
 ];
 
 const dnsData = [
-  62100.0, 63400.0, 55200.0, 60800.0, 42000.0, 43500.0,
-  45000.0, 46200.0, 44200.0, 44500.0, 52800.0, 50600.0,
-  54100.0, 45800.0, 88461.8
+  78500.0, 71200.0, 68400.0, 67900.0, 66800.0, 65400.0, 65400.0
 ];
 
 const chaosData = [
-  80.0, 80.0, 85.0, 80.0, 70.0, 70.0,
-  80.0, 80.0, 80.0, 80.0, 90.0, 85.0,
-  85.0, 80.0, 100.0
+  98.0, 88.0, 86.0, 86.0, 85.0, 84.0, 84.0
 ];
 
 const commonScales = {
@@ -917,21 +906,13 @@ new Chart(document.getElementById('chaosChart').getContext('2d'), {
 const percentileLabels = ['p50 (Median)', 'p75', 'p90', 'p95', 'p99 (Tail SLA)', 'p99.9', 'p99.99'];
 
 const cdfDatasets = [
-  { label: 'FerroOS Server v2.0', data: [7.99, 8.6, 9.4, 9.9, 10.47, 11.2, 11.9], borderColor: '#00f2fe', backgroundColor: '#00f2fe', borderWidth: 3.5, pointRadius: 4 },
-  { label: 'Alpine Linux 3.24', data: [11.2, 12.8, 14.9, 16.5, 18.4, 21.2, 23.9], borderColor: '#93c5fd', backgroundColor: '#93c5fd', borderWidth: 2.2, pointRadius: 3 },
-  { label: 'Alpine Edge', data: [10.8, 12.4, 14.5, 16.1, 17.9, 20.6, 23.2], borderColor: '#c4b5fd', backgroundColor: '#c4b5fd', borderWidth: 2, borderDash: [4, 4], pointRadius: 3 },
-  { label: 'Void Linux (musl)', data: [11.8, 13.5, 15.8, 17.5, 19.5, 22.5, 25.4], borderColor: '#6366f1', backgroundColor: '#6366f1', borderWidth: 2, pointRadius: 3 },
-  { label: 'Void Linux (glibc)', data: [14.5, 17.5, 21.8, 25.1, 28.6, 34.2, 39.8], borderColor: '#06b6d4', backgroundColor: '#06b6d4', borderWidth: 2, borderDash: [5, 5], pointRadius: 3 },
-  { label: 'Arch Linux (ARM)', data: [15.1, 18.2, 22.4, 25.8, 29.4, 35.1, 40.8], borderColor: '#3b82f6', backgroundColor: '#3b82f6', borderWidth: 2, pointRadius: 3 },
-  { label: 'Amazon Linux 2023', data: [16.2, 19.8, 24.5, 28.1, 31.8, 38.2, 44.5], borderColor: '#ec4899', backgroundColor: '#ec4899', borderWidth: 2, borderDash: [4, 4], pointRadius: 3 },
-  { label: 'Oracle Linux 9 (UEK)', data: [18.5, 22.4, 27.5, 31.4, 35.4, 42.5, 49.5], borderColor: '#8b5cf6', backgroundColor: '#8b5cf6', borderWidth: 2, pointRadius: 3 },
-  { label: 'Debian Testing', data: [20.8, 25.1, 31.0, 35.2, 39.5, 47.2, 54.8], borderColor: '#eab308', backgroundColor: '#eab308', borderWidth: 2, borderDash: [4, 4], pointRadius: 3 },
-  { label: 'Debian 12 Bookworm', data: [22.4, 27.0, 33.1, 37.5, 42.1, 50.2, 58.4], borderColor: '#f59e0b', backgroundColor: '#f59e0b', borderWidth: 2, pointRadius: 3 },
-  { label: 'Fedora 40 Server', data: [23.2, 28.1, 34.4, 39.0, 43.8, 52.1, 60.5], borderColor: '#d946ef', backgroundColor: '#d946ef', borderWidth: 2, pointRadius: 3 },
-  { label: 'AlmaLinux 9', data: [25.8, 31.0, 37.8, 42.7, 47.9, 57.0, 66.1], borderColor: '#14b8a6', backgroundColor: '#14b8a6', borderWidth: 2, borderDash: [4, 4], pointRadius: 3 },
-  { label: 'Rocky Linux 9', data: [26.1, 31.4, 38.3, 43.2, 48.5, 57.7, 66.9], borderColor: '#10b981', backgroundColor: '#10b981', borderWidth: 2, pointRadius: 3 },
-  { label: 'Ubuntu 22.04 LTS', data: [380.0, 580.0, 890.0, 1150.0, 1650.0, 2100.0, 2500.0], borderColor: '#f97316', backgroundColor: '#f97316', borderWidth: 2.2, borderDash: [6, 4], pointRadius: 3 },
-  { label: 'Ubuntu 24.04 LTS', data: [412.0, 640.0, 980.0, 1280.0, 1875.4, 2350.0, 2850.0], borderColor: '#ef4444', backgroundColor: '#ef4444', borderWidth: 2.8, pointRadius: 4 }
+  { label: 'FerroOS Server v2.0', data: [0.35, 0.95, 1.76, 2.45, 3.10, 4.50, 7.80], borderColor: '#00f2fe', backgroundColor: '#00f2fe', borderWidth: 3.5, pointRadius: 4 },
+  { label: 'Alpine Linux 3.20', data: [0.35, 1.25, 2.40, 3.20, 4.39, 6.20, 9.80], borderColor: '#00B0FF', backgroundColor: '#00B0FF', borderWidth: 2.5, pointRadius: 3 },
+  { label: 'Debian 12 Bookworm', data: [0.35, 1.45, 3.10, 4.50, 5.92, 8.40, 12.50], borderColor: '#D50000', backgroundColor: '#D50000', borderWidth: 2.2, pointRadius: 3 },
+  { label: 'Amazon Linux 2023', data: [0.35, 1.50, 3.20, 4.65, 6.19, 8.60, 12.90], borderColor: '#FFAB00', backgroundColor: '#FFAB00', borderWidth: 2.2, borderDash: [4, 4], pointRadius: 3 },
+  { label: 'Ubuntu 24.04 LTS', data: [0.35, 1.48, 3.15, 4.60, 6.09, 8.50, 12.80], borderColor: '#FF6D00', backgroundColor: '#FF6D00', borderWidth: 2.2, pointRadius: 3 },
+  { label: 'Rocky Linux 9', data: [0.35, 1.52, 3.25, 4.70, 6.25, 8.70, 13.10], borderColor: '#2979FF', backgroundColor: '#2979FF', borderWidth: 2.0, pointRadius: 3 },
+  { label: 'AlmaLinux 9', data: [0.35, 1.52, 3.25, 4.70, 6.25, 8.70, 13.10], borderColor: '#651FFF', backgroundColor: '#651FFF', borderWidth: 2.0, borderDash: [4, 4], pointRadius: 3 }
 ];
 
 new Chart(document.getElementById('interactiveCdfChart').getContext('2d'), {

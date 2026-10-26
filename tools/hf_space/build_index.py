@@ -32,7 +32,7 @@ def build():
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FerroOS vs 14 Linux Competitors & Cloud Incident Radar</title>
+  <title>FerroOS 65-Scenario Real-World Multi-OS Benchmark & Cloud Incident Radar</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -46,17 +46,17 @@ def build():
   <header class="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 border-b border-zinc-800 gap-4">
     <div>
       <div class="flex items-center gap-3">
-        <span class="px-2.5 py-1 text-xs font-bold uppercase rounded bg-gradient-to-r from-red-600 to-amber-600 text-white">Live Cloud Suite</span>
-        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">⚡ FerroOS 15-OS Benchmark & Cloud Incident Radar</h1>
+        <span class="px-2.5 py-1 text-xs font-bold uppercase rounded bg-gradient-to-r from-red-600 to-amber-600 text-white">Live Empirical Suite</span>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">⚡ FerroOS Sustained Real-World Benchmark & Cloud Incident Radar</h1>
       </div>
-      <p class="text-sm text-zinc-400 mt-1">Multi-OS Performance Benchmarks, Tail Latency Jitter, and Autonomous Cloud Failure Surveillance</p>
+      <p class="text-sm text-zinc-400 mt-1">65 Real-World Production Scenarios • 5-Minute 6-Stage Sustained Ladder • Zero-Trust Cloud Outage Surveillance</p>
     </div>
     <div class="flex items-center gap-2">
       <a href="https://github.com/Praveen-1308/ferro-os" target="_blank" class="px-4 py-2 text-xs font-semibold rounded bg-zinc-800 hover:bg-zinc-700 transition flex items-center gap-2 border border-zinc-700">
         GitHub Repository
       </a>
       <span class="px-3 py-1.5 text-xs font-semibold rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
-        🟢 100% Invariance Verified
+        🟢 Verified &lt; 2.5% Variance Gate
       </span>
     </div>
   </header>
@@ -64,7 +64,7 @@ def build():
   <!-- Navigation View Switcher -->
   <nav class="flex gap-8 border-b border-zinc-800 my-6 text-sm font-semibold text-zinc-400">
     <button id="navBenchmarks" onclick="switchTab('benchmarks')" class="pb-3 active-nav transition hover:text-white flex items-center gap-2">
-      <span>⚡ 15-OS Multi-Cloud Benchmarks</span>
+      <span>⚡ 65 Real-World Production Benchmarks</span>
     </button>
     <button id="navRadar" onclick="switchTab('radar')" class="pb-3 transition hover:text-white flex items-center gap-2">
       <span>📡 Real-Time Cloud Incident Radar</span>

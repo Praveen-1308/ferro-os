@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 500" width="100%" height="100%">
+<rect width="750" height="500" fill="#1E1E24" rx="8"/>
+<text x="375.0" y="32" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">6-Stage Stress Resilience Radar Comparison</text>
+<polygon points="300.0,226.0 329.4,243.0 329.4,277.0 300.0,294.0 270.6,277.0 270.6,243.0" fill="none" stroke="#33333F" stroke-width="1"/>
+<text x="305" y="238.0" font-family="monospace" font-size="9" fill="#666677">20%</text>
+<polygon points="300.0,192.0 358.9,226.0 358.9,294.0 300.0,328.0 241.1,294.0 241.1,226.0" fill="none" stroke="#33333F" stroke-width="1"/>
+<text x="305" y="204.0" font-family="monospace" font-size="9" fill="#666677">40%</text>
+<polygon points="300.0,158.0 388.3,209.0 388.3,311.0 300.0,362.0 211.7,311.0 211.7,209.0" fill="none" stroke="#33333F" stroke-width="1"/>
+<text x="305" y="170.0" font-family="monospace" font-size="9" fill="#666677">60%</text>
+<polygon points="300.0,124.0 417.8,192.0 417.8,328.0 300.0,396.0 182.2,328.0 182.2,192.0" fill="none" stroke="#33333F" stroke-width="1"/>
+<text x="305" y="136.0" font-family="monospace" font-size="9" fill="#666677">80%</text>
+<polygon points="300.0,90.0 447.2,175.0 447.2,345.0 300.0,430.0 152.8,345.0 152.8,175.0" fill="none" stroke="#33333F" stroke-width="1"/>
+<text x="305" y="102.0" font-family="monospace" font-size="9" fill="#666677">100%</text>
+<line x1="300" y1="260" x2="300.0" y2="90.0" stroke="#444455" stroke-width="1"/>
+<text x="300.0" y="62.0" font-family="system-ui, sans-serif" font-size="11" fill="#CCCCDD" text-anchor="middle">1. Cold-Start Latency</text>
+<line x1="300" y1="260" x2="447.22431864335454" y2="175.0" stroke="#444455" stroke-width="1"/>
+<text x="471.5" y="161.0" font-family="system-ui, sans-serif" font-size="11" fill="#CCCCDD" text-anchor="start">2. Steady-State SLA</text>
+<line x1="300" y1="260" x2="447.2243186433546" y2="345.0" stroke="#444455" stroke-width="1"/>
+<text x="471.5" y="359.0" font-family="system-ui, sans-serif" font-size="11" fill="#CCCCDD" text-anchor="start">3. High-Concurrency</text>
+<line x1="300" y1="260" x2="300.0" y2="430.0" stroke="#444455" stroke-width="1"/>
+<text x="300.0" y="458.0" font-family="system-ui, sans-serif" font-size="11" fill="#CCCCDD" text-anchor="middle">4. Choking Resilience</text>
+<line x1="300" y1="260" x2="152.77568135664546" y2="345.00000000000006" stroke="#444455" stroke-width="1"/>
+<text x="128.5" y="359.0" font-family="system-ui, sans-serif" font-size="11" fill="#CCCCDD" text-anchor="end">5. Crash Recovery</text>
+<line x1="300" y1="260" x2="152.77568135664535" y2="175.0000000000001" stroke="#444455" stroke-width="1"/>
+<text x="128.5" y="161.0" font-family="system-ui, sans-serif" font-size="11" fill="#CCCCDD" text-anchor="end">6. Deadzone Ceiling</text>
+<polygon points="300.0,96.8 444.3,176.7 439.9,340.8 300.0,419.8 155.7,343.3 164.6,181.8" fill="#00C853" fill-opacity="0.15" stroke="#00C853" stroke-width="2"/>
+<g transform="translate(560, 70)">
+<rect x="0" y="0" width="12" height="12" fill="#00C853" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">ferro-server</text>
+</g>
+<polygon points="300.0,120.6 429.6,185.2 425.1,332.2 300.0,392.6 182.2,328.0 189.6,196.3" fill="#FF6D00" fill-opacity="0.15" stroke="#FF6D00" stroke-width="2"/>
+<g transform="translate(560, 94)">
+<rect x="0" y="0" width="12" height="12" fill="#FF6D00" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">ubuntu</text>
+</g>
+<polygon points="300.0,117.2 431.0,184.3 426.6,333.1 300.0,396.0 180.7,328.9 188.1,195.4" fill="#D50000" fill-opacity="0.15" stroke="#D50000" stroke-width="2"/>
+<g transform="translate(560, 118)">
+<rect x="0" y="0" width="12" height="12" fill="#D50000" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">debian</text>
+</g>
+<polygon points="300.0,122.3 428.1,186.1 423.7,331.4 300.0,399.4 182.2,328.0 186.6,194.6" fill="#2979FF" fill-opacity="0.15" stroke="#2979FF" stroke-width="2"/>
+<g transform="translate(560, 142)">
+<rect x="0" y="0" width="12" height="12" fill="#2979FF" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">rocky</text>
+</g>
+<polygon points="300.0,120.6 429.6,185.2 425.1,332.2 300.0,397.7 182.2,328.0 188.1,195.4" fill="#651FFF" fill-opacity="0.15" stroke="#651FFF" stroke-width="2"/>
+<g transform="translate(560, 166)">
+<rect x="0" y="0" width="12" height="12" fill="#651FFF" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">almalinux:9</text>
+</g>
+<polygon points="300.0,100.2 435.4,181.8 426.6,333.1 300.0,382.4 179.3,329.7 185.2,193.7" fill="#00B0FF" fill-opacity="0.15" stroke="#00B0FF" stroke-width="2"/>
+<g transform="translate(560, 190)">
+<rect x="0" y="0" width="12" height="12" fill="#00B0FF" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">alpine</text>
+</g>
+<polygon points="300.0,118.9 431.0,184.3 426.6,333.1 300.0,397.7 179.3,329.7 186.6,194.6" fill="#FFAB00" fill-opacity="0.15" stroke="#FFAB00" stroke-width="2"/>
+<g transform="translate(560, 214)">
+<rect x="0" y="0" width="12" height="12" fill="#FFAB00" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="11" fill="#E0E0EE">amazonlinux:2023</text>
+</g>
+</svg>

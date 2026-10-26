@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 380" width="100%" height="100%">
+<rect width="750" height="380" fill="#1E1E24" rx="8"/>
+<text x="375.0" y="30" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Symmetric Crossover Slot-Swap Variance (&lt; 2.5% Certification Gate)</text>
+<g transform="translate(140, 50)">
+<line x1="0.0" y1="0" x2="0.0" y2="270" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="0.0" y="290" font-family="monospace" font-size="11" fill="#888899" text-anchor="middle">0.0%</text>
+<line x1="91.66666666666666" y1="0" x2="91.66666666666666" y2="270" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="91.66666666666666" y="290" font-family="monospace" font-size="11" fill="#888899" text-anchor="middle">0.5%</text>
+<line x1="183.33333333333331" y1="0" x2="183.33333333333331" y2="270" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="183.33333333333331" y="290" font-family="monospace" font-size="11" fill="#888899" text-anchor="middle">1.0%</text>
+<line x1="275.0" y1="0" x2="275.0" y2="270" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="275.0" y="290" font-family="monospace" font-size="11" fill="#888899" text-anchor="middle">1.5%</text>
+<line x1="366.66666666666663" y1="0" x2="366.66666666666663" y2="270" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="366.66666666666663" y="290" font-family="monospace" font-size="11" fill="#888899" text-anchor="middle">2.0%</text>
+<line x1="458.33333333333337" y1="0" x2="458.33333333333337" y2="270" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="458.33333333333337" y="290" font-family="monospace" font-size="11" fill="#888899" text-anchor="middle">2.5%</text>
+<line x1="550.0" y1="0" x2="550.0" y2="270" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="550.0" y="290" font-family="monospace" font-size="11" fill="#888899" text-anchor="middle">3.0%</text>
+<line x1="458.33333333333337" y1="0" x2="458.33333333333337" y2="270" stroke="#FF1744" stroke-width="2.5" stroke-dasharray="6,4"/>
+<text x="458.33333333333337" y="-10" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#FF1744" text-anchor="middle">2.5% Strict Gate</text>
+<text x="-12" y="23.285714285714285" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE" text-anchor="end">ferro-server</text>
+<rect x="0" y="7.232142857142858" width="0.0" height="24.107142857142854" fill="#00C853" rx="3"/>
+<text x="8.0" y="23.285714285714285" font-family="monospace" font-size="11" fill="#FFFFFF">0.00% (PASS)</text>
+<text x="-12" y="61.85714285714286" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE" text-anchor="end">ubuntu</text>
+<rect x="0" y="45.80357142857143" width="0.0" height="24.107142857142854" fill="#FF6D00" rx="3"/>
+<text x="8.0" y="61.85714285714286" font-family="monospace" font-size="11" fill="#FFFFFF">0.00% (PASS)</text>
+<text x="-12" y="100.42857142857143" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE" text-anchor="end">debian</text>
+<rect x="0" y="84.375" width="0.0" height="24.107142857142854" fill="#D50000" rx="3"/>
+<text x="8.0" y="100.42857142857143" font-family="monospace" font-size="11" fill="#FFFFFF">0.00% (PASS)</text>
+<text x="-12" y="139.0" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE" text-anchor="end">rocky</text>
+<rect x="0" y="122.94642857142857" width="0.0" height="24.107142857142854" fill="#2979FF" rx="3"/>
+<text x="8.0" y="139.0" font-family="monospace" font-size="11" fill="#FFFFFF">0.00% (PASS)</text>
+<text x="-12" y="177.57142857142856" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE" text-anchor="end">almalinux:9</text>
+<rect x="0" y="161.51785714285714" width="0.0" height="24.107142857142854" fill="#651FFF" rx="3"/>
+<text x="8.0" y="177.57142857142856" font-family="monospace" font-size="11" fill="#FFFFFF">0.00% (PASS)</text>
+<text x="-12" y="216.1428571428571" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE" text-anchor="end">alpine</text>
+<rect x="0" y="200.0892857142857" width="0.0" height="24.107142857142854" fill="#00B0FF" rx="3"/>
+<text x="8.0" y="216.1428571428571" font-family="monospace" font-size="11" fill="#FFFFFF">0.00% (PASS)</text>
+<text x="-12" y="254.7142857142857" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE" text-anchor="end">amazonlinux:2023</text>
+<rect x="0" y="238.66071428571428" width="0.0" height="24.107142857142854" fill="#FFAB00" rx="3"/>
+<text x="8.0" y="254.7142857142857" font-family="monospace" font-size="11" fill="#FFFFFF">0.00% (PASS)</text>
+</g>
+</svg>

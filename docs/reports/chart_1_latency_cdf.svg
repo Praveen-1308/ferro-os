@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+<rect width="800" height="450" fill="#1E1E24" rx="8"/>
+<text x="400.0" y="32" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Empirical Latency CDF & Percentile Distribution (300s Continuous)</text>
+<g transform="translate(80, 60)">
+<line x1="0" y1="330.0" x2="540" y2="330.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="334.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">0.0ms</text>
+<line x1="0" y1="264.0" x2="540" y2="264.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="268.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">3.2ms</text>
+<line x1="0" y1="198.0" x2="540" y2="198.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="202.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">6.4ms</text>
+<line x1="0" y1="132.0" x2="540" y2="132.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="136.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">9.6ms</text>
+<line x1="0" y1="66.0" x2="540" y2="66.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="70.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">12.8ms</text>
+<line x1="0" y1="0.0" x2="540" y2="0.0" stroke="#33333F" stroke-width="1" stroke-dasharray="4"/>
+<text x="-10" y="4.0" font-family="monospace" font-size="11" fill="#888899" text-anchor="end">16.0ms</text>
+<line x1="0.0" y1="0" x2="0.0" y2="330" stroke="#33333F" stroke-width="1"/>
+<text x="0.0" y="352" font-family="monospace" font-size="12" fill="#BBBBCC" text-anchor="middle">p50</text>
+<line x1="108.0" y1="0" x2="108.0" y2="330" stroke="#33333F" stroke-width="1"/>
+<text x="108.0" y="352" font-family="monospace" font-size="12" fill="#BBBBCC" text-anchor="middle">p90</text>
+<line x1="216.0" y1="0" x2="216.0" y2="330" stroke="#33333F" stroke-width="1"/>
+<text x="216.0" y="352" font-family="monospace" font-size="12" fill="#BBBBCC" text-anchor="middle">p95</text>
+<line x1="324.0" y1="0" x2="324.0" y2="330" stroke="#33333F" stroke-width="1"/>
+<text x="324.0" y="352" font-family="monospace" font-size="12" fill="#BBBBCC" text-anchor="middle">p99</text>
+<line x1="432.0" y1="0" x2="432.0" y2="330" stroke="#33333F" stroke-width="1"/>
+<text x="432.0" y="352" font-family="monospace" font-size="12" fill="#BBBBCC" text-anchor="middle">p99.9</text>
+<line x1="540.0" y1="0" x2="540.0" y2="330" stroke="#33333F" stroke-width="1"/>
+<text x="540.0" y="352" font-family="monospace" font-size="12" fill="#BBBBCC" text-anchor="middle">Max</text>
+<polyline points="0.0,322.8 108.0,302.4 216.0,293.6 324.0,266.2 432.0,237.4 540.0,189.6" fill="none" stroke="#00C853" stroke-width="2.5"/>
+<circle cx="0.0" cy="322.8" r="3.5" fill="#00C853"/>
+<circle cx="108.0" cy="302.4" r="3.5" fill="#00C853"/>
+<circle cx="216.0" cy="293.6" r="3.5" fill="#00C853"/>
+<circle cx="324.0" cy="266.2" r="3.5" fill="#00C853"/>
+<circle cx="432.0" cy="237.4" r="3.5" fill="#00C853"/>
+<circle cx="540.0" cy="189.6" r="3.5" fill="#00C853"/>
+<g transform="translate(560, 20)">
+<rect x="0" y="0" width="12" height="12" fill="#00C853" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE">ferro-server</text>
+</g>
+<polyline points="0.0,322.8 108.0,284.8 216.0,268.5 324.0,204.4 432.0,147.9 540.0,53.7" fill="none" stroke="#FF6D00" stroke-width="2.5"/>
+<circle cx="0.0" cy="322.8" r="3.5" fill="#FF6D00"/>
+<circle cx="108.0" cy="284.8" r="3.5" fill="#FF6D00"/>
+<circle cx="216.0" cy="268.5" r="3.5" fill="#FF6D00"/>
+<circle cx="324.0" cy="204.4" r="3.5" fill="#FF6D00"/>
+<circle cx="432.0" cy="147.9" r="3.5" fill="#FF6D00"/>
+<circle cx="540.0" cy="53.7" r="3.5" fill="#FF6D00"/>
+<g transform="translate(560, 44)">
+<rect x="0" y="0" width="12" height="12" fill="#FF6D00" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE">ubuntu</text>
+</g>
+<polyline points="0.0,322.8 108.0,285.5 216.0,269.5 324.0,207.8 432.0,152.8 540.0,61.2" fill="none" stroke="#D50000" stroke-width="2.5"/>
+<circle cx="0.0" cy="322.8" r="3.5" fill="#D50000"/>
+<circle cx="108.0" cy="285.5" r="3.5" fill="#D50000"/>
+<circle cx="216.0" cy="269.5" r="3.5" fill="#D50000"/>
+<circle cx="324.0" cy="207.8" r="3.5" fill="#D50000"/>
+<circle cx="432.0" cy="152.8" r="3.5" fill="#D50000"/>
+<circle cx="540.0" cy="61.2" r="3.5" fill="#D50000"/>
+<g transform="translate(560, 68)">
+<rect x="0" y="0" width="12" height="12" fill="#D50000" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE">debian</text>
+</g>
+<polyline points="0.0,322.8 108.0,284.0 216.0,267.4 324.0,201.0 432.0,143.0 540.0,46.3" fill="none" stroke="#2979FF" stroke-width="2.5"/>
+<circle cx="0.0" cy="322.8" r="3.5" fill="#2979FF"/>
+<circle cx="108.0" cy="284.0" r="3.5" fill="#2979FF"/>
+<circle cx="216.0" cy="267.4" r="3.5" fill="#2979FF"/>
+<circle cx="324.0" cy="201.0" r="3.5" fill="#2979FF"/>
+<circle cx="432.0" cy="143.0" r="3.5" fill="#2979FF"/>
+<circle cx="540.0" cy="46.3" r="3.5" fill="#2979FF"/>
+<g transform="translate(560, 92)">
+<rect x="0" y="0" width="12" height="12" fill="#2979FF" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE">rocky</text>
+</g>
+<polyline points="0.0,322.8 108.0,284.0 216.0,267.4 324.0,201.0 432.0,143.0 540.0,46.3" fill="none" stroke="#651FFF" stroke-width="2.5"/>
+<circle cx="0.0" cy="322.8" r="3.5" fill="#651FFF"/>
+<circle cx="108.0" cy="284.0" r="3.5" fill="#651FFF"/>
+<circle cx="216.0" cy="267.4" r="3.5" fill="#651FFF"/>
+<circle cx="324.0" cy="201.0" r="3.5" fill="#651FFF"/>
+<circle cx="432.0" cy="143.0" r="3.5" fill="#651FFF"/>
+<circle cx="540.0" cy="46.3" r="3.5" fill="#651FFF"/>
+<g transform="translate(560, 116)">
+<rect x="0" y="0" width="12" height="12" fill="#651FFF" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE">almalinux:9</text>
+</g>
+<polyline points="0.0,322.8 108.0,295.2 216.0,283.4 324.0,239.4 432.0,198.6 540.0,130.6" fill="none" stroke="#00B0FF" stroke-width="2.5"/>
+<circle cx="0.0" cy="322.8" r="3.5" fill="#00B0FF"/>
+<circle cx="108.0" cy="295.2" r="3.5" fill="#00B0FF"/>
+<circle cx="216.0" cy="283.4" r="3.5" fill="#00B0FF"/>
+<circle cx="324.0" cy="239.4" r="3.5" fill="#00B0FF"/>
+<circle cx="432.0" cy="198.6" r="3.5" fill="#00B0FF"/>
+<circle cx="540.0" cy="130.6" r="3.5" fill="#00B0FF"/>
+<g transform="translate(560, 140)">
+<rect x="0" y="0" width="12" height="12" fill="#00B0FF" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE">alpine</text>
+</g>
+<polyline points="0.0,322.8 108.0,284.4 216.0,268.0 324.0,202.4 432.0,144.9 540.0,49.2" fill="none" stroke="#FFAB00" stroke-width="2.5"/>
+<circle cx="0.0" cy="322.8" r="3.5" fill="#FFAB00"/>
+<circle cx="108.0" cy="284.4" r="3.5" fill="#FFAB00"/>
+<circle cx="216.0" cy="268.0" r="3.5" fill="#FFAB00"/>
+<circle cx="324.0" cy="202.4" r="3.5" fill="#FFAB00"/>
+<circle cx="432.0" cy="144.9" r="3.5" fill="#FFAB00"/>
+<circle cx="540.0" cy="49.2" r="3.5" fill="#FFAB00"/>
+<g transform="translate(560, 164)">
+<rect x="0" y="0" width="12" height="12" fill="#FFAB00" rx="2"/>
+<text x="18" y="10" font-family="system-ui, sans-serif" font-size="12" fill="#E0E0EE">amazonlinux:2023</text>
+</g>
+</g>
+</svg>
