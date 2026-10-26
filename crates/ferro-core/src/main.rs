@@ -16,6 +16,7 @@ use std::time::{Duration, Instant};
 
 pub mod bench_suite;
 pub mod dhcp;
+pub mod shell;
 pub mod syslog;
 pub mod zeroize;
 
@@ -88,6 +89,7 @@ fn main() -> ExitCode {
 
     match command_name.as_str() {
         "sh" | "bash" => run_sh(&command_args),
+        "[" | "test" => shell::run_test(&command_args),
         "ls" => run_ls(&command_args),
         "cat" => run_cat(&command_args),
         "echo" => run_echo(&command_args),
@@ -186,12 +188,18 @@ fn print_usage() {
 // -------------------------------------------------------------
 fn run_sh(args: &[String]) -> ExitCode {
     if args.len() >= 2 && args[0] == "-c" {
-        let cmd_str = args[1..].join(" ");
-        return execute_compound_script(&cmd_str);
+        let cmd_str = &args[1];
+        if args.len() > 2 {
+            shell::set_positional(args[2..].to_vec());
+        }
+        return execute_compound_script(cmd_str);
     }
 
     if !args.is_empty() && !args[0].starts_with('-') {
         let script_path = &args[0];
+        if args.len() > 1 {
+            shell::set_positional(args[1..].to_vec());
+        }
         if let Ok(content) = fs::read_to_string(script_path) {
             return execute_compound_script(&content);
         } else {
@@ -228,11 +236,13 @@ fn run_sh(args: &[String]) -> ExitCode {
     ExitCode::SUCCESS
 }
 
+#[allow(dead_code)]
 fn is_exit_success(code: &ExitCode) -> bool {
     let s = format!("{:?}", code);
     s.contains("(0)") || s.contains("SUCCESS")
 }
 
+#[allow(dead_code)]
 fn split_compound_statements_quote_aware(script: &str) -> Vec<String> {
     let mut stmts = Vec::new();
     let mut current = String::new();
@@ -270,67 +280,9 @@ fn split_compound_statements_quote_aware(script: &str) -> Vec<String> {
 }
 
 fn execute_compound_script(script: &str) -> ExitCode {
-    let mut final_code = ExitCode::SUCCESS;
-    for stmt in split_compound_statements_quote_aware(script) {
-        let trimmed = stmt.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-
-        if trimmed.contains("||") {
-            let subcmds: Vec<&str> = trimmed.split("||").collect();
-            let mut any_ok = false;
-            for sub in subcmds {
-                let s_trim = sub.trim();
-                if s_trim.is_empty() {
-                    continue;
-                }
-                let res = execute_pipeline(s_trim);
-                if is_exit_success(&res) {
-                    any_ok = true;
-                    final_code = ExitCode::SUCCESS;
-                    break;
-                } else {
-                    final_code = res;
-                }
-            }
-            if any_ok {
-                continue;
-            }
-        } else if trimmed.contains("&&") {
-            let subcmds: Vec<&str> = trimmed.split("&&").collect();
-            let mut sub_ok = true;
-            for sub in subcmds {
-                let s_trim = sub.trim();
-                if s_trim.is_empty() {
-                    continue;
-                }
-                let res = execute_pipeline(s_trim);
-                if !is_exit_success(&res) {
-                    sub_ok = false;
-                    final_code = res;
-                    break;
-                } else {
-                    final_code = ExitCode::SUCCESS;
-                }
-            }
-            if !sub_ok {
-                continue;
-            }
-        } else {
-            final_code = execute_pipeline(trimmed);
-        }
-    }
-    final_code
-}
-
-fn expand_env_vars(token: &str) -> String {
-    if token.starts_with('$') && token.len() > 1 {
-        let var_name = &token[1..];
-        env::var(var_name).unwrap_or_default()
-    } else {
-        token.to_string()
-    }
+    shell::execute_script(script, |stmt| {
+        execute_pipeline(stmt)
+    })
 }
 
 fn parse_tokens(line: &str) -> Vec<String> {
@@ -350,7 +302,7 @@ fn parse_tokens(line: &str) -> Vec<String> {
             }
             c if c.is_whitespace() && !in_quotes => {
                 if !current.is_empty() {
-                    tokens.push(expand_env_vars(&current));
+                    tokens.push(shell::expand_string_vars(&current));
                     current.clear();
                 }
             }
@@ -360,7 +312,7 @@ fn parse_tokens(line: &str) -> Vec<String> {
         }
     }
     if !current.is_empty() {
-        tokens.push(expand_env_vars(&current));
+        tokens.push(shell::expand_string_vars(&current));
     }
     tokens
 }
@@ -507,7 +459,7 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
 }
 
 pub const ALL_APPLETS: &[&str] = &[
-    "sh", "bash", "ls", "cat", "echo", "pwd", "uname", "clear", "mkdir", "rm", "cp",
+    "sh", "bash", "[", "test", "ls", "cat", "echo", "pwd", "uname", "clear", "mkdir", "rm", "cp",
     "mv", "chmod", "chown", "touch", "ln", "stat", "id", "grep", "find",
     "head", "tail", "wc", "which", "env", "sleep", "free", "df", "ps", "kill",
     "uptime", "whoami", "sync", "hostname", "tee", "ip", "mount", "umount",
@@ -580,8 +532,16 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
     let cmd = &tokens[0];
     let args = &tokens[1..];
 
+    if tokens.len() == 1 {
+        if let Some((k, v)) = shell::is_assignment(cmd) {
+            shell::set_var(&k, &v);
+            return ExitCode::SUCCESS;
+        }
+    }
+
     // Builtins
     match cmd.as_str() {
+        "[" | "test" => return shell::run_test(args),
         "cd" => {
             let target = if args.is_empty() { "/" } else { &args[0] };
             if let Err(e) = env::set_current_dir(target) {
@@ -590,7 +550,28 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
             }
             return ExitCode::SUCCESS;
         }
-        "true" | ":" | "set" | "export" => return ExitCode::SUCCESS,
+        "true" | ":" | "set" => return ExitCode::SUCCESS,
+        "export" => {
+            if let Some(first_arg) = args.first() {
+                if let Some((k, v)) = shell::is_assignment(first_arg) {
+                    shell::set_var(&k, &v);
+                } else if let Some(val) = shell::get_var(first_arg) {
+                    env::set_var(first_arg, val);
+                }
+            }
+            return ExitCode::SUCCESS;
+        }
+        "shift" => {
+            let n = args.first().and_then(|s| s.parse::<usize>().ok()).unwrap_or(1);
+            shell::shift_positional(n);
+            return ExitCode::SUCCESS;
+        }
+        "unset" => {
+            for arg in args {
+                env::remove_var(arg);
+            }
+            return ExitCode::SUCCESS;
+        }
         "false" => return ExitCode::FAILURE,
         "ulimit" => {
             #[cfg(unix)]
@@ -716,6 +697,7 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
 
 fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
     match cmd {
+        "[" | "test" => shell::run_test(args),
         "ls" => run_ls(args),
         "cat" => run_cat(args),
         "echo" => run_echo(args),

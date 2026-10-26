@@ -53,6 +53,10 @@ mod linux_init {
         // 1. Mount virtual filesystems first so we have /proc, /sys, /dev, /tmp
         mount_essential_filesystems();
 
+        // 1b. Register PID 1 Signal Handlers & Start Continuous Zombie Reaper
+        register_pid1_signal_handlers();
+        spawn_continuous_zombie_reaper();
+
         // 2. Set Hostname & Environment
         set_hostname("ferro-os");
         std::env::set_var("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin");
@@ -850,6 +854,67 @@ mod linux_init {
                     }
                 }
             }
+        }
+    }
+
+    static SHUTDOWN_REQUESTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+    extern "C" fn sigchld_handler(_sig: libc::c_int) {
+        unsafe {
+            let mut status = 0;
+            while libc::waitpid(-1, &mut status, libc::WNOHANG) > 0 {}
+        }
+    }
+
+    extern "C" fn sigterm_handler(_sig: libc::c_int) {
+        SHUTDOWN_REQUESTED.store(true, std::sync::atomic::Ordering::SeqCst);
+        unsafe {
+            let msg = b"\n[ferro-init] Termination signal received (SIGTERM/SIGINT). Initiating graceful shutdown...\n";
+            libc::write(libc::STDOUT_FILENO, msg.as_ptr() as *const libc::c_void, msg.len());
+        }
+    }
+
+    fn register_pid1_signal_handlers() {
+        unsafe {
+            let mut sa_chld: libc::sigaction = std::mem::zeroed();
+            sa_chld.sa_sigaction = sigchld_handler as usize;
+            sa_chld.sa_flags = libc::SA_NOCLDSTOP | libc::SA_RESTART;
+            libc::sigaction(libc::SIGCHLD, &sa_chld, std::ptr::null_mut());
+
+            let mut sa_term: libc::sigaction = std::mem::zeroed();
+            sa_term.sa_sigaction = sigterm_handler as usize;
+            sa_term.sa_flags = libc::SA_RESTART;
+            libc::sigaction(libc::SIGTERM, &sa_term, std::ptr::null_mut());
+            libc::sigaction(libc::SIGINT, &sa_term, std::ptr::null_mut());
+            libc::sigaction(libc::SIGPWR, &sa_term, std::ptr::null_mut());
+        }
+        println!("[ferro-init] PID 1 signal handlers registered (SIGCHLD auto-reaping & SIGTERM/SIGINT graceful shutdown).");
+    }
+
+    fn spawn_continuous_zombie_reaper() {
+        let _ = std::thread::Builder::new()
+            .name("ferro-reaper".to_string())
+            .spawn(|| {
+                loop {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    reap_zombies();
+                    if SHUTDOWN_REQUESTED.load(std::sync::atomic::Ordering::SeqCst) {
+                        handle_graceful_shutdown();
+                        break;
+                    }
+                }
+            });
+    }
+
+    fn handle_graceful_shutdown() {
+        println!("[ferro-init] Executing graceful system shutdown...");
+        mark_clean_shutdown();
+        unsafe {
+            libc::kill(-1, libc::SIGTERM);
+            std::thread::sleep(std::time::Duration::from_millis(500));
+            libc::kill(-1, libc::SIGKILL);
+            libc::sync();
+            libc::reboot(0x4321fedc as i32); // LINUX_REBOOT_CMD_POWER_OFF
         }
     }
 

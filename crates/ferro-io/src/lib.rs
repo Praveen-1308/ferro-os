@@ -41,10 +41,11 @@ const IORING_OP_WRITE: u8 = 23;
 const IORING_FSYNC_DATASYNC: u32 = 1;
 const IORING_SETUP_SQPOLL: u32 = 1 << 1;
 const IORING_SETUP_SINGLE_ISSUER: u32 = 1 << 12;
-const FERRO_URING_ENTRIES: u32 = 64;
+const FERRO_URING_ENTRIES: u32 = 256;
+const MIN_URING_IO_BYTES: size_t = 4096;
 
-// Cache bounds
-const MAX_CACHED_FDS: usize = 65536;
+// Cache bounds (128K FDs for extreme network & database concurrency)
+const MAX_CACHED_FDS: usize = 131072;
 // 0 = Unknown, 1 = Bypass (socket/pipe/TTY), 2 = Regular File Eligible
 static FD_TYPE_CACHE: [AtomicU8; MAX_CACHED_FDS] = {
     const INIT: AtomicU8 = AtomicU8::new(0);
@@ -376,11 +377,17 @@ fn get_thread_uring() -> Option<*mut IoUring> {
             if r.owner_pid == pid && r.active {
                 return Some(&mut r.ring as *mut IoUring);
             } else {
-                // PID changed (fork occurred)
-                unsafe { io_uring_queue_exit(&mut r.ring) };
+                // PID changed (fork occurred) - do NOT destroy parent's ring!
+                // Simply release the thread-local instance so child creates its own ring.
                 *borrow = None;
             }
         }
+
+        let entries = std::env::var("FERRO_URING_ENTRIES")
+            .ok()
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(FERRO_URING_ENTRIES)
+            .clamp(64, 4096);
 
         // Initialize new io_uring
         let mut uninit_ring: IoUring = unsafe { std::mem::zeroed() };
@@ -389,7 +396,7 @@ fn get_thread_uring() -> Option<*mut IoUring> {
         params.sq_thread_idle = 2000;
 
         let ret = unsafe {
-            io_uring_queue_init_params(FERRO_URING_ENTRIES, &mut uninit_ring, &mut params)
+            io_uring_queue_init_params(entries, &mut uninit_ring, &mut params)
         };
         if ret >= 0 {
             *borrow = Some(RustThreadRing {
@@ -404,7 +411,7 @@ fn get_thread_uring() -> Option<*mut IoUring> {
         let mut params2: IoUringParams = unsafe { std::mem::zeroed() };
         params2.flags = IORING_SETUP_SINGLE_ISSUER;
         let ret2 = unsafe {
-            io_uring_queue_init_params(FERRO_URING_ENTRIES, &mut uninit_ring, &mut params2)
+            io_uring_queue_init_params(entries, &mut uninit_ring, &mut params2)
         };
         if ret2 >= 0 {
             *borrow = Some(RustThreadRing {
@@ -416,7 +423,7 @@ fn get_thread_uring() -> Option<*mut IoUring> {
         }
 
         // Fallback 2: Standard Ring
-        let ret3 = unsafe { io_uring_queue_init(FERRO_URING_ENTRIES, &mut uninit_ring, 0) };
+        let ret3 = unsafe { io_uring_queue_init(entries, &mut uninit_ring, 0) };
         if ret3 >= 0 {
             *borrow = Some(RustThreadRing {
                 ring: uninit_ring,
@@ -618,7 +625,11 @@ fn is_secure_execution() -> bool {
 }
 
 fn is_uring_eligible_fd(fd: c_int, count: size_t) -> bool {
-    if count < 65536 || fd <= 2 || fd as usize >= MAX_CACHED_FDS {
+    let min_bytes: size_t = match std::env::var("FERRO_IO_MIN_BYTES") {
+        Ok(v) => v.parse::<size_t>().unwrap_or(MIN_URING_IO_BYTES),
+        Err(_) => MIN_URING_IO_BYTES,
+    };
+    if count < min_bytes || fd <= 2 || fd as usize >= MAX_CACHED_FDS {
         return false;
     }
 
@@ -670,6 +681,15 @@ unsafe fn optimize_tcp_socket(fd: c_int, addr: *const sockaddr, addrlen: socklen
             &quickack as *const _ as *const c_void,
             std::mem::size_of::<c_int>() as socklen_t,
         );
+
+        let keepalive: c_int = 1;
+        libc::setsockopt(
+            fd,
+            SOL_SOCKET,
+            libc::SO_KEEPALIVE,
+            &keepalive as *const _ as *const c_void,
+            std::mem::size_of::<c_int>() as socklen_t,
+        );
     }
 
     if !addr.is_null() && addrlen >= std::mem::size_of::<libc::sockaddr_in>() as socklen_t {
@@ -712,7 +732,7 @@ pub unsafe extern "C" fn read(fd: c_int, buf: *mut c_void, count: size_t) -> ssi
     ensure_symbols_initialized();
     let real_fn: ReadFn = std::mem::transmute(REAL_READ.load(Ordering::Acquire));
 
-    if is_secure_execution() || count < 65536 || count > u32::MAX as size_t {
+    if is_secure_execution() || count < MIN_URING_IO_BYTES || count > u32::MAX as size_t {
         return real_fn(fd, buf, count);
     }
 
@@ -763,7 +783,7 @@ pub unsafe extern "C" fn write(fd: c_int, buf: *const c_void, count: size_t) -> 
     ensure_symbols_initialized();
     let real_fn: WriteFn = std::mem::transmute(REAL_WRITE.load(Ordering::Acquire));
 
-    if is_secure_execution() || count < 65536 || count > u32::MAX as size_t {
+    if is_secure_execution() || count < MIN_URING_IO_BYTES || count > u32::MAX as size_t {
         return real_fn(fd, buf, count);
     }
 
@@ -819,7 +839,7 @@ pub unsafe extern "C" fn pread(
     ensure_symbols_initialized();
     let real_fn: PreadFn = std::mem::transmute(REAL_PREAD.load(Ordering::Acquire));
 
-    if is_secure_execution() || count < 65536 || count > u32::MAX as size_t {
+    if is_secure_execution() || count < MIN_URING_IO_BYTES || count > u32::MAX as size_t {
         return real_fn(fd, buf, count, offset);
     }
 
@@ -885,7 +905,7 @@ pub unsafe extern "C" fn pwrite(
     ensure_symbols_initialized();
     let real_fn: PwriteFn = std::mem::transmute(REAL_PWRITE.load(Ordering::Acquire));
 
-    if is_secure_execution() || count < 65536 || count > u32::MAX as size_t {
+    if is_secure_execution() || count < MIN_URING_IO_BYTES || count > u32::MAX as size_t {
         return real_fn(fd, buf, count, offset);
     }
 
@@ -1153,4 +1173,38 @@ pub unsafe extern "C" fn epoll_wait(
     ensure_symbols_initialized();
     let real_fn: EpollWaitFn = std::mem::transmute(REAL_EPOLL_WAIT.load(Ordering::Acquire));
     real_fn(epfd, events, maxevents, timeout)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fd_cache_bounds_and_lifecycle() {
+        assert_eq!(MAX_CACHED_FDS, 131072);
+
+        let test_fd: usize = 1000;
+        assert_eq!(FD_TYPE_CACHE[test_fd].load(Ordering::Relaxed), 0);
+
+        // Mark as regular file eligible
+        FD_TYPE_CACHE[test_fd].store(2, Ordering::Relaxed);
+        assert_eq!(FD_TYPE_CACHE[test_fd].load(Ordering::Relaxed), 2);
+
+        // Simulated close resets cache
+        if test_fd < MAX_CACHED_FDS {
+            FD_TYPE_CACHE[test_fd].store(0, Ordering::Relaxed);
+        }
+        assert_eq!(FD_TYPE_CACHE[test_fd].load(Ordering::Relaxed), 0);
+    }
+
+    #[test]
+    fn test_min_uring_io_bytes() {
+        assert_eq!(MIN_URING_IO_BYTES, 4096);
+        assert!(!is_uring_eligible_fd(5, 512));
+    }
+
+    #[test]
+    fn test_queue_entries_bounds() {
+        assert_eq!(FERRO_URING_ENTRIES, 256);
+    }
 }

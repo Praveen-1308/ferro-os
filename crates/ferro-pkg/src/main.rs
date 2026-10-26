@@ -179,12 +179,27 @@ impl PackageDatabase {
                     return db;
                 }
             }
+            // Transactional fault-tolerance: recover from automatic backup
+            let bak_path = db_path.with_extension("json.bak");
+            if bak_path.exists() {
+                if let Ok(content) = fs::read_to_string(&bak_path) {
+                    if let Ok(db) = serde_json::from_str(&content) {
+                        eprintln!("[rpk] Alert: db.json corrupted or truncated. Successfully recovered from automatic backup ({})!", bak_path.display());
+                        return db;
+                    }
+                }
+            }
         }
         PackageDatabase::default()
     }
 
     pub fn save(&self, root: &Path) -> io::Result<()> {
         let db_path = Self::get_db_path(root);
+        // Transactional fault-tolerance: preserve previous database snapshot as backup
+        if db_path.exists() {
+            let bak_path = db_path.with_extension("json.bak");
+            let _ = fs::copy(&db_path, &bak_path);
+        }
         let data = serde_json::to_string_pretty(self)?;
         safeguards::privileged_write_file(&db_path, &data)?;
         Ok(())
@@ -1900,6 +1915,47 @@ mod tests {
             loaded.packages.get("test-pkg").unwrap().metadata.version,
             "2.1.0"
         );
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_package_database_corrupt_recovery() {
+        let temp_dir = env::temp_dir().join("ferro_pkg_corrupt_test");
+        let _ = fs::remove_dir_all(&temp_dir);
+        let _ = fs::create_dir_all(&temp_dir);
+
+        let mut db = PackageDatabase::load(&temp_dir);
+        let meta = PackageMetadata {
+            name: "saved-pkg".to_string(),
+            version: "1.0.0".to_string(),
+            description: "Saved package".to_string(),
+            architecture: "all".to_string(),
+            dependencies: vec![],
+            sha256: None,
+        };
+        db.packages.insert(
+            "saved-pkg".to_string(),
+            InstalledPackage {
+                metadata: meta,
+                installed_files: vec!["/bin/saved".to_string()],
+                installed_at: "now".to_string(),
+            },
+        );
+        assert!(db.save(&temp_dir).is_ok());
+
+        // Now save a second version, creating the backup .json.bak
+        db.packages.get_mut("saved-pkg").unwrap().metadata.version = "1.1.0".to_string();
+        assert!(db.save(&temp_dir).is_ok());
+
+        // Simulate corrupted db.json (e.g. truncated write during crash)
+        let db_path = PackageDatabase::get_db_path(&temp_dir);
+        fs::write(&db_path, "{ broken json ...").unwrap();
+
+        // Loading should recover from json.bak without panic
+        let recovered = PackageDatabase::load(&temp_dir);
+        assert_eq!(recovered.packages.len(), 1);
+        assert!(recovered.packages.contains_key("saved-pkg"));
 
         let _ = fs::remove_dir_all(&temp_dir);
     }
