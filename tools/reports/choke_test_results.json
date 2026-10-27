@@ -1,5 +1,5 @@
 {
-  "timestamp": 1792619364.350037,
+  "timestamp": 1793015086.59385,
   "hardware_profile": "1 vCPU / 2 GB RAM (No Swap)",
   "ubuntu": {
     "os_id": "ubuntu",
@@ -8,48 +8,48 @@
     "tiers": [
       {
         "vus": 50,
-        "requests": "4981",
-        "med": "43.51ms",
-        "p95": "65.46ms",
-        "p99": "71.16ms",
+        "requests": "5193",
+        "med": "42.72ms",
+        "p95": "56.9ms",
+        "p99": "63.87ms",
         "error_rate": "0.00%",
         "status": "PASS",
-        "rss_mb": 21.2
+        "rss_mb": 16.7
       },
       {
         "vus": 100,
-        "requests": "5558",
-        "med": "92.15ms",
-        "p95": "130.05ms",
-        "p99": "155.7ms",
+        "requests": "5310",
+        "med": "99.24ms",
+        "p95": "119.21ms",
+        "p99": "131.11ms",
         "error_rate": "0.00%",
         "status": "PASS",
-        "rss_mb": 21.4
+        "rss_mb": 16.7
       },
       {
         "vus": 250,
-        "requests": "4673",
-        "med": "287.6ms",
-        "p95": "463.83ms",
-        "p99": "496.2ms",
+        "requests": "5443",
+        "med": "271.12ms",
+        "p95": "302.78ms",
+        "p99": "330.37ms",
         "error_rate": "0.00%",
         "status": "PASS",
-        "rss_mb": 22.2
+        "rss_mb": 17.2
       },
       {
         "vus": 500,
-        "requests": "5276",
-        "med": "537.66ms",
-        "p95": "905.58ms",
-        "p99": "947.51ms",
+        "requests": "5412",
+        "med": "561.96ms",
+        "p95": "770.27ms",
+        "p99": "797.16ms",
         "error_rate": "0.00%",
         "status": "FAIL",
-        "rss_mb": 24.2
+        "rss_mb": 18.9
       }
     ],
     "choked": true,
     "choke_tier": 500,
-    "choke_reason": "Latency breached threshold (p95: 905.58ms, p99: 947.51ms)"
+    "choke_reason": "Latency breached threshold (p95: 770.27ms, p99: 797.16ms)"
   },
   "ferro": {
     "os_id": "ferro",
@@ -58,47 +58,57 @@
     "tiers": [
       {
         "vus": 50,
-        "requests": "8540",
-        "med": "19.83ms",
-        "p95": "29.19ms",
-        "p99": "35.82ms",
+        "requests": "6670",
+        "med": "28.79ms",
+        "p95": "43.76ms",
+        "p99": "57.85ms",
         "error_rate": "0.00%",
         "status": "PASS",
-        "rss_mb": 18.7
+        "rss_mb": 16.6
       },
       {
         "vus": 100,
-        "requests": "8672",
-        "med": "54.2ms",
-        "p95": "65.28ms",
-        "p99": "74.89ms",
+        "requests": "6597",
+        "med": "75.11ms",
+        "p95": "101.46ms",
+        "p99": "118.16ms",
         "error_rate": "0.00%",
         "status": "PASS",
-        "rss_mb": 18.8
+        "rss_mb": 17.0
       },
       {
         "vus": 250,
-        "requests": "7556",
-        "med": "167.44ms",
-        "p95": "303.58ms",
-        "p99": "320.73ms",
+        "requests": "6622",
+        "med": "215.2ms",
+        "p95": "253.87ms",
+        "p99": "263.64ms",
         "error_rate": "0.00%",
         "status": "PASS",
-        "rss_mb": 19.1
+        "rss_mb": 17.1
       },
       {
         "vus": 500,
-        "requests": "6868",
-        "med": "388.87ms",
-        "p95": "625.96ms",
-        "p99": "644.21ms",
+        "requests": "6824",
+        "med": "450.51ms",
+        "p95": "498.93ms",
+        "p99": "523.88ms",
+        "error_rate": "0.00%",
+        "status": "PASS",
+        "rss_mb": 18.5
+      },
+      {
+        "vus": 750,
+        "requests": "7109",
+        "med": "674.71ms",
+        "p95": "731.71ms",
+        "p99": "746.91ms",
         "error_rate": "0.00%",
         "status": "FAIL",
-        "rss_mb": 21.1
+        "rss_mb": 21.3
       }
     ],
     "choked": true,
-    "choke_tier": 500,
-    "choke_reason": "Latency breached threshold (p95: 625.96ms, p99: 644.21ms)"
+    "choke_tier": 750,
+    "choke_reason": "Latency breached threshold (p95: 731.71ms, p99: 746.91ms)"
   }
 }

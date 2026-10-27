@@ -1,0 +1,261 @@
+{
+  "timestamp": 1793017808.2316222,
+  "results": [
+    {
+      "config": {
+        "id": "scooter_ubuntu",
+        "name": "Community #1 (scooter1337)",
+        "os": "Ubuntu 24.04 LTS",
+        "image": "bench-ubuntu:latest",
+        "bin": "/repo/submissions/rust-epoll-scooter1337/target/release/twelve-rust-poll"
+      },
+      "correctness": "42/42 PASS",
+      "tiers": [
+        {
+          "vus": 200,
+          "reqs_total": 724,
+          "req_per_sec": 14.168067923009657,
+          "avg_ms": 0.4419151740331491,
+          "p95_ms": 0.5860488500000001,
+          "p99_ms": 0.7542459899999987,
+          "max_ms": 9.199671,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 23.04,
+          "cpu_pct": 0.47
+        },
+        {
+          "vus": 500,
+          "reqs_total": 1756,
+          "req_per_sec": 33.76822524759246,
+          "avg_ms": 0.3562593610478364,
+          "p95_ms": 0.54811875,
+          "p99_ms": 0.6113349000000001,
+          "max_ms": 7.184806,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 27.94,
+          "cpu_pct": 0.89
+        },
+        {
+          "vus": 800,
+          "reqs_total": 2843,
+          "req_per_sec": 54.711711915142445,
+          "avg_ms": 0.32808292578262455,
+          "p95_ms": 0.5358531000000001,
+          "p99_ms": 0.61071076,
+          "max_ms": 4.054231,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 33.07,
+          "cpu_pct": 1.35
+        },
+        {
+          "vus": 1200,
+          "reqs_total": 4262,
+          "req_per_sec": 82.03946204952975,
+          "avg_ms": 0.2770159181135622,
+          "p95_ms": 0.5032712,
+          "p99_ms": 0.5930354200000001,
+          "max_ms": 1.943578,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 35.64,
+          "cpu_pct": 1.54
+        }
+      ]
+    },
+    {
+      "config": {
+        "id": "scooter_ferro",
+        "name": "Community #1 (scooter1337)",
+        "os": "FerroOS Server",
+        "image": "ferro-server:latest",
+        "bin": "/repo/submissions/rust-epoll-scooter1337/target/release/twelve-rust-poll"
+      },
+      "correctness": "42/42 PASS",
+      "tiers": [
+        {
+          "vus": 200,
+          "reqs_total": 700,
+          "req_per_sec": 13.461193913737558,
+          "avg_ms": 0.41788447714285726,
+          "p95_ms": 0.5488729999999999,
+          "p99_ms": 0.65855384,
+          "max_ms": 16.593,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 24.5,
+          "cpu_pct": 0.43
+        },
+        {
+          "vus": 500,
+          "reqs_total": 1771,
+          "req_per_sec": 34.13584102268902,
+          "avg_ms": 0.35282176115189157,
+          "p95_ms": 0.5408835,
+          "p99_ms": 0.6120668999999997,
+          "max_ms": 8.00745,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 29.48,
+          "cpu_pct": 0.96
+        },
+        {
+          "vus": 800,
+          "reqs_total": 2837,
+          "req_per_sec": 54.556871678966075,
+          "avg_ms": 0.32071760028198804,
+          "p95_ms": 0.5260317999999997,
+          "p99_ms": 0.598432839999999,
+          "max_ms": 6.307392,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 34.88,
+          "cpu_pct": 1.09
+        },
+        {
+          "vus": 1200,
+          "reqs_total": 4225,
+          "req_per_sec": 81.28771205524338,
+          "avg_ms": 0.2969296054437877,
+          "p95_ms": 0.5213661999999999,
+          "p99_ms": 0.6061790000000001,
+          "max_ms": 4.14542,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 37.07,
+          "cpu_pct": 1.53
+        }
+      ]
+    },
+    {
+      "config": {
+        "id": "ferroc500k_ubuntu",
+        "name": "Ferro-C500K Server",
+        "os": "Ubuntu 24.04 LTS",
+        "image": "bench-ubuntu:latest",
+        "bin": "/repo/submissions/ferro-c500k-server/target/release/ferro-c500k-server"
+      },
+      "correctness": "42/42 PASS",
+      "tiers": [
+        {
+          "vus": 200,
+          "reqs_total": 714,
+          "req_per_sec": 13.730548275353748,
+          "avg_ms": 0.5095201932773109,
+          "p95_ms": 0.6929810500000001,
+          "p99_ms": 1.153724140000001,
+          "max_ms": 9.808491,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 15.16,
+          "cpu_pct": 0.95
+        },
+        {
+          "vus": 500,
+          "reqs_total": 1784,
+          "req_per_sec": 34.34709469166687,
+          "avg_ms": 0.4178204355381162,
+          "p95_ms": 0.6552672999999999,
+          "p99_ms": 0.7507208900000003,
+          "max_ms": 3.82288,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 24.0,
+          "cpu_pct": 1.88
+        },
+        {
+          "vus": 800,
+          "reqs_total": 2863,
+          "req_per_sec": 55.05673119715876,
+          "avg_ms": 0.377954496681803,
+          "p95_ms": 0.6295084,
+          "p99_ms": 0.7612854000000003,
+          "max_ms": 22.109055,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 33.39,
+          "cpu_pct": 2.6
+        },
+        {
+          "vus": 1200,
+          "reqs_total": 4260,
+          "req_per_sec": 81.92104851695512,
+          "avg_ms": 0.32493660868544616,
+          "p95_ms": 0.5722731499999999,
+          "p99_ms": 0.6968098099999999,
+          "max_ms": 12.784652,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 46.14,
+          "cpu_pct": 3.32
+        }
+      ]
+    },
+    {
+      "config": {
+        "id": "ferroc500k_ferro",
+        "name": "Ferro-C500K Server",
+        "os": "FerroOS Server",
+        "image": "ferro-server:latest",
+        "bin": "/repo/submissions/ferro-c500k-server/target/release/ferro-c500k-server"
+      },
+      "correctness": "42/42 PASS",
+      "tiers": [
+        {
+          "vus": 200,
+          "reqs_total": 707,
+          "req_per_sec": 13.596031091511053,
+          "avg_ms": 0.5000931669024052,
+          "p95_ms": 0.7039719999999996,
+          "p99_ms": 0.9097452199999986,
+          "max_ms": 13.629909,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 15.56,
+          "cpu_pct": 0.95
+        },
+        {
+          "vus": 500,
+          "reqs_total": 1746,
+          "req_per_sec": 33.57620401926894,
+          "avg_ms": 0.4096929507445581,
+          "p95_ms": 0.62817775,
+          "p99_ms": 0.7631722999999998,
+          "max_ms": 6.891872,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 22.22,
+          "cpu_pct": 1.98
+        },
+        {
+          "vus": 800,
+          "reqs_total": 2825,
+          "req_per_sec": 54.5623709316022,
+          "avg_ms": 0.38184380814159363,
+          "p95_ms": 0.6248797999999999,
+          "p99_ms": 0.7795010799999991,
+          "max_ms": 21.591631,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 26.79,
+          "cpu_pct": 2.41
+        },
+        {
+          "vus": 1200,
+          "reqs_total": 4264,
+          "req_per_sec": 82.03786225144195,
+          "avg_ms": 0.3354985091463414,
+          "p95_ms": 0.5844712999999999,
+          "p99_ms": 0.7256366399999999,
+          "max_ms": 21.375738,
+          "error_pct": 0.0,
+          "passed": true,
+          "mem_mb": 35.86,
+          "cpu_pct": 3.1
+        }
+      ]
+    }
+  ]
+}

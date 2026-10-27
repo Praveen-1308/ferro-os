@@ -84,10 +84,15 @@ def run_tier(vus, duration="6s"):
                 elif part.startswith("med="):
                     http_med = part.split("=")[1]
         if "http_req_failed" in line and "%" in line:
-            err_rate = line.split()[1]
+            for part in line.split():
+                if "%" in part:
+                    err_rate = part
+                    break
         if "http_reqs." in line:
-            parts = line.split()
-            if len(parts) >= 2: reqs = parts[1]
+            for part in line.split():
+                if part.isdigit():
+                    reqs = part
+                    break
 
     if "✗" in out or p.returncode != 0:
         pass_status = "FAIL"
@@ -145,7 +150,11 @@ def run_choke_test_for_os(os_id, os_name, image_name):
         if tier_data["status"] == "FAIL" or "FAIL" in tier_data["status"]:
             choked = True
             choke_tier = vus
-            if float(tier_data["error_rate"].replace("%", "")) > 1.0:
+            try:
+                err_val = float(tier_data["error_rate"].replace("%", "").strip())
+            except (ValueError, AttributeError):
+                err_val = 0.0
+            if err_val > 1.0:
                 choke_reason = f"Error rate exceeded 1% ({tier_data['error_rate']})"
             else:
                 choke_reason = f"Latency breached threshold (p95: {tier_data['p95']}, p99: {tier_data['p99']})"

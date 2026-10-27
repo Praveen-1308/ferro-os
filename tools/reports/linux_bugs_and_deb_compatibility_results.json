@@ -1,0 +1,578 @@
+{
+  "timestamp": "2026-10-24T14:40:47Z",
+  "environment": {
+    "platform": "linux",
+    "kernel": "7.0.0-38-generic",
+    "glibc_version": "2.38+"
+  },
+  "sla_thresholds_ms": {
+    "fast_coreutils": 100.0,
+    "standard_service": 500.0,
+    "heavy_benchmark": 3000.0
+  },
+  "suites": {
+    "linux_official_bugs": [
+      {
+        "test": "Bug 1: PID 1 Zombie Reaping Architecture",
+        "passed": true,
+        "command_sent": "grep -n -C 5 'waitpid(-1' crates/ferro-init/src/main.rs",
+        "latency_ms": 4.213,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "854-    }\n855-\n856-    fn reap_zombies() {\n857-        unsafe {\n858-            let mut status = 0;\n859:            while libc::waitpid(-1, &mut status, libc::WNOHANG) > 0 {}\n860-        }\n861-    }\n8",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Bug 2: EMFILE Defense & RLIMIT_NOFILE Elevation",
+        "passed": true,
+        "command_sent": "grep -n -C 2 'RLIMIT_NOFILE' crates/ferro-init/src/main.rs",
+        "latency_ms": 3.977,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "61-        std::env::set_var(\"USER\", \"root\");\n62-\n63:        // 2b. Elevate Process & Socket Limits (RLIMIT_NOFILE = 65,536)\n64-        elevate_system_limits();\n65-\n--\n671-                rlim_max: 65",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Bug 3: Epoll Edge-Trigger Socket Draining",
+        "passed": true,
+        "command_sent": "25 burst requests on port 18980",
+        "latency_ms": 251.587,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "25/25 healthy",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Bug 4: CWE-22 Path Traversal Defense",
+        "passed": true,
+        "command_sent": "GET /../../../../etc/passwd",
+        "latency_ms": 28.522,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "All blocked (403/404)",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Bug 5: CWE-78 Shell Quote Injection Defense",
+        "passed": true,
+        "command_sent": "echo \"payload > /tmp/trap.txt\"",
+        "latency_ms": 434.079,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "Quoted redirection safely escaped (trap not created)",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Bug 6: POSIX Sticky-Bit 1777 Multi-Tenant Safety",
+        "passed": true,
+        "command_sent": "stat /tmp",
+        "latency_ms": 432.509,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "File: /tmp\n  Size: 4096       Blocks: 8        IO Block: 4096   directory\nDevice: 136        Inode: 1476071    Links: 2\nAccess: (1777/drwxrwxrwt)  Uid: ( 1000/   ferro)   Gid: ( 1000/   ferro)",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Bug 7: TIME_WAIT Rapid Socket Recycling",
+        "passed": true,
+        "command_sent": "15 rapid TCP connections on port 18981",
+        "latency_ms": 140.166,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "15/15 connected",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Bug 8: Fsync Zero-Stall Writeback Verification",
+        "passed": true,
+        "command_sent": "bench-fsync --count 30 --size 4096",
+        "latency_ms": 466.515,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "{\"metric\": \"throughput_mb\", \"throughput_mb\": 1636.13, \"p50_ms\": 0.264, \"p95_ms\": 0.310, \"p99_ms\": 0.964, \"max_ms\": 0.964, \"fsync_stall_ms\": 21.543}",
+          "stderr_snippet": "=== BENCH_FSYNC COMPLETE ===\nVolume: 64 MB | Throughput: 1636.13 MB/s\np50: 0.264 ms | p95: 0.310 ms | p99: 0.964 ms | max: 0.964 ms\nfsync_stall: 21.543 ms",
+          "exit_code": 0
+        }
+      }
+    ],
+    "deb_glibc_compatibility": [
+      {
+        "test": "Compat A: Static .deb Binary in ferro-os-pure",
+        "passed": true,
+        "command_sent": "/usr/bin/busybox --help",
+        "latency_ms": 410.107,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "BusyBox v1.37.0 (Ubuntu 1:1.37.0-7ubuntu1) multi-call binary",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Compat B: Static .deb Binary in ferro-os-server",
+        "passed": true,
+        "command_sent": "/usr/bin/busybox --help",
+        "latency_ms": 424.351,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "BusyBox v1.37.0 (Ubuntu 1:1.37.0-7ubuntu1) multi-call binary",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Compat C: Minimal Dynamic .deb Binary in pure-os",
+        "passed": true,
+        "command_sent": "/usr/bin/tree /etc",
+        "latency_ms": 416.69,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "/etc\n|-- ferro\n|-- group\n|-- hostname\n|-- hosts\n|-- mtab ->",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Compat D: Complex .deb Missing Lib Detection",
+        "passed": true,
+        "command_sent": "/usr/bin/nano --version",
+        "latency_ms": 421.911,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "",
+          "stderr_snippet": "/usr/bin/nano: error while loading shared libraries: libncursesw.so.6: cannot open shared object file: No such file or directory\nsh: failed to spawn 'true': No such file or directory (os error 2)",
+          "exit_code": 1
+        }
+      },
+      {
+        "test": "Compat E: Native Debian 12 .deb in ferro-os-server",
+        "passed": true,
+        "command_sent": "apt-get install -y nano && nano --version",
+        "latency_ms": 7547.023,
+        "sla_warning": true,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "GNU nano, version 7.2",
+          "stderr_snippet": "debconf: delaying package configuration, since apt-utils is not installed",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Compat F: Native .rpk Package Deployment & Verification",
+        "passed": true,
+        "command_sent": "python3 tools/test_ferro_os_python_runtime.py",
+        "latency_ms": 152.407,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "Python runtime deployed via rpk sysroot",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      }
+    ],
+    "timed_commands_and_logs": [
+      {
+        "test": "Timer: 'pwd' Execution",
+        "passed": true,
+        "command_sent": "pwd",
+        "latency_ms": 435.553,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "/home/ferro",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'ls -la' Root Listing",
+        "passed": true,
+        "command_sent": "ls -la /",
+        "latency_ms": 421.838,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "-rw-r--r--        0 .dockerenv\n-rw-r--r--        7 bin\ndrwxr-xr-x      340 \u001b[1;34mdev\u001b[0m\ndrwxr-xr-x     4096 \u001b[1;34metc\u001b[0m\ndrwxr-xr-x     4096 \u001b[1;34mhome\u001b[0m\n-rw-r--r--       20 init\n-rw-r--r--",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'which' Binary Path Lookup",
+        "passed": true,
+        "command_sent": "which sh ls rpk",
+        "latency_ms": 444.987,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "/usr/bin/sh",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'touch' File Creation",
+        "passed": true,
+        "command_sent": "touch /tmp/t_time.tmp && stat /tmp/t_time.tmp",
+        "latency_ms": 410.935,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "File: /tmp/t_time.tmp\n  Size: 0          Blocks: 0        IO Block: 4096   regular file\nDevice: 136        Inode: 1703971    Links: 1\nAccess: (0644/-rw-r--r--)  Uid: ( 1000/   ferro)   Gid: ( 1000/",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'echo' File Write & Append",
+        "passed": true,
+        "command_sent": "echo 'Line A' > /tmp/w.tmp && echo 'Line B' >> /tmp/w.tmp && cat /tmp/w.tmp",
+        "latency_ms": 427.847,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "Line A\nLine B",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'tee' Stdin Duplication",
+        "passed": true,
+        "command_sent": "echo 'Tee Timed' | tee /tmp/tee.tmp",
+        "latency_ms": 425.048,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "Tee Timed",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'head' & 'tail' Line Slicing",
+        "passed": true,
+        "command_sent": "echo 1 > /tmp/s.tmp; echo 2 >> /tmp/s.tmp; echo 3 >> /tmp/s.tmp; head -n 2 /tmp/s.tmp && tail -n 1 /tmp/s.tmp",
+        "latency_ms": 437.235,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "1\n2\n3",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'wc' Character & Line Count",
+        "passed": true,
+        "command_sent": "echo 'ferro fast' > /tmp/wc.tmp && wc /tmp/wc.tmp",
+        "latency_ms": 415.012,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "1     2    11 /tmp/wc.tmp",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'chmod' Permission Update",
+        "passed": true,
+        "command_sent": "touch /tmp/p.tmp && chmod 755 /tmp/p.tmp && stat /tmp/p.tmp",
+        "latency_ms": 422.51,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "File: /tmp/p.tmp\n  Size: 0          Blocks: 0        IO Block: 4096   regular file\nDevice: 136        Inode: 1703970    Links: 1\nAccess: (0755/-rwxr-xr-x)  Uid: ( 1000/   ferro)   Gid: ( 1000/   ferro",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'sync' Page Cache Commit",
+        "passed": true,
+        "command_sent": "sync",
+        "latency_ms": 427.204,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'uptime' Kernel Uptime",
+        "passed": true,
+        "command_sent": "uptime",
+        "latency_ms": 430.811,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "up 1 hours, 18 minutes",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'free' RAM Statistics",
+        "passed": true,
+        "command_sent": "free",
+        "latency_ms": 440.76,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "total        used        free   available\nMem:           15273M       2821M       3704M       12451M",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'df -h' VFS Storage Status",
+        "passed": true,
+        "command_sent": "df -h",
+        "latency_ms": 425.584,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "Filesystem     1K-blocks      Used Available Use% Mounted on\noverlay          1048576     32768   1015808   3% /\nproc             1048576     32768   1015808   3% /proc\ntmpfs            1048576     32",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'id' & 'whoami' Identity",
+        "passed": true,
+        "command_sent": "id && whoami",
+        "latency_ms": 426.683,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "uid=1000(ferro) gid=1000(ferro) groups=1000(ferro)\nferro",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'uname -a' Kernel Identification",
+        "passed": true,
+        "command_sent": "uname -a",
+        "latency_ms": 427.995,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "Linux ferro-os 6.1.0-ferro #1 SMP PREEMPT Rust x86_64 GNU/Linux",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'hostname' Host Resolution",
+        "passed": true,
+        "command_sent": "hostname",
+        "latency_ms": 432.636,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "32d3c7f6842c",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'env' Environment Variables",
+        "passed": true,
+        "command_sent": "env",
+        "latency_ms": 420.121,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "PATH=/usr/bin:/usr/sbin\nHOSTNAME=7aa5ed2a775a\nHOME=/home/ferro",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'ip link' Network Interfaces",
+        "passed": true,
+        "command_sent": "ip link",
+        "latency_ms": 427.677,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "1: eth0: <UP,LOWER_UP> mtu 1500\n    link/ether 42:65:04:a8:be:7b brd ff:ff:ff:ff:ff:ff\n2: lo: <UNKNOWN,LOWER_UP> mtu 65536\n    link/ether 00:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'ip addr' IPv4/IPv6 Addresses",
+        "passed": true,
+        "command_sent": "ip addr",
+        "latency_ms": 428.193,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "1: eth0: <UP,LOWER_UP> mtu 1500\n    link/ether d2:6a:cb:bc:6e:a9 brd ff:ff:ff:ff:ff:ff\n2: lo: <UNKNOWN,LOWER_UP> mtu 65536\n    link/ether 00:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff\n    inet /32/24 brd 19",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'ip route' Kernel Routing Table",
+        "passed": true,
+        "command_sent": "ip route",
+        "latency_ms": 420.415,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "default via 192.168.1.1 dev eth0 proto dhcp src 192.168.1.100 metric 100\n000011AC dev eth0 proto kernel scope link",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'dhcp' Synthetic Validation",
+        "passed": true,
+        "command_sent": "dhcp --test-synthetic",
+        "latency_ms": 426.858,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "[dhcp-test] Running synthetic DHCP packet validation test...\n[dhcp-test] Serialized discover: 300 bytes.\n\u2705 Synthetic DHCP packet serialization & parsing test PASSED (100% fidelity).",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Timer: 'dns-cache' Help Interface",
+        "passed": true,
+        "command_sent": "dns-cache help",
+        "latency_ms": 421.5,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "FerroOS Local Shared-Memory DNS Caching Resolver\nUsage: ferro-core dns-cache <command> [options]\n\nCommands:\n  start [--port 5353] [--upstream 1.1.1.1:53]  Run local caching daemon\n  query <domain> [--",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      }
+    ],
+    "live_microservices_timing": [
+      {
+        "test": "Service Timer: GET /api/health",
+        "passed": true,
+        "command_sent": "curl http://127.0.0.1:18990/api/health",
+        "latency_ms": 8.652,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "{\"status\": \"HEALTHY\", \"uptime_sec\": 1.22}",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Service Timer: GET /api/status",
+        "passed": true,
+        "command_sent": "curl http://127.0.0.1:18990/api/status",
+        "latency_ms": 9.31,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "{\n  \"server\": \"FerroOS Pure-Rust Telemetry Microservice\",\n  \"os\": \"FerroOS 2.0 (Pure Rust)\",\n  \"cores\": 8,\n  \"ram_total_mb\": 15273.41,\n  \"ram_used_mb\": 2854.16,\n  \"ram_percent\": 18.7,\n  \"uptime_sec\":",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Service Timer: GET /set (KV Store)",
+        "passed": true,
+        "command_sent": "curl http://127.0.0.1:18991/set?key=sla_check&val=subsecond",
+        "latency_ms": 9.195,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "{\"status\": \"STORED\", \"key\": \"sla_check\", \"value\": \"subsecond\"}",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Service Timer: GET /get (KV Store)",
+        "passed": true,
+        "command_sent": "curl http://127.0.0.1:18991/get?key=sla_check",
+        "latency_ms": 9.332,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "{\"key\": \"sla_check\", \"value\": \"subsecond\"}",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Service Timer: GET / (Package Registry)",
+        "passed": true,
+        "command_sent": "curl http://127.0.0.1:18992/",
+        "latency_ms": 8.736,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "{\"repository\": \"FerroOS Official Package Registry\", \"status\": \"ACTIVE\"}",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      },
+      {
+        "test": "Log Audit: Server-Suite Container Logs",
+        "passed": true,
+        "command_sent": "docker logs 816dc7bf3fb0",
+        "latency_ms": 20.236,
+        "sla_warning": false,
+        "ground_truth_matched": true,
+        "logs": {
+          "stdout_snippet": "================================================================================",
+          "stderr_snippet": "",
+          "exit_code": 0
+        }
+      }
+    ]
+  },
+  "summary": {
+    "total_tests": 42,
+    "passed": 42,
+    "failed": 0,
+    "warnings": 1,
+    "avg_latency_ms": 490.4,
+    "pass_rate_pct": 100.0,
+    "total_duration_sec": 27.95
+  }
+}

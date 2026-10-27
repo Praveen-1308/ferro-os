@@ -100,6 +100,11 @@ def main():
     if os.path.exists(so_src):
         shutil.copy2(so_src, os.path.join(ROOTFS, "usr/lib/libferro_io.so"))
 
+    # Multi-call ferro-pkg symlink
+    rpk_link = os.path.join(ROOTFS, "usr/bin/rpk")
+    if not os.path.exists(rpk_link):
+        os.symlink("/usr/bin/ferro-pkg", rpk_link)
+
     # Kernel executes /init as PID 1
     os.symlink("/usr/sbin/ferro-init", os.path.join(ROOTFS, "init"))
 
@@ -110,10 +115,12 @@ def main():
         "mv", "chmod", "chown", "touch", "ln", "stat", "id", "grep", "find",
         "head", "tail", "wc", "which", "env", "sleep", "free", "df", "ps", "kill",
         "uptime", "whoami", "sync", "hostname", "tee", "ip", "mount", "umount",
-        "ferrod", "syslogd", "logger", "logs", "journalctl", "dmesg",
-        "dhcp", "ferro-net", "udhcpc", "hackbench", "bench-fsync",
-        "reboot", "poweroff", "bench", "serve", "server-suite", "dns-cache", "fdstore", "bpf",
-        "sched", "install", "snapshot", "recovery"
+        "fetch", "curl", "serve", "httpd", "server-suite", "server", "dns-cache", "dns",
+        "ferrod", "syslogd", "logger", "logs", "log", "journalctl", "dmesg",
+        "dhcp", "ferro-net", "udhcpc", "hackbench", "bench-fsync", "fsync-bench",
+        "gamemode", "bpf", "ebpf", "sched", "scx", "game", "proton", "win", "wine",
+        "install", "snapshot", "ai-mode", "sandbox", "supervise",
+        "reboot", "poweroff", "bench", "fdstore", "recovery", "help"
     ]
     for app in applets:
         link_target = "/usr/bin/ferro-core"

@@ -558,6 +558,206 @@
     }
 
     /* ========================================================================== */
+    /* INTERACTIVE SERVER SELECTOR & OS DOWNLOAD HUB STYLES                       */
+    /* ========================================================================== */
+    .selector-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 36px;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+    .config-step {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .step-label {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+      color: #04101e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .edition-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .select-box {
+      background: rgba(8, 14, 28, 0.7);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      position: relative;
+    }
+    .select-box:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(13, 22, 42, 0.85);
+      transform: translateY(-2px);
+    }
+    .select-box.active {
+      border-color: var(--primary);
+      background: rgba(14, 30, 56, 0.9);
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.25), inset 0 0 15px rgba(56, 189, 248, 0.1);
+    }
+    .select-box .box-icon {
+      font-size: 28px;
+    }
+    .select-box .box-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .select-box .box-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .select-box .box-tag {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--neon-cyan);
+      background: rgba(0, 242, 254, 0.1);
+      padding: 4px 8px;
+      border-radius: 6px;
+      align-self: flex-start;
+      margin-top: 6px;
+    }
+
+    .budget-pills-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .budget-pill {
+      background: rgba(8, 14, 28, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 14px 18px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+      color: inherit;
+      font-family: inherit;
+    }
+    .budget-pill:hover {
+      border-color: rgba(56, 189, 248, 0.35);
+      background: rgba(13, 22, 42, 0.8);
+    }
+    .budget-pill.active {
+      border-color: var(--success);
+      background: rgba(6, 32, 25, 0.85);
+      box-shadow: 0 0 20px rgba(52, 211, 153, 0.2);
+    }
+    .budget-pill .pill-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .budget-pill.active .pill-title {
+      color: var(--success);
+    }
+    .budget-pill .pill-subtitle {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .result-display-panel {
+      background: rgba(4, 8, 18, 0.9);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    .result-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .specs-mini-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 16px;
+      margin: 22px 0;
+      padding: 18px;
+      background: rgba(13, 20, 36, 0.5);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .mini-spec-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .mini-spec-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    .mini-spec-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      font-family: 'Fira Code', monospace;
+    }
+    .action-buttons-group {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .copy-btn {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover {
+      background: rgba(56, 189, 248, 0.3);
+      color: #fff;
+    }
+
+    /* ========================================================================== */
     /* IN-PAGE GLASS DASHBOARD MODAL (<dialog>)                                    */
     /* ========================================================================== */
     dialog.glass-modal {
@@ -720,6 +920,7 @@
       <a href="#matrix">15-OS Matrix</a>
       <a href="#bars">Outcome Bars</a>
       <a href="#editions">Editions</a>
+      <a href="#download-hub" style="color: var(--neon-cyan); font-weight: 700;">⚡ Download OS</a>
       <a href="#desktop">Desktop 3D</a>
       <a href="#windows">Windows Apps</a>
       <a href="#quickstart">Quick Start</a>
@@ -1240,6 +1441,151 @@ ferro-core win-run UntrustedTool.exe --sandbox --prefix ~/.ferro/prefixes/sandbo
       </div>
     </section>
 
+    <!-- ======================================================================== -->
+    <!-- INTERACTIVE SERVER SELECTOR & OS DOWNLOAD HUB                            -->
+    <!-- ======================================================================== -->
+    <section class="section" id="download-hub">
+      <div class="section-header">
+        <div class="badge-pill" style="margin-bottom: 12px; display: inline-flex;">
+          <span class="pulse-dot"></span>
+          <span>Interactive OS & Server Configurator</span>
+        </div>
+        <h2 class="section-title">Select Your Server Edition & Download OS</h2>
+        <p class="section-desc">Choose your workload, target hardware profile, and memory allocation to get your custom container or bootable OS image instantly.</p>
+      </div>
+
+      <div class="selector-card">
+        <!-- Step 1: Select Edition / Workload -->
+        <div class="config-step">
+          <label class="step-label"><span class="step-num">1</span> Choose Server / OS Edition:</label>
+          <div class="edition-selector-grid">
+            <div class="select-box active" data-edition="qa" onclick="selectEdition('qa')">
+              <div class="box-icon">🐍</div>
+              <div class="box-content">
+                <div class="box-title">Python QA & Testing Engine</div>
+                <div class="box-desc">pytn5250 Telnet • REST APIs • SQLite/Postgres DB Loops • Zero-Leak mimalloc 2.1</div>
+                <div class="box-tag">52 MB • Capped @ 64m</div>
+              </div>
+            </div>
+
+            <div class="select-box" data-edition="server" onclick="selectEdition('server')">
+              <div class="box-icon">⚡</div>
+              <div class="box-content">
+                <div class="box-title">Dedicated Server Suite</div>
+                <div class="box-desc">4 Microservices (REST, KV-Cache, Web, DNS) • $12 Droplet Challenge • SO_REUSEPORT</div>
+                <div class="box-tag">148 MB • 31 MB Idle</div>
+              </div>
+            </div>
+
+            <div class="select-box" data-edition="baremetal" onclick="selectEdition('baremetal')">
+              <div class="box-icon">💻</div>
+              <div class="box-content">
+                <div class="box-title">Bare-Metal PC / USB Live OS</div>
+                <div class="box-desc">Bootable Hybrid UEFI/BIOS ISO for old laptops & bare-metal servers • &lt; 30 MB Idle</div>
+                <div class="box-tag">11 MB Live ISO</div>
+              </div>
+            </div>
+
+            <div class="select-box" data-edition="pure" onclick="selectEdition('pure')">
+              <div class="box-icon">🦀</div>
+              <div class="box-content">
+                <div class="box-title">Autonomous Pure-Rust Rootfs</div>
+                <div class="box-desc">100% Safe Rust • ferro-init PID 1 • ferro-core • MicroVMs (Firecracker) & OCI scratch</div>
+                <div class="box-tag">2.92 MB RootFS</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Client Laptop Hardware & Memory Profile -->
+        <div class="config-step" style="margin-top: 32px;">
+          <label class="step-label"><span class="step-num">2</span> Select Client Laptop Hardware Budget (e.g. 16 GB HP / Dell):</label>
+          <div class="budget-pills-row">
+            <button type="button" class="budget-pill active" data-budget="basic" onclick="selectBudget('basic')">
+              <div class="pill-title">Basic Use (4 GB Budget)</div>
+              <div class="pill-subtitle">Leaves 12 GB for Windows/Chrome/Teams • Up to 50 Containers</div>
+            </button>
+            <button type="button" class="budget-pill" data-budget="moderate" onclick="selectBudget('moderate')">
+              <div class="pill-title">Moderate Use (8 GB Budget)</div>
+              <div class="pill-subtitle">Leaves 8 GB for Host OS • Up to 100 Containers</div>
+            </button>
+            <button type="button" class="budget-pill" data-budget="max" onclick="selectBudget('max')">
+              <div class="pill-title">Max Use (12 GB Budget)</div>
+              <div class="pill-subtitle">Leaves 4 GB for Host OS • Up to 160 Containers</div>
+            </button>
+            <button type="button" class="budget-pill" data-budget="hardware" onclick="selectBudget('hardware')">
+              <div class="pill-title">Bare-Metal Direct</div>
+              <div class="pill-subtitle">Full PC Hardware Utilization • Boots in &lt; 1.5s</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Dynamic Specification & Download Display -->
+        <div class="result-display-panel" style="margin-top: 36px;">
+          <div class="result-header">
+            <div>
+              <span id="selectedEditionBadge" class="result-badge">Python QA Testing Container</span>
+              <h3 id="selectedEditionHeading" style="font-size: 22px; font-weight: 700; color: #fff; margin-top: 6px;">FerroOS Python QA Container (`ferro-python-qa`)</h3>
+              <p id="selectedEditionSummary" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Pre-configured for continuous 5250 terminal emulation, REST API benchmarks, and database transactional loops with zero memory leakage.</p>
+            </div>
+          </div>
+
+          <div class="specs-mini-grid">
+            <div class="mini-spec-item">
+              <span class="mini-spec-label">Download Size</span>
+              <span id="specDownloadSize" class="mini-spec-value">52 MB</span>
+            </div>
+            <div class="mini-spec-item">
+              <span class="mini-spec-label">Idle RAM per Worker</span>
+              <span id="specIdleRam" class="mini-spec-value">13.89 MB</span>
+            </div>
+            <div class="mini-spec-item">
+              <span class="mini-spec-label">Peak Loop RAM (15 min)</span>
+              <span id="specPeakRam" class="mini-spec-value">18 – 28 MB</span>
+            </div>
+            <div class="mini-spec-item">
+              <span class="mini-spec-label">Allocated Container Cap</span>
+              <span id="specMemoryCap" class="mini-spec-value">64 MB</span>
+            </div>
+            <div class="mini-spec-item">
+              <span class="mini-spec-label">Concurrent Workers Supported</span>
+              <span id="specWorkerCapacity" class="mini-spec-value">50 Containers</span>
+            </div>
+            <div class="mini-spec-item">
+              <span class="mini-spec-label">Host OS Headroom Left</span>
+              <span id="specHostHeadroom" class="mini-spec-value">12.0 GB (100% Safe)</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Action Buttons -->
+          <div class="action-buttons-group">
+            <a id="btnDownloadOS" href="https://github.com/Praveen-1308/ferro-os/raw/main/build_out/ferro-python-qa.tar.gz" download class="btn btn-primary" style="font-size: 15px; padding: 14px 28px;">
+              <span>📥 Download Selected OS Image</span>
+            </a>
+            <button type="button" class="btn btn-glass" id="btnDownloadConfig" onclick="downloadStartupScript()">
+              <span>📄 Download 1-Click Launch Script</span>
+            </button>
+            <a href="https://github.com/Praveen-1308/ferro-os/releases" target="_blank" rel="noopener" class="btn btn-glass">
+              <span>🏷️ View All GitHub Releases</span>
+            </a>
+          </div>
+
+          <!-- 1-Click Copy Command Box -->
+          <div style="margin-top: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">
+                ⚡ Direct 1-Click Run Command for Your 16 GB Laptop:
+              </span>
+              <button type="button" id="copyCmdBtn" class="copy-btn" onclick="copyRunCommand()">📋 Copy Command</button>
+            </div>
+            <div class="terminal-box" id="commandBox" style="margin-top: 0; padding: 16px 20px; font-size: 13.5px; line-height: 1.6;">
+docker run -d --name ferro-qa-1 --memory=64m --memory-swap=64m --cpus=0.25 -v $(pwd)/scripts:/app ferro-python-qa:latest
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- QUICKSTART -->
     <section class="section" id="quickstart">
       <div class="section-header">
@@ -1591,6 +1937,178 @@ python3 tools/live_user_simulator.py --host 172.28.0.2 --port 8088 --users 1000 
         }
       });
     }
+
+    // =========================================================================
+    // INTERACTIVE OS SELECTOR & DOWNLOAD HUB LOGIC
+    // =========================================================================
+    const OS_CONFIGS = {
+      qa: {
+        badge: "Python QA Testing Container",
+        title: "FerroOS Python QA Container (`ferro-python-qa`)",
+        summary: "Pre-configured for continuous 5250 terminal emulation, REST API benchmarks, and database transactional loops with zero memory leakage.",
+        downloadSize: "52 MB",
+        idleRam: "13.89 MB",
+        peakRam: "18 – 28 MB",
+        downloadUrl: "https://github.com/Praveen-1308/ferro-os/raw/main/build_out/ferro-python-qa.tar.gz",
+        downloadFilename: "ferro-python-qa.tar.gz",
+        scriptFilename: "spin-ferro-qa.sh",
+        imageTag: "ferro-python-qa:latest"
+      },
+      server: {
+        badge: "Enterprise Dedicated Server",
+        title: "FerroOS Dedicated Server Suite (`ferro-os-server`)",
+        summary: "Ultra-low-latency headless server with 4 active microservices (Telemetry API, KV-Cache, Web Server, DNS Cache) optimized for $12 Droplets.",
+        downloadSize: "148 MB",
+        idleRam: "31.01 MB",
+        peakRam: "35 – 50 MB",
+        downloadUrl: "https://github.com/Praveen-1308/ferro-os/raw/main/Dockerfile.server",
+        downloadFilename: "Dockerfile.server",
+        scriptFilename: "spin-ferro-server.sh",
+        imageTag: "ferro-os-server:latest"
+      },
+      baremetal: {
+        badge: "Bare-Metal Live Bootable ISO",
+        title: "FerroOS Bare-Metal Live Hybrid ISO (`ferro-os-live.iso`)",
+        summary: "Hybrid UEFI & BIOS bootable ISO for physical laptops, desktops, or VMs. Boots directly into pure-Rust PID 1 in < 1.5 seconds under 30 MB RAM.",
+        downloadSize: "11 MB",
+        idleRam: "< 30 MB",
+        peakRam: "< 35 MB",
+        downloadUrl: "https://github.com/Praveen-1308/ferro-os/raw/main/build_out/ferro-os-live.iso",
+        downloadFilename: "ferro-os-live.iso",
+        scriptFilename: "flash-usb-drive.sh",
+        imageTag: "ferro-os-live.iso"
+      },
+      pure: {
+        badge: "Pure-Rust Minimal RootFS",
+        title: "FerroOS Autonomous Pure-Rust Rootfs (`pure_rust_rootfs`)",
+        summary: "100% memory-safe Rust userspace (ferro-init + ferro-core + rpk) with zero C daemons for MicroVMs (Firecracker) and scratch OCI containers.",
+        downloadSize: "2.92 MB",
+        idleRam: "4.2 – 6.8 MB",
+        peakRam: "10 – 15 MB",
+        downloadUrl: "https://github.com/Praveen-1308/ferro-os/raw/main/build_out/pure_rust_rootfs.tar.gz",
+        downloadFilename: "pure_rust_rootfs.tar.gz",
+        scriptFilename: "spin-ferro-pure.sh",
+        imageTag: "ferro-os-pure:latest"
+      }
+    };
+
+    const BUDGET_CONFIGS = {
+      basic: {
+        cap: "64 MB",
+        capacity: "50 Containers",
+        headroom: "12.0 GB (100% Safe)",
+        memFlag: "--memory=64m --memory-swap=64m --cpus=0.25",
+        hostBudget: "4 GB"
+      },
+      moderate: {
+        cap: "64 MB",
+        capacity: "100 Containers",
+        headroom: "8.0 GB (Safe)",
+        memFlag: "--memory=64m --memory-swap=64m --cpus=0.5",
+        hostBudget: "8 GB"
+      },
+      max: {
+        cap: "64 MB",
+        capacity: "160 Containers",
+        headroom: "4.0 GB (Close Heavy Apps)",
+        memFlag: "--memory=64m --memory-swap=64m --cpus=1.0",
+        hostBudget: "12 GB"
+      },
+      hardware: {
+        cap: "Uncapped",
+        capacity: "1 Native Node",
+        headroom: "Full 16 GB Available",
+        memFlag: "--memory=full",
+        hostBudget: "Bare Metal"
+      }
+    };
+
+    let currentEdition = "qa";
+    let currentBudget = "basic";
+
+    function updateSelectorDisplay() {
+      const ed = OS_CONFIGS[currentEdition];
+      const bg = BUDGET_CONFIGS[currentBudget];
+
+      document.getElementById("selectedEditionBadge").textContent = ed.badge;
+      document.getElementById("selectedEditionHeading").textContent = ed.title;
+      document.getElementById("selectedEditionSummary").textContent = ed.summary;
+
+      document.getElementById("specDownloadSize").textContent = ed.downloadSize;
+      document.getElementById("specIdleRam").textContent = ed.idleRam;
+      document.getElementById("specPeakRam").textContent = ed.peakRam;
+      document.getElementById("specMemoryCap").textContent = currentBudget === "hardware" ? "Bare Metal" : bg.cap;
+      document.getElementById("specWorkerCapacity").textContent = currentBudget === "hardware" ? "1 Bare-Metal Host" : bg.capacity;
+      document.getElementById("specHostHeadroom").textContent = currentBudget === "hardware" ? "All Physical RAM" : bg.headroom;
+
+      const btn = document.getElementById("btnDownloadOS");
+      btn.href = ed.downloadUrl;
+      btn.setAttribute("download", ed.downloadFilename);
+      btn.querySelector("span").textContent = `📥 Download ${ed.downloadFilename} (${ed.downloadSize})`;
+
+      // Update command box
+      const cmdBox = document.getElementById("commandBox");
+      if (currentEdition === "baremetal") {
+        cmdBox.innerHTML = `# 1. Flash to USB thumb drive on Linux/macOS:<br>sudo dd if=${ed.downloadFilename} of=/dev/sdX bs=4M status=progress conv=fsync<br><br><span style="color:#64748b;"># Or on Windows, write using Rufus (DD mode). Reboot and select USB boot!</span>`;
+      } else if (currentEdition === "pure") {
+        cmdBox.innerHTML = `# Run 2.92 MB Pure-Rust scratch container with ${bg.hostBudget} budget:<br>docker run -it --rm ${bg.memFlag} ferro-os-pure:latest /usr/bin/sh`;
+      } else if (currentEdition === "server") {
+        cmdBox.innerHTML = `# Launch dedicated server suite with ${bg.hostBudget} budget:<br>docker run -d --name ferro-server -p 8080:8080 -p 8081:8081 -p 8088:8088 ${bg.memFlag} ferro-os-server:latest`;
+      } else {
+        cmdBox.innerHTML = `# Run Python QA & DB testing worker with ${bg.hostBudget} budget on 16 GB laptop:<br>docker run -d --name ferro-qa-1 ${bg.memFlag} -v $(pwd)/scripts:/app ferro-python-qa:latest`;
+      }
+    }
+
+    function selectEdition(ed) {
+      currentEdition = ed;
+      document.querySelectorAll(".select-box").forEach(b => {
+        b.classList.toggle("active", b.getAttribute("data-edition") === ed);
+      });
+      updateSelectorDisplay();
+    }
+
+    function selectBudget(bg) {
+      currentBudget = bg;
+      document.querySelectorAll(".budget-pill").forEach(p => {
+        p.classList.toggle("active", p.getAttribute("data-budget") === bg);
+      });
+      updateSelectorDisplay();
+    }
+
+    function copyRunCommand() {
+      const cmdText = document.getElementById("commandBox").innerText;
+      navigator.clipboard.writeText(cmdText).then(() => {
+        const btn = document.getElementById("copyCmdBtn");
+        const orig = btn.textContent;
+        btn.textContent = "✅ Copied!";
+        setTimeout(() => { btn.textContent = orig; }, 2000);
+      });
+    }
+
+    function downloadStartupScript() {
+      const ed = OS_CONFIGS[currentEdition];
+      const bg = BUDGET_CONFIGS[currentBudget];
+      let scriptContent = "";
+      if (currentEdition === "baremetal") {
+        scriptContent = `#!/usr/bin/env bash\n# Flash FerroOS Bare-Metal ISO to USB\nset -euo pipefail\necho "Target ISO: ${ed.downloadFilename}"\necho "Insert USB drive and run:"\necho "sudo dd if=${ed.downloadFilename} of=/dev/sdX bs=4M status=progress conv=fsync"\n`;
+      } else {
+        scriptContent = `#!/usr/bin/env bash\n# Launch FerroOS ${ed.title}\n# Configured for ${bg.hostBudget} budget on 16 GB enterprise laptop\nset -euo pipefail\n\necho "Starting FerroOS Container: ${ed.imageTag}..."\ndocker run -d \\\n  --name ferro-${currentEdition}-worker \\\n  ${bg.memFlag.split(" ").join(" \\\n  ")} \\\n  -v "$(pwd)/scripts:/app" \\\n  ${ed.imageTag}\n\necho "Worker started! Verifying resource usage:"\ndocker stats ferro-${currentEdition}-worker --no-stream\n`;
+      }
+      const blob = new Blob([scriptContent], { type: "text/x-sh" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = ed.scriptFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Initialize display on page load
+    document.addEventListener("DOMContentLoaded", () => {
+      updateSelectorDisplay();
+    });
   </script>
 </body>
 </html>

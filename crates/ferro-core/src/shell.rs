@@ -960,44 +960,53 @@ mod tests {
     #[test]
     fn test_builtin_test_evaluation() {
         // String checks
-        assert_eq!(run_test(&["hello".into()]), ExitCode::SUCCESS);
-        assert_eq!(run_test(&["-z".into(), "".into()]), ExitCode::SUCCESS);
-        assert_eq!(run_test(&["-n".into(), "abc".into()]), ExitCode::SUCCESS);
-        assert_eq!(run_test(&["-n".into(), "".into()]), ExitCode::FAILURE);
+        assert!(is_exit_success(&run_test(&["hello".into()])));
+        assert!(is_exit_success(&run_test(&["-z".into(), "".into()])));
+        assert!(is_exit_success(&run_test(&["-n".into(), "abc".into()])));
+        assert!(!is_exit_success(&run_test(&["-n".into(), "".into()])));
 
         // Comparisons
-        assert_eq!(
-            run_test(&["apple".into(), "=".into(), "apple".into()]),
-            ExitCode::SUCCESS
-        );
-        assert_eq!(
-            run_test(&["apple".into(), "!=".into(), "banana".into()]),
-            ExitCode::SUCCESS
-        );
-        assert_eq!(
-            run_test(&["10".into(), "-eq".into(), "10".into()]),
-            ExitCode::SUCCESS
-        );
-        assert_eq!(
-            run_test(&["5".into(), "-lt".into(), "10".into()]),
-            ExitCode::SUCCESS
-        );
-        assert_eq!(
-            run_test(&["15".into(), "-gt".into(), "10".into()]),
-            ExitCode::SUCCESS
-        );
+        assert!(is_exit_success(&run_test(&[
+            "apple".into(),
+            "=".into(),
+            "apple".into()
+        ])));
+        assert!(is_exit_success(&run_test(&[
+            "apple".into(),
+            "!=".into(),
+            "banana".into()
+        ])));
+        assert!(is_exit_success(&run_test(&[
+            "10".into(),
+            "-eq".into(),
+            "10".into()
+        ])));
+        assert!(is_exit_success(&run_test(&[
+            "5".into(),
+            "-lt".into(),
+            "10".into()
+        ])));
+        assert!(is_exit_success(&run_test(&[
+            "15".into(),
+            "-gt".into(),
+            "10".into()
+        ])));
 
         // Logical NOT `!`
-        assert_eq!(
-            run_test(&["!".into(), "apple".into(), "=".into(), "banana".into()]),
-            ExitCode::SUCCESS
-        );
+        assert!(is_exit_success(&run_test(&[
+            "!".into(),
+            "apple".into(),
+            "=".into(),
+            "banana".into()
+        ])));
 
         // Bracket syntax `[ ... ]`
-        assert_eq!(
-            run_test(&["10".into(), "-eq".into(), "10".into(), "]".into()]),
-            ExitCode::SUCCESS
-        );
+        assert!(is_exit_success(&run_test(&[
+            "10".into(),
+            "-eq".into(),
+            "10".into(),
+            "]".into()
+        ])));
     }
 
     #[test]

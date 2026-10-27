@@ -14,7 +14,7 @@
 [![Documentation](https://praveen-1308.github.io/ferro-os/)](https://praveen-1308.github.io/ferro-os/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**[🏛️ Execution Model & Architecture](docs/arch/FERRO_OS_COMPATIBILITY_AND_EXECUTION_MODEL.md)** • **[📐 Modular-to-Functional Blueprint](docs/arch/MODULAR_TO_FUNCTIONAL_RUST_OS_BLUEPRINT.md)** • **[🛡️ Memory & Security Standards](docs/MEMORY_SECURITY_AND_STANDARDS.md)** • **[🌍 Philosophy & Hardware Boundaries](#-engineering-philosophy-hardware-boundaries--open-community-collaboration)** • **[📊 Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)** • **[🚀 Quick Start](#-quick-start)**
+**[🏛️ Execution Model & Architecture](docs/arch/FERRO_OS_COMPATIBILITY_AND_EXECUTION_MODEL.md)** • **[📐 Modular-to-Functional Blueprint](docs/arch/MODULAR_TO_FUNCTIONAL_RUST_OS_BLUEPRINT.md)** • **[🛡️ Memory & Security Standards](docs/MEMORY_SECURITY_AND_STANDARDS.md)** • **[❓ FAQ & Compatibility](#-frequently-asked-questions-faq--compatibility-guide)** • **[🌍 Philosophy & Hardware Boundaries](#-engineering-philosophy-hardware-boundaries--open-community-collaboration)** • **[📊 Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)** • **[🚀 Quick Start](#-quick-start)**
 
 </div>
 
@@ -243,6 +243,98 @@ Rather than comparing against obsolete 1990s utilities (`plipconfig`, `slattach`
 * **Capability Profiles**: Entire functional stacks can be toggled on demand (`rpk install @c-compat-libs`, `rpk install @c-toolchain`, `rpk install @sre-forensics`).
 * **Atomic Pre-Update Snapshots**: Every `rpk install`, `rpk upgrade`, or capability profile installation automatically captures a transactional Btrfs Copy-on-Write snapshot (`@pre_update`).
 * **Instant Rollback**: If a package upgrade introduces regressions or library conflicts, `rpk rollback` reverts rootfs state in under 15 ms.
+
+---
+
+## ❓ Frequently Asked Questions (FAQ) & Compatibility Guide
+
+### Q1: Does FerroOS support standard Linux software and binary compatibility?
+**Yes, 100%.** FerroOS is built directly on the stable Linux Application Binary Interface (ABI) and POSIX standards. Any binary compiled for 64-bit Linux (`x86_64`) runs directly without code changes, emulation, or virtualization:
+
+* **Static Binaries (Rust, Go, Zig, Musl C)**: Direct kernel mapping via `sys_execve` with zero external dependencies.
+* **Dynamic Binaries (C/C++, Python, Node.js, SQLite, Nginx)**: Resolved transparently via `/usr/lib/ld-linux-x86-64.so.2` (mapped through FHS 3.0 `/lib` and `/lib64` symlinks) and core shared libraries (`libc.so.6`, `libm.so.6`, `libdl.so.2`, `libpthread.so.0`).
+* **Specialized Syscalls & Modern Kernel Primitives**:
+  * Raw **`io_uring`** with fixed registered files (`IORING_REGISTER_FILES`, bypassing `LimitNOFILE` caps) and Submission Queue Polling (SQPOLL).
+  * Direct support for raw **`epoll`**, **`eventfd`**, **`signalfd`**, and **`timerfd`**.
+  * Full hardware vectorization: **AVX-512**, **AVX2**, and **NEON SIMD** instructions.
+  * Kernel **Landlock LSM** unprivileged sandboxing and **seccomp-BPF** filter chains.
+* **Interpreted Scripts**: Executes standard shebang scripts (`#!/bin/sh`), Bash scripts, Python 3.12/3.14, and Node.js runtimes.
+
+---
+
+### Q2: What is the difference between `ferro-os-pure` and `ferro-os-server`?
+FerroOS provides two tailored editions engineered for different workload requirements:
+
+| Dimension / Capability | `ferro-os-pure` (Minimalist Appliance) | `ferro-os-server` (Enterprise Microservices) |
+| :--- | :--- | :--- |
+| **Compressed RootFS** | **2.92 MB** (`pure_rust_rootfs.tar.gz`) | 113 MB compressed Docker image |
+| **Userspace Codebase** | **100% Memory-Safe Rust** | Safe Rust + Debian 12 Bookworm Glibc Substrate |
+| **PID 1 Init Supervisor** | `ferro-init` (Pure-Rust PID 1) | `ferro-init` / supervisor daemon |
+| **Core Utilities** | `ferro-core` (Multi-call binary: `sh`, `ls`, `ps`, `ip`...) | GNU/POSIX coreutils + `ferro-core` applets |
+| **Package Manager** | `rpk` (Rust Package Keeper: `.rpk` packages) | Hybrid: `rpk` + Debian `apt` / `dpkg` (60,000+ packages) |
+| **I/O Acceleration** | Transparent `libferro_io.so` (io_uring SQPOLL) | `libferro_io.so` + `mimalloc` global allocator |
+| **Bundled Services** | Syslog (`ferrod`), DHCP (`ferro-net`) | Telemetry (8080), KV-Cache (8081), Web (8088), DNS (9123) |
+| **Memory Footprint** | **4.2 – 6.8 MB idle RAM** | **< 30 MB idle RAM** (4 active services) |
+| **Primary Use Cases** | MicroVMs (Firecracker), Edge appliances, OCI containers | Web APIs, $12 Challenge servers, High-load databases |
+
+---
+
+### Q3: Does FerroOS support Debian `.deb` packages and standard package managers?
+**Yes.**
+* **In `ferro-os-server`**: Full `apt` and `dpkg` package management is enabled out of the box. You can execute `apt-get update && apt-get install -y <package>` to install any of Debian's 60,000+ pre-compiled packages (e.g., PostgreSQL, Redis, Python 3 packages, FFmpeg, etc.).
+* **In `ferro-os-pure`**: Uses `rpk` (Rust Package Keeper) for lightweight, cryptographically verified `.rpk` packages.
+* **Hybrid Auto-Fallback**: Running `rpk install <package>` transparently queries the curated native FerroOS package repository, automatically falling back to Debian `apt` (`bookworm`) if a native package is not present.
+* **Instant Btrfs Rollbacks**: Every installation automatically creates a Btrfs Copy-on-Write snapshot (`@pre_update`), allowing 15 ms instant rollbacks via `ferro-core snapshot rollback` if an update introduces conflicts.
+
+---
+
+### Q4: What does the file system layout look like? Where are the files located?
+FerroOS adheres strictly to the **Filesystem Hierarchy Standard (FHS 3.0)** with a merged-usr architecture:
+
+```
+/ (RootFS)
+├── bin -> /usr/bin                    # FHS 3.0 unified binary directory
+├── sbin -> /usr/sbin                  # FHS 3.0 unified admin binary directory
+├── lib -> /usr/lib                    # FHS 3.0 unified library directory
+├── lib64 -> /usr/lib                  # Dynamic linker x86_64 ABI symlink
+├── etc/
+│   ├── os-release                     # OS identification (NAME="FerroOS", ID=ferro)
+│   ├── ld.so.preload                  # Injects /usr/lib/libferro_io.so transparently
+│   ├── passwd & shadow                # Multi-tenant user auth (root:0, ferro:1000)
+│   └── resolv.conf                    # Nameserver configuration (managed by ferro-net)
+├── dev/
+│   ├── log                            # Pure-Rust syslog Unix datagram socket (ferrod)
+│   └── [standard Linux dev nodes]
+├── proc/ & sys/                       # Linux kernel virtual filesystems
+├── tmp/ & var/tmp/                    # Mode 1777 (POSIX sticky bit multi-tenant isolation)
+├── var/log/syslog                     # Circular append-only system log
+└── usr/
+    ├── bin/
+    │   ├── ferro-core                 # 995 KB multi-call binary (sh, ls, ps, ip, kill...)
+    │   ├── ferro-pkg (rpk)            # Rust Package Keeper
+    │   └── [40+ POSIX command symlinks pointing to ferro-core]
+    ├── sbin/
+    │   └── ferro-init                 # Pure-Rust PID 1 init supervisor
+    └── lib/
+        ├── ld-linux-x86-64.so.2       # Dynamic ELF loader
+        ├── libc.so.6, libm.so.6       # Standard C libraries
+        ├── liburing.so.2              # Kernel io_uring interface library
+        └── libferro_io.so             # Pure-Rust POSIX I/O acceleration shim
+```
+
+#### Pre-Compiled Bootable & Deployable Artifacts in `build_out/`:
+* **`build_out/ferro-os-live.iso`** (11 MB): Bootable hybrid UEFI/BIOS ISO ready for USB flash drives or VMs.
+* **`build_out/pure_rust_rootfs.tar.gz`** (2.92 MB): Minimal pure-Rust rootfs for Docker/OCI and MicroVMs.
+* **`build_out/vmlinuz`** (7.9 MB): Hardened Linux kernel with io_uring and KSPP protections.
+* **`build_out/ferro-initrd.img`** (2.8 MB): Compressed initial ramdisk for network (PXE) or direct kernel boot.
+
+---
+
+### Q5: Can I run or install FerroOS on an old physical PC or bare metal?
+**Yes!** FerroOS is exceptionally lightweight (idle memory < 30 MB), making it ideal for older PCs, laptops, and thin clients.
+* **Recommended Boot Method**: Flash [`build_out/ferro-os-live.iso`](build_out/ferro-os-live.iso) (11 MB) onto any standard **USB Flash Drive (Thumb Drive / Pen Drive)** using `dd` on Linux/macOS or Rufus/BalenaEtcher on Windows.
+* **BIOS / UEFI Configuration**: In BIOS settings, set boot mode to **Legacy Boot / CSM** or UEFI, disable **Secure Boot**, and select your USB drive as the first boot device. FerroOS boots into an interactive prompt in < 1.5 seconds!
+* *Note on direct USB cables*: Standard USB-A to USB-A cables directly connecting two PCs cannot transfer or boot an operating system because PC motherboards do not operate in USB client/device mode. Always use a USB Flash Drive, a network PXE boot, or a USB-to-SATA hard drive adapter.
 
 ---
 
