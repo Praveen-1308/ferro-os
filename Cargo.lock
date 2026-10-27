@@ -41,39 +41,39 @@ dependencies = [
 
 [[package]]
 name = "ferro-compositor"
-version = "0.1.0"
+version = "2.3.0"
 dependencies = [
  "libc",
 ]
 
 [[package]]
 name = "ferro-core"
-version = "0.1.0"
+version = "2.3.0"
 dependencies = [
  "libc",
 ]
 
 [[package]]
 name = "ferro-gui"
-version = "0.1.0"
+version = "2.3.0"
 
 [[package]]
 name = "ferro-init"
-version = "0.1.0"
+version = "2.3.0"
 dependencies = [
  "libc",
 ]
 
 [[package]]
 name = "ferro-io"
-version = "0.2.0"
+version = "2.3.0"
 dependencies = [
  "libc",
 ]
 
 [[package]]
 name = "ferro-pkg"
-version = "0.1.0"
+version = "2.3.0"
 dependencies = [
  "flate2",
  "libc",
@@ -272,7 +272,7 @@ dependencies = [
 
 [[package]]
 name = "xdg-desktop-portal-ferro"
-version = "0.1.0"
+version = "2.3.0"
 
 [[package]]
 name = "zlib-rs"

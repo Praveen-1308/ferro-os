@@ -245,13 +245,13 @@ fn main() -> ExitCode {
     fb.draw_window(w1_x, w1_y, w1_w, w1_h, "System Monitor - FerroOS");
 
     fb.draw_text(w1_x + 20, w1_y + 50, "Operating System:", 0xFF94a3b8);
-    fb.draw_text(w1_x + 180, w1_y + 50, "FerroOS v0.1.0", 0xFF38bdf8);
+    fb.draw_text(w1_x + 180, w1_y + 50, "FerroOS v2.3.0", 0xFF38bdf8);
 
     fb.draw_text(w1_x + 20, w1_y + 75, "Init (PID 1):", 0xFF94a3b8);
     fb.draw_text(w1_x + 180, w1_y + 75, "ferro-init (Rust)", 0xFF22c55e);
 
     fb.draw_text(w1_x + 20, w1_y + 100, "Package Manager:", 0xFF94a3b8);
-    fb.draw_text(w1_x + 180, w1_y + 100, "rpk v0.1.0 (Rust)", 0xFFe2e8f0);
+    fb.draw_text(w1_x + 180, w1_y + 100, "rpk v2.3.0 (Rust)", 0xFFe2e8f0);
 
     fb.draw_text(w1_x + 20, w1_y + 125, "Runtime ABI:", 0xFF94a3b8);
     fb.draw_text(w1_x + 180, w1_y + 125, "glibc x86_64", 0xFFe2e8f0);

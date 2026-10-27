@@ -165,7 +165,7 @@ fn main() -> ExitCode {
 }
 
 fn print_usage() {
-    println!("FerroOS Core Utilities v0.1.0 (Rust multi-call binary)");
+    println!("FerroOS Core Utilities v2.3.0 (Rust multi-call binary)");
     println!("Usage: ferro-core <applet> [arguments...]");
     println!("\nDefined applets:");
     println!("  Shell & Navigation: sh, ls, pwd, cd, clear, which");
@@ -2538,7 +2538,7 @@ fn run_fetch(args: &[String]) -> ExitCode {
     }
 
     if args.iter().any(|a| a == "--version" || a == "-V") {
-        println!("ferro-fetch 0.1.0 (pure-Rust minimal HTTP client)");
+        println!("ferro-fetch 2.3.0 (pure-Rust minimal HTTP client)");
         return ExitCode::SUCCESS;
     }
 
@@ -3302,7 +3302,7 @@ fn run_gamemode(args: &[String]) -> ExitCode {
     let mode = args.first().map(|s| s.as_str()).unwrap_or("status");
     match mode {
         "status" => {
-            println!("⬡ FerroOS Dynamic GameMode Subsystem v0.1.0");
+            println!("⬡ FerroOS Dynamic GameMode Subsystem v2.3.0");
             println!("  Interactive Priority: Elevated (Nice -10 ready)");
             println!("  Direct Scanout: Armed for Vulkan/DRM/KMS swapchains");
             if let Ok(gov) =
@@ -3518,7 +3518,7 @@ fn run_dns_cache(args: &[String]) -> ExitCode {
                 "================================================================================"
             );
             println!(
-                "     ⬡ FERRO-OS LOCAL SHARED-MEMORY DNS CACHING RESOLVER (v0.1.0)              "
+                "     ⬡ FERRO-OS LOCAL SHARED-MEMORY DNS CACHING RESOLVER (v2.3.0)              "
             );
             println!(
                 "================================================================================"

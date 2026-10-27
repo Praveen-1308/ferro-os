@@ -25,7 +25,7 @@ mod linux_init {
  | | |  __/ |  | | | (_) | | |__| |____) |
  |_|  \___|_|  |_|  \___/   \____/|_____/ 
  
- FerroOS v0.1.0 - Fast Rust-Powered Operating System
+ FerroOS v2.3.0 - Fast Rust-Powered Operating System
  Enterprise Safety + Sub-Second Velocity + WinRE Recovery
 "#;
 

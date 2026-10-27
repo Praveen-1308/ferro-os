@@ -1,6 +1,6 @@
 [package]
 name = "xdg-desktop-portal-ferro"
-version = "0.1.0"
+version = "2.3.0"
 edition = "2021"
 description = "Native Wayland XDG Desktop Portal backend for FerroOS in pure Rust"
 

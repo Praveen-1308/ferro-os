@@ -1,6 +1,6 @@
 [package]
 name = "ferro-io"
-version = "0.2.0"
+version = "2.3.0"
 edition = "2021"
 authors = ["FerroOS Team"]
 description = "High-Performance Pure-Rust POSIX I/O Interposition and io_uring Acceleration Library"
