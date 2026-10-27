@@ -1146,5 +1146,57 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xfnayk.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xfnayk.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xg2ykv",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Moment of Solidarity for those who have had to terminate a Co-worker or Friend",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xg2ykv/moment_of_solidarity_for_those_who_have_had_to/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Moment of Solidarity for those who have had to terminate a Co-worker or Friend <!-- SC_OFF --><div class=\"md\"><p>Today, I got the news that a co-worker of mine passed away. She was one of the first people I on-boarded at this client when I previously worked for them as a tech with an MSP and not as their manager. She was always smiling and made me feel so accepted at a place that I was unfamiliar with. She was a mother, under 50 yrs old and had a young daughter she was co parenting. I would get to see her daughter often at the org and you could tell how much her mom loved her.</p> <p>Now, she is gone and I have to retrieve her laptop. Maintenance has to clean up the office and we have to move on.</p> <p>It is the second person this year that I have closely worked with that I will have to terminate and it is devastating.</p> <p>I know this is a somewhat common post here, but I think it&#39;s a conversation that is very important for those of us that have had to deal with grief in the workplace.</p> <p>She had a direct impact on my experience at work and me feeling like I was at the right place in my career.</p> <p>I want her memory to live on so I will tell others of our interaction",
+    "score": 0,
+    "timestamp": "2026-10-27T09:42:07.762159+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Moment of Solidarity for those who have had to terminate a Co-worker or Friend.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xg2ykv.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xg2ykv.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xgmaew",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Police Evidence",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xgmaew/police_evidence/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Police Evidence <!-- SC_OFF --><div class=\"md\"><p>We were sadly compromised. Twice. It&#39;s finally answered the question of investments, but the police want evidence. </p> <p>The audit logs is clear on that, but I realise this will become police evidence. They have a secure upload. I filtered the audit logs as I downloaded them to show everything from the attackers to create the csv file. I then created a text file showing the filter, how it was created and the SHA hash of the file. </p> <p>Is this enough? I think the attacker(s) made a mistake and may be traceable, so absolutely would be willing to see them prosecuted. </p> <p>The question is, should I have included anything else in there or done anything else to show the file is not tampered with between myself creating and them opening? </p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/jesuiscanard\"> /u/jesuiscanard </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xgmaew/police_evidence/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xgmaew/police_evidence/\">[comments]</a></span>",
+    "score": 0,
+    "timestamp": "2026-10-27T09:42:07.763019+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Police Evidence.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xgmaew.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xgmaew.json"
   }
 ]

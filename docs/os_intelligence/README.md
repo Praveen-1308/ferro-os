@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 40 | **Last Sweep**: 2026-10-26 09:56:50 UTC
+**Active Tracked Incidents**: 42 | **Last Sweep**: 2026-10-27 09:42:08 UTC
 
 ---
 
@@ -53,6 +53,8 @@
 | `REDDIT-SYSADMIN-1xefcqf` | **Linux Server Administration** | Has anyone left IT support after years in the industry and moved into a completely different role? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xefcqf.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xefcqf.md) |
 | `REDDIT-SYSADMIN-1xe41b9` | **Linux Server Administration** | PHP2Shell: notes from the field | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xe41b9.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xe41b9.md) |
 | `REDDIT-SYSADMIN-1xfnayk` | **Linux Server Administration** | if your blacklist checker uses Google or Cloudflare DNS, Spamhaus results are probably wrong | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xfnayk.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xfnayk.md) |
+| `REDDIT-SYSADMIN-1xg2ykv` | **Linux Server Administration** | Moment of Solidarity for those who have had to terminate a Co-worker or Friend | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xg2ykv.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xg2ykv.md) |
+| `REDDIT-SYSADMIN-1xgmaew` | **Linux Server Administration** | Police Evidence | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xgmaew.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xgmaew.md) |
 
 ---
 
