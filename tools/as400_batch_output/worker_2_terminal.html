@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FerroOS AS/400 5250 Screen Capture - Worker 2</title>
+  <style>
+    body {
+      background: #05080f;
+      color: #33ff33;
+      font-family: 'Courier New', 'Fira Code', 'Lucida Console', monospace;
+      padding: 30px 15px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 90vh;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .header h2 {
+      margin: 0 0 6px 0;
+      color: #38bdf8;
+      font-size: 22px;
+      letter-spacing: 1px;
+    }
+    .header p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    .terminal-container {
+      position: relative;
+      background: #010a01;
+      border: 3px solid #10b981;
+      border-radius: 14px;
+      box-shadow: 0 0 35px rgba(16, 185, 129, 0.35), inset 0 0 25px rgba(0, 40, 0, 0.7);
+      padding: 26px 30px;
+      width: 760px;
+      overflow: hidden;
+    }
+    .terminal-container::before {
+      content: " ";
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      z-index: 2;
+      background-size: 100% 3px, 4px 100%;
+      pointer-events: none;
+    }
+    .crt-screen {
+      font-size: 13.5px;
+      line-height: 1.25;
+      color: #00ff66;
+      text-shadow: 0 0 7px rgba(0, 255, 100, 0.75);
+      white-space: pre;
+      margin: 0;
+      user-select: text;
+      position: relative;
+      z-index: 1;
+    }
+    .telemetry-grid {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      border-top: 1px solid rgba(16, 185, 129, 0.3);
+      padding-top: 14px;
+      position: relative;
+      z-index: 1;
+    }
+    .telemetry-card {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 6px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .telemetry-label {
+      font-size: 10.5px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+    }
+    .telemetry-val {
+      font-size: 13px;
+      font-weight: bold;
+      color: #38bdf8;
+    }
+    .badge-ok {
+      color: #10b981;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>⚡ FerroOS Multi-Container AS/400 (5250) Automation Engine</h2>
+    <p>Concurrent Worker #2 • Target Host: pub400.com:23 • Direct Host Volume Sync</p>
+  </div>
+
+  <div class="terminal-container">
+    <pre class="crt-screen">                                                                                
+                            Welcome to PUB400.COM                               
+                         Your public IBM i server v7r5                          
+                                                                                
+  System  . . . . . :   PUB400                    Sign On (Batch 5/5)           
+  Subsystem . . . . :   QINTER                                                  
+  Display . . . . . :   QPADEV02E                                               
+                                                                                
+  User  . . . . . . . . . . . . . . .   FERRO_02                                
+  Password  . . . . . . . . . . . . .   [ *************** ]                     
+  Program/procedure . . . . . . . . .   [ WRKACTJOB       ]                     
+  Menu  . . . . . . . . . . . . . . .   [ MAIN            ]                     
+  Current library . . . . . . . . . .   [ QGPL            ]                     
+                                                                                
+                                                                                
+  Active Worker : Worker #2 (Parallel Batch Engine)                             
+  Transaction   : TXN_2_0005_PROCESSED                                          
+  Handshake     : 12 bytes verified with pub400.com                             
+                                                                                
+  Batch Status  : SUCCESS (Allocated RSS: 14.11 MB)                             
+                                                                                
+                                                                                
+                    (C) COPYRIGHT IBM CORP. 1980, 2024.                         
+                                                                                </pre>
+
+    <div class="telemetry-grid">
+      <div class="telemetry-card">
+        <div class="telemetry-label">Worker ID</div>
+        <div class="telemetry-val">Worker #2</div>
+      </div>
+      <div class="telemetry-card">
+        <div class="telemetry-label">Handshake Latency</div>
+        <div class="telemetry-val badge-ok">628.69 ms</div>
+      </div>
+      <div class="telemetry-card">
+        <div class="telemetry-label">Active Container RSS</div>
+        <div class="telemetry-val">14.11 MB</div>
+      </div>
+      <div class="telemetry-card">
+        <div class="telemetry-label">Batches Processed</div>
+        <div class="telemetry-val badge-ok">5 Iterations</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

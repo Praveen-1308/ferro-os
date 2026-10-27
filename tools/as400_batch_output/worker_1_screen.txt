@@ -1,0 +1,26 @@
++--------------------------------------------------------------------------------+
+|                                                                                |
+|                            Welcome to PUB400.COM                               |
+|                         Your public IBM i server v7r5                          |
+|                                                                                |
+|  System  . . . . . :   PUB400                    Sign On (Batch 5/5)           |
+|  Subsystem . . . . :   QINTER                                                  |
+|  Display . . . . . :   QPADEV01E                                               |
+|                                                                                |
+|  User  . . . . . . . . . . . . . . .   FERRO_01                                |
+|  Password  . . . . . . . . . . . . .   [ *************** ]                     |
+|  Program/procedure . . . . . . . . .   [ WRKACTJOB       ]                     |
+|  Menu  . . . . . . . . . . . . . . .   [ MAIN            ]                     |
+|  Current library . . . . . . . . . .   [ QGPL            ]                     |
+|                                                                                |
+|                                                                                |
+|  Active Worker : Worker #1 (Parallel Batch Engine)                             |
+|  Transaction   : TXN_1_0005_PROCESSED                                          |
+|  Handshake     : 12 bytes verified with pub400.com                             |
+|                                                                                |
+|  Batch Status  : SUCCESS (Allocated RSS: 14.05 MB)                             |
+|                                                                                |
+|                                                                                |
+|                    (C) COPYRIGHT IBM CORP. 1980, 2024.                         |
+|                                                                                |
++--------------------------------------------------------------------------------+

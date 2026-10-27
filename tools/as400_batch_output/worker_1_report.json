@@ -1,0 +1,68 @@
+{
+  "worker_id": 1,
+  "host": "pub400.com",
+  "port": 23,
+  "is_live_connection": true,
+  "bytes_received": 12,
+  "handshake_latency_ms": 563.42,
+  "total_batches_processed": 5,
+  "batch_records": [
+    {
+      "batch_idx": 1,
+      "device": "QPADEV01A",
+      "system": "PUB400",
+      "subsystem": "QINTER",
+      "operator": "FERRO_01",
+      "rss_mb": 14.05,
+      "timestamp": 1793084667.523
+    },
+    {
+      "batch_idx": 2,
+      "device": "QPADEV01B",
+      "system": "PUB400",
+      "subsystem": "QINTER",
+      "operator": "FERRO_01",
+      "rss_mb": 14.05,
+      "timestamp": 1793084668.123
+    },
+    {
+      "batch_idx": 3,
+      "device": "QPADEV01C",
+      "system": "PUB400",
+      "subsystem": "QINTER",
+      "operator": "FERRO_01",
+      "rss_mb": 14.05,
+      "timestamp": 1793084668.724
+    },
+    {
+      "batch_idx": 4,
+      "device": "QPADEV01D",
+      "system": "PUB400",
+      "subsystem": "QINTER",
+      "operator": "FERRO_01",
+      "rss_mb": 14.05,
+      "timestamp": 1793084669.324
+    },
+    {
+      "batch_idx": 5,
+      "device": "QPADEV01E",
+      "system": "PUB400",
+      "subsystem": "QINTER",
+      "operator": "FERRO_01",
+      "rss_mb": 14.05,
+      "timestamp": 1793084669.924
+    }
+  ],
+  "memory_telemetry": {
+    "initial_rss_mb": 13.46,
+    "final_rss_mb": 14.05,
+    "growth_mb": 0.6
+  },
+  "terminal_screen": {
+    "system": "PUB400",
+    "subsystem": "QINTER",
+    "display": "QPADEV01E",
+    "user": "FERRO_01"
+  },
+  "completion_timestamp": 1793084670.5246572
+}
