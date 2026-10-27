@@ -2510,26 +2510,26 @@ python3 tools/live_user_simulator.py --host 172.28.0.2 --port 8088 --users 1000 
       postCommands.style.display = "block";
 
       // Select artifact or generate custom configuration
-      let targetFile = "ferro-custom-qa.tar.gz";
-      let downloadUrl = "https://github.com/Praveen-1308/ferro-os/raw/main/build_out/ferro-python-qa.tar.gz";
+      let targetFile = "ferro-python-qa.tar.gz";
+      let downloadUrl = "https://github.com/Praveen-1308/ferro-os/releases/download/v2.3.0-modular-os-hub/ferro-python-qa.tar.gz";
       let runCmd = "";
 
       if (selectedModules.baremetal_iso) {
         targetFile = "ferro-os-live.iso";
-        downloadUrl = "https://github.com/Praveen-1308/ferro-os/raw/main/build_out/ferro-os-live.iso";
+        downloadUrl = "https://github.com/Praveen-1308/ferro-os/releases/download/v2.3.0-modular-os-hub/ferro-os-live.iso";
         runCmd = `# Flash synthesized ISO to USB drive on Linux/macOS:\nsudo dd if=${targetFile} of=/dev/sdX bs=4M status=progress conv=fsync\n\n# Or write with Rufus (DD mode) on Windows, reboot into BIOS, and select USB boot!`;
       } else if (!selectedModules.glibc && !selectedModules.python && !selectedModules.server_suite) {
         targetFile = "pure_rust_rootfs.tar.gz";
-        downloadUrl = "https://github.com/Praveen-1308/ferro-os/raw/main/build_out/pure_rust_rootfs.tar.gz";
+        downloadUrl = "https://github.com/Praveen-1308/ferro-os/releases/download/v2.3.0-modular-os-hub/pure_rust_rootfs.tar.gz";
         runCmd = `# Run 2.92 MB Pure-Rust scratch container:\ndocker run -it --rm --memory=32m ferro-os-pure:latest /usr/bin/sh`;
       } else if (selectedModules.server_suite) {
         targetFile = "Dockerfile.server";
-        downloadUrl = "https://github.com/Praveen-1308/ferro-os/raw/main/Dockerfile.server";
+        downloadUrl = "https://raw.githubusercontent.com/Praveen-1308/ferro-os/main/Dockerfile.server";
         runCmd = `# Run dedicated server suite with active microservices:\ndocker run -d --name ferro-server -p 8080:8080 -p 8081:8081 -p 8088:8088 --memory=128m ferro-os-server:latest`;
       } else {
         // Python QA Testing Container
         targetFile = "ferro-python-qa.tar.gz";
-        downloadUrl = "https://github.com/Praveen-1308/ferro-os/raw/main/build_out/ferro-python-qa.tar.gz";
+        downloadUrl = "https://github.com/Praveen-1308/ferro-os/releases/download/v2.3.0-modular-os-hub/ferro-python-qa.tar.gz";
         const memCap = selectedModules.c_toolchain ? "384m" : "64m";
         const cpuCap = BUDGET_MATRIX[currentAppBudget].cpuLimit;
         runCmd = `# Run synthesized FerroOS Python QA worker (${currentAppBudget} budget on 16 GB laptop):\ndocker run -d --name ferro-qa-worker --memory=${memCap} --memory-swap=${memCap} --cpus=${cpuCap} -v $(pwd)/scripts:/app ferro-python-qa:latest`;
