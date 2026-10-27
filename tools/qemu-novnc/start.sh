@@ -7,13 +7,15 @@ echo "==========================================================================
 
 # Boot QEMU with VNC on port 5900
 # VGA display at 1024x768 (vga=792)
+# console=tty0 so VGA display receives all terminal I/O and shell prompts
 echo "--> Starting QEMU with pure-Rust OS on VNC:5900..."
 qemu-system-x86_64 \
     -m 512M \
     -kernel /os/vmlinuz \
     -initrd /os/initramfs.cpio.gz \
-    -append "console=tty0 console=ttyS0 quiet rdinit=/init vga=792" \
+    -append "console=ttyS0 console=tty0 rdinit=/init vga=792" \
     -vga std \
+    -serial file:/tmp/serial.log \
     -vnc 127.0.0.1:0 \
     -no-reboot &
 

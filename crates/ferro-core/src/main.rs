@@ -220,7 +220,8 @@ fn run_sh(args: &[String]) -> ExitCode {
         let _ = stdout.flush();
 
         let mut line = String::new();
-        match stdin.lock().read_line(&mut line) {
+        let read_res = stdin.lock().read_line(&mut line);
+        match read_res {
             Ok(0) => break,
             Ok(_) => {
                 let trimmed = line.trim();
@@ -4098,7 +4099,12 @@ fn run_recovery() -> ExitCode {
                 println!("✅ Defaults restored successfully.");
                 ExitCode::SUCCESS
             }
-            "3" => run_bench(&["8".to_string(), "100000".to_string()]),
+            "3" => {
+                println!("[RECOVERY] Executing Real-Time Hardware & Memory Diagnostics...");
+                let code = run_bench(&["8".to_string(), "100000".to_string()]);
+                println!("\n✅ Hardware Diagnostics Finished! Returning to shell prompt...");
+                code
+            }
             "4" => {
                 let _ = fs::create_dir_all("/var/lib/ferro");
                 let _ = fs::write("/var/lib/ferro/system_crashed", "TRIGGER_SAFE_MODE\n");
