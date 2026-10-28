@@ -6,7 +6,9 @@ use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::UnixStream;
 use std::process::ExitCode;
 
-const SOCKET_PATH: &str = "/run/ferro/superd.sock";
+fn get_socket_path() -> String {
+    std::env::var("FERRO_SOCKET_PATH").unwrap_or_else(|_| "/run/ferro/superd.sock".to_string())
+}
 
 pub fn run_service(args: &[String]) -> ExitCode {
     if args.is_empty() {
@@ -51,10 +53,11 @@ fn print_usage() {
 }
 
 fn send_rpc(request_json: &str) -> Result<String, String> {
-    let mut stream = UnixStream::connect(SOCKET_PATH).map_err(|e| {
+    let sock = get_socket_path();
+    let mut stream = UnixStream::connect(&sock).map_err(|e| {
         format!(
             "Failed to connect to ferro-superd at '{}' (is ferro-superd running?): {}",
-            SOCKET_PATH, e
+            sock, e
         )
     })?;
 

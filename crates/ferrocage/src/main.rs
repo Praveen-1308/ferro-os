@@ -9,9 +9,15 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const STATE_DIR: &str = "/var/lib/ferrocage/containers";
-const IMAGES_DIR: &str = "/var/lib/ferrocage/images";
-const LOGS_DIR: &str = "/var/log/ferrocage";
+fn get_state_dir() -> String {
+    std::env::var("FERROCAGE_STATE_DIR").unwrap_or_else(|_| "/var/lib/ferrocage/containers".to_string())
+}
+fn get_images_dir() -> String {
+    std::env::var("FERROCAGE_IMAGES_DIR").unwrap_or_else(|_| "/var/lib/ferrocage/images".to_string())
+}
+fn get_logs_dir() -> String {
+    std::env::var("FERROCAGE_LOGS_DIR").unwrap_or_else(|_| "/var/log/ferrocage".to_string())
+}
 const CGROUP_ROOT: &str = "/sys/fs/cgroup/ferrocage";
 
 #[derive(Debug, Clone)]
@@ -165,10 +171,12 @@ fn handle_run(args: &[String]) -> ExitCode {
     let container_id = generate_id();
     let name = custom_name.unwrap_or_else(|| format!("ferro-{}", &container_id[..6]));
 
-    let _ = fs::create_dir_all(STATE_DIR);
-    let _ = fs::create_dir_all(LOGS_DIR);
+    let state_dir = get_state_dir();
+    let logs_dir = get_logs_dir();
+    let _ = fs::create_dir_all(&state_dir);
+    let _ = fs::create_dir_all(&logs_dir);
 
-    let log_path = format!("{}/{}.log", LOGS_DIR, container_id);
+    let log_path = format!("{}/{}.log", logs_dir, container_id);
     let log_file = OpenOptions::new()
         .create(true)
         .write(true)
@@ -179,6 +187,74 @@ fn handle_run(args: &[String]) -> ExitCode {
     let mut cmd = Command::new(&cmd_parts[0]);
     if cmd_parts.len() > 1 {
         cmd.args(&cmd_parts[1..]);
+    }
+
+    #[cfg(target_os = "linux")]
+    unsafe {
+        use std::os::unix::process::CommandExt;
+        let vols = volumes.clone();
+        cmd.pre_exec(move || {
+            if !vols.is_empty() {
+                let uid = libc::getuid();
+                let gid = libc::getgid();
+
+                // 1. Create a private mount namespace (support rootless with CLONE_NEWUSER)
+                let unshared = if libc::unshare(libc::CLONE_NEWNS) == 0 {
+                    true
+                } else if libc::unshare(libc::CLONE_NEWUSER | libc::CLONE_NEWNS) == 0 {
+                    let _ = std::fs::write("/proc/self/setgroups", "deny");
+                    let _ = std::fs::write("/proc/self/uid_map", format!("0 {} 1\n", uid));
+                    let _ = std::fs::write("/proc/self/gid_map", format!("0 {} 1\n", gid));
+                    true
+                } else {
+                    false
+                };
+
+                if unshared {
+                    let none_str = std::ffi::CString::new("none").unwrap();
+                    libc::mount(
+                        std::ptr::null(),
+                        none_str.as_ptr(),
+                        std::ptr::null(),
+                        libc::MS_REC | libc::MS_PRIVATE,
+                        std::ptr::null(),
+                    );
+
+                    for vol in &vols {
+                        let parts: Vec<&str> = vol.split(':').collect();
+                        if parts.len() >= 2 {
+                            let host_path = parts[0];
+                            let dest_path = parts[1];
+                            let is_ro = parts.get(2).map(|s| *s == "ro").unwrap_or(false);
+
+                            let _ = std::fs::create_dir_all(dest_path);
+
+                            let c_host = std::ffi::CString::new(host_path).unwrap();
+                            let c_dest = std::ffi::CString::new(dest_path).unwrap();
+
+                            if libc::mount(
+                                c_host.as_ptr(),
+                                c_dest.as_ptr(),
+                                std::ptr::null(),
+                                libc::MS_BIND,
+                                std::ptr::null(),
+                            ) == 0 {
+                                if is_ro {
+                                    libc::mount(
+                                        std::ptr::null(),
+                                        c_dest.as_ptr(),
+                                        std::ptr::null(),
+                                        libc::MS_BIND | libc::MS_REMOUNT | libc::MS_RDONLY,
+                                        std::ptr::null(),
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Ok(())
+        });
     }
 
     if detach {
@@ -260,7 +336,7 @@ fn handle_run(args: &[String]) -> ExitCode {
         state.exit_code = Some(code);
 
         if auto_rm {
-            let container_dir = format!("{}/{}", STATE_DIR, container_id);
+            let container_dir = format!("{}/{}", get_state_dir(), container_id);
             let _ = fs::remove_dir_all(container_dir);
             cleanup_cgroup_v2(&container_id);
         } else {
@@ -448,9 +524,9 @@ fn handle_rm(args: &[String]) -> ExitCode {
             }
         }
 
-        let container_dir = format!("{}/{}", STATE_DIR, state.id);
+        let container_dir = format!("{}/{}", get_state_dir(), state.id);
         let _ = fs::remove_dir_all(&container_dir);
-        let log_file = format!("{}/{}.log", LOGS_DIR, state.id);
+        let log_file = format!("{}/{}.log", get_logs_dir(), state.id);
         let _ = fs::remove_file(&log_file);
         cleanup_cgroup_v2(&state.id);
 
@@ -479,7 +555,7 @@ fn handle_logs(args: &[String]) -> ExitCode {
     };
 
     if let Some(state) = find_container(&target) {
-        let log_path = format!("{}/{}.log", LOGS_DIR, state.id);
+        let log_path = format!("{}/{}.log", get_logs_dir(), state.id);
         if let Ok(file) = File::open(&log_path) {
             let reader = BufReader::new(file);
             let lines: Vec<String> = reader.lines().flatten().collect();
@@ -581,9 +657,10 @@ fn handle_exec(args: &[String]) -> ExitCode {
 
 fn handle_images(_args: &[String]) -> ExitCode {
     println!("{:<24} {:<12} {:<16} {}", "REPOSITORY", "TAG", "SIZE", "LOCATION");
-    let _ = fs::create_dir_all(IMAGES_DIR);
+    let images_dir = get_images_dir();
+    let _ = fs::create_dir_all(&images_dir);
 
-    if let Ok(entries) = fs::read_dir(IMAGES_DIR) {
+    if let Ok(entries) = fs::read_dir(&images_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             let name = path.file_name().and_then(|s| s.to_str()).unwrap_or("unknown");
@@ -633,7 +710,7 @@ fn cleanup_cgroup_v2(id: &str) {
 }
 
 fn save_state(state: &ContainerState) {
-    let container_dir = format!("{}/{}", STATE_DIR, state.id);
+    let container_dir = format!("{}/{}", get_state_dir(), state.id);
     let _ = fs::create_dir_all(&container_dir);
     let state_file = format!("{}/state.json", container_dir);
     let json = format_state_json(state);
@@ -642,7 +719,7 @@ fn save_state(state: &ContainerState) {
 
 fn load_all_containers() -> Vec<ContainerState> {
     let mut result = Vec::new();
-    if let Ok(entries) = fs::read_dir(STATE_DIR) {
+    if let Ok(entries) = fs::read_dir(get_state_dir()) {
         for entry in entries.flatten() {
             let path = entry.path().join("state.json");
             if path.exists() {

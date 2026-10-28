@@ -15,9 +15,15 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-const SOCKET_PATH: &str = "/run/ferro/superd.sock";
-const SERVICES_DIR: &str = "/etc/ferro/services";
-const LOGS_DIR: &str = "/var/log/ferro";
+fn get_socket_path() -> String {
+    std::env::var("FERRO_SOCKET_PATH").unwrap_or_else(|_| "/run/ferro/superd.sock".to_string())
+}
+fn get_services_dir() -> String {
+    std::env::var("FERRO_SERVICES_DIR").unwrap_or_else(|_| "/etc/ferro/services".to_string())
+}
+fn get_logs_dir() -> String {
+    std::env::var("FERRO_LOGS_DIR").unwrap_or_else(|_| "/var/log/ferro".to_string())
+}
 const CGROUP_ROOT: &str = "/sys/fs/cgroup/ferro.slice";
 const MAX_LOG_LINES: usize = 500;
 
@@ -92,7 +98,8 @@ pub struct ManagedService {
 
 impl ManagedService {
     pub fn new(config: ServiceConfig) -> Self {
-        let log_file_path = format!("{}/{}.log", LOGS_DIR, config.name);
+        let logs_dir = get_logs_dir();
+        let log_file_path = format!("{}/{}.log", logs_dir, config.name);
         let log_file = OpenOptions::new()
             .create(true)
             .append(true)
@@ -141,14 +148,16 @@ impl Supervisor {
     }
 
     pub fn load_manifests(&self) {
-        if !Path::new(SERVICES_DIR).exists() {
-            let _ = fs::create_dir_all(SERVICES_DIR);
+        let services_dir = get_services_dir();
+        let logs_dir = get_logs_dir();
+        if !Path::new(&services_dir).exists() {
+            let _ = fs::create_dir_all(&services_dir);
         }
-        if !Path::new(LOGS_DIR).exists() {
-            let _ = fs::create_dir_all(LOGS_DIR);
+        if !Path::new(&logs_dir).exists() {
+            let _ = fs::create_dir_all(&logs_dir);
         }
 
-        let entries = match fs::read_dir(SERVICES_DIR) {
+        let entries = match fs::read_dir(&services_dir) {
             Ok(e) => e,
             Err(_) => return,
         };
@@ -513,24 +522,28 @@ fn run_health_check_loop(supervisor: Arc<Supervisor>) {
 // ---------------------------------------------------------------------------
 
 fn run_ipc_server(supervisor: Arc<Supervisor>) {
-    let _ = fs::create_dir_all("/run/ferro");
-    if Path::new(SOCKET_PATH).exists() {
-        let _ = fs::remove_file(SOCKET_PATH);
+    let sock = get_socket_path();
+    let sock_path = Path::new(&sock);
+    if let Some(parent) = sock_path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    if sock_path.exists() {
+        let _ = fs::remove_file(&sock);
     }
 
-    let listener = match UnixListener::bind(SOCKET_PATH) {
+    let listener = match UnixListener::bind(&sock) {
         Ok(l) => {
             // Set socket permissions 0660
-            let _ = fs::set_permissions(SOCKET_PATH, fs::Permissions::from_mode(0o660));
+            let _ = fs::set_permissions(&sock, fs::Permissions::from_mode(0o660));
             l
         }
         Err(e) => {
-            eprintln!("[ferro-superd] Failed to bind IPC socket {}: {}", SOCKET_PATH, e);
+            eprintln!("[ferro-superd] Failed to bind IPC socket {}: {}", sock, e);
             return;
         }
     };
 
-    println!("[ferro-superd] Listening for CLI commands on {}", SOCKET_PATH);
+    println!("[ferro-superd] Listening for CLI commands on {}", sock);
 
     for stream in listener.incoming() {
         if !RUNNING.load(Ordering::Relaxed) {
