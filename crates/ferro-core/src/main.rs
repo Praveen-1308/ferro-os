@@ -15,8 +15,11 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 pub mod bench_suite;
+pub mod cloud_init;
 pub mod dhcp;
+pub mod disk;
 pub mod shell;
+pub mod sshd;
 pub mod syslog;
 pub mod zeroize;
 
@@ -152,6 +155,9 @@ fn main() -> ExitCode {
         "dmesg" => syslog::run_dmesg(&command_args),
         "hackbench" => bench_suite::run_hackbench(&command_args),
         "bench-fsync" | "fsync-bench" => bench_suite::run_fsync_bench(&command_args),
+        "disk" => disk::run_disk(&command_args),
+        "cloud-init" | "cloudinit" => cloud_init::run_cloud_init(&command_args),
+        "sshd" | "ssh-server" => sshd::run_sshd(&command_args),
         "help" => {
             print_usage();
             ExitCode::SUCCESS
@@ -473,7 +479,7 @@ pub const ALL_APPLETS: &[&str] = &[
     "ai-mode", "ai", "sandbox", "landlock", "recovery", "fetch", "curl",
     "hackbench", "bench-fsync", "fsync-bench", "dhcp", "ferro-net", "udhcpc",
     "ferrod", "syslogd", "logger", "logs", "log", "journalctl", "dmesg",
-    "server-suite", "server"
+    "server-suite", "server", "disk", "cloud-init", "cloudinit", "sshd", "ssh-server"
 ];
 
 fn is_internal_applet(cmd: &str) -> bool {

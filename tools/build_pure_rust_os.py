@@ -72,10 +72,10 @@ def main():
     print("\n[Stage 2] Generating FHS 3.0 UsrMerge Directory Hierarchy...")
     usr_dirs = [
         "usr/bin", "usr/sbin", "usr/lib", "usr/lib/ferro",
-        "etc", "etc/ferro", "etc/sysctl.d",
-        "home/ferro", "root",
+        "etc", "etc/ferro", "etc/sysctl.d", "etc/ssh",
+        "home/ferro", "root", "root/.ssh",
         "var", "var/log", "var/log/ferro", "var/lib/ferro", "var/tmp",
-        "tmp", "run", "run/ferro", "dev", "proc", "sys"
+        "tmp", "run", "run/ferro", "dev", "proc", "sys", "sysroot"
     ]
     for d in usr_dirs:
         os.makedirs(os.path.join(ROOTFS, d), exist_ok=True)
@@ -120,6 +120,7 @@ def main():
         "dhcp", "ferro-net", "udhcpc", "hackbench", "bench-fsync", "fsync-bench",
         "gamemode", "bpf", "ebpf", "sched", "scx", "game", "proton", "win", "wine",
         "install", "snapshot", "ai-mode", "sandbox", "supervise",
+        "disk", "cloud-init", "cloudinit", "sshd",
         "reboot", "poweroff", "bench", "fdstore", "recovery", "help"
     ]
     for app in applets:

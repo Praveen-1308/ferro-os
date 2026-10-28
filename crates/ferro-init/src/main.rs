@@ -53,6 +53,23 @@ mod linux_init {
         // 1. Mount virtual filesystems first so we have /proc, /sys, /dev, /tmp
         mount_essential_filesystems();
 
+        // 1a. Persistent Block Storage Root Pivot (switch_root) Check
+        // If a persistent root device is supplied in kernel cmdline (root=/dev/...) or detected,
+        // mount it onto /sysroot and pivot execution from volatile initramfs to persistent disk.
+        if !Path::new("/etc/ferro_persistent_root").exists() {
+            if let Some(root_dev) = detect_persistent_root_device() {
+                println!("[ferro-init] Detected persistent root device: {}. Attempting switch_root...", root_dev);
+                if try_switch_root(&root_dev) {
+                    println!("[ferro-init] Root pivot successful. Re-executing PID 1 in persistent rootfs.");
+                    return Ok(());
+                }
+            } else {
+                println!("[ferro-init] No persistent block device specified (root=...). Running in high-velocity RAM (initramfs) mode.");
+            }
+        } else {
+            println!("[ferro-init] ✅ Running on PERSISTENT BLOCK STORAGE rootfs (Data persists across reboots).");
+        }
+
         // 1b. Register PID 1 Signal Handlers & Start Continuous Zombie Reaper
         register_pid1_signal_handlers();
         spawn_continuous_zombie_reaper();
@@ -680,6 +697,152 @@ mod linux_init {
         }
     }
 
+    // -------------------------------------------------------------
+    // Persistent Block Storage & switch_root Engine
+    // -------------------------------------------------------------
+    fn detect_persistent_root_device() -> Option<String> {
+        // 1. Check kernel commandline for root=... parameter
+        if let Ok(cmdline) = fs::read_to_string("/proc/cmdline") {
+            for token in cmdline.split_whitespace() {
+                if let Some(stripped) = token.strip_prefix("root=") {
+                    let root_target = stripped.trim_matches('"');
+                    if root_target != "/dev/ram" && root_target != "ramfs" && !root_target.is_empty() {
+                        return Some(root_target.to_string());
+                    }
+                }
+            }
+        }
+
+        // 2. Auto-detect if a block device contains FerroOS persistent root
+        let candidate_devices = [
+            "/dev/vda1", "/dev/vda2", "/dev/sda1", "/dev/sda2", "/dev/nvme0n1p1", "/dev/nvme0n1p2"
+        ];
+        for dev in &candidate_devices {
+            if Path::new(dev).exists() {
+                let test_mount = "/tmp/.root_probe";
+                let _ = fs::create_dir_all(test_mount);
+                if mount_persistent_root(dev, test_mount) {
+                    let has_marker = Path::new(&format!("{}/etc/ferro_persistent_root", test_mount)).exists();
+                    let _ = libc_umount(test_mount);
+                    let _ = fs::remove_dir(test_mount);
+                    if has_marker {
+                        return Some(dev.to_string());
+                    }
+                }
+            }
+        }
+
+        None
+    }
+
+    fn try_switch_root(target_dev: &str) -> bool {
+        let sysroot = "/sysroot";
+        let _ = fs::create_dir_all(sysroot);
+
+        // Try mounting persistent device with ext4, btrfs, or xfs
+        let mounted = mount_persistent_root(target_dev, sysroot);
+        if !mounted {
+            eprintln!("[ferro-init] Failed to mount persistent root device {} onto {}", target_dev, sysroot);
+            return false;
+        }
+
+        // Verify valid root directory structure
+        let init_candidate = format!("{}/init", sysroot);
+        let core_candidate = format!("{}/bin/ferro-core", sysroot);
+        if !Path::new(&init_candidate).exists() && !Path::new(&core_candidate).exists() {
+            eprintln!("[ferro-init] Target persistent root {} has no /init or /bin/ferro-core. Aborting pivot.", sysroot);
+            let _ = libc_umount(sysroot);
+            return false;
+        }
+
+        // Move virtual filesystems: /dev, /proc, /sys, /run
+        for vfs in &["dev", "proc", "sys", "run"] {
+            let src = format!("/{}", vfs);
+            let dst = format!("{}/{}", sysroot, vfs);
+            let _ = fs::create_dir_all(&dst);
+            move_mount(&src, &dst);
+        }
+
+        // Perform switch_root: chdir to new root, chroot, and re-exec init
+        println!("[ferro-init] Pivoting root to persistent block device (switch_root)...");
+        unsafe {
+            let c_sysroot = match CString::new(sysroot) { Ok(c) => c, Err(_) => return false };
+            let c_slash = match CString::new("/") { Ok(c) => c, Err(_) => return false };
+
+            if libc::chdir(c_sysroot.as_ptr()) != 0 {
+                eprintln!("[ferro-init] chdir to sysroot failed!");
+                return false;
+            }
+
+            if libc::chroot(b".\0".as_ptr() as *const libc::c_char) != 0 {
+                eprintln!("[ferro-init] chroot to new root failed!");
+                return false;
+            }
+
+            if libc::chdir(c_slash.as_ptr()) != 0 {
+                eprintln!("[ferro-init] chdir to / in new root failed!");
+                return false;
+            }
+
+            // Re-exec PID 1 in the new rootfs
+            let c_init = CString::new("/init").unwrap();
+            let args = [c_init.as_ptr(), std::ptr::null()];
+            libc::execv(c_init.as_ptr(), args.as_ptr());
+
+            // Fallback to /bin/ferro-core
+            let c_core = CString::new("/bin/ferro-core").unwrap();
+            let c_sh = CString::new("sh").unwrap();
+            let args_fallback = [c_core.as_ptr(), c_sh.as_ptr(), std::ptr::null()];
+            libc::execv(c_core.as_ptr(), args_fallback.as_ptr());
+        }
+
+        true
+    }
+
+    fn mount_persistent_root(dev: &str, target: &str) -> bool {
+        for fstype in &["ext4", "btrfs", "xfs"] {
+            let c_dev = match CString::new(dev) { Ok(c) => c, Err(_) => continue };
+            let c_target = match CString::new(target) { Ok(c) => c, Err(_) => continue };
+            let c_fstype = match CString::new(*fstype) { Ok(c) => c, Err(_) => continue };
+
+            unsafe {
+                let ret = libc::mount(
+                    c_dev.as_ptr(),
+                    c_target.as_ptr(),
+                    c_fstype.as_ptr(),
+                    libc::MS_RELATIME,
+                    std::ptr::null(),
+                );
+                if ret == 0 {
+                    println!("[ferro-init] Mounted persistent root {} ({}) on {}", dev, fstype, target);
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    fn move_mount(src: &str, dst: &str) {
+        let c_src = match CString::new(src) { Ok(c) => c, Err(_) => return };
+        let c_dst = match CString::new(dst) { Ok(c) => c, Err(_) => return };
+        unsafe {
+            let _ = libc::mount(
+                c_src.as_ptr(),
+                c_dst.as_ptr(),
+                std::ptr::null(),
+                libc::MS_MOVE,
+                std::ptr::null(),
+            );
+        }
+    }
+
+    fn libc_umount(target: &str) -> bool {
+        let c_target = match CString::new(target) { Ok(c) => c, Err(_) => return false };
+        unsafe {
+            libc::umount2(c_target.as_ptr(), libc::MNT_DETACH) == 0
+        }
+    }
+
     fn elevate_system_limits() {
         #[cfg(unix)]
         unsafe {
@@ -845,6 +1008,28 @@ mod linux_init {
                     }
                 }
                 libc::close(sock);
+
+                // Trigger Cloud-Init metadata ingestion (AWS/GCP/Azure/OpenStack)
+                println!("[ferro-init] Spawning Cloud-Init metadata service probe (169.254.169.254)...");
+                let _ = std::thread::Builder::new()
+                    .name("ferro-cloud-init".to_string())
+                    .spawn(|| {
+                        std::thread::sleep(std::time::Duration::from_millis(600));
+                        let _ = std::process::Command::new("/bin/ferro-core")
+                            .args(["cloud-init"])
+                            .status();
+                    });
+
+                // Spawn Secure Remote Administration SSH Server (sshd on port 22)
+                println!("[ferro-init] Spawning FerroOS SSH remote administration daemon on port 22...");
+                let _ = std::thread::Builder::new()
+                    .name("ferro-sshd".to_string())
+                    .spawn(|| {
+                        std::thread::sleep(std::time::Duration::from_millis(800));
+                        let _ = std::process::Command::new("/bin/ferro-core")
+                            .args(["sshd", "--port", "22"])
+                            .status();
+                    });
             }
         }
     }

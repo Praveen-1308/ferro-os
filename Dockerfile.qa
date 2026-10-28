@@ -20,8 +20,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # 3. Copy FerroOS Pure-Rust Core, Package Keeper (rpk) and Acceleration Shim
 COPY --from=ferro-os-server:latest /usr/lib/libferro_io.so /usr/lib/libferro_io.so
-COPY --from=ferro-os-server:latest /usr/local/bin/ferro-pkg /usr/local/bin/rpk
-COPY --from=ferro-os-server:latest /usr/local/bin/ferro-core /usr/local/bin/ferro-core
+COPY --from=ferro-os-pure:latest /usr/bin/ferro-pkg /usr/local/bin/rpk
+COPY --from=ferro-os-pure:latest /usr/bin/ferro-core /usr/local/bin/ferro-core
 RUN chmod +x /usr/local/bin/rpk /usr/local/bin/ferro-core
 
 # 4. Configure mimalloc zero-delay memory purging and LD_PRELOAD

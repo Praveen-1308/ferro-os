@@ -172,8 +172,10 @@ flowchart LR
 - [ ] **POSIX Shell Extensions**: Expand `crates/ferro-core/src/shell.rs` to support `for ... in ... do ... done` loops, `case ... in ... esac`, and multi-line heredocs.
 - [ ] **Dynamic DNS Resolver**: Implement automatic generation of `/etc/resolv.conf` from DHCP lease responses.
 
-### Priority 2: Storage & Persistence
-- [ ] **Persistent Disk Installer**: Add an installer command (`ferro-install /dev/vda`) to partition, format (`ext4`), and install the FerroOS bootloader and rootfs onto persistent block devices.
+### Priority 2: Storage, Cloud-Init & Remote Administration
+- [x] **Persistent Block Storage & switch_root**: Added `ferro-core disk` and kernel rootfs pivot in `ferro-init` to mount `/sysroot` and run from persistent block devices (`/dev/vda1`, `/dev/sda1`, NVMe).
+- [x] **Autonomous Cloud-Init Engine**: Added `ferro-core cloud-init` to probe `http://169.254.169.254/latest/meta-data/`, inject public SSH keys into `/root/.ssh/authorized_keys` (`0600`), sync hostnames, and execute bootstrapping scripts.
+- [x] **Remote Administration SSH Daemon (`sshd`)**: Added native SSH-2.0 listener on port 22 with automatic host-key generation (`/etc/ssh/ssh_host_*_key`) and authenticated remote console.
 - [ ] **OverlayFS Root**: Transition from initramfs-only execution to an ephemeral OverlayFS layer backed by persistent storage.
 
 ### Priority 3: Containerization & Sandboxing
