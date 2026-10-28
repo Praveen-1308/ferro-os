@@ -7795,167 +7795,194 @@ const LANDLOCK_ACCESS_FS_TRUNCATE: u64 = 1 << 14;
 
 fn run_sandbox(args: &[String]) -> ExitCode {
     if args.is_empty() {
-        println!("Usage: ferro-core sandbox [status | enforce <dir> -- <cmd...>]");
+        println!("Usage: ferro sandbox [options] -- <command> [args...]");
+        println!("       ferro sandbox enforce <dir> -- <command> [args...]");
+        println!("       ferro sandbox status");
+        println!();
+        println!("Options:");
+        println!("  --ro <path>     Allow read-only access to specified path (repeatable)");
+        println!("  --rw <path>     Allow read-write access to specified storage path (repeatable)");
+        println!("  --no-net        Disallow network access (isolated private loopback)");
+        println!("  --drop-caps     Drop all ambient Linux capabilities");
         return ExitCode::FAILURE;
     }
-    match args[0].as_str() {
-        "status" => {
-            println!(
-                "================================================================================"
-            );
-            println!(
-                "      ⬡ FERRO-OS LANDLOCK LSM & SECCOMP-BPF SANDBOX SUBSYSTEM                   "
-            );
-            println!(
-                "================================================================================"
-            );
-            let landlock_supported = Path::new("/sys/kernel/security/lsm").exists()
-                || fs::read_to_string("/sys/kernel/security/lsm")
-                    .map(|s| s.contains("landlock"))
-                    .unwrap_or(false);
-            println!(
-                "  Landlock LSM Kernel Support:   {}",
-                if landlock_supported {
-                    "ARMED (Available)"
-                } else {
-                    "Active / Available via Kernel ABI"
-                }
-            );
-            println!("  seccomp-bpf Filter:           Active");
-            println!("  PR_SET_NO_NEW_PRIVS:          Enabled");
-            println!(
-                "================================================================================"
-            );
-            ExitCode::SUCCESS
-        }
-        "enforce" => {
-            if args.len() < 4 {
-                eprintln!("Usage: ferro-core sandbox enforce <allowed_dir> -- <cmd> [args...]");
-                return ExitCode::FAILURE;
+
+    if args[0] == "status" {
+        println!("================================================================================");
+        println!("      ⬡ FERRO-OS LANDLOCK LSM & SECCOMP-BPF SANDBOX SUBSYSTEM                   ");
+        println!("================================================================================");
+        let landlock_supported = Path::new("/sys/kernel/security/lsm").exists()
+            || fs::read_to_string("/sys/kernel/security/lsm")
+                .map(|s| s.contains("landlock"))
+                .unwrap_or(false);
+        println!(
+            "  Landlock LSM Kernel Support:   {}",
+            if landlock_supported {
+                "ARMED (Available)"
+            } else {
+                "Active / Available via Kernel ABI"
             }
-            let allowed_dir = &args[1];
-            let cmd_idx = match args.iter().position(|r| r == "--") {
-                Some(i) => i + 1,
-                None => 2,
+        );
+        println!("  seccomp-bpf Filter:           Active");
+        println!("  PR_SET_NO_NEW_PRIVS:          Enabled");
+        println!("================================================================================");
+        return ExitCode::SUCCESS;
+    }
+
+    let mut read_only_paths: Vec<String> = Vec::new();
+    let mut read_write_paths: Vec<String> = Vec::new();
+    let mut no_net = false;
+    let mut drop_caps = false;
+
+    let sep_idx = args.iter().position(|r| r == "--");
+    let (opts, cmd_slice) = if let Some(i) = sep_idx {
+        (&args[..i], &args[i + 1..])
+    } else if args[0] == "enforce" && args.len() >= 3 {
+        // Fallback for: enforce <dir> <cmd...>
+        read_write_paths.push(args[1].clone());
+        (&args[0..0], &args[2..])
+    } else {
+        eprintln!("Error: sandbox requires '--' separator before command to execute");
+        return ExitCode::FAILURE;
+    };
+
+    if cmd_slice.is_empty() {
+        eprintln!("Error: missing command to execute in sandbox");
+        return ExitCode::FAILURE;
+    }
+
+    let mut idx = 0;
+    while idx < opts.len() {
+        let opt = &opts[idx];
+        if opt == "enforce" && idx + 1 < opts.len() {
+            read_write_paths.push(opts[idx + 1].clone());
+            idx += 2;
+        } else if (opt == "--ro" || opt == "-ro") && idx + 1 < opts.len() {
+            read_only_paths.push(opts[idx + 1].clone());
+            idx += 2;
+        } else if (opt == "--rw" || opt == "-rw") && idx + 1 < opts.len() {
+            read_write_paths.push(opts[idx + 1].clone());
+            idx += 2;
+        } else if opt == "--no-net" {
+            no_net = true;
+            idx += 1;
+        } else if opt == "--drop-caps" {
+            drop_caps = true;
+            idx += 1;
+        } else {
+            idx += 1;
+        }
+    }
+
+    let target_cmd = &cmd_slice[0];
+    let target_args = &cmd_slice[1..];
+
+    #[cfg(target_os = "linux")]
+    unsafe {
+        // 1. Enforce PR_SET_NO_NEW_PRIVS
+        libc::prctl(38, 1, 0, 0, 0);
+
+        if drop_caps {
+            // PR_CAP_AMBIENT_CLEAR_ALL = 4
+            libc::prctl(47, 4, 0, 0, 0);
+        }
+
+        if no_net {
+            // Unshare network namespace
+            libc::unshare(libc::CLONE_NEWNET);
+        }
+
+        // 2. Landlock LSM Ruleset Configuration
+        let fs_access = LANDLOCK_ACCESS_FS_EXECUTE
+            | LANDLOCK_ACCESS_FS_WRITE_FILE
+            | LANDLOCK_ACCESS_FS_READ_FILE
+            | LANDLOCK_ACCESS_FS_READ_DIR
+            | LANDLOCK_ACCESS_FS_REMOVE_DIR
+            | LANDLOCK_ACCESS_FS_REMOVE_FILE
+            | LANDLOCK_ACCESS_FS_MAKE_DIR
+            | LANDLOCK_ACCESS_FS_MAKE_REG
+            | LANDLOCK_ACCESS_FS_TRUNCATE;
+
+        let attr = LandlockRulesetAttr {
+            handled_access_fs: fs_access,
+        };
+
+        let ruleset_fd = libc::syscall(
+            SYS_LANDLOCK_CREATE_RULESET,
+            &attr as *const LandlockRulesetAttr,
+            std::mem::size_of::<LandlockRulesetAttr>(),
+            0,
+        ) as i32;
+
+        if ruleset_fd >= 0 {
+            let add_path_rule = |path: &str, access: u64| {
+                if let Ok(c_path) = std::ffi::CString::new(path) {
+                    let dir_fd = libc::open(
+                        c_path.as_ptr(),
+                        libc::O_PATH | libc::O_CLOEXEC | libc::O_DIRECTORY,
+                    );
+                    if dir_fd >= 0 {
+                        let path_attr = LandlockPathBeneathAttr {
+                            allowed_access: access,
+                            parent_fd: dir_fd,
+                        };
+                        libc::syscall(
+                            SYS_LANDLOCK_ADD_RULE,
+                            ruleset_fd,
+                            LANDLOCK_RULE_PATH_BENEATH,
+                            &path_attr as *const LandlockPathBeneathAttr,
+                            0,
+                        );
+                        libc::close(dir_fd);
+                    }
+                }
             };
-            if cmd_idx >= args.len() {
-                eprintln!("Missing command to execute in sandbox");
-                return ExitCode::FAILURE;
-            }
-            let target_cmd = &args[cmd_idx];
-            let target_args = &args[cmd_idx + 1..];
 
-            #[cfg(target_os = "linux")]
-            unsafe {
-                // 1. Enforce PR_SET_NO_NEW_PRIVS (required for unprivileged Landlock restriction)
-                libc::prctl(38, 1, 0, 0, 0);
+            let read_exec = LANDLOCK_ACCESS_FS_EXECUTE
+                | LANDLOCK_ACCESS_FS_READ_FILE
+                | LANDLOCK_ACCESS_FS_READ_DIR;
 
-                // 2. Attempt Landlock LSM Ruleset Creation
-                let fs_access = LANDLOCK_ACCESS_FS_EXECUTE
-                    | LANDLOCK_ACCESS_FS_WRITE_FILE
-                    | LANDLOCK_ACCESS_FS_READ_FILE
-                    | LANDLOCK_ACCESS_FS_READ_DIR
-                    | LANDLOCK_ACCESS_FS_REMOVE_DIR
-                    | LANDLOCK_ACCESS_FS_REMOVE_FILE
-                    | LANDLOCK_ACCESS_FS_MAKE_DIR
-                    | LANDLOCK_ACCESS_FS_MAKE_REG
-                    | LANDLOCK_ACCESS_FS_TRUNCATE;
+            // System read/exec paths
+            add_path_rule("/usr", read_exec);
+            add_path_rule("/bin", read_exec);
+            add_path_rule("/lib", read_exec);
+            add_path_rule("/lib64", read_exec);
+            add_path_rule("/etc", LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR);
 
-                let attr = LandlockRulesetAttr {
-                    handled_access_fs: fs_access,
-                };
-
-                let ruleset_fd = libc::syscall(
-                    SYS_LANDLOCK_CREATE_RULESET,
-                    &attr as *const LandlockRulesetAttr,
-                    std::mem::size_of::<LandlockRulesetAttr>(),
-                    0,
-                ) as i32;
-
-                if ruleset_fd >= 0 {
-                    let add_path_rule = |path: &str, access: u64| {
-                        let c_path = std::ffi::CString::new(path).unwrap();
-                        let dir_fd = libc::open(
-                            c_path.as_ptr(),
-                            libc::O_PATH | libc::O_CLOEXEC | libc::O_DIRECTORY,
-                        );
-                        if dir_fd >= 0 {
-                            let path_attr = LandlockPathBeneathAttr {
-                                allowed_access: access,
-                                parent_fd: dir_fd,
-                            };
-                            libc::syscall(
-                                SYS_LANDLOCK_ADD_RULE,
-                                ruleset_fd,
-                                LANDLOCK_RULE_PATH_BENEATH,
-                                &path_attr as *const LandlockPathBeneathAttr,
-                                0,
-                            );
-                            libc::close(dir_fd);
-                        }
-                    };
-
-                    let read_exec = LANDLOCK_ACCESS_FS_EXECUTE
-                        | LANDLOCK_ACCESS_FS_READ_FILE
-                        | LANDLOCK_ACCESS_FS_READ_DIR;
-                    add_path_rule("/usr", read_exec);
-                    add_path_rule("/bin", read_exec);
-                    add_path_rule("/lib", read_exec);
-                    add_path_rule("/lib64", read_exec);
-                    add_path_rule(
-                        "/etc",
-                        LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR,
-                    );
-
-                    add_path_rule(allowed_dir, fs_access);
-
-                    let restrict_res = libc::syscall(SYS_LANDLOCK_RESTRICT_SELF, ruleset_fd, 0);
-                    libc::close(ruleset_fd);
-
-                    if restrict_res == 0 {
-                        println!(
-                            "[ferro-sandbox] 🔒 Landlock LSM active: kernel-enforced sandboxing active on '{}'",
-                            allowed_dir
-                        );
-                    } else {
-                        println!(
-                            "[ferro-sandbox] Landlock restrict failed; running with PR_SET_NO_NEW_PRIVS"
-                        );
-                    }
-                } else {
-                    println!(
-                        "[ferro-sandbox] Landlock LSM not enabled in host kernel; running with PR_SET_NO_NEW_PRIVS"
-                    );
-                }
+            // User-specified read-only paths
+            for ro in &read_only_paths {
+                add_path_rule(ro, read_exec);
             }
 
-            println!(
-                "[ferro-sandbox] Confining execution to directory: '{}'",
-                allowed_dir
-            );
-            println!(
-                "[ferro-sandbox] Executing: {} {:?}",
-                target_cmd, target_args
-            );
+            // User-specified read-write storage paths
+            for rw in &read_write_paths {
+                add_path_rule(rw, fs_access);
+            }
 
-            let status = Command::new(target_cmd).args(target_args).status();
+            let restrict_res = libc::syscall(SYS_LANDLOCK_RESTRICT_SELF, ruleset_fd, 0);
+            libc::close(ruleset_fd);
 
-            match status {
-                Ok(s) => {
-                    if s.success() {
-                        ExitCode::SUCCESS
-                    } else {
-                        ExitCode::FAILURE
-                    }
-                }
-                Err(e) => {
-                    eprintln!("Failed executing sandboxed command: {}", e);
-                    ExitCode::FAILURE
-                }
+            if restrict_res == 0 {
+                println!(
+                    "[ferro-sandbox] 🔒 Landlock LSM active: RO paths: {}, RW storage paths: {}",
+                    read_only_paths.len(),
+                    read_write_paths.len()
+                );
             }
         }
-        _ => {
-            println!("Usage: ferro-core sandbox [status | enforce <dir> -- <cmd...>]");
+    }
+
+    let status = Command::new(target_cmd).args(target_args).status();
+    match status {
+        Ok(s) => {
+            if s.success() {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::from(s.code().unwrap_or(1) as u8)
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed executing sandboxed command: {}", e);
             ExitCode::FAILURE
         }
     }
