@@ -991,37 +991,76 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
 fn run_ls(args: &[String]) -> ExitCode {
     let mut show_all = false;
     let mut long_format = false;
-    let mut targets: Vec<&str> = Vec::new();
+    let mut directory_self = false;
+    let mut one_per_line = false;
+    let mut human_readable = false;
+    let mut targets: Vec<PathBuf> = Vec::new();
 
     for arg in args {
-        if arg.starts_with('-') {
-            if arg.contains('a') {
-                show_all = true;
+        if arg.starts_with('-') && arg.len() > 1 && !arg.starts_with("--") {
+            for ch in arg[1..].chars() {
+                match ch {
+                    'a' => show_all = true,
+                    'l' => long_format = true,
+                    'd' => directory_self = true,
+                    '1' => one_per_line = true,
+                    'h' => human_readable = true,
+                    _ => {}
+                }
             }
-            if arg.contains('l') {
-                long_format = true;
+        } else if arg.starts_with("--") {
+            match arg.as_str() {
+                "--all" => show_all = true,
+                "--directory" => directory_self = true,
+                "--human-readable" => human_readable = true,
+                _ => {}
             }
         } else {
-            targets.push(arg.as_str());
+            targets.push(PathBuf::from(arg));
         }
     }
 
     if targets.is_empty() {
-        targets.push(".");
+        targets.push(PathBuf::from("."));
     }
 
+    #[cfg(unix)]
+    let is_piped = unsafe { libc::isatty(libc::STDOUT_FILENO) == 0 };
+    #[cfg(not(unix))]
+    let is_piped = false;
+    let print_newline = one_per_line || long_format || is_piped;
+
     let mut exit_code = ExitCode::SUCCESS;
-    for target in targets {
-        let path = Path::new(target);
-        if path.is_file() || path.is_symlink() {
+    let multiple_targets = targets.len() > 1;
+
+    for (t_idx, target) in targets.iter().enumerate() {
+        if multiple_targets && target.is_dir() && !directory_self {
+            println!("{}:", target.display());
+        }
+
+        if !target.exists() && !target.is_symlink() {
+            eprintln!("ls: cannot access '{}': No such file or directory", target.display());
+            exit_code = ExitCode::FAILURE;
+            continue;
+        }
+
+        if directory_self || target.is_file() || target.is_symlink() {
             if long_format {
-                let meta = fs::symlink_metadata(path);
+                let meta = fs::symlink_metadata(target);
                 let size = meta.as_ref().map(|m| m.len()).unwrap_or(0);
-                let is_symlink = meta.map(|m| m.is_symlink()).unwrap_or(false);
-                let mode_str = if is_symlink { "lrwxrwxrwx" } else { "-rw-r--r--" };
-                println!("{} {:8} {}", mode_str, size, target);
+                let is_symlink = meta.as_ref().map(|m| m.is_symlink()).unwrap_or(false);
+                #[cfg(unix)]
+                let raw_mode = {
+                    use std::os::unix::fs::PermissionsExt;
+                    meta.as_ref().map(|m| m.permissions().mode()).unwrap_or(0o644)
+                };
+                #[cfg(not(unix))]
+                let raw_mode = 0o644;
+                let mode_str = format_file_mode(raw_mode, target.is_dir(), is_symlink);
+                let size_str = if human_readable { format_human_size(size) } else { format!("{:8}", size) };
+                println!("{} {} {}", mode_str, size_str, target.display());
             } else {
-                println!("{}", target);
+                println!("{}", target.display());
             }
             continue;
         }
@@ -1031,40 +1070,92 @@ fn run_ls(args: &[String]) -> ExitCode {
                 let mut list: Vec<_> = entries.flatten().collect();
                 list.sort_by_key(|e| e.file_name());
 
-                for entry in list {
-                    let file_name = entry.file_name();
-                    let name_str = file_name.to_string_lossy();
-                    if !show_all && name_str.starts_with('.') {
-                        continue;
-                    }
-                    let is_dir = entry.file_type().is_ok_and(|t| t.is_dir());
-                    if long_format {
-                        let meta = entry.metadata();
-                        let size = meta.map(|m| m.len()).unwrap_or(0);
-                        if is_dir {
-                            println!("drwxr-xr-x {:8} \x1b[1;34m{}\x1b[0m", size, name_str);
-                        } else {
-                            println!("-rw-r--r-- {:8} {}", size, name_str);
+                if print_newline {
+                    for entry in list {
+                        let file_name = entry.file_name();
+                        let name_str = file_name.to_string_lossy();
+                        if !show_all && name_str.starts_with('.') {
+                            continue;
                         }
-                    } else {
-                        if is_dir {
-                            print!("\x1b[1;34m{}/\x1b[0m  ", name_str);
+                        if long_format {
+                            let meta = entry.metadata();
+                            let size = meta.as_ref().map(|m| m.len()).unwrap_or(0);
+                            let is_dir = entry.file_type().is_ok_and(|t| t.is_dir());
+                            let is_symlink = entry.file_type().is_ok_and(|t| t.is_symlink());
+                            #[cfg(unix)]
+                            let raw_mode = {
+                                use std::os::unix::fs::PermissionsExt;
+                                meta.as_ref().map(|m| m.permissions().mode()).unwrap_or(0o644)
+                            };
+                            #[cfg(not(unix))]
+                            let raw_mode = 0o644;
+                            let mode_str = format_file_mode(raw_mode, is_dir, is_symlink);
+                            let size_str = if human_readable { format_human_size(size) } else { format!("{:8}", size) };
+                            println!("{} {} {}", mode_str, size_str, name_str);
                         } else {
-                            print!("{}  ", name_str);
+                            println!("{}", name_str);
                         }
                     }
-                }
-                if !long_format {
-                    println!();
+                } else {
+                    let mut first = true;
+                    for entry in list {
+                        let file_name = entry.file_name();
+                        let name_str = file_name.to_string_lossy();
+                        if !show_all && name_str.starts_with('.') {
+                            continue;
+                        }
+                        if !first {
+                            print!("  ");
+                        }
+                        let is_dir = entry.file_type().is_ok_and(|t| t.is_dir());
+                        if is_dir {
+                            print!("\x1b[1;34m{}/\x1b[0m", name_str);
+                        } else {
+                            print!("{}", name_str);
+                        }
+                        first = false;
+                    }
+                    if !first {
+                        println!();
+                    }
                 }
             }
             Err(e) => {
-                eprintln!("ls: cannot access '{}': {}", target, e);
+                eprintln!("ls: cannot access '{}': {}", target.display(), e);
                 exit_code = ExitCode::FAILURE;
             }
         }
+        if multiple_targets && t_idx < targets.len() - 1 && target.is_dir() && !directory_self {
+            println!();
+        }
     }
     exit_code
+}
+
+fn format_file_mode(mode: u32, is_dir: bool, is_symlink: bool) -> String {
+    let type_char = if is_symlink { 'l' } else if is_dir { 'd' } else { '-' };
+    let r1 = if mode & 0o400 != 0 { 'r' } else { '-' };
+    let w1 = if mode & 0o200 != 0 { 'w' } else { '-' };
+    let x1 = if mode & 0o100 != 0 { 'x' } else { '-' };
+    let r2 = if mode & 0o040 != 0 { 'r' } else { '-' };
+    let w2 = if mode & 0o020 != 0 { 'w' } else { '-' };
+    let x2 = if mode & 0o010 != 0 { 'x' } else { '-' };
+    let r3 = if mode & 0o004 != 0 { 'r' } else { '-' };
+    let w3 = if mode & 0o002 != 0 { 'w' } else { '-' };
+    let x3 = if mode & 0o001 != 0 { 'x' } else { '-' };
+    format!("{}{}{}{}{}{}{}{}{}{}", type_char, r1, w1, x1, r2, w2, x2, r3, w3, x3)
+}
+
+fn format_human_size(bytes: u64) -> String {
+    if bytes < 1024 {
+        format!("{:5}B", bytes)
+    } else if bytes < 1024 * 1024 {
+        format!("{:5.1}K", bytes as f64 / 1024.0)
+    } else if bytes < 1024 * 1024 * 1024 {
+        format!("{:5.1}M", bytes as f64 / (1024.0 * 1024.0))
+    } else {
+        format!("{:5.1}G", bytes as f64 / (1024.0 * 1024.0 * 1024.0))
+    }
 }
 
 fn run_cat(args: &[String]) -> ExitCode {
@@ -1173,17 +1264,64 @@ fn run_mkdir(args: &[String]) -> ExitCode {
         eprintln!("mkdir: missing operand");
         return ExitCode::FAILURE;
     }
-    let mut exit = ExitCode::SUCCESS;
-    for dir in args {
-        if dir == "-p" || dir == "--parents" || dir.starts_with('-') {
-            continue;
-        }
-        if let Err(e) = fs::create_dir_all(dir) {
-            eprintln!("mkdir: cannot create directory '{}': {}", dir, e);
-            exit = ExitCode::FAILURE;
+
+    let mut parents = false;
+    let mut mode: Option<u32> = None;
+    let mut targets: Vec<PathBuf> = Vec::new();
+
+    let mut iter = args.iter().peekable();
+    while let Some(arg) = iter.next() {
+        if arg == "-p" || arg == "--parents" {
+            parents = true;
+        } else if arg.starts_with('-') && arg.len() > 1 && !arg.starts_with("--") && arg.contains('p') {
+            parents = true;
+        } else if (arg == "-m" || arg == "--mode") && iter.peek().is_some() {
+            let mode_str = iter.next().unwrap();
+            mode = u32::from_str_radix(mode_str, 8).ok();
+        } else if arg.starts_with("-m") && arg.len() > 2 {
+            mode = u32::from_str_radix(&arg[2..], 8).ok();
+        } else if !arg.starts_with('-') {
+            targets.push(PathBuf::from(arg));
         }
     }
-    exit
+
+    if targets.is_empty() {
+        eprintln!("mkdir: missing operand");
+        return ExitCode::FAILURE;
+    }
+
+    let mut all_ok = true;
+    for target in &targets {
+        let res = if parents {
+            if target.is_dir() {
+                Ok(())
+            } else {
+                fs::create_dir_all(target)
+            }
+        } else {
+            fs::create_dir(target)
+        };
+
+        match res {
+            Ok(_) => {
+                #[cfg(unix)]
+                if let Some(m) = mode {
+                    use std::os::unix::fs::PermissionsExt;
+                    let _ = fs::set_permissions(target, fs::Permissions::from_mode(m));
+                }
+            }
+            Err(e) => {
+                eprintln!("mkdir: cannot create directory '{}': {}", target.display(), e);
+                all_ok = false;
+            }
+        }
+    }
+
+    if all_ok {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }
 
 fn run_rm(args: &[String]) -> ExitCode {
@@ -1511,56 +1649,146 @@ fn run_mv(args: &[String]) -> ExitCode {
     }
 }
 
-fn run_chmod(args: &[String]) -> ExitCode {
-    if args.len() < 2 {
-        eprintln!("chmod: missing mode or operand");
-        return ExitCode::FAILURE;
-    }
-    let mode_str = &args[0];
-    let target = &args[1];
-
+fn chmod_one_entry(path: &Path, mode: u32, verbose: bool) -> bool {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        let mut final_mode = None;
+        let perms = fs::Permissions::from_mode(mode);
+        if let Err(e) = fs::set_permissions(path, perms) {
+            eprintln!("chmod: cannot set permissions for '{}': {}", path.display(), e);
+            return false;
+        }
+        if verbose {
+            println!("mode of '{}' changed to {:o}", path.display(), mode);
+        }
+        true
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = (path, mode, verbose);
+        true
+    }
+}
 
-        if let Ok(octal) = u32::from_str_radix(mode_str, 8) {
+fn chmod_recursive(path: &Path, mode: u32, verbose: bool) -> bool {
+    let mut ok = chmod_one_entry(path, mode, verbose);
+    if path.is_dir() && !path.is_symlink() {
+        if let Ok(entries) = fs::read_dir(path) {
+            for entry in entries.flatten() {
+                if !chmod_recursive(&entry.path(), mode, verbose) {
+                    ok = false;
+                }
+            }
+        }
+    }
+    ok
+}
+
+fn run_chmod(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("chmod: missing operand");
+        return ExitCode::FAILURE;
+    }
+
+    let mut recursive = false;
+    let mut verbose = false;
+    let mut mode_str: Option<String> = None;
+    let mut targets: Vec<PathBuf> = Vec::new();
+
+    for arg in args {
+        if mode_str.is_none() && arg.starts_with('-') && arg.len() > 1 && !arg.starts_with("--") {
+            let is_symbolic_mode = arg == "-x" || arg == "-r" || arg == "-w" || arg == "-rw" || arg == "-rwx";
+            if !is_symbolic_mode {
+                for ch in arg[1..].chars() {
+                    match ch {
+                        'R' => recursive = true,
+                        'v' | 'c' => verbose = true,
+                        _ => {}
+                    }
+                }
+                continue;
+            }
+        } else if mode_str.is_none() && arg.starts_with("--") {
+            match arg.as_str() {
+                "--recursive" => { recursive = true; continue; }
+                "--verbose" | "--changes" => { verbose = true; continue; }
+                _ => {}
+            }
+        }
+
+        if mode_str.is_none() {
+            mode_str = Some(arg.clone());
+        } else {
+            targets.push(PathBuf::from(arg));
+        }
+    }
+
+    let mode_val = match mode_str {
+        Some(m) => m,
+        None => {
+            eprintln!("chmod: missing operand");
+            return ExitCode::FAILURE;
+        }
+    };
+    if targets.is_empty() {
+        eprintln!("chmod: missing operand after '{}'", mode_val);
+        return ExitCode::FAILURE;
+    }
+
+    let mut all_ok = true;
+    for target in &targets {
+        if !target.exists() && !target.is_symlink() {
+            eprintln!("chmod: cannot access '{}': No such file or directory", target.display());
+            all_ok = false;
+            continue;
+        }
+
+        let mut final_mode = None;
+        if let Ok(octal) = u32::from_str_radix(&mode_val, 8) {
             final_mode = Some(octal);
-        } else if mode_str == "+x" || mode_str == "a+x" || mode_str == "u+x" {
-            if let Ok(meta) = fs::metadata(target) {
-                final_mode = Some(meta.permissions().mode() | 0o111);
-            }
-        } else if mode_str == "-x" {
-            if let Ok(meta) = fs::metadata(target) {
-                final_mode = Some(meta.permissions().mode() & !0o111);
-            }
-        } else if mode_str == "+r" {
-            if let Ok(meta) = fs::metadata(target) {
-                final_mode = Some(meta.permissions().mode() | 0o444);
-            }
-        } else if mode_str == "+w" {
-            if let Ok(meta) = fs::metadata(target) {
-                final_mode = Some(meta.permissions().mode() | 0o222);
+        } else {
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                if let Ok(meta) = fs::metadata(target) {
+                    let cur = meta.permissions().mode();
+                    if mode_val == "+x" || mode_val == "a+x" || mode_val == "u+x" {
+                        final_mode = Some(cur | 0o111);
+                    } else if mode_val == "-x" {
+                        final_mode = Some(cur & !0o111);
+                    } else if mode_val == "+r" || mode_val == "a+r" {
+                        final_mode = Some(cur | 0o444);
+                    } else if mode_val == "-r" {
+                        final_mode = Some(cur & !0o444);
+                    } else if mode_val == "+w" || mode_val == "u+w" {
+                        final_mode = Some(cur | 0o200);
+                    } else if mode_val == "-w" {
+                        final_mode = Some(cur & !0o222);
+                    }
+                }
             }
         }
 
         if let Some(m) = final_mode {
-            let perms = fs::Permissions::from_mode(m);
-            if let Err(e) = fs::set_permissions(target, perms) {
-                eprintln!("chmod: cannot set permissions for '{}': {}", target, e);
-                return ExitCode::FAILURE;
+            let res = if recursive && target.is_dir() {
+                chmod_recursive(target, m, verbose)
+            } else {
+                chmod_one_entry(target, m, verbose)
+            };
+            if !res {
+                all_ok = false;
             }
-            return ExitCode::SUCCESS;
+        } else {
+            eprintln!("chmod: invalid mode: '{}'", mode_val);
+            return ExitCode::FAILURE;
         }
     }
 
-    #[cfg(not(unix))]
-    {
-        return ExitCode::SUCCESS;
+    if all_ok {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
     }
-
-    eprintln!("chmod: invalid mode: {}", mode_str);
-    ExitCode::FAILURE
 }
 
 fn run_grep(args: &[String]) -> ExitCode {
@@ -1733,43 +1961,76 @@ fn run_find(args: &[String]) -> ExitCode {
 
 fn run_head(args: &[String]) -> ExitCode {
     let mut count = 10;
-    let mut file_idx = 0;
+    let mut files = Vec::new();
 
-    if !args.is_empty() {
-        if args[0] == "-n" && args.len() >= 2 {
-            count = args[1].parse().unwrap_or(10);
-            file_idx = 2;
-        } else if args[0].starts_with("-n") && args[0].len() > 2 {
-            count = args[0][2..].parse().unwrap_or(10);
-            file_idx = 1;
-        } else if args[0].starts_with('-') && args[0].len() > 1 && args[0][1..].chars().all(|c| c.is_ascii_digit()) {
-            count = args[0][1..].parse().unwrap_or(10);
-            file_idx = 1;
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
+        if arg == "-n" && i + 1 < args.len() {
+            i += 1;
+            count = args[i].parse().unwrap_or(10);
+        } else if arg.starts_with("-n") && arg.len() > 2 {
+            count = arg[2..].parse().unwrap_or(10);
+        } else if arg.starts_with('-') && arg.len() > 1 && arg[1..].chars().all(|c| c.is_ascii_digit()) {
+            count = arg[1..].parse().unwrap_or(10);
+        } else if !arg.starts_with('-') {
+            files.push(arg.clone());
         }
+        i += 1;
     }
 
-    let file = args.get(file_idx);
-    let reader: Box<dyn BufRead> = if let Some(path) = file {
-        match File::open(path) {
-            Ok(f) => Box::new(BufReader::new(f)),
-            Err(e) => {
-                eprintln!("head: {}: {}", path, e);
-                return ExitCode::FAILURE;
+    let mut exit_code = ExitCode::SUCCESS;
+    if files.is_empty() {
+        let stdin = io::stdin();
+        for (idx, line) in stdin.lock().lines().enumerate() {
+            if idx >= count {
+                break;
+            }
+            if let Ok(l) = line {
+                println!("{}", l);
             }
         }
     } else {
-        Box::new(io::stdin().lock())
-    };
-
-    for (i, line) in reader.lines().enumerate() {
-        if i >= count {
-            break;
-        }
-        if let Ok(l) = line {
-            println!("{}", l);
+        let multiple = files.len() > 1;
+        for (f_idx, file) in files.iter().enumerate() {
+            if file == "-" {
+                let stdin = io::stdin();
+                for (idx, line) in stdin.lock().lines().enumerate() {
+                    if idx >= count {
+                        break;
+                    }
+                    if let Ok(l) = line {
+                        println!("{}", l);
+                    }
+                }
+                continue;
+            }
+            if multiple {
+                if f_idx > 0 {
+                    println!();
+                }
+                println!("==> {} <==", file);
+            }
+            match File::open(file) {
+                Ok(f) => {
+                    let reader = BufReader::new(f);
+                    for (idx, line) in reader.lines().enumerate() {
+                        if idx >= count {
+                            break;
+                        }
+                        if let Ok(l) = line {
+                            println!("{}", l);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("head: cannot open '{}' for reading: {}", file, e);
+                    exit_code = ExitCode::FAILURE;
+                }
+            }
         }
     }
-    ExitCode::SUCCESS
+    exit_code
 }
 
 fn run_tail(args: &[String]) -> ExitCode {
@@ -1861,7 +2122,7 @@ fn run_wc(args: &[String]) -> ExitCode {
     let mut count_lines = false;
     let mut count_words = false;
     let mut count_bytes = false;
-    let mut file: Option<&str> = None;
+    let mut files: Vec<String> = Vec::new();
 
     for arg in args {
         if arg.starts_with('-') && arg.len() > 1 && !arg.starts_with("--") {
@@ -1873,8 +2134,15 @@ fn run_wc(args: &[String]) -> ExitCode {
                     _ => {}
                 }
             }
-        } else if !arg.starts_with('-') && file.is_none() {
-            file = Some(arg.as_str());
+        } else if arg.starts_with("--") {
+            match arg.as_str() {
+                "--lines" => count_lines = true,
+                "--words" => count_words = true,
+                "--bytes" => count_bytes = true,
+                _ => {}
+            }
+        } else {
+            files.push(arg.clone());
         }
     }
 
@@ -1884,44 +2152,81 @@ fn run_wc(args: &[String]) -> ExitCode {
         count_bytes = true;
     }
 
-    let reader: Box<dyn BufRead> = if let Some(path) = file {
-        match File::open(path) {
-            Ok(f) => Box::new(BufReader::new(f)),
-            Err(e) => {
-                eprintln!("wc: {}: {}", path, e);
-                return ExitCode::FAILURE;
+    let mut tot_lines: u64 = 0;
+    let mut tot_words: u64 = 0;
+    let mut tot_bytes: u64 = 0;
+    let mut exit_code = ExitCode::SUCCESS;
+
+    let count_stream = |reader: &mut dyn Read| -> (u64, u64, u64) {
+        let mut l: u64 = 0;
+        let mut w: u64 = 0;
+        let mut b: u64 = 0;
+        let mut in_word = false;
+        let mut buf = [0u8; 8192];
+        loop {
+            match reader.read(&mut buf) {
+                Ok(0) => break,
+                Ok(n) => {
+                    b += n as u64;
+                    for &byte in &buf[..n] {
+                        if byte == b'\n' {
+                            l += 1;
+                        }
+                        if byte.is_ascii_whitespace() {
+                            in_word = false;
+                        } else if !in_word {
+                            in_word = true;
+                            w += 1;
+                        }
+                    }
+                }
+                Err(_) => break,
             }
         }
-    } else {
-        Box::new(io::stdin().lock())
+        (l, w, b)
     };
 
-    let mut lines = 0;
-    let mut words = 0;
-    let mut bytes = 0;
-
-    for line in reader.lines().map_while(Result::ok) {
-        lines += 1;
-        words += line.split_whitespace().count();
-        bytes += line.len() + 1;
+    if files.is_empty() {
+        let mut stdin = io::stdin().lock();
+        let (l, w, b) = count_stream(&mut stdin);
+        print_wc_row(count_lines, count_words, count_bytes, l, w, b, None);
+    } else {
+        for file in &files {
+            if file == "-" {
+                let mut stdin = io::stdin().lock();
+                let (l, w, b) = count_stream(&mut stdin);
+                tot_lines += l; tot_words += w; tot_bytes += b;
+                print_wc_row(count_lines, count_words, count_bytes, l, w, b, Some("-"));
+                continue;
+            }
+            match File::open(file) {
+                Ok(mut f) => {
+                    let (l, w, b) = count_stream(&mut f);
+                    tot_lines += l; tot_words += w; tot_bytes += b;
+                    print_wc_row(count_lines, count_words, count_bytes, l, w, b, Some(file));
+                }
+                Err(e) => {
+                    eprintln!("wc: {}: {}", file, e);
+                    exit_code = ExitCode::FAILURE;
+                }
+            }
+        }
+        if files.len() > 1 {
+            print_wc_row(count_lines, count_words, count_bytes, tot_lines, tot_words, tot_bytes, Some("total"));
+        }
     }
+    exit_code
+}
 
+fn print_wc_row(count_l: bool, count_w: bool, count_b: bool, l: u64, w: u64, b: u64, label: Option<&str>) {
     let mut parts = Vec::new();
-    if count_lines {
-        parts.push(format!("{}", lines));
+    if count_l { parts.push(format!("{:>4}", l)); }
+    if count_w { parts.push(format!("{:>4}", w)); }
+    if count_b { parts.push(format!("{:>4}", b)); }
+    if let Some(lbl) = label {
+        parts.push(lbl.to_string());
     }
-    if count_words {
-        parts.push(format!("{}", words));
-    }
-    if count_bytes {
-        parts.push(format!("{}", bytes));
-    }
-    if let Some(f) = file {
-        parts.push(f.to_string());
-    }
-
     println!("{}", parts.join(" "));
-    ExitCode::SUCCESS
 }
 
 fn run_which(args: &[String]) -> ExitCode {

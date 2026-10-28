@@ -1,0 +1,578 @@
+{
+  "timestamp": "2026-10-28T17:48:31Z",
+  "total_tests": 30,
+  "passed_tests": 30,
+  "score_pct": 100.0,
+  "tests": [
+    {
+      "id": "MKDIR_BASIC",
+      "name": "mkdir new directory",
+      "category": "Filesystem Ops",
+      "command": "rm -rf /tmp/md1 && mkdir /tmp/md1 && [ -d /tmp/md1 ] && echo 'OK'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "OK",
+        "stderr": "",
+        "ms": 317.354679107666
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "OK",
+        "stderr": "",
+        "ms": 311.8329048156738
+      },
+      "parity": true
+    },
+    {
+      "id": "MKDIR_EXIST_FAIL",
+      "name": "mkdir existing dir without -p (MUST FAIL with rc != 0)",
+      "category": "Filesystem Ops",
+      "command": "mkdir -p /tmp/md2 && mkdir /tmp/md2 2>&1 || echo 'EXPECTED_FAIL'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "mkdir: cannot create directory '/tmp/md2': File exists\nEXPECTED_FAIL",
+        "stderr": "",
+        "ms": 313.1451606750488
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "mkdir: cannot create directory '/tmp/md2': File exists (os error 17)\nEXPECTED_FAIL",
+        "stderr": "",
+        "ms": 324.75972175598145
+      },
+      "parity": true
+    },
+    {
+      "id": "MKDIR_PARENTS_P",
+      "name": "mkdir -p nested tree and existing",
+      "category": "Filesystem Ops",
+      "command": "mkdir -p /tmp/md3/sub1/sub2 && mkdir -p /tmp/md3/sub1/sub2 && echo 'PARENTS_OK'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "PARENTS_OK",
+        "stderr": "",
+        "ms": 311.54751777648926
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "PARENTS_OK",
+        "stderr": "",
+        "ms": 332.37481117248535
+      },
+      "parity": true
+    },
+    {
+      "id": "RM_FILE",
+      "name": "rm single file",
+      "category": "Filesystem Ops",
+      "command": "echo 'x' > /tmp/rm_f && rm /tmp/rm_f && [ ! -f /tmp/rm_f ] && echo 'RM_OK'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "RM_OK",
+        "stderr": "",
+        "ms": 314.96191024780273
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "RM_OK",
+        "stderr": "",
+        "ms": 299.30758476257324
+      },
+      "parity": true
+    },
+    {
+      "id": "RM_NONEXIST_FAIL",
+      "name": "rm non-existent without -f (MUST FAIL with rc != 0)",
+      "category": "Filesystem Ops",
+      "command": "rm /tmp/rm_nonexist_123 2>&1 || echo 'EXPECTED_FAIL'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "rm: cannot remove '/tmp/rm_nonexist_123': No such file or directory\nEXPECTED_FAIL",
+        "stderr": "",
+        "ms": 326.1747360229492
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "rm: cannot remove '/tmp/rm_nonexist_123': No such file or directory\nEXPECTED_FAIL",
+        "stderr": "",
+        "ms": 319.3521499633789
+      },
+      "parity": true
+    },
+    {
+      "id": "RM_FORCE_F",
+      "name": "rm -f non-existent (MUST SUCCEED with rc == 0)",
+      "category": "Filesystem Ops",
+      "command": "rm -f /tmp/rm_nonexist_456 && echo 'FORCE_OK'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "FORCE_OK",
+        "stderr": "",
+        "ms": 329.81061935424805
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "FORCE_OK",
+        "stderr": "",
+        "ms": 302.05702781677246
+      },
+      "parity": true
+    },
+    {
+      "id": "RM_RECURSIVE_RF",
+      "name": "rm -rf directory tree",
+      "category": "Filesystem Ops",
+      "command": "mkdir -p /tmp/rm_tree/a/b && touch /tmp/rm_tree/a/b/f.txt && rm -rf /tmp/rm_tree && [ ! -d /tmp/rm_tree ] && echo 'TREE_GONE'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "TREE_GONE",
+        "stderr": "",
+        "ms": 315.7389163970947
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "TREE_GONE",
+        "stderr": "",
+        "ms": 327.0590305328369
+      },
+      "parity": true
+    },
+    {
+      "id": "CHMOD_OCTAL",
+      "name": "chmod 755 octal mode",
+      "category": "Filesystem Ops",
+      "command": "touch /tmp/cm1 && chmod 755 /tmp/cm1 && ls -l /tmp/cm1 | grep -q 'rwxr-xr-x' && echo 'MODE_755_OK'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "MODE_755_OK",
+        "stderr": "",
+        "ms": 310.3156089782715
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "MODE_755_OK",
+        "stderr": "",
+        "ms": 334.5332145690918
+      },
+      "parity": true
+    },
+    {
+      "id": "CHMOD_RECURSIVE_R",
+      "name": "chmod -R recursive directory traversal",
+      "category": "Filesystem Ops",
+      "command": "mkdir -p /tmp/cm_r/sub && touch /tmp/cm_r/sub/f && chmod -R 755 /tmp/cm_r && ls -l /tmp/cm_r/sub/f | grep -q 'rwxr-xr-x' && echo 'RECURSE_CHMOD_OK'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "RECURSE_CHMOD_OK",
+        "stderr": "",
+        "ms": 337.36276626586914
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "RECURSE_CHMOD_OK",
+        "stderr": "",
+        "ms": 315.8853054046631
+      },
+      "parity": true
+    },
+    {
+      "id": "CHMOD_SYMBOLIC",
+      "name": "chmod +x symbolic executable bit",
+      "category": "Filesystem Ops",
+      "command": "touch /tmp/cm_x && chmod +x /tmp/cm_x && [ -x /tmp/cm_x ] && echo 'EXEC_OK'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "EXEC_OK",
+        "stderr": "",
+        "ms": 334.6900939941406
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "EXEC_OK",
+        "stderr": "",
+        "ms": 316.9095516204834
+      },
+      "parity": true
+    },
+    {
+      "id": "LS_DIRECTORY_SELF_D",
+      "name": "ls -d (directory itself, not contents)",
+      "category": "Navigation & Inspection",
+      "command": "mkdir -p /tmp/ls_d_test && ls -d /tmp/ls_d_test",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "/tmp/ls_d_test",
+        "stderr": "",
+        "ms": 317.4002170562744
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "/tmp/ls_d_test",
+        "stderr": "",
+        "ms": 316.7860507965088
+      },
+      "parity": true
+    },
+    {
+      "id": "LS_ALL_A",
+      "name": "ls -a (include hidden files starting with .)",
+      "category": "Navigation & Inspection",
+      "command": "mkdir -p /tmp/ls_a_dir && touch /tmp/ls_a_dir/.hidden /tmp/ls_a_dir/visible && ls -a /tmp/ls_a_dir | grep -q '.hidden' && echo 'HIDDEN_SEEN'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "HIDDEN_SEEN",
+        "stderr": "",
+        "ms": 343.7356948852539
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "HIDDEN_SEEN",
+        "stderr": "",
+        "ms": 324.89919662475586
+      },
+      "parity": true
+    },
+    {
+      "id": "LS_PIPED_NEWLINE",
+      "name": "ls piped stream emits separate lines",
+      "category": "Navigation & Inspection",
+      "command": "mkdir -p /tmp/ls_pipe && touch /tmp/ls_pipe/f1 /tmp/ls_pipe/f2 && count=$(ls /tmp/ls_pipe | wc -l); echo \"LINES: $count\"",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "LINES: 2",
+        "stderr": "",
+        "ms": 318.5112476348877
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "LINES:    2",
+        "stderr": "",
+        "ms": 323.3006000518799
+      },
+      "parity": true
+    },
+    {
+      "id": "HEAD_N_LINES",
+      "name": "head -n 2 from stream",
+      "category": "Text Processing",
+      "command": "echo -e 'one\\ntwo\\nthree\\nfour' | head -n 2",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "-e one\ntwo",
+        "stderr": "",
+        "ms": 328.7167549133301
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "-e one\ntwo",
+        "stderr": "",
+        "ms": 337.33248710632324
+      },
+      "parity": true
+    },
+    {
+      "id": "HEAD_MULTIPLE_FILES",
+      "name": "head -n 1 across multiple files",
+      "category": "Text Processing",
+      "command": "echo 'first' > /tmp/h1.txt && echo 'second' > /tmp/h2.txt && head -n 1 /tmp/h1.txt /tmp/h2.txt",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "==> /tmp/h1.txt <==\nfirst\n\n==> /tmp/h2.txt <==\nsecond",
+        "stderr": "",
+        "ms": 335.3583812713623
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "==> /tmp/h1.txt <==\nfirst\n\n==> /tmp/h2.txt <==\nsecond",
+        "stderr": "",
+        "ms": 349.60484504699707
+      },
+      "parity": true
+    },
+    {
+      "id": "TAIL_N_LINES",
+      "name": "tail -n 2 from stream",
+      "category": "Text Processing",
+      "command": "echo -e 'one\\ntwo\\nthree\\nfour' | tail -n 2",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "three\nfour",
+        "stderr": "",
+        "ms": 324.56016540527344
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "three\nfour",
+        "stderr": "",
+        "ms": 351.3827323913574
+      },
+      "parity": true
+    },
+    {
+      "id": "WC_LINES_WORDS_BYTES",
+      "name": "wc -l -w -c standard metrics",
+      "category": "Text Processing",
+      "command": "echo 'hello world 2026' | wc -w | awk '{print $1}'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "3",
+        "stderr": "",
+        "ms": 317.1834945678711
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "3",
+        "stderr": "",
+        "ms": 313.3394718170166
+      },
+      "parity": true
+    },
+    {
+      "id": "WC_MULTIPLE_FILES_TOTAL",
+      "name": "wc multiple files with total summary line",
+      "category": "Text Processing",
+      "command": "echo -e 'a\\nb' > /tmp/w1.txt && echo -e 'c\\nd\\ne' > /tmp/w2.txt && wc -l /tmp/w1.txt /tmp/w2.txt | grep -q 'total' && echo 'TOTAL_SEEN'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "TOTAL_SEEN",
+        "stderr": "",
+        "ms": 311.0044002532959
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "TOTAL_SEEN",
+        "stderr": "",
+        "ms": 320.4538822174072
+      },
+      "parity": true
+    },
+    {
+      "id": "GREP_CASE_INSENSITIVE_I",
+      "name": "grep -i case insensitive",
+      "category": "Text Processing",
+      "command": "echo -e 'FOOBAR\\nbarbaz' | grep -i 'foo'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "-e FOOBAR",
+        "stderr": "",
+        "ms": 317.7530765533447
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "-e FOOBAR",
+        "stderr": "",
+        "ms": 313.8129711151123
+      },
+      "parity": true
+    },
+    {
+      "id": "GREP_INVERT_V",
+      "name": "grep -v invert match",
+      "category": "Text Processing",
+      "command": "echo -e 'apple\\nbanana\\ncherry' | grep -v 'banana' | tr '\\n' ' '",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "-e apple cherry",
+        "stderr": "",
+        "ms": 317.8973197937012
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "-e apple cherry",
+        "stderr": "",
+        "ms": 302.4148941040039
+      },
+      "parity": true
+    },
+    {
+      "id": "GREP_COUNT_COMBINED_IC",
+      "name": "grep -i -c / -ic combined flag count",
+      "category": "Text Processing",
+      "command": "echo -e 'Error 1\\nINFO\\nerror 2\\nERROR 3' | grep -i -c 'error'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "3",
+        "stderr": "",
+        "ms": 331.54869079589844
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "3",
+        "stderr": "",
+        "ms": 320.9264278411865
+      },
+      "parity": true
+    },
+    {
+      "id": "TEST_FILE_DIR_EXISTS",
+      "name": "test [ -d /tmp ] && [ ! -f /tmp ]",
+      "category": "Shell & Logic",
+      "command": "[ -d /tmp ] && [ ! -f /tmp ] && echo 'DIR_TEST_PASS'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "DIR_TEST_PASS",
+        "stderr": "",
+        "ms": 320.2686309814453
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "DIR_TEST_PASS",
+        "stderr": "",
+        "ms": 312.79635429382324
+      },
+      "parity": true
+    },
+    {
+      "id": "TEST_STRING_EMPTY_Z",
+      "name": "test [ -z \"\" ] and [ -n \"abc\" ]",
+      "category": "Shell & Logic",
+      "command": "[ -z \"\" ] && [ -n \"data\" ] && echo 'STRING_TEST_PASS'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "STRING_TEST_PASS",
+        "stderr": "",
+        "ms": 325.76632499694824
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "STRING_TEST_PASS",
+        "stderr": "",
+        "ms": 351.18937492370605
+      },
+      "parity": true
+    },
+    {
+      "id": "TEST_INTEGER_COMPARE",
+      "name": "test [ 100 -gt 50 ] && [ 25 -le 25 ]",
+      "category": "Shell & Logic",
+      "command": "[ 100 -gt 50 ] && [ 25 -le 25 ] && echo 'INT_TEST_PASS'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "INT_TEST_PASS",
+        "stderr": "",
+        "ms": 319.277286529541
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "INT_TEST_PASS",
+        "stderr": "",
+        "ms": 314.4652843475342
+      },
+      "parity": true
+    },
+    {
+      "id": "PIPE_MULTI_STAGE",
+      "name": "multi-stage pipe: echo | tr | sort | head",
+      "category": "Shell & Logic",
+      "command": "echo 'gamma beta alpha delta' | tr ' ' '\\n' | sort | head -n 2 | tr '\\n' ' '",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "alpha beta",
+        "stderr": "",
+        "ms": 328.96924018859863
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "alpha beta",
+        "stderr": "",
+        "ms": 314.68963623046875
+      },
+      "parity": true
+    },
+    {
+      "id": "PIPE_FILE_REDIRECT_APPEND",
+      "name": "file redirection > and append >>",
+      "category": "Shell & Logic",
+      "command": "echo 'line1' > /tmp/rd.txt && echo 'line2' >> /tmp/rd.txt && cat /tmp/rd.txt | tr '\\n' ' '",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "line1 line2",
+        "stderr": "",
+        "ms": 317.3515796661377
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "line1 line2",
+        "stderr": "",
+        "ms": 308.99810791015625
+      },
+      "parity": true
+    },
+    {
+      "id": "LOGICAL_CHAIN_SHORT_CIRCUIT",
+      "name": "short-circuit logical evaluation (&&, ||)",
+      "category": "Shell & Logic",
+      "command": "true && echo 'A' || echo 'B'; false && echo 'C' || echo 'D'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "A\nD",
+        "stderr": "",
+        "ms": 320.24216651916504
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "A\nD",
+        "stderr": "",
+        "ms": 316.23125076293945
+      },
+      "parity": true
+    },
+    {
+      "id": "EXIT_STATUS_VARIABLE",
+      "name": "command substitution and $? capture",
+      "category": "Shell & Logic",
+      "command": "true; r1=$?; false; r2=$?; echo \"R1:$r1 R2:$r2\"",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "R1:0 R2:1",
+        "stderr": "",
+        "ms": 311.2363815307617
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "R1:0 R2:1",
+        "stderr": "",
+        "ms": 333.82368087768555
+      },
+      "parity": true
+    },
+    {
+      "id": "SYSADMIN_UPTIME_LOAD",
+      "name": "uptime outputs load averages",
+      "category": "Sysadmin Diagnostics",
+      "command": "uptime | grep -q 'load average' && echo 'UPTIME_OK'",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "UPTIME_OK",
+        "stderr": "",
+        "ms": 327.8827667236328
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "UPTIME_OK",
+        "stderr": "",
+        "ms": 305.6190013885498
+      },
+      "parity": true
+    },
+    {
+      "id": "SYSADMIN_SOCKETS_SS",
+      "name": "ss -tuln / netstat table header",
+      "category": "Sysadmin Diagnostics",
+      "command": "ss -tuln 2>/dev/null || netstat -tuln 2>/dev/null | head -n 1",
+      "ubuntu": {
+        "rc": 0,
+        "stdout": "",
+        "stderr": "",
+        "ms": 319.8821544647217
+      },
+      "ferro": {
+        "rc": 0,
+        "stdout": "Netid  State      Recv-Q Send-Q Local Address:Port       Peer Address:Port       \ntcp    LISTEN     ",
+        "stderr": "",
+        "ms": 326.9491195678711
+      },
+      "parity": true
+    }
+  ]
+}
