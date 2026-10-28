@@ -7,7 +7,7 @@ ENV LC_ALL=C.UTF-8
 # 1. Automated Debloater
 RUN echo 'APT::Install-Recommends "0";\nAPT::Install-Suggests "0";\nDPkg::Post-Invoke {"rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/groff/* /usr/share/info/* /usr/share/locale/* || true";};' > /etc/apt/apt.conf.d/99ferro-nodoc
 
-# 2. Core Python 3, Pip, SQLite, and Mimalloc 2.0
+# 2. Core Python 3, Pip, SQLite, Mimalloc 2.0, and Developer Toolchain (gcc, make, git)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
@@ -16,13 +16,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmimalloc2.0 \
     ca-certificates \
     curl \
+    gcc \
+    libc6-dev \
+    make \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # 3. Copy FerroOS Pure-Rust Core, Package Keeper (rpk) and Acceleration Shim
 COPY --from=ferro-os-server:latest /usr/lib/libferro_io.so /usr/lib/libferro_io.so
 COPY --from=ferro-os-pure:latest /usr/bin/ferro-pkg /usr/local/bin/rpk
 COPY --from=ferro-os-pure:latest /usr/bin/ferro-core /usr/local/bin/ferro-core
-RUN chmod +x /usr/local/bin/rpk /usr/local/bin/ferro-core
+RUN chmod +x /usr/local/bin/rpk /usr/local/bin/ferro-core && /usr/local/bin/ferro-core --install-symlinks /usr/local/bin
 
 # 4. Configure mimalloc zero-delay memory purging and LD_PRELOAD
 ENV MIMALLOC_PURGE_DELAY=0

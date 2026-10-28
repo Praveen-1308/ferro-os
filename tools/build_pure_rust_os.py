@@ -125,6 +125,7 @@ def main():
         "gamemode", "bpf", "ebpf", "sched", "scx", "game", "proton", "win", "wine",
         "install", "snapshot", "ai-mode", "sandbox", "supervise",
         "disk", "cloud-init", "cloudinit", "sshd",
+        "netstat", "ss",
         "reboot", "poweroff", "bench", "fdstore", "recovery", "help"
     ]
     for app in applets:
