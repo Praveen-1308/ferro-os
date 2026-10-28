@@ -167,10 +167,15 @@ flowchart LR
     end
 ```
 
-### Priority 1: Developer Experience
+### Priority 1: Developer Experience & POSIX Standards
 - [ ] **Package `@dev-tools`**: Assemble minimal `.rpk` packages for `curl`, `git`, and build tools so developers can fetch and inspect code in-guest.
-- [ ] **POSIX Shell Extensions**: Expand `crates/ferro-core/src/shell.rs` to support `for ... in ... do ... done` loops, `case ... in ... esac`, and multi-line heredocs.
-- [ ] **Dynamic DNS Resolver**: Implement automatic generation of `/etc/resolv.conf` from DHCP lease responses.
+- [x] **POSIX Shell & Coreutils Architecture Fixes**:
+  - **Literal Single Quotes**: Variables like `$VAR` are now preserved literally inside single quotes `'...'` (preventing variable expansion in scripts, SQL, and inline Python).
+  - **Compound Logical Operators (`&&` and `||`)**: Rewrote logical chain parser to evaluate left-to-right quote-aware chaining (fixing `cmd1 && cmd2 || cmd3`).
+  - **Piped Redirection & Multi-Stream I/O**: Last pipe stages now properly redirect to output files (`cat file | grep error > out.txt`); added full support for input redirection (`<`), stderr redirection (`2>`, `2>>`), and stderr-to-stdout merging (`2>&1`).
+  - **Shebang & `env` Command Launcher**: `env` now executes target commands with custom environment variables, enabling `#!/usr/bin/env python3` and `#!/usr/bin/env bash` scripts to run seamlessly.
+  - **Coreutils Hardening**: `cat` supports binary streams and stdin (`-`); `echo` supports `-n` and `-e`; `head`/`tail` support compact counts (`-5`, `-n5`); `chmod` supports symbolic modes (`+x`, `-x`); `test` validates actual permissions via `libc::access`; `mkdir -p` no longer creates literal `"-p"` directory.
+- [x] **Dynamic Gateway & Routing Table**: Implemented kernel routing table injection via `SIOCADDRT` (`rtentry`) during DHCP auto-leasing and fallback routing.
 
 ### Priority 2: Storage, Cloud-Init & Remote Administration
 - [x] **Persistent Block Storage & switch_root**: Added `ferro-core disk` and kernel rootfs pivot in `ferro-init` to mount `/sysroot` and run from persistent block devices (`/dev/vda1`, `/dev/sda1`, NVMe).

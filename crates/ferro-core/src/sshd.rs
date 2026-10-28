@@ -34,21 +34,24 @@ pub fn run_sshd(args: &[String]) -> ExitCode {
     // 2. Ensure Cryptographic Host Keys exist or generate fallback markers
     ensure_host_keys();
 
-    // 3. Check for external Dropbear or OpenSSH binary fallback
-    if Path::new("/usr/sbin/dropbear").exists() {
-        println!("[sshd] Found native dropbear daemon. Supervising dropbear on port {}...", port);
-        let status = Command::new("/usr/sbin/dropbear")
-            .args(["-F", "-E", "-p", &port.to_string(), "-r", HOST_KEY_ED25519, "-r", HOST_KEY_RSA])
-            .status();
-        return if status.map_or(false, |s| s.success()) { ExitCode::SUCCESS } else { ExitCode::FAILURE };
-    }
+    // 3. Optional external Dropbear or OpenSSH binary fallback
+    let use_system = args.iter().any(|a| a == "--system" || a == "--openssh" || a == "--dropbear");
+    if use_system {
+        if Path::new("/usr/sbin/dropbear").exists() {
+            println!("[sshd] Found native dropbear daemon. Supervising dropbear on port {}...", port);
+            let status = Command::new("/usr/sbin/dropbear")
+                .args(["-F", "-E", "-p", &port.to_string(), "-r", HOST_KEY_ED25519, "-r", HOST_KEY_RSA])
+                .status();
+            return if status.map_or(false, |s| s.success()) { ExitCode::SUCCESS } else { ExitCode::FAILURE };
+        }
 
-    if Path::new("/usr/sbin/sshd").exists() {
-        println!("[sshd] Found OpenSSH daemon. Supervising OpenSSH on port {}...", port);
-        let status = Command::new("/usr/sbin/sshd")
-            .args(["-D", "-p", &port.to_string()])
-            .status();
-        return if status.map_or(false, |s| s.success()) { ExitCode::SUCCESS } else { ExitCode::FAILURE };
+        if Path::new("/usr/sbin/sshd").exists() {
+            println!("[sshd] Found OpenSSH daemon. Supervising OpenSSH on port {}...", port);
+            let status = Command::new("/usr/sbin/sshd")
+                .args(["-D", "-p", &port.to_string()])
+                .status();
+            return if status.map_or(false, |s| s.success()) { ExitCode::SUCCESS } else { ExitCode::FAILURE };
+        }
     }
 
     // 4. Pure-Rust Native Remote Terminal Daemon

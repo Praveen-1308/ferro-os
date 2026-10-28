@@ -11,7 +11,35 @@ import subprocess
 import tempfile
 import hashlib
 
-FERRO_CORE = "/usr/local/bin/ferro-core"
+FERRO_CORE = os.environ.get("FERRO_CORE")
+if not FERRO_CORE or not os.path.exists(FERRO_CORE):
+    candidates = [
+        "target/debug/ferro-core",
+        "target/release/ferro-core",
+        "/usr/local/bin/ferro-core",
+        "/usr/bin/ferro-core",
+    ]
+    if sys.platform != "darwin":
+        candidates.insert(0, "target/release/ferro-core")
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            try:
+                with open(candidate, "rb") as f:
+                    magic = f.read(4)
+                    if sys.platform == "darwin" and (magic == b"\xcf\xfa\xed\xfe" or magic == b"\xca\xfe\xba\xbe"):
+                        FERRO_CORE = os.path.abspath(candidate)
+                        break
+                    elif sys.platform.startswith("linux") and magic == b"\x7fELF":
+                        FERRO_CORE = os.path.abspath(candidate)
+                        break
+            except Exception:
+                pass
+            if sys.platform != "darwin":
+                FERRO_CORE = os.path.abspath(candidate)
+                break
+    if not FERRO_CORE:
+        FERRO_CORE = os.path.abspath("target/debug/ferro-core" if sys.platform == "darwin" else "target/release/ferro-core")
+
 RESULTS = []
 
 def run_applet(applet, args=[], stdin=None):

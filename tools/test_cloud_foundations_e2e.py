@@ -17,8 +17,33 @@ import time
 import os
 import sys
 
-FERRO_CORE = os.path.abspath("target/release/ferro-core")
-FERRO_INIT = os.path.abspath("target/release/ferro-init")
+def find_binary(name):
+    env_override = os.environ.get(f"FERRO_{name.upper().replace('-', '_')}")
+    if env_override and os.path.exists(env_override):
+        return os.path.abspath(env_override)
+    candidates = [
+        f"target/debug/{name}",
+        f"target/release/{name}",
+        f"/usr/local/bin/{name}",
+        f"/usr/bin/{name}",
+    ]
+    if sys.platform != "darwin":
+        candidates.insert(0, f"target/release/{name}")
+    for c in candidates:
+        if os.path.exists(c):
+            try:
+                with open(c, "rb") as f:
+                    magic = f.read(4)
+                    if sys.platform == "darwin" and (magic == b"\xcf\xfa\xed\xfe" or magic == b"\xca\xfe\xba\xbe"):
+                        return os.path.abspath(c)
+                    elif sys.platform.startswith("linux") and magic == b"\x7fELF":
+                        return os.path.abspath(c)
+            except Exception:
+                pass
+    return os.path.abspath(f"target/debug/{name}" if sys.platform == "darwin" else f"target/release/{name}")
+
+FERRO_CORE = find_binary("ferro-core")
+FERRO_INIT = find_binary("ferro-init")
 
 def run(cmd):
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

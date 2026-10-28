@@ -192,6 +192,22 @@ fn print_usage() {
 // -------------------------------------------------------------
 // Interactive Shell (sh) with Pipes, Redirection & Env Expansion
 // -------------------------------------------------------------
+#[inline]
+fn reap_shell_zombies() {
+    #[cfg(unix)]
+    unsafe {
+        let mut status = 0;
+        while libc::waitpid(-1, &mut status, libc::WNOHANG) > 0 {}
+    }
+}
+
+#[cfg(unix)]
+extern "C" fn shell_sigint_handler(_sig: libc::c_int) {
+    unsafe {
+        libc::write(libc::STDOUT_FILENO, b"\n".as_ptr() as *const libc::c_void, 1);
+    }
+}
+
 fn run_sh(args: &[String]) -> ExitCode {
     if args.len() >= 2 && args[0] == "-c" {
         let cmd_str = &args[1];
@@ -214,6 +230,11 @@ fn run_sh(args: &[String]) -> ExitCode {
         }
     }
 
+    #[cfg(unix)]
+    unsafe {
+        libc::signal(libc::SIGINT, shell_sigint_handler as *const () as usize);
+    }
+
     println!("Welcome to FerroOS Shell (Rust)");
     println!("Type 'help' for builtins, or run any system command (e.g. python3).");
 
@@ -221,6 +242,7 @@ fn run_sh(args: &[String]) -> ExitCode {
     let mut stdout = io::stdout();
 
     loop {
+        reap_shell_zombies();
         let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
         print!("ferro-os:{}$ ", cwd.display());
         let _ = stdout.flush();
@@ -235,6 +257,11 @@ fn run_sh(args: &[String]) -> ExitCode {
                     continue;
                 }
                 execute_compound_script(trimmed);
+                reap_shell_zombies();
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::Interrupted => {
+                // Interrupted by SIGINT (Ctrl+C), continue to fresh prompt
+                continue;
             }
             Err(_) => break,
         }
@@ -292,34 +319,75 @@ fn execute_compound_script(script: &str) -> ExitCode {
     })
 }
 
+#[derive(Debug, Default, Clone)]
+struct CommandRedirections {
+    stdin_file: Option<String>,
+    stdout_file: Option<(String, bool)>, // (filename, append)
+    stderr_file: Option<(String, bool)>, // (filename, append)
+    stderr_to_stdout: bool,
+}
+
 fn parse_tokens(line: &str) -> Vec<String> {
     let mut tokens = Vec::new();
     let mut current = String::new();
     let mut in_quotes = false;
     let mut quote_char = ' ';
+    let mut has_token = false;
 
-    for c in line.chars() {
-        match c {
-            '"' | '\'' if !in_quotes => {
-                in_quotes = true;
-                quote_char = c;
+    let chars: Vec<char> = line.chars().collect();
+    let mut i = 0;
+
+    while i < chars.len() {
+        let c = chars[i];
+        if (c == '"' || c == '\'') && !in_quotes {
+            in_quotes = true;
+            quote_char = c;
+            has_token = true;
+            i += 1;
+        } else if in_quotes && c == quote_char {
+            in_quotes = false;
+            i += 1;
+        } else if !in_quotes && c.is_whitespace() {
+            if has_token {
+                tokens.push(current);
+                current = String::new();
+                has_token = false;
             }
-            c if in_quotes && c == quote_char => {
-                in_quotes = false;
-            }
-            c if c.is_whitespace() && !in_quotes => {
-                if !current.is_empty() {
-                    tokens.push(shell::expand_string_vars(&current));
-                    current.clear();
+            i += 1;
+        } else if in_quotes && quote_char == '\'' {
+            // In single quotes: literal characters, NO variable expansion
+            current.push(c);
+            has_token = true;
+            i += 1;
+        } else if c == '$' {
+            let mut end = i + 1;
+            if end < chars.len() {
+                let next = chars[end];
+                if next == '?' || next == '$' || next == '#' || next == '*' || next == '@' || next.is_ascii_digit() {
+                    end += 1;
+                } else if next == '{' {
+                    if let Some(pos) = chars[end..].iter().position(|&ch| ch == '}') {
+                        end += pos + 1;
+                    }
+                } else if next.is_ascii_alphabetic() || next == '_' {
+                    while end < chars.len() && (chars[end].is_ascii_alphanumeric() || chars[end] == '_') {
+                        end += 1;
+                    }
                 }
             }
-            _ => {
-                current.push(c);
-            }
+            let var_slice: String = chars[i..end].iter().collect();
+            let var_expanded = shell::expand_string_vars(&var_slice);
+            current.push_str(&var_expanded);
+            has_token = true;
+            i = end;
+        } else {
+            current.push(c);
+            has_token = true;
+            i += 1;
         }
     }
-    if !current.is_empty() {
-        tokens.push(shell::expand_string_vars(&current));
+    if has_token {
+        tokens.push(current);
     }
     tokens
 }
@@ -356,42 +424,115 @@ fn split_pipeline_quote_aware(line: &str) -> Vec<String> {
     parts
 }
 
-fn extract_redirection_quote_aware(line: &str) -> (String, Option<(String, bool)>) {
-    let mut clean_cmd = String::new();
-    let mut in_quotes = false;
-    let mut quote_char = ' ';
+fn extract_redirections_quote_aware(line: &str) -> (String, CommandRedirections) {
+    let mut redir = CommandRedirections::default();
     let chars: Vec<char> = line.chars().collect();
     let mut i = 0;
+    let mut current = String::new();
+    let mut in_quotes = false;
+    let mut quote_char = ' ';
 
     while i < chars.len() {
         let c = chars[i];
         if (c == '"' || c == '\'') && !in_quotes {
             in_quotes = true;
             quote_char = c;
-            clean_cmd.push(c);
+            current.push(c);
             i += 1;
         } else if in_quotes && c == quote_char {
             in_quotes = false;
-            clean_cmd.push(c);
+            current.push(c);
             i += 1;
-        } else if !in_quotes && c == '>' {
-            let is_append = i + 1 < chars.len() && chars[i + 1] == '>';
-            let target_start = if is_append { i + 2 } else { i + 1 };
-            let raw_target: String = chars[target_start..].iter().collect();
-            let target_file = raw_target
-                .trim()
-                .trim_matches(|ch| ch == '"' || ch == '\'')
-                .to_string();
-            if target_file.starts_with("&2") || target_file.starts_with("&1") || target_file == "." || target_file.is_empty() {
-                return (clean_cmd.trim().to_string(), None);
+        } else if !in_quotes {
+            // Check for 2>&1
+            if i + 3 < chars.len() && c == '2' && chars[i+1] == '>' && chars[i+2] == '&' && chars[i+3] == '1' {
+                redir.stderr_to_stdout = true;
+                i += 4;
+                continue;
             }
-            return (clean_cmd.trim().to_string(), Some((target_file, is_append)));
+            // Check for 2>>
+            if i + 2 < chars.len() && c == '2' && chars[i+1] == '>' && chars[i+2] == '>' {
+                i += 3;
+                while i < chars.len() && chars[i].is_whitespace() { i += 1; }
+                let mut target = String::new();
+                while i < chars.len() && !chars[i].is_whitespace() {
+                    target.push(chars[i]);
+                    i += 1;
+                }
+                let clean_target = target.trim_matches(|ch| ch == '"' || ch == '\'').to_string();
+                if !clean_target.is_empty() {
+                    redir.stderr_file = Some((clean_target, true));
+                }
+                continue;
+            }
+            // Check for 2>
+            if i + 1 < chars.len() && c == '2' && chars[i+1] == '>' {
+                i += 2;
+                while i < chars.len() && chars[i].is_whitespace() { i += 1; }
+                let mut target = String::new();
+                while i < chars.len() && !chars[i].is_whitespace() {
+                    target.push(chars[i]);
+                    i += 1;
+                }
+                let clean_target = target.trim_matches(|ch| ch == '"' || ch == '\'').to_string();
+                if !clean_target.is_empty() {
+                    redir.stderr_file = Some((clean_target, false));
+                }
+                continue;
+            }
+            // Check for >>
+            if i + 1 < chars.len() && c == '>' && chars[i+1] == '>' {
+                i += 2;
+                while i < chars.len() && chars[i].is_whitespace() { i += 1; }
+                let mut target = String::new();
+                while i < chars.len() && !chars[i].is_whitespace() {
+                    target.push(chars[i]);
+                    i += 1;
+                }
+                let clean_target = target.trim_matches(|ch| ch == '"' || ch == '\'').to_string();
+                if !clean_target.is_empty() {
+                    redir.stdout_file = Some((clean_target, true));
+                }
+                continue;
+            }
+            // Check for >
+            if c == '>' {
+                i += 1;
+                while i < chars.len() && chars[i].is_whitespace() { i += 1; }
+                let mut target = String::new();
+                while i < chars.len() && !chars[i].is_whitespace() {
+                    target.push(chars[i]);
+                    i += 1;
+                }
+                let clean_target = target.trim_matches(|ch| ch == '"' || ch == '\'').to_string();
+                if !clean_target.is_empty() {
+                    redir.stdout_file = Some((clean_target, false));
+                }
+                continue;
+            }
+            // Check for <
+            if c == '<' {
+                i += 1;
+                while i < chars.len() && chars[i].is_whitespace() { i += 1; }
+                let mut target = String::new();
+                while i < chars.len() && !chars[i].is_whitespace() {
+                    target.push(chars[i]);
+                    i += 1;
+                }
+                let clean_target = target.trim_matches(|ch| ch == '"' || ch == '\'').to_string();
+                if !clean_target.is_empty() {
+                    redir.stdin_file = Some(clean_target);
+                }
+                continue;
+            }
+            current.push(c);
+            i += 1;
         } else {
-            clean_cmd.push(c);
+            current.push(c);
             i += 1;
         }
     }
-    (clean_cmd.trim().to_string(), None)
+    (current.trim().to_string(), redir)
 }
 
 fn execute_pipeline(line: &str) -> ExitCode {
@@ -402,7 +543,7 @@ fn execute_pipeline(line: &str) -> ExitCode {
         return execute_piped_commands(pipe_refs);
     }
 
-    // Single command execution with quote-aware redirection check (> or >>)
+    // Single command execution with quote-aware redirection check
     execute_single_command(line)
 }
 
@@ -411,8 +552,8 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
     let mut prev_stdout = None;
 
     for (i, part) in pipe_parts.iter().enumerate() {
-        let mut tokens = parse_tokens(part.trim());
-        tokens.retain(|t| !t.starts_with("2>") && !t.starts_with("1>") && t != ">/dev/null" && t != "2>/dev/null");
+        let (clean_part, redir) = extract_redirections_quote_aware(part);
+        let tokens = parse_tokens(&clean_part);
         if tokens.is_empty() {
             continue;
         }
@@ -421,13 +562,29 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
         let args = &tokens[1..];
         let is_last = i == pipe_parts.len() - 1;
 
-        let stdin_cfg = if let Some(stdout) = prev_stdout.take() {
+        let stdin_cfg = if let Some(ref stdin_f) = redir.stdin_file {
+            match File::open(stdin_f) {
+                Ok(f) => Stdio::from(f),
+                Err(e) => {
+                    eprintln!("sh: cannot open '{}' for reading: {}", stdin_f, e);
+                    return ExitCode::FAILURE;
+                }
+            }
+        } else if let Some(stdout) = prev_stdout.take() {
             Stdio::from(stdout)
         } else {
             Stdio::inherit()
         };
 
-        let stdout_cfg = if is_last {
+        let stdout_cfg = if let Some((ref filepath, append)) = redir.stdout_file {
+            match OpenOptions::new().create(true).write(true).append(append).truncate(!append).open(filepath) {
+                Ok(f) => Stdio::from(f),
+                Err(e) => {
+                    eprintln!("sh: cannot open '{}' for writing: {}", filepath, e);
+                    return ExitCode::FAILURE;
+                }
+            }
+        } else if is_last {
             Stdio::inherit()
         } else {
             Stdio::piped()
@@ -442,6 +599,12 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
             Command::new(cmd)
         };
         command.args(args).stdin(stdin_cfg).stdout(stdout_cfg);
+
+        if let Some((ref filepath, append)) = redir.stderr_file {
+            if let Ok(f) = OpenOptions::new().create(true).write(true).append(append).truncate(!append).open(filepath) {
+                command.stderr(Stdio::from(f));
+            }
+        }
 
         match command.spawn() {
             Ok(mut child) => {
@@ -532,7 +695,7 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
         false
     };
 
-    let (line, redirect_out) = extract_redirection_quote_aware(trimmed_raw);
+    let (line, redir) = extract_redirections_quote_aware(trimmed_raw);
 
     let tokens = parse_tokens(&line);
     if tokens.is_empty() {
@@ -553,8 +716,12 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
     match cmd.as_str() {
         "[" | "test" => return shell::run_test(args),
         "cd" => {
-            let target = if args.is_empty() { "/" } else { &args[0] };
-            if let Err(e) = env::set_current_dir(target) {
+            let target = if args.is_empty() {
+                shell::get_var("HOME").unwrap_or_else(|| "/root".to_string())
+            } else {
+                args[0].clone()
+            };
+            if let Err(e) = env::set_current_dir(&target) {
                 eprintln!("cd: {}: {}", target, e);
                 return ExitCode::FAILURE;
             }
@@ -620,6 +787,8 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
         _ => {}
     }
 
+    let has_redirection = redir.stdin_file.is_some() || redir.stdout_file.is_some() || redir.stderr_file.is_some() || redir.stderr_to_stdout;
+
     if is_background {
         let current_exe = env::current_exe().unwrap_or_else(|_| PathBuf::from("/bin/ferro-core"));
         let mut command = if is_internal_applet(cmd) {
@@ -630,6 +799,18 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
             Command::new(cmd)
         };
         command.args(args);
+
+        if let Some((ref filepath, append)) = redir.stdout_file {
+            if let Ok(f) = OpenOptions::new().create(true).write(true).append(append).truncate(!append).open(filepath) {
+                command.stdout(Stdio::from(f));
+            }
+        }
+        if let Some((ref filepath, append)) = redir.stderr_file {
+            if let Ok(f) = OpenOptions::new().create(true).write(true).append(append).truncate(!append).open(filepath) {
+                command.stderr(Stdio::from(f));
+            }
+        }
+
         match command.spawn() {
             Ok(_) => return ExitCode::SUCCESS,
             Err(e) => {
@@ -639,59 +820,68 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
         }
     }
 
-    // Prioritize internal pure-Rust applets over untrusted external PATH binaries (resisting PATH hijacking)
-    if is_internal_applet(cmd) {
-        if let Some((ref filepath, append)) = redirect_out {
-            if let Ok(current_exe) = env::current_exe() {
-                let file_res = OpenOptions::new()
-                    .create(true)
-                    .write(true)
-                    .append(append)
-                    .truncate(!append)
-                    .open(filepath);
-
-                match file_res {
-                    Ok(f) => {
-                        let mut command = Command::new(current_exe);
-                        command.arg(cmd).args(args).stdout(Stdio::from(f));
-                        match command.status() {
-                            Ok(status) => {
-                                return if status.success() {
-                                    ExitCode::SUCCESS
-                                } else {
-                                    ExitCode::FAILURE
-                                }
-                            }
-                            Err(e) => {
-                                eprintln!("sh: failed to execute internal applet '{}': {}", cmd, e);
-                                return ExitCode::FAILURE;
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("sh: cannot open '{}' for writing: {}", filepath, e);
-                        return ExitCode::FAILURE;
-                    }
-                }
-            }
-        }
+    // Prioritize internal pure-Rust applets without redirection for fast in-process dispatch
+    if is_internal_applet(cmd) && !has_redirection {
         return dispatch_internal_applet(cmd, args);
     }
 
-    let mut command = Command::new(cmd);
+    // For external commands or internal applets with redirection
+    let current_exe = env::current_exe().unwrap_or_else(|_| PathBuf::from("/bin/ferro-core"));
+    let mut command = if is_internal_applet(cmd) {
+        let mut c = Command::new(current_exe);
+        c.arg(cmd);
+        c
+    } else {
+        Command::new(cmd)
+    };
     command.args(args);
 
-    if let Some((filepath, append)) = redirect_out {
+    if let Some(ref stdin_f) = redir.stdin_file {
+        match File::open(stdin_f) {
+            Ok(f) => {
+                command.stdin(Stdio::from(f));
+            }
+            Err(e) => {
+                eprintln!("sh: cannot open '{}' for reading: {}", stdin_f, e);
+                return ExitCode::FAILURE;
+            }
+        }
+    }
+
+    if let Some((ref filepath, append)) = redir.stdout_file {
         let file_res = OpenOptions::new()
             .create(true)
             .write(true)
             .append(append)
             .truncate(!append)
-            .open(&filepath);
+            .open(filepath);
 
         match file_res {
             Ok(f) => {
+                if redir.stderr_to_stdout {
+                    if let Ok(f_err) = f.try_clone() {
+                        command.stderr(Stdio::from(f_err));
+                    }
+                }
                 command.stdout(Stdio::from(f));
+            }
+            Err(e) => {
+                eprintln!("sh: cannot open '{}' for writing: {}", filepath, e);
+                return ExitCode::FAILURE;
+            }
+        }
+    }
+
+    if let Some((ref filepath, append)) = redir.stderr_file {
+        let file_res = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .append(append)
+            .truncate(!append)
+            .open(filepath);
+        match file_res {
+            Ok(f) => {
+                command.stderr(Stdio::from(f));
             }
             Err(e) => {
                 eprintln!("sh: cannot open '{}' for writing: {}", filepath, e);
@@ -705,7 +895,7 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
             if status.success() {
                 ExitCode::SUCCESS
             } else {
-                ExitCode::FAILURE
+                ExitCode::from(status.code().unwrap_or(1) as u8)
             }
         }
         Err(_) => dispatch_internal_applet(cmd, args),
@@ -714,6 +904,14 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
 
 fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
     match cmd {
+        "sh" | "bash" => run_sh(args),
+        "exec" => {
+            if args.is_empty() {
+                ExitCode::SUCCESS
+            } else {
+                execute_single_command(&args.join(" "))
+            }
+        }
         "[" | "test" => shell::run_test(args),
         "ls" => run_ls(args),
         "cat" => run_cat(args),
@@ -873,19 +1071,68 @@ fn run_cat(args: &[String]) -> ExitCode {
     }
     let mut exit = ExitCode::SUCCESS;
     for file in args {
-        match fs::read_to_string(file) {
-            Ok(content) => print!("{}", content),
+        if file == "-" {
+            if let Err(e) = io::copy(&mut io::stdin(), &mut io::stdout()) {
+                eprintln!("cat: <stdin>: {}", e);
+                exit = ExitCode::FAILURE;
+            }
+            continue;
+        }
+        match File::open(file) {
+            Ok(mut f) => {
+                if let Err(e) = io::copy(&mut f, &mut io::stdout()) {
+                    eprintln!("cat: {}: {}", file, e);
+                    exit = ExitCode::FAILURE;
+                }
+            }
             Err(e) => {
                 eprintln!("cat: {}: {}", file, e);
                 exit = ExitCode::FAILURE;
             }
         }
     }
+    let _ = io::stdout().flush();
     exit
 }
 
 fn run_echo(args: &[String]) -> ExitCode {
-    println!("{}", args.join(" "));
+    let mut no_newline = false;
+    let mut interpret_escapes = false;
+    let mut start_idx = 0;
+
+    while start_idx < args.len() {
+        let arg = &args[start_idx];
+        if arg == "-n" {
+            no_newline = true;
+            start_idx += 1;
+        } else if arg == "-e" {
+            interpret_escapes = true;
+            start_idx += 1;
+        } else if arg == "-ne" || arg == "-en" {
+            no_newline = true;
+            interpret_escapes = true;
+            start_idx += 1;
+        } else {
+            break;
+        }
+    }
+
+    let joined = args[start_idx..].join(" ");
+    let out = if interpret_escapes {
+        joined.replace("\\n", "\n")
+              .replace("\\t", "\t")
+              .replace("\\r", "\r")
+              .replace("\\\\", "\\")
+    } else {
+        joined
+    };
+
+    if no_newline {
+        print!("{}", out);
+        let _ = io::stdout().flush();
+    } else {
+        println!("{}", out);
+    }
     ExitCode::SUCCESS
 }
 
@@ -923,12 +1170,17 @@ fn run_mkdir(args: &[String]) -> ExitCode {
         eprintln!("mkdir: missing operand");
         return ExitCode::FAILURE;
     }
+    let mut exit = ExitCode::SUCCESS;
     for dir in args {
+        if dir == "-p" || dir == "--parents" || dir.starts_with('-') {
+            continue;
+        }
         if let Err(e) = fs::create_dir_all(dir) {
             eprintln!("mkdir: cannot create directory '{}': {}", dir, e);
+            exit = ExitCode::FAILURE;
         }
     }
-    ExitCode::SUCCESS
+    exit
 }
 
 fn run_rm(args: &[String]) -> ExitCode {
@@ -936,15 +1188,57 @@ fn run_rm(args: &[String]) -> ExitCode {
         eprintln!("rm: missing operand");
         return ExitCode::FAILURE;
     }
-    for path in args {
-        let p = Path::new(path);
-        if p.is_dir() {
-            let _ = fs::remove_dir_all(p);
-        } else {
-            let _ = fs::remove_file(p);
+    let mut force = false;
+    let mut recursive = false;
+    let mut targets = Vec::new();
+
+    for arg in args {
+        if arg.starts_with('-') && arg.len() > 1 && !arg.starts_with("--") {
+            for c in arg[1..].chars() {
+                if c == 'f' { force = true; }
+                if c == 'r' || c == 'R' { recursive = true; }
+            }
+        } else if arg == "-f" || arg == "--force" {
+            force = true;
+        } else if arg == "-r" || arg == "-R" || arg == "--recursive" {
+            recursive = true;
+        } else if !arg.starts_with('-') {
+            targets.push(arg.as_str());
         }
     }
-    ExitCode::SUCCESS
+
+    let mut exit = ExitCode::SUCCESS;
+    for target in targets {
+        let p = Path::new(target);
+        if !p.exists() && !p.is_symlink() {
+            if !force {
+                eprintln!("rm: cannot remove '{}': No such file or directory", target);
+                exit = ExitCode::FAILURE;
+            }
+            continue;
+        }
+        if p.is_dir() {
+            if recursive {
+                if let Err(e) = fs::remove_dir_all(p) {
+                    if !force {
+                        eprintln!("rm: cannot remove directory '{}': {}", target, e);
+                        exit = ExitCode::FAILURE;
+                    }
+                }
+            } else {
+                eprintln!("rm: cannot remove '{}': Is a directory", target);
+                exit = ExitCode::FAILURE;
+            }
+        } else {
+            if let Err(e) = fs::remove_file(p) {
+                if !force {
+                    eprintln!("rm: cannot remove '{}': {}", target, e);
+                    exit = ExitCode::FAILURE;
+                }
+            }
+        }
+    }
+    exit
 }
 
 #[cfg(target_os = "linux")]
@@ -1222,18 +1516,48 @@ fn run_chmod(args: &[String]) -> ExitCode {
     let mode_str = &args[0];
     let target = &args[1];
 
-    if let Ok(mode) = u32::from_str_radix(mode_str, 8) {
+    #[cfg(unix)]
+    {
         use std::os::unix::fs::PermissionsExt;
-        let perms = fs::Permissions::from_mode(mode);
-        if let Err(e) = fs::set_permissions(target, perms) {
-            eprintln!("chmod: cannot set permissions for '{}': {}", target, e);
-            return ExitCode::FAILURE;
+        let mut final_mode = None;
+
+        if let Ok(octal) = u32::from_str_radix(mode_str, 8) {
+            final_mode = Some(octal);
+        } else if mode_str == "+x" || mode_str == "a+x" || mode_str == "u+x" {
+            if let Ok(meta) = fs::metadata(target) {
+                final_mode = Some(meta.permissions().mode() | 0o111);
+            }
+        } else if mode_str == "-x" {
+            if let Ok(meta) = fs::metadata(target) {
+                final_mode = Some(meta.permissions().mode() & !0o111);
+            }
+        } else if mode_str == "+r" {
+            if let Ok(meta) = fs::metadata(target) {
+                final_mode = Some(meta.permissions().mode() | 0o444);
+            }
+        } else if mode_str == "+w" {
+            if let Ok(meta) = fs::metadata(target) {
+                final_mode = Some(meta.permissions().mode() | 0o222);
+            }
         }
-        ExitCode::SUCCESS
-    } else {
-        eprintln!("chmod: invalid mode: {}", mode_str);
-        ExitCode::FAILURE
+
+        if let Some(m) = final_mode {
+            let perms = fs::Permissions::from_mode(m);
+            if let Err(e) = fs::set_permissions(target, perms) {
+                eprintln!("chmod: cannot set permissions for '{}': {}", target, e);
+                return ExitCode::FAILURE;
+            }
+            return ExitCode::SUCCESS;
+        }
     }
+
+    #[cfg(not(unix))]
+    {
+        return ExitCode::SUCCESS;
+    }
+
+    eprintln!("chmod: invalid mode: {}", mode_str);
+    ExitCode::FAILURE
 }
 
 fn run_grep(args: &[String]) -> ExitCode {
@@ -1352,9 +1676,17 @@ fn run_head(args: &[String]) -> ExitCode {
     let mut count = 10;
     let mut file_idx = 0;
 
-    if args.len() >= 2 && args[0] == "-n" {
-        count = args[1].parse().unwrap_or(10);
-        file_idx = 2;
+    if !args.is_empty() {
+        if args[0] == "-n" && args.len() >= 2 {
+            count = args[1].parse().unwrap_or(10);
+            file_idx = 2;
+        } else if args[0].starts_with("-n") && args[0].len() > 2 {
+            count = args[0][2..].parse().unwrap_or(10);
+            file_idx = 1;
+        } else if args[0].starts_with('-') && args[0].len() > 1 && args[0][1..].chars().all(|c| c.is_ascii_digit()) {
+            count = args[0][1..].parse().unwrap_or(10);
+            file_idx = 1;
+        }
     }
 
     let file = args.get(file_idx);
@@ -1385,9 +1717,17 @@ fn run_tail(args: &[String]) -> ExitCode {
     let mut count = 10;
     let mut file_idx = 0;
 
-    if args.len() >= 2 && args[0] == "-n" {
-        count = args[1].parse().unwrap_or(10);
-        file_idx = 2;
+    if !args.is_empty() {
+        if args[0] == "-n" && args.len() >= 2 {
+            count = args[1].parse().unwrap_or(10);
+            file_idx = 2;
+        } else if args[0].starts_with("-n") && args[0].len() > 2 {
+            count = args[0][2..].parse().unwrap_or(10);
+            file_idx = 1;
+        } else if args[0].starts_with('-') && args[0].len() > 1 && args[0][1..].chars().all(|c| c.is_ascii_digit()) {
+            count = args[0][1..].parse().unwrap_or(10);
+            file_idx = 1;
+        }
     }
 
     let file = args.get(file_idx);
@@ -1487,24 +1827,113 @@ fn run_which(args: &[String]) -> ExitCode {
         return ExitCode::FAILURE;
     }
     let target = &args[0];
-    let path_var = env::var("PATH").unwrap_or_else(|_| "/bin:/usr/bin".to_string());
+    let path_var = env::var("PATH").unwrap_or_else(|_| "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin".to_string());
 
     for dir in path_var.split(':') {
         let candidate = Path::new(dir).join(target);
         if candidate.is_file() {
-            println!("{}", candidate.display());
-            return ExitCode::SUCCESS;
+            #[cfg(unix)]
+            {
+                use std::ffi::CString;
+                if let Ok(c) = CString::new(candidate.to_string_lossy().as_bytes()) {
+                    if unsafe { libc::access(c.as_ptr(), libc::X_OK) } == 0 {
+                        println!("{}", candidate.display());
+                        return ExitCode::SUCCESS;
+                    }
+                }
+            }
+            #[cfg(not(unix))]
+            {
+                println!("{}", candidate.display());
+                return ExitCode::SUCCESS;
+            }
         }
+    }
+    if is_internal_applet(target) {
+        println!("/bin/{}", target);
+        return ExitCode::SUCCESS;
     }
     eprintln!("which: no {} in ({})", target, path_var);
     ExitCode::FAILURE
 }
 
-fn run_env(_args: &[String]) -> ExitCode {
-    for (key, val) in env::vars() {
-        println!("{}={}", key, val);
+fn run_env(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        for (key, val) in env::vars() {
+            println!("{}={}", key, val);
+        }
+        return ExitCode::SUCCESS;
     }
-    ExitCode::SUCCESS
+
+    let mut i = 0;
+    let mut custom_env: Vec<(String, String)> = Vec::new();
+    let mut ignore_env = false;
+
+    while i < args.len() {
+        let arg = &args[i];
+        if arg == "-i" || arg == "--ignore-environment" {
+            ignore_env = true;
+            i += 1;
+        } else if arg == "-u" && i + 1 < args.len() {
+            env::remove_var(&args[i + 1]);
+            i += 2;
+        } else if let Some(eq) = arg.find('=') {
+            if eq > 0 {
+                let key = &arg[..eq];
+                let val = &arg[eq + 1..];
+                custom_env.push((key.to_string(), val.to_string()));
+                i += 1;
+                continue;
+            }
+            break;
+        } else {
+            break;
+        }
+    }
+
+    if i >= args.len() {
+        for (k, v) in &custom_env {
+            env::set_var(k, v);
+        }
+        for (key, val) in env::vars() {
+            println!("{}={}", key, val);
+        }
+        return ExitCode::SUCCESS;
+    }
+
+    let cmd = &args[i];
+    let cmd_args = &args[i + 1..];
+
+    let mut command = if is_internal_applet(cmd) {
+        let exe = env::current_exe().unwrap_or_else(|_| PathBuf::from("/bin/ferro-core"));
+        let mut c = Command::new(exe);
+        c.arg(cmd);
+        c
+    } else {
+        Command::new(cmd)
+    };
+
+    if ignore_env {
+        command.env_clear();
+    }
+    for (k, v) in custom_env {
+        command.env(k, v);
+    }
+    command.args(cmd_args);
+
+    match command.status() {
+        Ok(s) => {
+            if s.success() {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::from(s.code().unwrap_or(1) as u8)
+            }
+        }
+        Err(e) => {
+            eprintln!("env: '{cmd}': {e}");
+            ExitCode::from(127)
+        }
+    }
 }
 
 fn run_sleep(args: &[String]) -> ExitCode {

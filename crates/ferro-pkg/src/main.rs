@@ -1033,7 +1033,7 @@ fn cmd_install_native(
             unpacked_paths_for_rollback.len()
         );
         for p in unpacked_paths_for_rollback.iter().rev() {
-            if p.is_file() {
+            if p.is_file() || p.is_symlink() {
                 let _ = fs::remove_file(p);
             }
         }
@@ -1079,7 +1079,7 @@ fn cmd_install_native(
             eprintln!("  Use --nodeps to force installation without dependencies.");
             // Rollback files
             for p in unpacked_paths_for_rollback.iter().rev() {
-                if p.is_file() {
+                if p.is_file() || p.is_symlink() {
                     let _ = fs::remove_file(p);
                 }
             }
@@ -1457,7 +1457,7 @@ fn cmd_remove(pkg_name: &str, root: &Path) -> ExitCode {
         let mut removed_count = 0;
         for file in pkg.installed_files {
             let full_path = root.join(file.trim_start_matches('/'));
-            if full_path.is_file() {
+            if full_path.is_file() || full_path.is_symlink() {
                 let _ = fs::remove_file(&full_path);
                 removed_count += 1;
             }
@@ -2338,6 +2338,49 @@ mod tests {
         let service_content = fs::read_to_string(temp_dir.join("usr/local/bin/service")).unwrap();
         assert!(service_content.contains("ferro-core"));
         assert!(service_content.contains("--status-all"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_package_remove_with_symlinks() {
+        let temp_dir = env::temp_dir().join("ferro_remove_symlink_test");
+        let _ = fs::remove_dir_all(&temp_dir);
+        let _ = fs::create_dir_all(temp_dir.join("bin"));
+
+        let target_file = temp_dir.join("bin/real_file");
+        let _ = fs::write(&target_file, b"content");
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::symlink;
+            let _ = symlink("real_file", temp_dir.join("bin/symlink_file"));
+        }
+
+        let mut db = PackageDatabase::load(&temp_dir);
+        let meta = PackageMetadata {
+            name: "symlink-pkg".to_string(),
+            version: "1.0.0".to_string(),
+            description: "Test".to_string(),
+            architecture: "x86_64".to_string(),
+            dependencies: vec![],
+            sha256: None,
+        };
+
+        db.packages.insert(
+            "symlink-pkg".to_string(),
+            InstalledPackage {
+                metadata: meta,
+                installed_files: vec!["bin/real_file".to_string(), "bin/symlink_file".to_string()],
+                installed_at: "now".to_string(),
+            },
+        );
+        db.save(&temp_dir).unwrap();
+
+        let code = cmd_remove("symlink-pkg", &temp_dir);
+        assert_eq!(format!("{:?}", code), format!("{:?}", ExitCode::SUCCESS));
+        assert!(!temp_dir.join("bin/real_file").exists());
+        assert!(!temp_dir.join("bin/symlink_file").exists());
 
         let _ = fs::remove_dir_all(&temp_dir);
     }

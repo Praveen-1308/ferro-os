@@ -178,8 +178,13 @@ fn http_get(host: &str, port: u16, path: &str) -> Option<String> {
 fn set_system_hostname(name: &str) {
     use std::ffi::CString;
     if let Ok(c_name) = CString::new(name) {
+        #[cfg(target_os = "linux")]
         unsafe {
             let _ = libc::sethostname(c_name.as_ptr(), name.len());
+        }
+        #[cfg(not(target_os = "linux"))]
+        unsafe {
+            let _ = libc::sethostname(c_name.as_ptr(), name.len() as libc::c_int);
         }
     }
 }

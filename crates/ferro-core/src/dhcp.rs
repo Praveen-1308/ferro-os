@@ -357,6 +357,48 @@ pub fn apply_ip_configuration(_iface: &str, _ip: Ipv4Addr, _mask: Option<Ipv4Add
     true
 }
 
+/// Apply default route (0.0.0.0/0 via gateway) on Linux using ioctls
+#[cfg(target_os = "linux")]
+pub fn apply_default_gateway(iface: &str, gateway: Ipv4Addr) -> bool {
+    use std::ffi::CString;
+    unsafe {
+        let sock = libc::socket(libc::AF_INET, libc::SOCK_DGRAM, 0);
+        if sock < 0 {
+            return false;
+        }
+
+        let mut rt: libc::rtentry = std::mem::zeroed();
+
+        // Destination: 0.0.0.0
+        let dst = &mut rt.rt_dst as *mut libc::sockaddr as *mut libc::sockaddr_in;
+        (*dst).sin_family = libc::AF_INET as libc::sa_family_t;
+        (*dst).sin_addr.s_addr = 0;
+
+        // Genmask: 0.0.0.0
+        let mask = &mut rt.rt_genmask as *mut libc::sockaddr as *mut libc::sockaddr_in;
+        (*mask).sin_family = libc::AF_INET as libc::sa_family_t;
+        (*mask).sin_addr.s_addr = 0;
+
+        // Gateway IP
+        let gw = &mut rt.rt_gateway as *mut libc::sockaddr as *mut libc::sockaddr_in;
+        (*gw).sin_family = libc::AF_INET as libc::sa_family_t;
+        (*gw).sin_addr.s_addr = u32::from_ne_bytes(gateway.octets());
+
+        let c_dev = CString::new(iface).unwrap_or_else(|_| CString::new("eth0").unwrap());
+        rt.rt_dev = c_dev.as_ptr() as *mut libc::c_char;
+        rt.rt_flags = (libc::RTF_UP | libc::RTF_GATEWAY) as libc::c_ushort;
+
+        let ret = libc::ioctl(sock, libc::SIOCADDRT, &rt);
+        libc::close(sock);
+        ret == 0
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+pub fn apply_default_gateway(_iface: &str, _gateway: Ipv4Addr) -> bool {
+    true
+}
+
 /// Update `/etc/resolv.conf` with acquired DNS servers
 pub fn update_resolv_conf(dns_servers: &[Ipv4Addr]) {
     if dns_servers.is_empty() {
@@ -507,6 +549,8 @@ pub fn run_dhcp(args: &[String]) -> ExitCode {
         // If live, configure interface
         if !dry_run {
             apply_ip_configuration(&interface, offer.yiaddr, offer.subnet_mask);
+            let gw = offer.routers.first().copied().unwrap_or(Ipv4Addr::new(10, 0, 2, 2));
+            apply_default_gateway(&interface, gw);
             update_resolv_conf(&offer.dns_servers);
         }
 
@@ -545,10 +589,12 @@ pub fn run_dhcp(args: &[String]) -> ExitCode {
     if !dry_run {
         let fallback_ip = Ipv4Addr::new(10, 0, 2, 15);
         let fallback_mask = Some(Ipv4Addr::new(255, 255, 255, 0));
+        let fallback_gw = Ipv4Addr::new(10, 0, 2, 2);
         apply_ip_configuration(&interface, fallback_ip, fallback_mask);
+        apply_default_gateway(&interface, fallback_gw);
         println!(
-            "[ferro-net] Configured fallback IP {}/24 on interface '{}'",
-            fallback_ip, interface
+            "[ferro-net] Configured fallback IP {}/24 and gateway {} on interface '{}'",
+            fallback_ip, fallback_gw, interface
         );
         if !Path::new("/etc/resolv.conf").exists() {
             update_resolv_conf(&fallback_dns);

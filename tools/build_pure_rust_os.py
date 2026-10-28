@@ -42,12 +42,15 @@ def main():
     print("\n[Stage 1] Compiling Pure-Rust Core Daemons...")
     target_rel = os.path.join(WORKSPACE, "target/release")
     ferro_bins = ["ferro-init", "ferro-core", "ferro-pkg"]
+    target_arch = os.environ.get("TARGET_ARCH", "x86_64")
+    expected_machine = 0x3E if target_arch in ("x86_64", "amd64") else 0xB7
     bins_exist = all(os.path.exists(os.path.join(target_rel, b)) for b in ferro_bins)
-    if bins_exist and sys.platform == "darwin":
-        # Check if existing binaries are Mach-O rather than Linux ELF
+    if bins_exist:
+        # Check if existing binaries are Linux ELF and match expected target architecture
         try:
             with open(os.path.join(target_rel, "ferro-core"), "rb") as f:
-                if f.read(4) != b"\x7fELF":
+                header = f.read(20)
+                if header[:4] != b"\x7fELF" or (len(header) >= 19 and header[18] != expected_machine):
                     bins_exist = False
         except Exception:
             bins_exist = False
@@ -56,9 +59,10 @@ def main():
         compile_cmd = ["cargo", "build", "--release", "-p", "ferro-init", "-p", "ferro-core", "-p", "ferro-pkg", "-p", "ferro-io"]
         run(compile_cmd, cwd=WORKSPACE)
     elif not bins_exist:
-        print("  • Cross-compiling native Linux ELF release binaries via container...")
+        arch_platform = "linux/amd64" if target_arch in ("x86_64", "amd64") else "linux/arm64"
+        print(f"  • Cross-compiling native Linux ELF release binaries ({target_arch}) via container ({arch_platform})...")
         compile_cmd = [
-            "docker", "run", "--rm",
+            "docker", "run", "--platform", arch_platform, "--rm",
             "-v", f"{WORKSPACE}:/build",
             "-w", "/build",
             "rust:1.80-slim-bookworm",

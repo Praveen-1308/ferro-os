@@ -59,45 +59,39 @@ pub fn list_block_devices() -> ExitCode {
     println!("{:<14} {:<10} {:<12} {:<16} {:<18}", "DEVICE", "MAJOR:MINOR", "SIZE (MB)", "TYPE", "MOUNTPOINT");
     println!("--------------------------------------------------------------------------------");
 
-    let partitions_file = match File::open("/proc/partitions") {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("Could not read /proc/partitions: {}", e);
-            return ExitCode::FAILURE;
-        }
-    };
-
-    let reader = BufReader::new(partitions_file);
     let mut found_any = false;
 
-    for line in reader.lines().flatten() {
-        let parts: Vec<&str> = line.split_whitespace().collect();
-        if parts.len() < 4 || parts[0] == "major" {
-            continue;
+    if let Ok(partitions_file) = File::open("/proc/partitions") {
+        let reader = BufReader::new(partitions_file);
+        for line in reader.lines().flatten() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() < 4 || parts[0] == "major" {
+                continue;
+            }
+
+            let major: u32 = parts[0].parse().unwrap_or(0);
+            let minor: u32 = parts[1].parse().unwrap_or(0);
+            let blocks: u64 = parts[2].parse().unwrap_or(0);
+            let name = parts[3];
+
+            // Skip loop devices and ram devices unless requested
+            if name.starts_with("ram") || name.starts_with("loop") {
+                continue;
+            }
+
+            found_any = true;
+            let size_mb = (blocks * 1024) / (1024 * 1024);
+            let dev_type = if name.chars().last().map_or(false, |c| c.is_ascii_digit()) {
+                "Partition"
+            } else {
+                "Disk"
+            };
+
+            let dev_path = format!("/dev/{}", name);
+            let mount_point = find_mount_point(&dev_path).unwrap_or_else(|| "-".to_string());
+
+            println!("{:<14} {:<10} {:<12} {:<16} {:<18}", dev_path, format!("{}:{}", major, minor), size_mb, dev_type, mount_point);
         }
-
-        let major: u32 = parts[0].parse().unwrap_or(0);
-        let minor: u32 = parts[1].parse().unwrap_or(0);
-        let blocks: u64 = parts[2].parse().unwrap_or(0);
-        let name = parts[3];
-
-        // Skip loop devices and ram devices unless requested
-        if name.starts_with("ram") || name.starts_with("loop") {
-            continue;
-        }
-
-        found_any = true;
-        let size_mb = (blocks * 1024) / (1024 * 1024);
-        let dev_type = if name.chars().last().map_or(false, |c| c.is_ascii_digit()) {
-            "Partition"
-        } else {
-            "Disk"
-        };
-
-        let dev_path = format!("/dev/{}", name);
-        let mount_point = find_mount_point(&dev_path).unwrap_or_else(|| "-".to_string());
-
-        println!("{:<14} {:<10} {:<12} {:<16} {:<18}", dev_path, format!("{}:{}", major, minor), size_mb, dev_type, mount_point);
     }
 
     if !found_any {
@@ -121,6 +115,7 @@ fn find_mount_point(dev_path: &str) -> Option<String> {
     None
 }
 
+#[cfg(target_os = "linux")]
 pub fn mount_device(dev: &str, target: &str, fstype: &str) -> bool {
     use std::ffi::CString;
 
@@ -148,6 +143,13 @@ pub fn mount_device(dev: &str, target: &str, fstype: &str) -> bool {
     }
 }
 
+#[cfg(not(target_os = "linux"))]
+pub fn mount_device(dev: &str, target: &str, fstype: &str) -> bool {
+    println!("[host-mock] mount {} on {} (type: {})", dev, target, fstype);
+    true
+}
+
+#[cfg(target_os = "linux")]
 pub fn umount_target(target: &str) -> ExitCode {
     use std::ffi::CString;
     let c_target = match CString::new(target) { Ok(c) => c, Err(_) => return ExitCode::FAILURE };
@@ -161,6 +163,12 @@ pub fn umount_target(target: &str) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+#[cfg(not(target_os = "linux"))]
+pub fn umount_target(target: &str) -> ExitCode {
+    println!("[host-mock] unmount {}", target);
+    ExitCode::SUCCESS
 }
 
 pub fn install_to_disk(target_disk: &str) -> ExitCode {

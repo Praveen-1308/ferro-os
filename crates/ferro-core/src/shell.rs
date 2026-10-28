@@ -97,9 +97,25 @@ pub fn expand_string_vars(input: &str) -> String {
     let mut out = String::with_capacity(input.len());
     let chars: Vec<char> = input.chars().collect();
     let mut i = 0;
+    let mut in_single_quotes = false;
+    let mut in_double_quotes = false;
 
     while i < chars.len() {
-        if chars[i] == '$' && i + 1 < chars.len() {
+        let c = chars[i];
+        if c == '\'' && !in_double_quotes {
+            in_single_quotes = !in_single_quotes;
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        if c == '"' && !in_single_quotes {
+            in_double_quotes = !in_double_quotes;
+            out.push(c);
+            i += 1;
+            continue;
+        }
+
+        if !in_single_quotes && c == '$' && i + 1 < chars.len() {
             let next = chars[i + 1];
             if next == '?' {
                 out.push_str(&get_last_status().to_string());
@@ -260,9 +276,33 @@ fn evaluate_test_expr(tokens: &[String]) -> bool {
                 "-d" => p.is_dir(),
                 "-e" => p.exists(),
                 "-s" => fs::metadata(p).map(|m| m.len() > 0).unwrap_or(false),
-                "-r" => p.exists(), // Best effort POSIX permission check
-                "-w" => p.exists(),
-                "-x" => p.exists(),
+                "-r" => {
+                    #[cfg(unix)]
+                    {
+                        use std::ffi::CString;
+                        CString::new(arg.as_str()).map(|c| unsafe { libc::access(c.as_ptr(), libc::R_OK) == 0 }).unwrap_or(false)
+                    }
+                    #[cfg(not(unix))]
+                    p.exists()
+                }
+                "-w" => {
+                    #[cfg(unix)]
+                    {
+                        use std::ffi::CString;
+                        CString::new(arg.as_str()).map(|c| unsafe { libc::access(c.as_ptr(), libc::W_OK) == 0 }).unwrap_or(false)
+                    }
+                    #[cfg(not(unix))]
+                    p.exists()
+                }
+                "-x" => {
+                    #[cfg(unix)]
+                    {
+                        use std::ffi::CString;
+                        CString::new(arg.as_str()).map(|c| unsafe { libc::access(c.as_ptr(), libc::X_OK) == 0 }).unwrap_or(false)
+                    }
+                    #[cfg(not(unix))]
+                    p.exists()
+                }
                 "-L" | "-h" => fs::symlink_metadata(p)
                     .map(|m| m.file_type().is_symlink())
                     .unwrap_or(false),
@@ -553,51 +593,72 @@ where
     last_code
 }
 
+fn split_logical_chain(stmt: &str) -> Vec<(Option<&str>, String)> {
+    let mut parts = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    let mut quote_char = ' ';
+    let chars: Vec<char> = stmt.chars().collect();
+    let mut i = 0;
+    let mut last_op: Option<&'static str> = None;
+
+    while i < chars.len() {
+        let c = chars[i];
+        if (c == '"' || c == '\'') && !in_quotes {
+            in_quotes = true;
+            quote_char = c;
+            current.push(c);
+            i += 1;
+        } else if in_quotes && c == quote_char {
+            in_quotes = false;
+            current.push(c);
+            i += 1;
+        } else if !in_quotes && i + 1 < chars.len() && ((c == '&' && chars[i + 1] == '&') || (c == '|' && chars[i + 1] == '|')) {
+            let op = if c == '&' { "&&" } else { "||" };
+            let sub = current.trim().to_string();
+            if !sub.is_empty() {
+                parts.push((last_op, sub));
+            }
+            current.clear();
+            last_op = Some(op);
+            i += 2;
+        } else {
+            current.push(c);
+            i += 1;
+        }
+    }
+    let sub = current.trim().to_string();
+    if !sub.is_empty() {
+        parts.push((last_op, sub));
+    }
+    parts
+}
+
 fn execute_logical_chain<F>(stmt: &str, mut exec_pipeline: F) -> ExitCode
 where
     F: FnMut(&str) -> ExitCode,
 {
-    if stmt.contains("||") {
-        let subcmds: Vec<&str> = stmt.split("||").collect();
-        let mut final_code = ExitCode::SUCCESS;
-        let mut any_ok = false;
-        for sub in subcmds {
-            let s = sub.trim();
-            if s.is_empty() {
-                continue;
-            }
-            let res = exec_pipeline(s);
-            if is_exit_success(&res) {
-                any_ok = true;
-                final_code = ExitCode::SUCCESS;
-                break;
-            } else {
-                final_code = res;
-            }
-        }
-        if any_ok {
-            ExitCode::SUCCESS
-        } else {
-            final_code
-        }
-    } else if stmt.contains("&&") {
-        let subcmds: Vec<&str> = stmt.split("&&").collect();
-        let mut final_code = ExitCode::SUCCESS;
-        for sub in subcmds {
-            let s = sub.trim();
-            if s.is_empty() {
-                continue;
-            }
-            let res = exec_pipeline(s);
-            if !is_exit_success(&res) {
-                return res;
-            }
-            final_code = ExitCode::SUCCESS;
-        }
-        final_code
-    } else {
-        exec_pipeline(stmt)
+    let chain = split_logical_chain(stmt);
+    if chain.is_empty() {
+        return ExitCode::SUCCESS;
     }
+
+    let mut last_code = ExitCode::SUCCESS;
+
+    for (op, subcmd) in chain {
+        let should_run = match op {
+            None => true,
+            Some("&&") => is_exit_success(&last_code),
+            Some("||") => !is_exit_success(&last_code),
+            _ => true,
+        };
+
+        if should_run {
+            last_code = exec_pipeline(&subcmd);
+        }
+    }
+
+    last_code
 }
 
 // -------------------------------------------------------------
