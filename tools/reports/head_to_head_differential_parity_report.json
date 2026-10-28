@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-28T18:52:30Z",
+  "timestamp": "2026-10-28T20:42:13Z",
   "total_tests": 30,
   "passed_tests": 30,
   "score_pct": 100.0,
@@ -13,13 +13,13 @@
         "rc": 0,
         "stdout": "OK",
         "stderr": "",
-        "ms": 315.9749507904053
+        "ms": 353.68919372558594
       },
       "ferro": {
         "rc": 0,
         "stdout": "OK",
         "stderr": "",
-        "ms": 320.19615173339844
+        "ms": 324.1724967956543
       },
       "parity": true
     },
@@ -32,13 +32,13 @@
         "rc": 0,
         "stdout": "mkdir: cannot create directory '/tmp/md2': File exists\nEXPECTED_FAIL",
         "stderr": "",
-        "ms": 330.09839057922363
+        "ms": 322.9022026062012
       },
       "ferro": {
         "rc": 0,
         "stdout": "mkdir: cannot create directory '/tmp/md2': File exists (os error 17)\nEXPECTED_FAIL",
         "stderr": "",
-        "ms": 316.77746772766113
+        "ms": 322.5831985473633
       },
       "parity": true
     },
@@ -51,13 +51,13 @@
         "rc": 0,
         "stdout": "PARENTS_OK",
         "stderr": "",
-        "ms": 309.720516204834
+        "ms": 317.9614543914795
       },
       "ferro": {
         "rc": 0,
         "stdout": "PARENTS_OK",
         "stderr": "",
-        "ms": 326.6582489013672
+        "ms": 312.8783702850342
       },
       "parity": true
     },
@@ -70,13 +70,13 @@
         "rc": 0,
         "stdout": "RM_OK",
         "stderr": "",
-        "ms": 324.00035858154297
+        "ms": 318.1002140045166
       },
       "ferro": {
         "rc": 0,
         "stdout": "RM_OK",
         "stderr": "",
-        "ms": 327.7010917663574
+        "ms": 333.0497741699219
       },
       "parity": true
     },
@@ -89,13 +89,13 @@
         "rc": 0,
         "stdout": "rm: cannot remove '/tmp/rm_nonexist_123': No such file or directory\nEXPECTED_FAIL",
         "stderr": "",
-        "ms": 312.7012252807617
+        "ms": 332.7500820159912
       },
       "ferro": {
         "rc": 0,
         "stdout": "rm: cannot remove '/tmp/rm_nonexist_123': No such file or directory\nEXPECTED_FAIL",
         "stderr": "",
-        "ms": 318.0851936340332
+        "ms": 320.80650329589844
       },
       "parity": true
     },
@@ -108,13 +108,13 @@
         "rc": 0,
         "stdout": "FORCE_OK",
         "stderr": "",
-        "ms": 328.0341625213623
+        "ms": 321.28047943115234
       },
       "ferro": {
         "rc": 0,
         "stdout": "FORCE_OK",
         "stderr": "",
-        "ms": 311.6648197174072
+        "ms": 334.99979972839355
       },
       "parity": true
     },
@@ -127,13 +127,13 @@
         "rc": 0,
         "stdout": "TREE_GONE",
         "stderr": "",
-        "ms": 314.4242763519287
+        "ms": 323.514461517334
       },
       "ferro": {
         "rc": 0,
         "stdout": "TREE_GONE",
         "stderr": "",
-        "ms": 323.51088523864746
+        "ms": 320.3909397125244
       },
       "parity": true
     },
@@ -146,13 +146,13 @@
         "rc": 0,
         "stdout": "MODE_755_OK",
         "stderr": "",
-        "ms": 323.45080375671387
+        "ms": 316.12157821655273
       },
       "ferro": {
         "rc": 0,
         "stdout": "MODE_755_OK",
         "stderr": "",
-        "ms": 330.65080642700195
+        "ms": 319.60129737854004
       },
       "parity": true
     },
@@ -165,13 +165,13 @@
         "rc": 0,
         "stdout": "RECURSE_CHMOD_OK",
         "stderr": "",
-        "ms": 318.1440830230713
+        "ms": 310.35447120666504
       },
       "ferro": {
         "rc": 0,
         "stdout": "RECURSE_CHMOD_OK",
         "stderr": "",
-        "ms": 317.0967102050781
+        "ms": 320.67155838012695
       },
       "parity": true
     },
@@ -184,13 +184,13 @@
         "rc": 0,
         "stdout": "EXEC_OK",
         "stderr": "",
-        "ms": 319.72503662109375
+        "ms": 305.680513381958
       },
       "ferro": {
         "rc": 0,
         "stdout": "EXEC_OK",
         "stderr": "",
-        "ms": 312.26396560668945
+        "ms": 323.3377933502197
       },
       "parity": true
     },
@@ -203,13 +203,13 @@
         "rc": 0,
         "stdout": "/tmp/ls_d_test",
         "stderr": "",
-        "ms": 316.9410228729248
+        "ms": 315.6859874725342
       },
       "ferro": {
         "rc": 0,
         "stdout": "/tmp/ls_d_test",
         "stderr": "",
-        "ms": 307.69848823547363
+        "ms": 327.87251472473145
       },
       "parity": true
     },
@@ -222,13 +222,13 @@
         "rc": 0,
         "stdout": "HIDDEN_SEEN",
         "stderr": "",
-        "ms": 322.0806121826172
+        "ms": 318.0088996887207
       },
       "ferro": {
         "rc": 0,
         "stdout": "HIDDEN_SEEN",
         "stderr": "",
-        "ms": 318.3908462524414
+        "ms": 304.5339584350586
       },
       "parity": true
     },
@@ -241,13 +241,13 @@
         "rc": 0,
         "stdout": "LINES: 2",
         "stderr": "",
-        "ms": 319.9608325958252
+        "ms": 325.9706497192383
       },
       "ferro": {
         "rc": 0,
         "stdout": "LINES:    2",
         "stderr": "",
-        "ms": 307.9218864440918
+        "ms": 329.72145080566406
       },
       "parity": true
     },
@@ -260,13 +260,13 @@
         "rc": 0,
         "stdout": "-e one\ntwo",
         "stderr": "",
-        "ms": 314.8069381713867
+        "ms": 308.48193168640137
       },
       "ferro": {
         "rc": 0,
         "stdout": "-e one\ntwo",
         "stderr": "",
-        "ms": 325.35791397094727
+        "ms": 318.20011138916016
       },
       "parity": true
     },
@@ -279,13 +279,13 @@
         "rc": 0,
         "stdout": "==> /tmp/h1.txt <==\nfirst\n\n==> /tmp/h2.txt <==\nsecond",
         "stderr": "",
-        "ms": 317.6231384277344
+        "ms": 323.94862174987793
       },
       "ferro": {
         "rc": 0,
         "stdout": "==> /tmp/h1.txt <==\nfirst\n\n==> /tmp/h2.txt <==\nsecond",
         "stderr": "",
-        "ms": 318.13859939575195
+        "ms": 313.22669982910156
       },
       "parity": true
     },
@@ -298,13 +298,13 @@
         "rc": 0,
         "stdout": "three\nfour",
         "stderr": "",
-        "ms": 345.0300693511963
+        "ms": 315.765380859375
       },
       "ferro": {
         "rc": 0,
         "stdout": "three\nfour",
         "stderr": "",
-        "ms": 305.52053451538086
+        "ms": 328.9306163787842
       },
       "parity": true
     },
@@ -317,13 +317,13 @@
         "rc": 0,
         "stdout": "3",
         "stderr": "",
-        "ms": 332.43727684020996
+        "ms": 322.17860221862793
       },
       "ferro": {
         "rc": 0,
         "stdout": "3",
         "stderr": "",
-        "ms": 318.27688217163086
+        "ms": 325.958251953125
       },
       "parity": true
     },
@@ -336,13 +336,13 @@
         "rc": 0,
         "stdout": "TOTAL_SEEN",
         "stderr": "",
-        "ms": 322.63708114624023
+        "ms": 318.98975372314453
       },
       "ferro": {
         "rc": 0,
         "stdout": "TOTAL_SEEN",
         "stderr": "",
-        "ms": 312.4105930328369
+        "ms": 320.80531120300293
       },
       "parity": true
     },
@@ -355,13 +355,13 @@
         "rc": 0,
         "stdout": "-e FOOBAR",
         "stderr": "",
-        "ms": 325.32596588134766
+        "ms": 330.9497833251953
       },
       "ferro": {
         "rc": 0,
         "stdout": "-e FOOBAR",
         "stderr": "",
-        "ms": 313.71498107910156
+        "ms": 319.25249099731445
       },
       "parity": true
     },
@@ -374,13 +374,13 @@
         "rc": 0,
         "stdout": "-e apple cherry",
         "stderr": "",
-        "ms": 311.24258041381836
+        "ms": 335.2468013763428
       },
       "ferro": {
         "rc": 0,
         "stdout": "-e apple cherry",
         "stderr": "",
-        "ms": 311.78975105285645
+        "ms": 323.9257335662842
       },
       "parity": true
     },
@@ -393,13 +393,13 @@
         "rc": 0,
         "stdout": "3",
         "stderr": "",
-        "ms": 307.2845935821533
+        "ms": 330.33037185668945
       },
       "ferro": {
         "rc": 0,
         "stdout": "3",
         "stderr": "",
-        "ms": 327.7280330657959
+        "ms": 314.1775131225586
       },
       "parity": true
     },
@@ -412,13 +412,13 @@
         "rc": 0,
         "stdout": "DIR_TEST_PASS",
         "stderr": "",
-        "ms": 333.0411911010742
+        "ms": 317.3377513885498
       },
       "ferro": {
         "rc": 0,
         "stdout": "DIR_TEST_PASS",
         "stderr": "",
-        "ms": 353.5780906677246
+        "ms": 317.3532485961914
       },
       "parity": true
     },
@@ -431,13 +431,13 @@
         "rc": 0,
         "stdout": "STRING_TEST_PASS",
         "stderr": "",
-        "ms": 325.7761001586914
+        "ms": 332.4763774871826
       },
       "ferro": {
         "rc": 0,
         "stdout": "STRING_TEST_PASS",
         "stderr": "",
-        "ms": 320.7106590270996
+        "ms": 326.1246681213379
       },
       "parity": true
     },
@@ -450,13 +450,13 @@
         "rc": 0,
         "stdout": "INT_TEST_PASS",
         "stderr": "",
-        "ms": 328.77469062805176
+        "ms": 316.8668746948242
       },
       "ferro": {
         "rc": 0,
         "stdout": "INT_TEST_PASS",
         "stderr": "",
-        "ms": 326.8895149230957
+        "ms": 316.1652088165283
       },
       "parity": true
     },
@@ -469,13 +469,13 @@
         "rc": 0,
         "stdout": "alpha beta",
         "stderr": "",
-        "ms": 318.01390647888184
+        "ms": 317.55518913269043
       },
       "ferro": {
         "rc": 0,
         "stdout": "alpha beta",
         "stderr": "",
-        "ms": 300.2936840057373
+        "ms": 313.2953643798828
       },
       "parity": true
     },
@@ -488,13 +488,13 @@
         "rc": 0,
         "stdout": "line1 line2",
         "stderr": "",
-        "ms": 323.7307071685791
+        "ms": 325.7482051849365
       },
       "ferro": {
         "rc": 0,
         "stdout": "line1 line2",
         "stderr": "",
-        "ms": 336.36927604675293
+        "ms": 316.2806034088135
       },
       "parity": true
     },
@@ -507,13 +507,13 @@
         "rc": 0,
         "stdout": "A\nD",
         "stderr": "",
-        "ms": 364.66026306152344
+        "ms": 337.7950191497803
       },
       "ferro": {
         "rc": 0,
         "stdout": "A\nD",
         "stderr": "",
-        "ms": 329.39934730529785
+        "ms": 332.14735984802246
       },
       "parity": true
     },
@@ -526,13 +526,13 @@
         "rc": 0,
         "stdout": "R1:0 R2:1",
         "stderr": "",
-        "ms": 323.67801666259766
+        "ms": 321.0113048553467
       },
       "ferro": {
         "rc": 0,
         "stdout": "R1:0 R2:1",
         "stderr": "",
-        "ms": 349.52664375305176
+        "ms": 323.23145866394043
       },
       "parity": true
     },
@@ -545,13 +545,13 @@
         "rc": 0,
         "stdout": "UPTIME_OK",
         "stderr": "",
-        "ms": 364.8824691772461
+        "ms": 339.6472930908203
       },
       "ferro": {
         "rc": 0,
         "stdout": "UPTIME_OK",
         "stderr": "",
-        "ms": 331.585168838501
+        "ms": 323.3494758605957
       },
       "parity": true
     },
@@ -564,13 +564,13 @@
         "rc": 0,
         "stdout": "",
         "stderr": "",
-        "ms": 313.39001655578613
+        "ms": 330.98697662353516
       },
       "ferro": {
         "rc": 0,
         "stdout": "Netid  State      Recv-Q Send-Q Local Address:Port       Peer Address:Port       \ntcp    LISTEN     ",
         "stderr": "",
-        "ms": 316.68591499328613
+        "ms": 312.29496002197266
       },
       "parity": true
     }

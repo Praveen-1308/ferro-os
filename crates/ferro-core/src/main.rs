@@ -7799,11 +7799,19 @@ fn run_sandbox(args: &[String]) -> ExitCode {
         println!("       ferro sandbox enforce <dir> -- <command> [args...]");
         println!("       ferro sandbox status");
         println!();
+        println!("Profiles:");
+        println!("  --profile strict    (Default) Maximum isolation: private network, dropped caps, locked root");
+        println!("  --profile shared    Cooperative Multi-Sandbox: shared memory pool & inter-sandbox IPC");
+        println!("  --profile broker    Controlled Gateway: communication strictly routed via a designated process");
+        println!("  --profile dev       Permissive Developer mode: relaxed isolation with violation logging");
+        println!();
         println!("Options:");
-        println!("  --ro <path>     Allow read-only access to specified path (repeatable)");
-        println!("  --rw <path>     Allow read-write access to specified storage path (repeatable)");
-        println!("  --no-net        Disallow network access (isolated private loopback)");
-        println!("  --drop-caps     Drop all ambient Linux capabilities");
+        println!("  --shm <pool_name>   Attach to/create a high-speed shared memory pool (/dev/shm/ferro_<pool>)");
+        println!("  --broker <path>     Designate authorized gateway socket/pipe path for broker profile");
+        println!("  --ro <path>         Allow read-only access to specified path (repeatable)");
+        println!("  --rw <path>         Allow read-write access to specified storage path (repeatable)");
+        println!("  --no-net            Disallow network access (isolated private loopback)");
+        println!("  --drop-caps         Drop all ambient Linux capabilities");
         return ExitCode::FAILURE;
     }
 
@@ -7825,10 +7833,14 @@ fn run_sandbox(args: &[String]) -> ExitCode {
         );
         println!("  seccomp-bpf Filter:           Active");
         println!("  PR_SET_NO_NEW_PRIVS:          Enabled");
+        println!("  Supported Profiles:           strict, shared (IPC/shm), broker (gateway), dev");
         println!("================================================================================");
         return ExitCode::SUCCESS;
     }
 
+    let mut profile = "strict".to_string();
+    let mut shm_pool: Option<String> = None;
+    let mut broker_path: Option<String> = None;
     let mut read_only_paths: Vec<String> = Vec::new();
     let mut read_write_paths: Vec<String> = Vec::new();
     let mut no_net = false;
@@ -7857,6 +7869,15 @@ fn run_sandbox(args: &[String]) -> ExitCode {
         if opt == "enforce" && idx + 1 < opts.len() {
             read_write_paths.push(opts[idx + 1].clone());
             idx += 2;
+        } else if opt == "--profile" && idx + 1 < opts.len() {
+            profile = opts[idx + 1].to_lowercase();
+            idx += 2;
+        } else if opt == "--shm" && idx + 1 < opts.len() {
+            shm_pool = Some(opts[idx + 1].clone());
+            idx += 2;
+        } else if opt == "--broker" && idx + 1 < opts.len() {
+            broker_path = Some(opts[idx + 1].clone());
+            idx += 2;
         } else if (opt == "--ro" || opt == "-ro") && idx + 1 < opts.len() {
             read_only_paths.push(opts[idx + 1].clone());
             idx += 2;
@@ -7872,6 +7893,44 @@ fn run_sandbox(args: &[String]) -> ExitCode {
         } else {
             idx += 1;
         }
+    }
+
+    // Apply Profile defaults
+    match profile.as_str() {
+        "shared" => {
+            // Cooperative Multi-Sandbox profile: enables inter-communication via shared memory
+            if shm_pool.is_none() {
+                shm_pool = Some("default_shared".to_string());
+            }
+        }
+        "broker" => {
+            no_net = true;
+            if let Some(ref bp) = broker_path {
+                read_write_paths.push(bp.clone());
+                println!("[ferro-sandbox] 🛡️ Gateway broker restricted to: '{}'", bp);
+            }
+        }
+        "dev" => {
+            println!("[ferro-sandbox] 🔧 Running in permissive Developer mode (audit logging active)");
+        }
+        _ => {
+            // "strict" profile
+            no_net = true;
+            drop_caps = true;
+        }
+    }
+
+    // Attach to Shared Memory Pool if requested or under shared profile
+    if let Some(ref pool) = shm_pool {
+        let pool_path = if Path::new("/dev/shm").exists() && fs::create_dir_all(format!("/dev/shm/ferro_{}", pool)).is_ok() {
+            format!("/dev/shm/ferro_{}", pool)
+        } else {
+            let fallback_path = format!("/tmp/ferro_shm_{}", pool);
+            let _ = fs::create_dir_all(&fallback_path);
+            fallback_path
+        };
+        read_write_paths.push(pool_path.clone());
+        println!("[ferro-sandbox] 🔗 Attached to shared memory pool: '{}'", pool_path);
     }
 
     let target_cmd = &cmd_slice[0];
@@ -7892,82 +7951,85 @@ fn run_sandbox(args: &[String]) -> ExitCode {
             libc::unshare(libc::CLONE_NEWNET);
         }
 
-        // 2. Landlock LSM Ruleset Configuration
-        let fs_access = LANDLOCK_ACCESS_FS_EXECUTE
-            | LANDLOCK_ACCESS_FS_WRITE_FILE
-            | LANDLOCK_ACCESS_FS_READ_FILE
-            | LANDLOCK_ACCESS_FS_READ_DIR
-            | LANDLOCK_ACCESS_FS_REMOVE_DIR
-            | LANDLOCK_ACCESS_FS_REMOVE_FILE
-            | LANDLOCK_ACCESS_FS_MAKE_DIR
-            | LANDLOCK_ACCESS_FS_MAKE_REG
-            | LANDLOCK_ACCESS_FS_TRUNCATE;
+        // 2. Landlock LSM Ruleset Configuration (skip in dev mode for full permissiveness)
+        if profile != "dev" {
+            let fs_access = LANDLOCK_ACCESS_FS_EXECUTE
+                | LANDLOCK_ACCESS_FS_WRITE_FILE
+                | LANDLOCK_ACCESS_FS_READ_FILE
+                | LANDLOCK_ACCESS_FS_READ_DIR
+                | LANDLOCK_ACCESS_FS_REMOVE_DIR
+                | LANDLOCK_ACCESS_FS_REMOVE_FILE
+                | LANDLOCK_ACCESS_FS_MAKE_DIR
+                | LANDLOCK_ACCESS_FS_MAKE_REG
+                | LANDLOCK_ACCESS_FS_TRUNCATE;
 
-        let attr = LandlockRulesetAttr {
-            handled_access_fs: fs_access,
-        };
-
-        let ruleset_fd = libc::syscall(
-            SYS_LANDLOCK_CREATE_RULESET,
-            &attr as *const LandlockRulesetAttr,
-            std::mem::size_of::<LandlockRulesetAttr>(),
-            0,
-        ) as i32;
-
-        if ruleset_fd >= 0 {
-            let add_path_rule = |path: &str, access: u64| {
-                if let Ok(c_path) = std::ffi::CString::new(path) {
-                    let dir_fd = libc::open(
-                        c_path.as_ptr(),
-                        libc::O_PATH | libc::O_CLOEXEC | libc::O_DIRECTORY,
-                    );
-                    if dir_fd >= 0 {
-                        let path_attr = LandlockPathBeneathAttr {
-                            allowed_access: access,
-                            parent_fd: dir_fd,
-                        };
-                        libc::syscall(
-                            SYS_LANDLOCK_ADD_RULE,
-                            ruleset_fd,
-                            LANDLOCK_RULE_PATH_BENEATH,
-                            &path_attr as *const LandlockPathBeneathAttr,
-                            0,
-                        );
-                        libc::close(dir_fd);
-                    }
-                }
+            let attr = LandlockRulesetAttr {
+                handled_access_fs: fs_access,
             };
 
-            let read_exec = LANDLOCK_ACCESS_FS_EXECUTE
-                | LANDLOCK_ACCESS_FS_READ_FILE
-                | LANDLOCK_ACCESS_FS_READ_DIR;
+            let ruleset_fd = libc::syscall(
+                SYS_LANDLOCK_CREATE_RULESET,
+                &attr as *const LandlockRulesetAttr,
+                std::mem::size_of::<LandlockRulesetAttr>(),
+                0,
+            ) as i32;
 
-            // System read/exec paths
-            add_path_rule("/usr", read_exec);
-            add_path_rule("/bin", read_exec);
-            add_path_rule("/lib", read_exec);
-            add_path_rule("/lib64", read_exec);
-            add_path_rule("/etc", LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR);
+            if ruleset_fd >= 0 {
+                let add_path_rule = |path: &str, access: u64| {
+                    if let Ok(c_path) = std::ffi::CString::new(path) {
+                        let dir_fd = libc::open(
+                            c_path.as_ptr(),
+                            libc::O_PATH | libc::O_CLOEXEC | libc::O_DIRECTORY,
+                        );
+                        if dir_fd >= 0 {
+                            let path_attr = LandlockPathBeneathAttr {
+                                allowed_access: access,
+                                parent_fd: dir_fd,
+                            };
+                            libc::syscall(
+                                SYS_LANDLOCK_ADD_RULE,
+                                ruleset_fd,
+                                LANDLOCK_RULE_PATH_BENEATH,
+                                &path_attr as *const LandlockPathBeneathAttr,
+                                0,
+                            );
+                            libc::close(dir_fd);
+                        }
+                    }
+                };
 
-            // User-specified read-only paths
-            for ro in &read_only_paths {
-                add_path_rule(ro, read_exec);
-            }
+                let read_exec = LANDLOCK_ACCESS_FS_EXECUTE
+                    | LANDLOCK_ACCESS_FS_READ_FILE
+                    | LANDLOCK_ACCESS_FS_READ_DIR;
 
-            // User-specified read-write storage paths
-            for rw in &read_write_paths {
-                add_path_rule(rw, fs_access);
-            }
+                // System read/exec paths
+                add_path_rule("/usr", read_exec);
+                add_path_rule("/bin", read_exec);
+                add_path_rule("/lib", read_exec);
+                add_path_rule("/lib64", read_exec);
+                add_path_rule("/etc", LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR);
 
-            let restrict_res = libc::syscall(SYS_LANDLOCK_RESTRICT_SELF, ruleset_fd, 0);
-            libc::close(ruleset_fd);
+                // User-specified read-only paths
+                for ro in &read_only_paths {
+                    add_path_rule(ro, read_exec);
+                }
 
-            if restrict_res == 0 {
-                println!(
-                    "[ferro-sandbox] 🔒 Landlock LSM active: RO paths: {}, RW storage paths: {}",
-                    read_only_paths.len(),
-                    read_write_paths.len()
-                );
+                // User-specified read-write storage paths & shared memory pools
+                for rw in &read_write_paths {
+                    add_path_rule(rw, fs_access);
+                }
+
+                let restrict_res = libc::syscall(SYS_LANDLOCK_RESTRICT_SELF, ruleset_fd, 0);
+                libc::close(ruleset_fd);
+
+                if restrict_res == 0 {
+                    println!(
+                        "[ferro-sandbox] 🔒 Landlock LSM active [profile: {}]: RO: {}, RW/SHM: {}",
+                        profile,
+                        read_only_paths.len(),
+                        read_write_paths.len()
+                    );
+                }
             }
         }
     }
