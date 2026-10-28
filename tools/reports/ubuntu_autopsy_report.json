@@ -1,0 +1,492 @@
+{
+  "verified_total_bytes": 455775289,
+  "verified_total_mb": 434.66,
+  "comparative_rootfs_mb": {
+    "ubuntu_server": 434.66,
+    "ubuntu_base": 74.56,
+    "ferro_full": 397.66,
+    "ferro_pure": 0.0
+  },
+  "top_physical_directories": {
+    "/usr": {
+      "bytes": 391487251,
+      "mb": 373.35
+    },
+    "/var": {
+      "bytes": 64054924,
+      "mb": 61.09
+    },
+    "/etc": {
+      "bytes": 225011,
+      "mb": 0.21
+    },
+    "/home": {
+      "bytes": 4798,
+      "mb": 0.0
+    },
+    "/root": {
+      "bytes": 3267,
+      "mb": 0.0
+    },
+    "/tmp": {
+      "bytes": 0,
+      "mb": 0.0
+    },
+    "/srv": {
+      "bytes": 0,
+      "mb": 0.0
+    },
+    "/opt": {
+      "bytes": 0,
+      "mb": 0.0
+    },
+    "/boot": {
+      "bytes": 0,
+      "mb": 0.0
+    }
+  },
+  "forensic_categories": {
+    "Compilers & Build Toolchains": {
+      "bytes": 176343680,
+      "mb": 168.17,
+      "pct": 38.69
+    },
+    "C/C++ Shared Libraries (glibc, OpenSSL)": {
+      "bytes": 72071922,
+      "mb": 68.73,
+      "pct": 15.81
+    },
+    "Developer Runtimes (Ceph, MySQL, Python, Perl)": {
+      "bytes": 67665331,
+      "mb": 64.53,
+      "pct": 14.85
+    },
+    "Package Management & APT Cache Bloat": {
+      "bytes": 65449437,
+      "mb": 62.42,
+      "pct": 14.36
+    },
+    "Internationalization & Unicode Bloat (ICU)": {
+      "bytes": 36412205,
+      "mb": 34.73,
+      "pct": 7.99
+    },
+    "Traditional Core Unix Utilities & Shells": {
+      "bytes": 16329275,
+      "mb": 15.57,
+      "pct": 3.58
+    },
+    "Documentation, Manpages & Licenses": {
+      "bytes": 8200505,
+      "mb": 7.82,
+      "pct": 1.8
+    },
+    "System Daemons, Config & Filesystem Inodes": {
+      "bytes": 13302934,
+      "mb": 12.69,
+      "pct": 2.92
+    }
+  },
+  "top_50_packages": [
+    {
+      "name": "gcc-13-x86-64-linux-gnu",
+      "size_kb": 61333,
+      "size_mb": 59.9,
+      "section": "devel",
+      "priority": "optional",
+      "version": "13.3.0-6ubuntu2~24.04.1"
+    },
+    {
+      "name": "libicu74",
+      "size_kb": 35919,
+      "size_mb": 35.08,
+      "section": "libs",
+      "priority": "optional",
+      "version": "74.2-1ubuntu3.1"
+    },
+    {
+      "name": "cpp-13-x86-64-linux-gnu",
+      "size_kb": 30807,
+      "size_mb": 30.08,
+      "section": "interpreters",
+      "priority": "optional",
+      "version": "13.3.0-6ubuntu2~24.04.1"
+    },
+    {
+      "name": "libgcc-13-dev",
+      "size_kb": 16082,
+      "size_mb": 15.71,
+      "section": "libdevel",
+      "priority": "optional",
+      "version": "13.3.0-6ubuntu2~24.04.1"
+    },
+    {
+      "name": "librados2",
+      "size_kb": 15658,
+      "size_mb": 15.29,
+      "section": "libs",
+      "priority": "optional",
+      "version": "19.2.3-0ubuntu0.24.04.3"
+    },
+    {
+      "name": "librbd1",
+      "size_kb": 14793,
+      "size_mb": 14.45,
+      "section": "libs",
+      "priority": "optional",
+      "version": "19.2.3-0ubuntu0.24.04.3"
+    },
+    {
+      "name": "libc6",
+      "size_kb": 13432,
+      "size_mb": 13.12,
+      "section": "libs",
+      "priority": "optional",
+      "version": "2.39-0ubuntu8.9"
+    },
+    {
+      "name": "libc6-dev",
+      "size_kb": 13112,
+      "size_mb": 12.8,
+      "section": "libdevel",
+      "priority": "optional",
+      "version": "2.39-0ubuntu8.9"
+    },
+    {
+      "name": "binutils-x86-64-linux-gnu",
+      "size_kb": 11549,
+      "size_mb": 11.28,
+      "section": "devel",
+      "priority": "optional",
+      "version": "2.42-4ubuntu2.10"
+    },
+    {
+      "name": "libasan8",
+      "size_kb": 10791,
+      "size_mb": 10.54,
+      "section": "libs",
+      "priority": "optional",
+      "version": "14.2.0-4ubuntu2~24.04.1"
+    },
+    {
+      "name": "libpython3.12-stdlib",
+      "size_kb": 9034,
+      "size_mb": 8.82,
+      "section": "python",
+      "priority": "optional",
+      "version": "3.12.3-1ubuntu0.17"
+    },
+    {
+      "name": "libtsan2",
+      "size_kb": 8902,
+      "size_mb": 8.69,
+      "section": "libs",
+      "priority": "optional",
+      "version": "14.2.0-4ubuntu2~24.04.1"
+    },
+    {
+      "name": "python3.12-minimal",
+      "size_kb": 7928,
+      "size_mb": 7.74,
+      "section": "python",
+      "priority": "optional",
+      "version": "3.12.3-1ubuntu0.17"
+    },
+    {
+      "name": "perl-base",
+      "size_kb": 7919,
+      "size_mb": 7.73,
+      "section": "perl",
+      "priority": "required",
+      "version": "5.38.2-3.2ubuntu0.6"
+    },
+    {
+      "name": "linux-libc-dev",
+      "size_kb": 7659,
+      "size_mb": 7.48,
+      "section": "devel",
+      "priority": "optional",
+      "version": "6.8.0-147.147"
+    },
+    {
+      "name": "coreutils",
+      "size_kb": 6944,
+      "size_mb": 6.78,
+      "section": "utils",
+      "priority": "required",
+      "version": "9.4-3ubuntu6.3"
+    },
+    {
+      "name": "libmysqlclient21",
+      "size_kb": 6687,
+      "size_mb": 6.53,
+      "section": "libs",
+      "priority": "optional",
+      "version": "8.0.46-0ubuntu0.24.04.4"
+    },
+    {
+      "name": "libssl3t64",
+      "size_kb": 6615,
+      "size_mb": 6.46,
+      "section": "libs",
+      "priority": "optional",
+      "version": "3.0.13-0ubuntu3.16"
+    },
+    {
+      "name": "dpkg",
+      "size_kb": 6238,
+      "size_mb": 6.09,
+      "section": "admin",
+      "priority": "required",
+      "version": "1.22.6ubuntu6.6"
+    },
+    {
+      "name": "libpython3.12-minimal",
+      "size_kb": 5180,
+      "size_mb": 5.06,
+      "section": "python",
+      "priority": "optional",
+      "version": "3.12.3-1ubuntu0.17"
+    },
+    {
+      "name": "libhwasan0",
+      "size_kb": 4897,
+      "size_mb": 4.78,
+      "section": "libs",
+      "priority": "optional",
+      "version": "14.2.0-4ubuntu2~24.04.1"
+    },
+    {
+      "name": "apt",
+      "size_kb": 4108,
+      "size_mb": 4.01,
+      "section": "admin",
+      "priority": "required",
+      "version": "2.8.3"
+    },
+    {
+      "name": "libgprofng0",
+      "size_kb": 3833,
+      "size_mb": 3.74,
+      "section": "devel",
+      "priority": "optional",
+      "version": "2.42-4ubuntu2.10"
+    },
+    {
+      "name": "liblsan0",
+      "size_kb": 3828,
+      "size_mb": 3.74,
+      "section": "libs",
+      "priority": "optional",
+      "version": "14.2.0-4ubuntu2~24.04.1"
+    },
+    {
+      "name": "util-linux",
+      "size_kb": 3439,
+      "size_mb": 3.36,
+      "section": "utils",
+      "priority": "required",
+      "version": "2.39.3-9ubuntu6.6"
+    },
+    {
+      "name": "libubsan1",
+      "size_kb": 3364,
+      "size_mb": 3.29,
+      "section": "libs",
+      "priority": "optional",
+      "version": "14.2.0-4ubuntu2~24.04.1"
+    },
+    {
+      "name": "libapt-pkg6.0t64",
+      "size_kb": 3249,
+      "size_mb": 3.17,
+      "section": "libs",
+      "priority": "optional",
+      "version": "2.8.3"
+    },
+    {
+      "name": "libstdc++6",
+      "size_kb": 3110,
+      "size_mb": 3.04,
+      "section": "libs",
+      "priority": "optional",
+      "version": "14.2.0-4ubuntu2~24.04.1"
+    },
+    {
+      "name": "passwd",
+      "size_kb": 2419,
+      "size_mb": 2.36,
+      "section": "admin",
+      "priority": "required",
+      "version": "1:4.13+dfsg1-4ubuntu3.2"
+    },
+    {
+      "name": "libgnutls30t64",
+      "size_kb": 2360,
+      "size_mb": 2.3,
+      "section": "libs",
+      "priority": "optional",
+      "version": "3.8.3-1.1ubuntu3.6"
+    },
+    {
+      "name": "libbinutils",
+      "size_kb": 2350,
+      "size_mb": 2.29,
+      "section": "devel",
+      "priority": "optional",
+      "version": "2.42-4ubuntu2.10"
+    },
+    {
+      "name": "libboost-thread1.83.0",
+      "size_kb": 2271,
+      "size_mb": 2.22,
+      "section": "libs",
+      "priority": "optional",
+      "version": "1.83.0-2.1ubuntu3.2"
+    },
+    {
+      "name": "libboost-iostreams1.83.0",
+      "size_kb": 2235,
+      "size_mb": 2.18,
+      "section": "libs",
+      "priority": "optional",
+      "version": "1.83.0-2.1ubuntu3.2"
+    },
+    {
+      "name": "fio",
+      "size_kb": 2197,
+      "size_mb": 2.15,
+      "section": "utils",
+      "priority": "optional",
+      "version": "3.36-1ubuntu0.1"
+    },
+    {
+      "name": "libc-bin",
+      "size_kb": 2184,
+      "size_mb": 2.13,
+      "section": "libs",
+      "priority": "required",
+      "version": "2.39-0ubuntu8.9"
+    },
+    {
+      "name": "libxml2",
+      "size_kb": 2080,
+      "size_mb": 2.03,
+      "section": "libs",
+      "priority": "optional",
+      "version": "2.9.14+dfsg-1.3ubuntu3.10"
+    },
+    {
+      "name": "libisl23",
+      "size_kb": 2032,
+      "size_mb": 1.98,
+      "section": "libs",
+      "priority": "optional",
+      "version": "0.26-3build1.1"
+    },
+    {
+      "name": "bash",
+      "size_kb": 1900,
+      "size_mb": 1.86,
+      "section": "shells",
+      "priority": "required",
+      "version": "5.2.21-2ubuntu4"
+    },
+    {
+      "name": "procps",
+      "size_kb": 1800,
+      "size_mb": 1.76,
+      "section": "admin",
+      "priority": "important",
+      "version": "2:4.0.4-4ubuntu3.3"
+    },
+    {
+      "name": "libdb5.3t64",
+      "size_kb": 1761,
+      "size_mb": 1.72,
+      "section": "libs",
+      "priority": "optional",
+      "version": "5.3.28+dfsg2-7"
+    },
+    {
+      "name": "libunistring5",
+      "size_kb": 1757,
+      "size_mb": 1.72,
+      "section": "libs",
+      "priority": "optional",
+      "version": "1.1-2build1.1"
+    },
+    {
+      "name": "libsqlite3-0",
+      "size_kb": 1731,
+      "size_mb": 1.69,
+      "section": "libs",
+      "priority": "optional",
+      "version": "3.45.1-1ubuntu2.8"
+    },
+    {
+      "name": "libp11-kit0",
+      "size_kb": 1712,
+      "size_mb": 1.67,
+      "section": "libs",
+      "priority": "optional",
+      "version": "0.25.3-4ubuntu2.2"
+    },
+    {
+      "name": "e2fsprogs",
+      "size_kb": 1504,
+      "size_mb": 1.47,
+      "section": "admin",
+      "priority": "required",
+      "version": "1.47.0-2.4~exp1ubuntu4.1"
+    },
+    {
+      "name": "libgcrypt20",
+      "size_kb": 1400,
+      "size_mb": 1.37,
+      "section": "libs",
+      "priority": "optional",
+      "version": "1.10.3-2ubuntu0.2"
+    },
+    {
+      "name": "tzdata",
+      "size_kb": 1389,
+      "size_mb": 1.36,
+      "section": "localization",
+      "priority": "required",
+      "version": "2026e-0ubuntu0.24.04.1"
+    },
+    {
+      "name": "libmpfr6",
+      "size_kb": 1186,
+      "size_mb": 1.16,
+      "section": "libs",
+      "priority": "optional",
+      "version": "4.2.1-1build1.1"
+    },
+    {
+      "name": "libpam-modules",
+      "size_kb": 1155,
+      "size_mb": 1.13,
+      "section": "admin",
+      "priority": "required",
+      "version": "1.5.3-5ubuntu5.7"
+    },
+    {
+      "name": "python3-psutil",
+      "size_kb": 1139,
+      "size_mb": 1.11,
+      "section": "python",
+      "priority": "optional",
+      "version": "5.9.8-2build2"
+    },
+    {
+      "name": "libsystemd0",
+      "size_kb": 1028,
+      "size_mb": 1.0,
+      "section": "libs",
+      "priority": "optional",
+      "version": "255.4-1ubuntu8.17"
+    }
+  ]
+}
