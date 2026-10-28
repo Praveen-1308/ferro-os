@@ -651,6 +651,20 @@ mod linux_init {
             Some("mode=1777"),
         );
         mount_fs(
+            "tmpfs",
+            "/dev/shm",
+            "tmpfs",
+            libc::MS_NOSUID | libc::MS_NODEV,
+            Some("mode=1777"),
+        );
+        mount_fs(
+            "tmpfs",
+            "/run",
+            "tmpfs",
+            libc::MS_NOSUID | libc::MS_NODEV,
+            Some("mode=0755"),
+        );
+        mount_fs(
             "devpts",
             "/dev/pts",
             "devpts",
