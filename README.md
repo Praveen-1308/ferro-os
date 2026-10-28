@@ -14,7 +14,7 @@
 [![Documentation](https://praveen-1308.github.io/ferro-os/)](https://praveen-1308.github.io/ferro-os/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**[🏛️ Execution Model & Architecture](docs/arch/FERRO_OS_COMPATIBILITY_AND_EXECUTION_MODEL.md)** • **[📐 Modular-to-Functional Blueprint](docs/arch/MODULAR_TO_FUNCTIONAL_RUST_OS_BLUEPRINT.md)** • **[🛡️ Memory & Security Standards](docs/MEMORY_SECURITY_AND_STANDARDS.md)** • **[❓ FAQ & Compatibility](#-frequently-asked-questions-faq--compatibility-guide)** • **[🌍 Philosophy & Hardware Boundaries](#-engineering-philosophy-hardware-boundaries--open-community-collaboration)** • **[📊 Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)** • **[🚀 Quick Start](#-quick-start)**
+**[🗺️ Compatibility & Roadmap Tracking](docs/COMPATIBILITY_AND_ROADMAP.md)** • **[🏛️ Execution Model & Architecture](docs/arch/FERRO_OS_COMPATIBILITY_AND_EXECUTION_MODEL.md)** • **[📐 Modular-to-Functional Blueprint](docs/arch/MODULAR_TO_FUNCTIONAL_RUST_OS_BLUEPRINT.md)** • **[🛡️ Memory & Security Standards](docs/MEMORY_SECURITY_AND_STANDARDS.md)** • **[💬 GitHub Discussions](https://github.com/Praveen-1308/ferro-os/discussions)** • **[📊 Benchmark Dashboard](https://praveen-1308.github.io/ferro-os/benchmark_dashboard.html)** • **[🚀 Quick Start](#-quick-start)**
 
 </div>
 
@@ -432,6 +432,7 @@ We are building in the open and are completely transparent about our results, st
 
 ## 📚 Architectural Specifications & Documentation
 
+* **[Compatibility Audit, Current Changes & Roadmap Tracker](docs/COMPATIBILITY_AND_ROADMAP.md)**: Candid reality check, 6 solved compatibility roadblocks (dynamic linker, IPC, TLS, virtio networking), Python 3 + SQLite 3 verification, and active development roadmap.
 * **[Execution Model & Third-Party Compatibility Guide](docs/arch/FERRO_OS_COMPATIBILITY_AND_EXECUTION_MODEL.md)**: Deep dive into the Linux ABI, dynamic linker resolution, `libferro_io` interposition, and how standard binaries run without code changes.
 * **[Modular-to-Functional Pure-Rust Blueprint](docs/arch/MODULAR_TO_FUNCTIONAL_RUST_OS_BLUEPRINT.md)**: Step-by-step migration blueprint from hybrid C userland to pure-Rust Linux OS.
 * **[Theoretical Architecture Compendium](docs/THEORETICAL_ARCHITECTURE.md)**: Theoretical foundations, "Linux system tax" analysis, and subsystem optimization expectations.
