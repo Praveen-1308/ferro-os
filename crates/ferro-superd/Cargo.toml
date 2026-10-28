@@ -1,0 +1,9 @@
+[package]
+name = "ferro-superd"
+version = "2.3.0"
+edition = "2021"
+authors = ["Praveen Kumar Gorle"]
+description = "High-velocity pure Rust Cgroup v2 Service Supervisor and Process Daemon for FerroOS"
+
+[dependencies]
+libc = "0.2"

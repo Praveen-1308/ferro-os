@@ -3,6 +3,8 @@ resolver = "2"
 members = [
     "crates/ferro-init",
     "crates/ferro-core",
+    "crates/ferro-superd",
+    "crates/ferrocage",
     "crates/ferro-pkg",
     "crates/ferro-gui",
     "crates/ferro-compositor",

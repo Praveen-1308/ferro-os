@@ -83,6 +83,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "ferro-superd"
+version = "2.3.0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
+name = "ferrocage"
+version = "2.3.0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "filetime"
 version = "0.2.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"

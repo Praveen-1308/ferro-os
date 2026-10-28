@@ -21,6 +21,7 @@ pub mod disk;
 pub mod shell;
 pub mod sshd;
 pub mod syslog;
+pub mod service;
 pub mod zeroize;
 
 #[cfg(target_os = "linux")]
@@ -160,6 +161,8 @@ fn main() -> ExitCode {
         "sshd" | "ssh-server" => sshd::run_sshd(&command_args),
         "netstat" => run_netstat(&command_args),
         "ss" => run_ss(&command_args),
+        "service" | "ferro-service" => service::run_service(&command_args),
+        "container" | "ferrocage" | "cage" => run_ferrocage(&command_args),
         "help" => {
             print_usage();
             ExitCode::SUCCESS
@@ -645,7 +648,7 @@ pub const ALL_APPLETS: &[&str] = &[
     "hackbench", "bench-fsync", "fsync-bench", "dhcp", "ferro-net", "udhcpc",
     "ferrod", "syslogd", "logger", "logs", "log", "journalctl", "dmesg",
     "server-suite", "server", "disk", "cloud-init", "cloudinit", "sshd", "ssh-server",
-    "netstat", "ss"
+    "netstat", "ss", "service", "ferro-service", "container", "ferrocage", "cage"
 ];
 
 fn is_internal_applet(cmd: &str) -> bool {
@@ -978,8 +981,36 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "ai-mode" | "ai" => run_ai_mode(args),
         "sandbox" | "landlock" => run_sandbox(args),
         "recovery" => run_recovery(),
+        "service" | "ferro-service" => service::run_service(args),
+        "container" | "ferrocage" | "cage" => run_ferrocage(args),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn run_ferrocage(args: &[String]) -> ExitCode {
+    let mut possible_paths = vec![
+        PathBuf::from("/bin/ferrocage"),
+        PathBuf::from("/usr/bin/ferrocage"),
+    ];
+    if let Ok(exe) = env::current_exe() {
+        if let Some(parent) = exe.parent() {
+            possible_paths.push(parent.join("ferrocage"));
+        }
+    }
+    let ferrocage_bin = possible_paths.into_iter().find(|p| p.exists())
+        .unwrap_or_else(|| PathBuf::from("ferrocage"));
+
+    let status = Command::new(ferrocage_bin)
+        .args(args)
+        .status();
+
+    match status {
+        Ok(s) => ExitCode::from(s.code().unwrap_or(0) as u8),
+        Err(e) => {
+            eprintln!("ferro: failed to execute ferrocage: {}", e);
             ExitCode::FAILURE
         }
     }

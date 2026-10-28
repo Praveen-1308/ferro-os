@@ -41,7 +41,7 @@ def main():
     # 1. Compile Release Rust Binaries
     print("\n[Stage 1] Compiling Pure-Rust Core Daemons...")
     target_rel = os.path.join(WORKSPACE, "target/release")
-    ferro_bins = ["ferro-init", "ferro-core", "ferro-pkg"]
+    ferro_bins = ["ferro-init", "ferro-core", "ferro-pkg", "ferro-superd", "ferrocage"]
     target_arch = os.environ.get("TARGET_ARCH", "x86_64")
     expected_machine = 0x3E if target_arch in ("x86_64", "amd64") else 0xB7
     bins_exist = all(os.path.exists(os.path.join(target_rel, b)) for b in ferro_bins)
@@ -56,7 +56,7 @@ def main():
             bins_exist = False
 
     if sys.platform != "darwin" and shutil.which("cargo") and (not bins_exist or os.environ.get("FORCE_REBUILD") == "1"):
-        compile_cmd = ["cargo", "build", "--release", "-p", "ferro-init", "-p", "ferro-core", "-p", "ferro-pkg", "-p", "ferro-io"]
+        compile_cmd = ["cargo", "build", "--release", "-p", "ferro-init", "-p", "ferro-core", "-p", "ferro-pkg", "-p", "ferro-io", "-p", "ferro-superd", "-p", "ferrocage"]
         run(compile_cmd, cwd=WORKSPACE)
     elif not bins_exist:
         arch_platform = "linux/amd64" if target_arch in ("x86_64", "amd64") else "linux/arm64"
@@ -66,7 +66,7 @@ def main():
             "-v", f"{WORKSPACE}:/build",
             "-w", "/build",
             "rust:1.80-slim-bookworm",
-            "cargo", "build", "--release", "-p", "ferro-init", "-p", "ferro-core", "-p", "ferro-pkg", "-p", "ferro-io"
+            "cargo", "build", "--release", "-p", "ferro-init", "-p", "ferro-core", "-p", "ferro-pkg", "-p", "ferro-io", "-p", "ferro-superd", "-p", "ferrocage"
         ]
         run(compile_cmd)
     else:
@@ -76,9 +76,9 @@ def main():
     print("\n[Stage 2] Generating FHS 3.0 UsrMerge Directory Hierarchy...")
     usr_dirs = [
         "usr/bin", "usr/sbin", "usr/lib", "usr/lib/ferro",
-        "etc", "etc/ferro", "etc/sysctl.d", "etc/ssh",
+        "etc", "etc/ferro", "etc/ferro/services", "etc/sysctl.d", "etc/ssh",
         "home/ferro", "root", "root/.ssh",
-        "var", "var/log", "var/log/ferro", "var/lib/ferro", "var/tmp",
+        "var", "var/log", "var/log/ferro", "var/log/ferrocage", "var/lib/ferro", "var/lib/ferrocage", "var/lib/ferrocage/containers", "var/lib/ferrocage/images", "var/tmp",
         "tmp", "run", "run/ferro", "dev", "proc", "sys", "sysroot"
     ]
     for d in usr_dirs:
@@ -96,6 +96,8 @@ def main():
     shutil.copy2(os.path.join(target_rel, "ferro-init"), os.path.join(ROOTFS, "usr/sbin/ferro-init"))
     shutil.copy2(os.path.join(target_rel, "ferro-core"), os.path.join(ROOTFS, "usr/bin/ferro-core"))
     shutil.copy2(os.path.join(target_rel, "ferro-pkg"),  os.path.join(ROOTFS, "usr/bin/ferro-pkg"))
+    shutil.copy2(os.path.join(target_rel, "ferro-superd"), os.path.join(ROOTFS, "usr/bin/ferro-superd"))
+    shutil.copy2(os.path.join(target_rel, "ferrocage"),  os.path.join(ROOTFS, "usr/bin/ferrocage"))
 
     # Copy pure-Rust io_uring accelerator shim if compiled
     so_src = os.path.join(target_rel, "libferro_io.so")
@@ -125,7 +127,7 @@ def main():
         "gamemode", "bpf", "ebpf", "sched", "scx", "game", "proton", "win", "wine",
         "install", "snapshot", "ai-mode", "sandbox", "supervise",
         "disk", "cloud-init", "cloudinit", "sshd",
-        "netstat", "ss",
+        "netstat", "ss", "service", "ferro-service", "container", "cage",
         "reboot", "poweroff", "bench", "fdstore", "recovery", "help"
     ]
     for app in applets:

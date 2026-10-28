@@ -1,0 +1,9 @@
+[package]
+name = "ferrocage"
+version = "2.3.0"
+edition = "2021"
+authors = ["Praveen Kumar Gorle"]
+description = "Pure Rust Zero-Overhead Micro-Container Runtime for FerroOS"
+
+[dependencies]
+libc = "0.2"
