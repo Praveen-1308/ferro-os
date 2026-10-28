@@ -14,6 +14,7 @@ qemu-system-x86_64 \
     -kernel /os/vmlinuz \
     -initrd /os/initramfs.cpio.gz \
     -append "console=ttyS0 console=tty0 rdinit=/init vga=792" \
+    -nic user,model=virtio-net-pci,hostfwd=tcp::8080-:8080 \
     -vga std \
     -serial file:/tmp/serial.log \
     -vnc 127.0.0.1:0 \

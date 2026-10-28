@@ -542,11 +542,20 @@ pub fn run_dhcp(args: &[String]) -> ExitCode {
     );
 
     let fallback_dns = vec![Ipv4Addr::new(1, 1, 1, 1), Ipv4Addr::new(8, 8, 8, 8)];
-    if !dry_run && !Path::new("/etc/resolv.conf").exists() {
-        update_resolv_conf(&fallback_dns);
+    if !dry_run {
+        let fallback_ip = Ipv4Addr::new(10, 0, 2, 15);
+        let fallback_mask = Some(Ipv4Addr::new(255, 255, 255, 0));
+        apply_ip_configuration(&interface, fallback_ip, fallback_mask);
         println!(
-            "[ferro-net] Wrote fallback DNS nameservers (1.1.1.1, 8.8.8.8) to /etc/resolv.conf"
+            "[ferro-net] Configured fallback IP {}/24 on interface '{}'",
+            fallback_ip, interface
         );
+        if !Path::new("/etc/resolv.conf").exists() {
+            update_resolv_conf(&fallback_dns);
+            println!(
+                "[ferro-net] Wrote fallback DNS nameservers (1.1.1.1, 8.8.8.8) to /etc/resolv.conf"
+            );
+        }
     }
 
     println!(
