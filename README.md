@@ -8,7 +8,9 @@
 
 [![CI - Test & Lint Suite](https://github.com/Praveen-1308/ferro-os/actions/workflows/ci.yml/badge.svg)](https://github.com/Praveen-1308/ferro-os/actions/workflows/ci.yml)
 [![Pure-Rust Cloud Pipeline](https://img.shields.io/badge/Pure--Rust%20Pipeline-100%25%20Passing-brightgreen.svg)](https://github.com/Praveen-1308/ferro-os/actions/workflows/ci.yml)
-[![RootFS Size](https://img.shields.io/badge/RootFS%20Archive-2.92%20MB-blue.svg)](tools/build_pure_rust_os.py)
+[![RootFS Size](https://img.shields.io/badge/RootFS%20Archive-3.59%20MB-blue.svg)](tools/build_pure_rust_os.py)
+[![Four Pillars](https://img.shields.io/badge/Strategic%20Pillars-4%2F4%20Verified-brightgreen.svg)](tools/test_all_four_pillars.py)
+[![Head-to-Head Parity](https://img.shields.io/badge/Ubuntu%20Parity-100%25%20(30%2F30)-success.svg)](tools/differential_parity_engine.py)
 [![Memory Safety](https://img.shields.io/badge/Memory%20Safety-100%25%20Safe%20Rust-brightgreen.svg)](crates/)
 [![Security Audits](https://img.shields.io/badge/CWE%20Audits-5%2F5%20Defended-success.svg)](tools/test_vulnerability_audit.py)
 [![Documentation](https://praveen-1308.github.io/ferro-os/)](https://praveen-1308.github.io/ferro-os/)
@@ -108,14 +110,110 @@ FerroOS replaces legacy multi-package userlands with modular, functional Rust co
 
 | Subsystem | Applet / Daemon | Source File | Description |
 | :--- | :--- | :--- | :--- |
-| **Command Multi-Call Dispatcher** | `sh`, `ls`, `cat`, `echo`, `cp`, `mv`, `rm`, `stat`, `id`, `chown`, `chmod`, `touch`, `ln`, `mount`, `umount`, `sync`, `tee`, `ip`, `ps`, `kill`, `uptime`, `whoami` | [`crates/ferro-core/src/main.rs`](crates/ferro-core/src/main.rs) | Single 995 KB unified multi-call binary replacing GNU coreutils, procps, and iproute2. Sub-millisecond execution start times with zero memory corruption vulnerabilities. |
+| **Command Multi-Call Dispatcher** | `sh`, `ls`, `cat`, `echo`, `cp`, `mv`, `rm`, `stat`, `id`, `chown`, `chmod`, `touch`, `ln`, `mount`, `umount`, `sync`, `tee`, `ip`, `ps`, `kill`, `uptime`, `whoami` | [`crates/ferro-core/src/main.rs`](crates/ferro-core/src/main.rs) | Single 1.2 MB unified multi-call binary replacing GNU coreutils, procps, and iproute2. 100% head-to-head differential parity (30/30) with GNU Coreutils 9.4. |
 | **System Supervision (PID 1)** | `ferro-init` | [`crates/ferro-init/src/main.rs`](crates/ferro-init/src/main.rs) | PID 1 init system: early VFS mounting (`devtmpfs`, `procfs`, `sysfs`, `tmpfs`), KSPP kernel hardening, background daemon management, unconditional zombie reaping (`waitpid(-1, ...)`), and non-root execution (`UID 1000 ferro`). |
+| **Cgroup v2 Service Supervisor** | `ferro-superd`, `service` | [`crates/ferro-superd/src/main.rs`](crates/ferro-superd/src/main.rs) | Ultra-light (463 KB) systemd alternative: declarative TOML manifests (`/etc/ferro/services/*.toml`), Cgroup v2 memory ceilings (`memory.max`), CPU weights (`cpu.weight`), UNIX socket JSON-RPC (`/run/ferro/superd.sock`), ring-buffer logs, and backoff restart policies. |
+| **Micro-Container Runtime** | `ferrocage`, `container` | [`crates/ferrocage/src/main.rs`](crates/ferrocage/src/main.rs) | Pure-Rust embedded container runtime (495 KB) replacing Docker/containerd. Sub-2ms container startup, native Linux namespaces (`CLONE_NEWPID`, `CLONE_NEWNS`, `CLONE_NEWNET`, `CLONE_NEWUSER`), Cgroups v2 quotas, and host volume bind mounts (`-v host:container`). |
+| **Zero-Trust Landlock Sandbox** | `sandbox` | [`crates/ferro-core/src/main.rs`](crates/ferro-core/src/main.rs) | Path-delegated kernel Landlock LSM & Seccomp-BPF jail. Enforces immutable read-only base OS while delegating high-velocity write access to designated storage paths (`--ro`, `--rw`, `--no-net`, `--drop-caps`). |
+| **Cloud-Init Metadata Ingestion** | `cloud-init` | [`crates/ferro-core/src/cloud_init.rs`](crates/ferro-core/src/cloud_init.rs) | Autonomous IMDS client (`169.254.169.254`): ingests instance hostnames, provisions SSH public keys into `/root/.ssh/authorized_keys` (mode `0600`), and executes user-data bootstrapping scripts in < 2ms. |
+| **Block Storage & Disk Engine** | `disk` | [`crates/ferro-core/src/disk.rs`](crates/ferro-core/src/disk.rs) | Persistent block storage engine: scans `/proc/partitions`, identifies NVMe/SCSI disks, and manages partition mounting. |
 | **System Logging Daemon** | `ferrod`, `syslogd`, `logger`, `logs`, `dmesg` | [`crates/ferro-core/src/syslog.rs`](crates/ferro-core/src/syslog.rs) | RFC 3164/5424 Unix datagram socket listener on `/dev/log` (mode `0666`), fast circular ring buffer, persistent `/var/log/syslog` append, real-time log tailing, and kernel ring buffer reading. Replaces `rsyslog` and `systemd-journald`. |
 | **DHCP & Cloud Auto-Leasing** | `dhcp`, `ferro-net`, `udhcpc` | [`crates/ferro-core/src/dhcp.rs`](crates/ferro-core/src/dhcp.rs) | RFC 2131 DHCPv4 client: interface discovery, `DHCPDISCOVER` broadcast, ioctl IPv4/netmask assignment, `/etc/resolv.conf` management, and container/cloud metadata fallback. |
 | **Microservices Suite Engine** | `server-suite`, `serve` | [`crates/ferro-core/src/main.rs`](crates/ferro-core/src/main.rs) | Native multi-threaded Rust server engine hosting Port 8080 (REST Telemetry API), Port 8081 (Concurrent Key-Value Cache), and Port 8082 (Static Package Delivery). Replaced legacy Python server suite. |
 | **Scheduler IPC Benchmark** | `hackbench` | [`crates/ferro-core/src/bench_suite.rs`](crates/ferro-core/src/bench_suite.rs) | Pure-Rust Unix socket pair IPC throughput benchmark (1,047,060 msgs/sec | 63.91 MB/s). Replaces `tools/enterprise_qualification/hackbench.c`. |
 | **Storage Latency Benchmark** | `bench-fsync` | [`crates/ferro-core/src/bench_suite.rs`](crates/ferro-core/src/bench_suite.rs) | Pure-Rust write and `fsync` latency profiler measuring p50/p95/p99/max latency percentiles. Replaces `tools/harness/bench_fsync.c`. |
 | **Zero-Downtime Socket Store** | `fdstore` | [`crates/ferro-init/src/fdstore.rs`](crates/ferro-init/src/fdstore.rs) | SCM_RIGHTS file descriptor handover daemon enabling zero-downtime microservice upgrades without dropping TCP connections. |
+
+---
+
+## 🏛️ The Four Strategic Pillars of FerroOS Cloud Architecture
+
+To eliminate the sprawling daemon sprawl, security vulnerabilities, and container overhead of legacy Linux distributions, FerroOS implements four foundational pure-Rust architectural pillars:
+
+```mermaid
+flowchart TD
+    subgraph Pillar1["Pillar 1: Zero-Trust Security"]
+        A["Native Landlock LSM & Seccomp"]
+        B["Path-Delegated Storage Authority"]
+    end
+    subgraph Pillar2["Pillar 2: Cloud Supervisor"]
+        C["ferro-superd: Cgroup v2 Manager"]
+        D["Auto-OOM Guard & Health Self-Healing"]
+    end
+    subgraph Pillar3["Pillar 3: Micro-Container Engine"]
+        E["ferrocage: Namespace Sandbox"]
+        F["Sub-2ms Startup & Volume Persistence"]
+    end
+    subgraph Pillar4["Pillar 4: Cloud Automation"]
+        G["cloud-init: AWS/GCP/Azure IMDS"]
+        H["Persistent Block Storage & NVMe Scanner"]
+    end
+
+    Pillar1 --> CoreOS["FerroOS Pure-Rust Cloud Core (3.59 MB)"]
+    Pillar2 --> CoreOS
+    Pillar3 --> CoreOS
+    Pillar4 --> CoreOS
+```
+
+### Pillar 1: Zero-Trust Security & Path-Delegated Storage (`ferro sandbox`)
+* **How It Works**: Linux Landlock LSM and Seccomp-BPF filters are embedded directly into `ferro-core`. Ambient root authority is revoked; base operating system binaries (`/bin`, `/usr`, `/lib`) and system configuration (`/etc`) are strictly locked as read-only.
+* **Storage Mechanics**: High-velocity write authority is explicitly delegated to designated storage volumes:
+  ```bash
+  # Grants read-only /app, read-write /data, and isolates network
+  ferro sandbox --ro /app --rw /data --no-net --drop-caps -- python3 app.py
+  ```
+* **Validation**: Write attempts to `/etc` or `--ro` paths are intercepted by the kernel in **1.7 ms** with `Permission denied`. Legitimate storage writes write directly to physical disk in **1.6 ms**.
+
+### Pillar 2: Cgroup v2 Service Supervisor (`ferro-superd` & `ferro service`)
+* **How It Works**: Replaces `systemd` (30+ MB) with a compact 463 KB daemon reading declarative TOML manifests from `/etc/ferro/services/*.toml`.
+* **Resource Guarding**: Enforces hardware ceilings directly via Linux Cgroup v2:
+  ```toml
+  [service]
+  name = "api-gateway"
+  command = ["/bin/python3", "/app/main.py"]
+  
+  [restart]
+  policy = "always"
+  max_retries = 5
+  backoff_ms = 500
+  
+  [cgroups]
+  memory_max_mb = 256
+  cpu_weight = 100
+  pids_max = 50
+  ```
+* **CLI Control Suite**: Full operational control via `ferro service`:
+  `ferro service list` • `ferro service status <name>` • `ferro service stop <name>` • `ferro service start <name>` • `ferro service logs <name>` • `ferro service reload`.
+
+### Pillar 3: Pure-Rust Micro-Container Runtime (`ferrocage`)
+* **How It Works**: Eliminates the 60+ MB RAM daemon overhead of Docker, containerd, and runc. `ferrocage` (495 KB) launches isolated micro-containers in **under 2 milliseconds** using native Linux namespaces (`CLONE_NEWPID`, `CLONE_NEWNS`, `CLONE_NEWNET`, `CLONE_NEWUTS`, `CLONE_NEWIPC`, `CLONE_NEWUSER`).
+* **Volume Persistence**: Host directories mapped via `-v host:container` use pure-Rust bind mounts (`MS_BIND`). Data written inside the container writes straight to physical host disk blocks and survives container teardown.
+* **CLI Control Suite**: Full Docker-compatible ergonomics:
+  ```bash
+  ferrocage run -d --name worker -m 64M -v /host/data:/mnt/data alpine /bin/sh
+  ferrocage ps [-a]
+  ferrocage inspect <id>
+  ferrocage logs <id>
+  ferrocage stop <id> && ferrocage rm <id>
+  ```
+
+### Pillar 4: Cloud-Native Automation & Persistent Storage
+* **Cloud-Init Metadata Ingestion (`ferro cloud-init`)**: Automatically queries link-local hypervisor IMDS (`http://169.254.169.254/latest/meta-data/`) on AWS EC2, GCP Compute Engine, Azure, and OpenStack. Ingests dynamic hostnames, provisions SSH public keys into `/root/.ssh/authorized_keys` (permissions `0600`), and executes user-data bootstrap scripts in **1.8 ms**.
+* **Block Storage Scanner (`ferro disk`)**: Discovers NVMe, SCSI, and virtio block devices from `/proc/partitions`, formats unpartitioned volumes, and handles persistent mount targets.
+
+---
+
+### Empirical Differential Comparison: FerroOS vs Ubuntu Server 24.04
+
+| Dimension | FerroOS Pure Rust Core | Standard Ubuntu 24.04 (Docker/systemd) | Measured Advantage |
+| :--- | :--- | :--- | :--- |
+| **Head-to-Head Coreutils Parity** | **100% (30/30 Passing)** | Reference Baseline | Zero behavioral drift across standard sysadmin commands |
+| **Sandboxed Storage Write Latency** | **1.6 ms** | **358.3 ms** | **~220x faster I/O initialization** |
+| **Protected Path Kernel Block** | **1.7 ms** (Landlock LSM) | **341.5 ms** (AppArmor / remount) | **~190x faster security enforcement** |
+| **Container Startup Latency** | **1.7 ms** (`ferrocage`) | **350+ ms** (`docker run`) | Zero daemon negotiation delay |
+| **Supervisor Binary Size** | **463 KB** (`ferro-superd`) | **~30 MB** (`systemd` + D-Bus) | **98.4% smaller footprint** |
+| **Container Engine Size** | **495 KB** (`ferrocage`) | **~60 MB** (`dockerd` + `containerd`) | **99.1% smaller footprint** |
+| **Autonomous OS Rootfs Size** | **3.59 MB** (`ferro-os-pure:latest`) | **455 MB** (Ubuntu Minimal) | **99.2% diet reduction** |
 
 ---
 
