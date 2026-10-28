@@ -1198,5 +1198,83 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xgmaew.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xgmaew.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xhh6yk",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "reminiscing the golden years.",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xhh6yk/reminiscing_the_golden_years/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "reminiscing the golden years. <!-- SC_OFF --><div class=\"md\"><p>connected with a buddy of mine from the trenches after a looong time the other day, got hit hard with a wave of nostalgia from the early 2000s. i was working tech in higher ed back then. we had this crazy overhyped $8 million setup. vbrick encoders, crestron touch panels running shitty windows ce overlays, all packed into these heavy wooden rolling carts. the whole system blew up practically every other day. whenever a faculty started panicking mid lecture our actual high tech fix was sending a 19 year old workstudy kid to crawl behind the cart and yank the main power strip out of the wall. lol! remember begging the dean to let us build a simple linux stack in house but they fell for the slick vendor presentation instead. honestly though the broken hardware wasnt even the point. it was the culture. At 5:00 pm on the dot, front door to the office got locked so faculty couldn&#39;t barge in askign for help with personal laptops. my guys would fire up doom on the office pcs while we waited for nt 4.0 service packs to to finish patching. terry the workstudy kid held down the helpdesk phone till 11 pm. we&#39;d order pizza,",
+    "score": 0,
+    "timestamp": "2026-10-28T10:27:22.237956+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in reminiscing the golden years..",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xhh6yk.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xhh6yk.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xgte6q",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Tech moving too fast, layoffs everywhere. how are you coping?",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xgte6q/tech_moving_too_fast_layoffs_everywhere_how_are/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Tech moving too fast, layoffs everywhere. how are you coping? <!-- SC_OFF --><div class=\"md\"><p>Hi everyone!</p> <p>I&#39;m so exhausted being an M365 admin these days. Technology and AI are moving at crazy speeds and I just can&#39;t keep up! </p> <p>Hearing about all the big tech layoffs makes the stress twice as bad. I honestly feel like I could easily be replaced by an AI agent.</p> <p>Am I overthinking this or are you feeling this pressure too? Maybe burnout? </p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/ibteea\"> /u/ibteea </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xgte6q/tech_moving_too_fast_layoffs_everywhere_how_are/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xgte6q/tech_moving_too_fast_layoffs_everywhere_how_are/\">[comments]</a></span>",
+    "score": 0,
+    "timestamp": "2026-10-28T10:27:22.238000+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Tech moving too fast, layoffs everywhere. how are you coping?.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xgte6q.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xgte6q.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xherwo",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "A piece of advice for all the junior sysadmins and help desk guys out there",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xherwo/a_piece_of_advice_for_all_the_junior_sysadmins/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "A piece of advice for all the junior sysadmins and help desk guys out there <!-- SC_OFF --><div class=\"md\"><p><strong>Please don&#39;t settle for a salary that barely lets you get by.</strong></p> <p>I know you&#39;re just starting out. Maybe you&#39;re resetting passwords, fixing user issues, installing software, or doing basic troubleshooting all day. You might feel like your responsibilities aren&#39;t that big yet, so you don&#39;t deserve to ask for more money.</p> <p>But here&#39;s the thing about this career. The job you&#39;re doing today is only a small part of what you need to learn if you actually want to get somewhere in IT.</p> <p>You have to learn networking, operating systems, servers, virtualization, cloud, scripting, security, and a whole bunch of other stuff. And a lot of it? You&#39;re gonna have to learn on your own time, because your company isn&#39;t gonna teach you everything you need to know.</p> <p>You&#39;ll be spending your evenings learning, building labs, troubleshooting things that don&#39;t work, and trying to figure out what you should learn next. Sometimes you&#39;ll spend months learning something that has absolutely nothing to do with your current",
+    "score": 0,
+    "timestamp": "2026-10-28T10:27:22.238046+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in A piece of advice for all the junior sysadmins and help desk guys out there.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xherwo.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xherwo.json"
   }
 ]

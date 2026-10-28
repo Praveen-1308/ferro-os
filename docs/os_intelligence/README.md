@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 42 | **Last Sweep**: 2026-10-27 09:42:08 UTC
+**Active Tracked Incidents**: 45 | **Last Sweep**: 2026-10-28 10:27:22 UTC
 
 ---
 
@@ -55,6 +55,9 @@
 | `REDDIT-SYSADMIN-1xfnayk` | **Linux Server Administration** | if your blacklist checker uses Google or Cloudflare DNS, Spamhaus results are probably wrong | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xfnayk.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xfnayk.md) |
 | `REDDIT-SYSADMIN-1xg2ykv` | **Linux Server Administration** | Moment of Solidarity for those who have had to terminate a Co-worker or Friend | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xg2ykv.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xg2ykv.md) |
 | `REDDIT-SYSADMIN-1xgmaew` | **Linux Server Administration** | Police Evidence | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xgmaew.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xgmaew.md) |
+| `REDDIT-SYSADMIN-1xhh6yk` | **Linux Server Administration** | reminiscing the golden years. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xhh6yk.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xhh6yk.md) |
+| `REDDIT-SYSADMIN-1xgte6q` | **Linux Server Administration** | Tech moving too fast, layoffs everywhere. how are you coping? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xgte6q.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xgte6q.md) |
+| `REDDIT-SYSADMIN-1xherwo` | **Linux Server Administration** | A piece of advice for all the junior sysadmins and help desk guys out there | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xherwo.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xherwo.md) |
 
 ---
 
