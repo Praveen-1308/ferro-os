@@ -2,7 +2,7 @@
 
 > **Tracking Document**: Live status of system compatibility, recent userland/networking fixes, Python 3 + SQLite 3 enablement, and developer roadmap.  
 > **Repository**: [github.com/Praveen-1308/ferro-os](https://github.com/Praveen-1308/ferro-os)  
-> **GitHub Discussion**: [Tracking: Compatibility Audit, Python 3/SQLite 3 Verification & QEMU Network Updates](https://github.com/Praveen-1308/ferro-os/discussions)  
+> **GitHub Discussion**: [Tracking: Compatibility Audit, Python 3/SQLite 3 Verification & QEMU Network Updates (#7)](https://github.com/Praveen-1308/ferro-os/discussions/7)  
 > **Last Updated**: October 2026
 
 ---
@@ -183,6 +183,6 @@ flowchart LR
 ---
 
 ## 🤝 How to Contribute & Track
-1. Join the discussion on GitHub: [Discussions Tracker](https://github.com/Praveen-1308/ferro-os/discussions).
+1. Join the discussion on GitHub: [Discussions Tracker #7](https://github.com/Praveen-1308/ferro-os/discussions/7).
 2. Report edge cases or package compatibility requests via [GitHub Issues](https://github.com/Praveen-1308/ferro-os/issues).
 3. Follow the build and verification instructions in the [Main README](../README.md).
