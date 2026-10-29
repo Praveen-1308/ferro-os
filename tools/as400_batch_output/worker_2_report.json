@@ -3,8 +3,8 @@
   "host": "pub400.com",
   "port": 23,
   "is_live_connection": true,
-  "bytes_received": 12,
-  "handshake_latency_ms": 628.69,
+  "bytes_received": 6,
+  "handshake_latency_ms": 5342.46,
   "total_batches_processed": 5,
   "batch_records": [
     {
@@ -13,8 +13,8 @@
       "system": "PUB400",
       "subsystem": "QINTER",
       "operator": "FERRO_02",
-      "rss_mb": 14.11,
-      "timestamp": 1793084667.773
+      "rss_mb": 14.42,
+      "timestamp": 1793252837.722
     },
     {
       "batch_idx": 2,
@@ -22,8 +22,8 @@
       "system": "PUB400",
       "subsystem": "QINTER",
       "operator": "FERRO_02",
-      "rss_mb": 14.11,
-      "timestamp": 1793084668.373
+      "rss_mb": 14.42,
+      "timestamp": 1793252838.322
     },
     {
       "batch_idx": 3,
@@ -31,8 +31,8 @@
       "system": "PUB400",
       "subsystem": "QINTER",
       "operator": "FERRO_02",
-      "rss_mb": 14.11,
-      "timestamp": 1793084668.974
+      "rss_mb": 14.42,
+      "timestamp": 1793252838.922
     },
     {
       "batch_idx": 4,
@@ -40,8 +40,8 @@
       "system": "PUB400",
       "subsystem": "QINTER",
       "operator": "FERRO_02",
-      "rss_mb": 14.11,
-      "timestamp": 1793084669.574
+      "rss_mb": 14.42,
+      "timestamp": 1793252839.523
     },
     {
       "batch_idx": 5,
@@ -49,14 +49,14 @@
       "system": "PUB400",
       "subsystem": "QINTER",
       "operator": "FERRO_02",
-      "rss_mb": 14.11,
-      "timestamp": 1793084670.174
+      "rss_mb": 14.42,
+      "timestamp": 1793252840.123
     }
   ],
   "memory_telemetry": {
-    "initial_rss_mb": 13.55,
-    "final_rss_mb": 14.11,
-    "growth_mb": 0.55
+    "initial_rss_mb": 13.82,
+    "final_rss_mb": 14.42,
+    "growth_mb": 0.61
   },
   "terminal_screen": {
     "system": "PUB400",
@@ -64,5 +64,5 @@
     "display": "QPADEV02E",
     "user": "FERRO_02"
   },
-  "completion_timestamp": 1793084670.7749112
+  "completion_timestamp": 1793252840.7235508
 }
