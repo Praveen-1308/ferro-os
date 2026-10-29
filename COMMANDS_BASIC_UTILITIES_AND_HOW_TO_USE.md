@@ -1,7 +1,7 @@
 # FerroOS Commands, Basic Utilities & Usage Manual
 ### *Complete Catalog of Implemented Applets, Practical Playbooks, and Forward Gap Analysis*
 
-FerroOS incorporates [`ferro-core`](file:///Users/praveenkumar/rust%20os/crates/ferro-core/src/main.rs), an ultra-compact, high-performance, multi-call userspace binary written in **100% pure Rust** with zero external C runtime dependencies (`libc = "0.2"`, `flate2 = "1.0"` with safe `miniz_oxide`). Consolidating all traditional GNU coreutils, util-linux, procps, networking binaries, archival engines, modern cloud/container utilities, and cross-platform developer shims into a single **1.3 MB executable**, `ferro-core` provides **207 registered applets** symlinked across `/bin` and `/usr/bin`.
+FerroOS incorporates [`ferro-core`](file:///Users/praveenkumar/rust%20os/crates/ferro-core/src/main.rs), an ultra-compact, high-performance, multi-call userspace binary written in **100% pure Rust** with zero external C runtime dependencies (`libc = "0.2"`, `flate2 = "1.0"` with safe `miniz_oxide`). Consolidating all traditional GNU coreutils, util-linux, procps, networking binaries, archival engines, modern cloud/container utilities, and cross-platform developer shims into a single **1.3 MB executable**, `ferro-core` provides **210 registered applets** symlinked across `/bin` and `/usr/bin`.
 
 This document tracks every implemented command, its syntax, options, and practical usage, followed by a comprehensive **Gap Analysis** tracking what more is needed for complete parity with enterprise Linux distributions (Ubuntu 24.04 LTS, Debian 12, Alpine 3.20, Windows, and macOS). For a detailed multi-OS comparative audit, refer to [MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md](file:///Users/praveenkumar/rust%20os/docs/MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md).
 
@@ -1069,6 +1069,41 @@ FerroOS incorporates modern utilities specifically addressing areas where DevOps
   chattr +i /etc/resolv.conf
   ```
 
+### `awk`
+- **Syntax**: `awk [-F fs] [-v var=val] [-f progfile | 'program'] [file ...]`
+- **Description**: Lightweight, pure-Rust pattern scanning and text processing language. Supports custom field separators (`-F:`), line and column numbers (`NR`, `NF`), record references (`$0`, `$1`..`$NF`), comparison patterns, regex matches (`/pattern/`), and `BEGIN` / `END` blocks.
+- **Usage Examples**:
+  ```bash
+  # Print column 1 and column 3
+  awk '{print $1, $3}' /etc/hosts
+
+  # Parse /etc/passwd with colon delimiter
+  awk -F: '{print $1, $7}' /etc/passwd
+
+  # Skip header and sum column 2
+  awk 'NR > 1 {sum += $2} END {print "Total:", sum}' data.csv
+
+  # Match regex pattern
+  awk '/ERROR/ {print $0}' /var/log/syslog
+  ```
+
+### `vi` & `ed` (Emergency Recovery Editors)
+- **Syntax**: 
+  - `vi [FILE]`
+  - `ed [-p PROMPT] [-s] [FILE]`
+- **Description**: Self-contained emergency text editors designed for rescue mode, broken system repair, and container debugging. `vi` provides full-screen modal editing (Normal mode, Insert mode, line navigation, `:w`, `:q`, `:wq`, undo `u`), automatically falling back to line mode when running non-interactively. `ed` provides the standard POSIX scriptable line editor.
+- **Usage Examples**:
+  ```bash
+  # Interactive rescue editing
+  vi /etc/fstab
+
+  # Scripted file modification via ed
+  printf "a\nnameserver 1.1.1.1\n.\nw\nq\n" | ed /etc/resolv.conf
+
+  # Inspect all lines with line numbers
+  printf ",n\nq\n" | ed /etc/hosts
+  ```
+
 ---
 
 ## 15. Gap Analysis & Roadmap: What More We Need
@@ -1077,6 +1112,8 @@ For complete multi-OS comparative audit findings and package-level taxonomy, see
 
 | Priority | Utility | Functionality / Purpose | Status / Milestone |
 | :--- | :--- | :--- | :--- |
+| **Complete** | `awk` | Pure-Rust pattern scanning and column processing language | **Implemented in v2.3+** |
+| **Complete** | `vi`, `ed` | Full-screen modal & POSIX scriptable recovery editor | **Implemented in v2.3+** |
 | **Complete** | `gzip`, `gunzip`, `zcat` | RFC 1952 DEFLATE stream compression and decompression | **Implemented in v2.3+** |
 | **Complete** | `unzip` | Pure-Rust PKZIP archive extraction and inspection (`-l`, `-d`) | **Implemented in v2.3+** |
 | **Complete** | `envsubst` | Environment variable template substitution in containers | **Implemented in v2.3+** |
@@ -1115,7 +1152,7 @@ For complete multi-OS comparative audit findings and package-level taxonomy, see
 To verify all utilities, run the continuous integration test harnesses:
 
 ```bash
-# 1. Run all workspace unit tests (80 tests)
+# 1. Run all workspace unit tests (85 tests)
 cargo test --workspace
 
 # 2. Build the optimized release binary
@@ -1127,6 +1164,6 @@ python3 tools/test_supervisor_and_container.py
 # 4. Run the Sandbox & Storage Differential Parity Suite (vs Ubuntu 24.04)
 python3 tools/test_sandbox_and_storage_differential.py
 
-# 5. List all registered applets (207 applets)
+# 5. List all registered applets (210 applets)
 ./target/release/ferro-core --list-applets
 ```

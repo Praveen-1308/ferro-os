@@ -30,6 +30,8 @@ pub mod extra_utils;
 pub mod ext_utils;
 pub mod cross_os_utils;
 pub mod modern_utils;
+pub mod awk;
+pub mod editor;
 
 #[cfg(target_os = "linux")]
 extern "C" {
@@ -281,6 +283,9 @@ fn main() -> ExitCode {
         "ssl-check" | "cert" => modern_utils::run_ssl_check(&command_args),
         "lsattr" => modern_utils::run_lsattr(&command_args),
         "chattr" => modern_utils::run_chattr(&command_args),
+        "awk" => awk::run_awk(&command_args),
+        "vi" => editor::run_vi(&command_args),
+        "ed" => editor::run_ed(&command_args),
         "help" | "--help" | "-h" => {
             print_usage();
             ExitCode::SUCCESS
@@ -817,7 +822,8 @@ pub const ALL_APPLETS: &[&str] = &[
     "nc", "netcat", "route", "printf", "rmdir",
     "cls", "tasklist", "taskkill", "ipconfig", "where", "pbcopy", "clip", "pbpaste", "open", "start",
     "envsubst", "uuidgen", "uuid", "unzip", "lsof", "fuser", "dig", "nslookup", "host",
-    "patch", "json", "ssl-check", "cert", "lsattr", "chattr"
+    "patch", "json", "ssl-check", "cert", "lsattr", "chattr",
+    "awk", "vi", "ed"
 ];
 
 fn is_internal_applet(cmd: &str) -> bool {
@@ -1314,6 +1320,9 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "ssl-check" | "cert" => modern_utils::run_ssl_check(args),
         "lsattr" => modern_utils::run_lsattr(args),
         "chattr" => modern_utils::run_chattr(args),
+        "awk" => awk::run_awk(args),
+        "vi" => editor::run_vi(args),
+        "ed" => editor::run_ed(args),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
             ExitCode::from(127)
