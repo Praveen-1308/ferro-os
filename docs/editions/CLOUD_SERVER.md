@@ -17,6 +17,9 @@ It replaces the legacy ~116 MB – 660 MB Ubuntu/Debian server footprint with a 
 | **Default Packaging** | `ferro_cloud_appliance.tar.gz` | Cloud ISO / AMI | Cloud TAR |
 | **Docker Base Image** | `ferro-os-cloud:latest` | `ubuntu:24.04` | `alpine:3.20` |
 
+> [!NOTE]
+> For formal compliance details regarding POSIX.1-2017, FHS 3.0, OCI runtime specifications, CIS Linux Server Benchmark Level 1/2 hardening, and hypervisor guest standards, see **[Cloud Standards & Compliance Specification](CLOUD_STANDARDS_AND_COMPLIANCE.md)**.
+
 ---
 
 ## 2. Core Architectural Components
