@@ -1,0 +1,23 @@
+================================================================================
+         FERRO-OS PURE-RUST NATIVE INBUILT WEB RETRIEVAL REPORT                 
+================================================================================
+Status       : 200 OK (Pure Rust Sockets)
+Target URL   : http://httpbin.org/get
+Origin IP    : 103.164.161.50
+User-Agent   : FerroOS-PureRust/2.3
+
+--- Raw HTTP Body ---
+{
+  "args": {},
+  "headers": {
+    "Host": "httpbin.org",
+    "User-Agent": "FerroOS-PureRust/2.3"
+  },
+  "method": "GET",
+  "origin": "103.164.161.50",
+  "url": "http://httpbin.org/get"
+}
+
+================================================================================
+END OF PURE-RUST REPORT
+================================================================================

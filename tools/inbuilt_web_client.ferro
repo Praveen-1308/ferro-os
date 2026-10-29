@@ -1,0 +1,39 @@
+// ==============================================================================
+// FerroOS Pure-Rust Inbuilt Web Automation Program (.ferro)
+// 100% Pure Rust - ZERO Python, ZERO External Downloads, ZERO Extra Libraries
+// ==============================================================================
+
+println "================================================================================"
+println "   ⚡ FERRO-OS PURE-RUST NATIVE INBUILT WEB CLIENT (NO PYTHON / NO GCC)         "
+println "================================================================================"
+
+let target_url = "http://httpbin.org/get"
+println "-> Connecting to live web endpoint: " + target_url
+
+let payload = http_get(target_url)
+println "-> Successfully retrieved payload via pure-Rust TcpStream HTTP/1.1 client!"
+
+let origin_ip = json_get(payload, "origin")
+println "-> Extracted Client IP: " + origin_ip
+
+let user_agent = json_get(payload, "User-Agent")
+println "-> Extracted User-Agent: " + user_agent
+
+let out_file = "inbuilt_pure_rust_output.txt"
+println "-> Writing structured report to disk: " + out_file
+
+let header = "================================================================================\n"
+let title =  "         FERRO-OS PURE-RUST NATIVE INBUILT WEB RETRIEVAL REPORT                 \n"
+let div =    "================================================================================\n"
+let info =   "Status       : 200 OK (Pure Rust Sockets)\nTarget URL   : " + target_url + "\nOrigin IP    : " + origin_ip + "\nUser-Agent   : " + user_agent + "\n"
+let body_sec = "\n--- Raw HTTP Body ---\n" + payload + "\n" + div + "END OF PURE-RUST REPORT\n" + div
+
+let full_report = header + title + div + info + body_sec
+
+write_file(out_file, full_report)
+
+println "-> Verifying written file on disk..."
+let verified = read_file(out_file)
+let report_len = len(verified)
+println "✓ Report written successfully! Total bytes: " + report_len
+println "================================================================================"

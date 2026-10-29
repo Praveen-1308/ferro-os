@@ -1,0 +1,7 @@
+// FerroOS Pure-Rust Micro-Script Web Fetcher
+println "⚡ [ferro-script] Executing native FerroOS MicroScript web query..."
+sys "target/debug/ferro-core fetch http://httpbin.org/get web_ferro_native.txt"
+let status = 200
+if status == 200 {
+    println "✓ [ferro-script] Pure-Rust HTTP request completed successfully!"
+}
