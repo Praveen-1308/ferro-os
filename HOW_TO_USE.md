@@ -14,6 +14,7 @@ Welcome to the FerroOS practical playbook! This guide provides simple, copy-past
 6. [Bare-Metal Bootable ISO & Instant Snapshot Rollbacks](#6-bare-metal-bootable-iso--instant-snapshot-rollbacks)
 7. [How to Customize & Modify FerroOS for Your Needs](#7-how-to-customize--modify-ferroos-for-your-needs)
 8. [Hybrid Package Management (`rpk`) & Enterprise Profiles](#8-hybrid-package-management-rpk--enterprise-profiles)
+9. [Commands, Basic Utilities & Standard Playbooks (`ferro-core`)](#9-commands-basic-utilities--standard-playbooks-ferro-core)
 
 ---
 
@@ -289,6 +290,35 @@ rpk list
 Safely apply security patches without touching minor version runtime pins:
 ```bash
 rpk upgrade --security
+```
+
+---
+
+## 9. Commands, Basic Utilities & Standard Playbooks (`ferro-core`)
+
+FerroOS packages **168 registered applets** inside [`ferro-core`](file:///Users/praveenkumar/rust%20os/crates/ferro-core/src/main.rs), an ultra-lean 1.2 MB multi-call binary implementing full POSIX.1-2017 standards, exact Linux exit codes, and signal safety:
+
+- **Complete Reference & Gap Analysis**: See [**`COMMANDS_BASIC_UTILITIES_AND_HOW_TO_USE.md`**](file:///Users/praveenkumar/rust%20os/COMMANDS_BASIC_UTILITIES_AND_HOW_TO_USE.md) for full syntax, flags, examples, and roadmap for all 168 applets.
+- **Differential Parity Matrix**: See [**`docs/operations/COREUTILS_AND_PARITY.md`**](file:///Users/praveenkumar/rust%20os/docs/operations/COREUTILS_AND_PARITY.md) for the 30/30 head-to-head Ubuntu GNU coreutils differential benchmarks.
+
+### Quick Command Verification:
+```bash
+# List all 168 registered applets
+ferro-core --list-applets
+
+# Inspect file type with magic bytes
+file /bin/sh
+
+# Recursive directory hierarchy
+tree -L 2 tools/
+
+# FIPS & RFC cryptographic digests
+sha256sum file.tar.gz > file.sha256 && sha256sum -c file.sha256
+
+# Hardware and CPU capability inspection
+lscpu
+lspci
+lsmod
 ```
 
 ---

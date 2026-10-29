@@ -59,7 +59,8 @@ FerroOS (Pure-Rust Linux):    [ Kernel ] ---> [ ABI   ] ---> [ Safe Rust Userspa
 | **Operations & Userspace** | [**`docs/operations/README.md`**](docs/operations/README.md) | Overview of userspace daemons, process lifecycle management, containerization, and CLI tools. |
 | ├─ *Service Supervision* | [**`docs/operations/SERVICE_SUPERVISION.md`**](docs/operations/SERVICE_SUPERVISION.md) | `ferro-superd` supervisor, Cgroups v2 limits (`memory.swap.max = 0`, `cpu.max`), declarative TOML, `ferro service` CLI. |
 | ├─ *Micro-Container Runtime* | [**`docs/operations/CONTAINER_RUNTIME.md`**](docs/operations/CONTAINER_RUNTIME.md) | `ferrocage` sub-2ms container engine, Linux namespaces (PID, mount, net, IPC, UTS), volume persistence, zero Docker daemon. |
-| └─ *GNU Coreutils Parity* | [**`docs/operations/COREUTILS_AND_PARITY.md`**](docs/operations/COREUTILS_AND_PARITY.md) | Multi-call binary architecture (`ferro-core`), 30/30 head-to-head differential parity matrix vs Ubuntu GNU coreutils. |
+| ├─ *GNU Coreutils Parity* | [**`docs/operations/COREUTILS_AND_PARITY.md`**](docs/operations/COREUTILS_AND_PARITY.md) | Multi-call binary architecture (`ferro-core`), 30/30 head-to-head differential parity matrix vs Ubuntu GNU coreutils. |
+| └─ *Commands & Basic Utilities* | [**`COMMANDS_BASIC_UTILITIES_AND_HOW_TO_USE.md`**](COMMANDS_BASIC_UTILITIES_AND_HOW_TO_USE.md) | Complete manual of all 168 applets, syntax, options, playbooks, and forward gap analysis. |
 | **Empirical Benchmarks** | [**`docs/benchmarks/README.md`**](docs/benchmarks/README.md) | Empirical methodology, hardware disclosures, zero-synthetic policy, and performance summaries. |
 | ├─ *4-Core 8-GB Challenge* | [**`docs/benchmarks/FOUR_CORE_SERVICE_CHALLENGE.md`**](docs/benchmarks/FOUR_CORE_SERVICE_CHALLENGE.md) | Head-to-head benchmark: native FerroOS (1,858 req/s) vs Ubuntu container collapse under 600 concurrent connections. |
 | └─ *5-OS Destruction Matrix* | [**`docs/benchmarks/MULTI_OS_COMPARISON.md`**](docs/benchmarks/MULTI_OS_COMPARISON.md) | Sustained real-world benchmarks across 5 distributions (FerroOS, Alpine, Ubuntu, Debian, Rocky), C100K/C500K tests. |
@@ -96,7 +97,7 @@ graph TD
 | **Cloud Server** | AWS, GCP, Azure, Edge Kubernetes | **3.61 MB** | `ferro-superd`, `ferrocage`, Cgroups v2, Cloud-Init | `ferro_cloud_appliance.tar.gz` |
 | **Desktop & Web** | Laptops, Thin Clients, Cloud Streamers | **4.10 MB** | `ferro-compositor` (Wayland), `ferro-gui` (`/dev/fb0`), noVNC port 6080 | `ferro_desktop_appliance.tar.gz` |
 | **Gaming & Proton** | Gaming PCs, Handhelds, Cloud Gaming | **4.10 MB** | `sched_ext` (500µs slice), GameMode, Proton runner, DXVK | `ferro_gaming_appliance.tar.gz` |
-| **Universal Master** | General Purpose, Evaluation, Scratch | **4.10 MB** | All 8 release binaries + all 90+ coreutils applets | `pure_rust_rootfs.tar.gz` |
+| **Universal Master** | General Purpose, Evaluation, Scratch | **4.10 MB** | All 8 release binaries + all 168 coreutils applets | `pure_rust_rootfs.tar.gz` |
 
 ---
 
@@ -120,7 +121,7 @@ An interactive, searchable version of this entire stack is available at **[`docs
 |    - IPC Socket: /run/ferro/superd.sock (JSON-RPC 2.0)                   |
 +--------------------------------------------------------------------------+
 | Layer 6:  Pure-Rust POSIX Userspace Core                                 |
-|    - ferro-core: 30/30 GNU coreutils parity, ash-compatible shell        |
+|    - ferro-core: 168 applets, 30/30 GNU coreutils parity, ash-compatible shell |
 |    - ferro-init: PID 1 bootloader, virtual fs mounter, zombie reaper     |
 |    - ferro-pkg: rpk multi-arch package keeper & PE/MSI introspector      |
 +--------------------------------------------------------------------------+

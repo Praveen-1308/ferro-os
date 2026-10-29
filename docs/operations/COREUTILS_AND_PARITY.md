@@ -1,32 +1,37 @@
 # FerroOS Multi-Call Binary & GNU Coreutils Differential Parity
 
-[`ferro-core`](file:///home/tarun-kumar/Desktop/sample%20os%20/crates/ferro-core/src/main.rs) is the central userspace engine of FerroOS. Inspired by BusyBox and uutils coreutils, it is compiled as a single 1.2 MB multi-call pure-Rust binary that replaces legacy GNU coreutils, the POSIX shell, networking clients, and diagnostic tools.
+[`ferro-core`](file:///Users/praveenkumar/rust%20os/crates/ferro-core/src/main.rs) is the central userspace engine of FerroOS. Inspired by BusyBox and uutils coreutils, it is compiled as a single **1.2 MB multi-call pure-Rust binary** that replaces legacy GNU coreutils, the POSIX shell, networking clients, system diagnostics, and process supervisors.
+
+For complete manual and usage playbooks of every command, see [**`COMMANDS_BASIC_UTILITIES_AND_HOW_TO_USE.md`**](file:///Users/praveenkumar/rust%20os/COMMANDS_BASIC_UTILITIES_AND_HOW_TO_USE.md).
 
 ---
 
 ## 1. Multi-Call Binary Architecture
 
-When `ferro-core` is executed, it inspects `argv[0]` to determine which applet to run. Symlinks in `/usr/bin/` point to `ferro-core`:
+When `ferro-core` is executed, it inspects `argv[0]` to determine which applet to run. Symlinks in `/usr/bin/` and `/bin/` point directly to `ferro-core`:
 
 ```
-/usr/bin/ls   ──────┐
-/usr/bin/cat  ──────┼───> /usr/bin/ferro-core (1.2 MB pure-Rust multi-call binary)
-/usr/bin/grep ──────┤
-/usr/bin/sh   ──────┘
+/usr/bin/ls       ──────┐
+/usr/bin/cat      ──────┼───> /usr/bin/ferro-core (1.2 MB pure-Rust multi-call binary)
+/usr/bin/grep     ──────┤     (168 registered POSIX & Linux applets)
+/usr/bin/sh       ──────┤
+/usr/bin/file     ──────┤
+/usr/bin/tree     ──────┘
 ```
 
 This architecture achieves:
-1. **Dramatic Storage Savings**: 90+ individual utility binaries consolidated into 1.2 MB total disk footprint.
-2. **Instant Memory Deduplication**: Shared text segments across all utilities when executed simultaneously.
-3. **100% Memory Safety**: Pure safe Rust eliminates buffer overflows present in legacy C utilities.
+1. **Dramatic Storage Savings**: 168 individual utility binaries consolidated into **1.2 MB** total disk footprint.
+2. **Instant Memory Deduplication**: Shared text segments across all utilities when executed simultaneously in cloud containers or droplets.
+3. **100% Memory Safety**: Pure safe Rust eliminates buffer overflows, double-frees, and string termination bugs present in legacy C coreutils.
+4. **Fast In-Process Dispatch**: The FerroOS shell executes unredirected internal applets directly in-process, bypassing the `fork()` / `exec()` kernel boundary.
 
 ---
 
-## 2. 30/30 Head-to-Head GNU Differential Parity Matrix
+## 2. Head-to-Head GNU Differential Parity Matrix
 
-To ensure FerroOS runs existing bash scripts, cloud-init pipelines, and DevOps tooling without modification, FerroOS is continuously benchmarked against genuine Ubuntu 24.04 GNU coreutils via [`tools/differential_parity_engine.py`](file:///home/tarun-kumar/Desktop/sample%20os%20/tools/differential_parity_engine.py).
+To ensure FerroOS runs existing bash scripts, cloud-init pipelines, and DevOps tooling without modification, FerroOS is continuously benchmarked against genuine Ubuntu 24.04 GNU coreutils via [`tools/differential_parity_engine.py`](file:///Users/praveenkumar/rust%20os/tools/differential_parity_engine.py).
 
-### Parity Score: 30 / 30 Passed (100.0%)
+### Parity Score: 30 / 30 Core Scenarios Passed (100.0%)
 
 | Test Scenario | Category | Ubuntu (GNU) | FerroOS (Rust) | Differential Result |
 | :--- | :--- | :--- | :--- | :--- |
@@ -63,14 +68,17 @@ To ensure FerroOS runs existing bash scripts, cloud-init pipelines, and DevOps t
 
 ---
 
-## 3. List of Supported Applets
+## 3. Comprehensive Catalog of 168 Supported Applets
 
-`ferro-core` includes built-in implementations for:
-* **Shell & Core**: `sh`, `bash`, `echo`, `test`, `[`, `clear`, `env`, `sleep`, `which`, `help`.
-* **Filesystem Ops**: `ls`, `cat`, `mkdir`, `rm`, `cp`, `mv`, `chmod`, `chown`, `touch`, `ln`, `stat`, `sync`, `mount`, `umount`.
-* **Text Processing**: `grep`, `find`, `head`, `tail`, `wc`, `tee`.
-* **Process & Diagnostics**: `ps`, `kill`, `free`, `df`, `id`, `whoami`, `uptime`, `hostname`, `uname`.
-* **Networking & DNS**: `ip`, `dhcp`, `udhcpc`, `dns-cache`, `dns`, `curl`, `fetch`, `netstat`, `ss`.
-* **System Services**: `supervise`, `service`, `container`, `cage`, `sandbox`, `fdstore`, `recovery`.
-* **Gaming & Desktop**: `gamemode`, `sched`, `scx`, `game`, `proton`, `win`, `wine`, `gui`, `desktop`, `compositor`, `portal`.
-* **Benchmarks**: `hackbench`, `bench-fsync`, `server-suite`, `httpd`, `serve`.
+`ferro-core` includes complete, pure-Rust implementations across all essential system tiers:
+
+- **Shell & Execution**: `sh`, `bash`, `[`, `test`, `true`, `false`, `:`, `which`, `env`, `printenv`, `sleep`, `timeout`, `nohup`, `watch`, `nice`, `renice`, `xargs`, `chroot`, `clear`, `exec`.
+- **Filesystem & Directory**: `ls`, `cat`, `mkdir`, `rmdir`, `rm`, `cp`, `mv`, `chmod`, `chown`, `touch`, `ln`, `link`, `unlink`, `stat`, `mktemp`, `readlink`, `realpath`, `basename`, `dirname`, `truncate`, `split`, `du`, `df`, `sync`, `mount`, `umount`.
+- **Text & Stream Processing**: `grep`, `find`, `head`, `tail`, `wc`, `tee`, `echo`, `printf`, `cut`, `sort`, `uniq`, `tr`, `yes`, `seq`, `base64`, `sed`, `diff`, `cmp`, `comm`, `tac`, `rev`, `nl`, `paste`, `fold`, `xxd`, `hexdump`, `shuf`, `strings`.
+- **File Classification & Archiving**: `file`, `tree`, `tar` (ustar).
+- **Cryptographic Hashing**: `sha256sum`, `md5sum`, `sha1sum` (with `-c` verification).
+- **Process & Signals**: `ps`, `kill`, `pgrep`, `pkill`, `killall`, `uptime`.
+- **User Identity & Security**: `whoami`, `id`, `groups`, `logname`, `sudo`, `su`, `ntp`, `timesync`, `sandbox`, `landlock`, `zeroize`.
+- **Hardware & Kernel Diagnostics**: `uname`, `hostname`, `nproc`, `lscpu`, `lsmod`, `lspci`, `sysctl`, `lsblk`, `blkid`, `free`, `dmesg`, `cal`, `date`, `factor`, `reboot`, `poweroff`.
+- **Networking & Sockets**: `ifconfig`, `ip`, `netstat`, `ss`, `ping`, `wget`, `fetch`, `curl`, `dhcp`, `udhcpc`, `dns-cache`, `dns`, `sshd`, `httpd`, `serve`, `logger`, `logs`, `journalctl`.
+- **FerroOS Core Engine Pillars**: `ferrocage`, `container`, `cage`, `supervise`, `service`, `disk`, `cloud-init`, `fdstore`, `bpf`, `ebpf`, `sched`, `scx`, `gamemode`, `game`, `proton`, `win`, `wine`, `snapshot`, `ai-mode`, `rpk`, `recovery`.
