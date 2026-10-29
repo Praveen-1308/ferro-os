@@ -346,40 +346,79 @@ fn split_print_args(s: &str) -> Vec<String> {
 fn parse_expr(s: &str) -> Result<AwkExpr, String> {
     let trimmed = s.trim();
 
+    if trimmed.is_empty() {
+        return Ok(AwkExpr::StringLit(String::new()));
+    }
+
+    // 1. Binary operations: + and - (lowest precedence, scan right-to-left outside quotes)
+    let mut in_str = false;
+    let mut pos_add_sub = None;
+    for (i, c) in trimmed.char_indices().rev() {
+        if c == '"' {
+            in_str = !in_str;
+        } else if !in_str && (c == '+' || c == '-') && i > 0 && i < trimmed.len() - 1 {
+            let prev = trimmed[..i].trim_end();
+            if !prev.ends_with(['+', '-', '*', '/', 'e', 'E', '$']) {
+                pos_add_sub = Some((i, c));
+                break;
+            }
+        }
+    }
+    if let Some((pos, op)) = pos_add_sub {
+        let left = parse_expr(&trimmed[..pos])?;
+        let right = parse_expr(&trimmed[pos + 1..])?;
+        return match op {
+            '+' => Ok(AwkExpr::Add(Box::new(left), Box::new(right))),
+            '-' => Ok(AwkExpr::Sub(Box::new(left), Box::new(right))),
+            _ => unreachable!(),
+        };
+    }
+
+    // 2. Binary operations: * and / (higher precedence, scan right-to-left outside quotes)
+    let mut pos_mul_div = None;
+    for (i, c) in trimmed.char_indices().rev() {
+        if c == '"' {
+            in_str = !in_str;
+        } else if !in_str && (c == '*' || c == '/') && i > 0 && i < trimmed.len() - 1 {
+            let prev = trimmed[..i].trim_end();
+            if !prev.ends_with(['+', '-', '*', '/', '$']) {
+                pos_mul_div = Some((i, c));
+                break;
+            }
+        }
+    }
+    if let Some((pos, op)) = pos_mul_div {
+        let left = parse_expr(&trimmed[..pos])?;
+        let right = parse_expr(&trimmed[pos + 1..])?;
+        return match op {
+            '*' => Ok(AwkExpr::Mul(Box::new(left), Box::new(right))),
+            '/' => Ok(AwkExpr::Div(Box::new(left), Box::new(right))),
+            _ => unreachable!(),
+        };
+    }
+
+    // 3. Atom: LastField $NF
     if trimmed == "$NF" {
         return Ok(AwkExpr::LastField);
     }
 
-    if trimmed.starts_with('"') && trimmed.ends_with('"') && trimmed.len() >= 2 {
-        return Ok(AwkExpr::StringLit(trimmed[1..trimmed.len() - 1].to_string()));
-    }
-
-    if let Ok(n) = trimmed.parse::<f64>() {
-        return Ok(AwkExpr::NumberLit(n));
-    }
-
+    // 4. Atom: Field access $expr (e.g. $1, $0, $(1+1))
     if let Some(f_idx_str) = trimmed.strip_prefix('$') {
         let inner = parse_expr(f_idx_str)?;
         return Ok(AwkExpr::Field(Box::new(inner)));
     }
 
-    // Binary operations: + and -
-    if let Some(pos) = trimmed.rfind('+') {
-        if pos > 0 && pos < trimmed.len() - 1 {
-            let left = parse_expr(&trimmed[..pos])?;
-            let right = parse_expr(&trimmed[pos + 1..])?;
-            return Ok(AwkExpr::Add(Box::new(left), Box::new(right)));
-        }
+    // 5. Atom: String literal
+    if trimmed.starts_with('"') && trimmed.ends_with('"') && trimmed.len() >= 2 {
+        return Ok(AwkExpr::StringLit(trimmed[1..trimmed.len() - 1].to_string()));
     }
 
-    if let Some(pos) = trimmed.rfind('-') {
-        if pos > 0 && pos < trimmed.len() - 1 {
-            let left = parse_expr(&trimmed[..pos])?;
-            let right = parse_expr(&trimmed[pos + 1..])?;
-            return Ok(AwkExpr::Sub(Box::new(left), Box::new(right)));
-        }
+    // 6. Atom: Number literal
+    if let Ok(n) = trimmed.parse::<f64>() {
+        return Ok(AwkExpr::NumberLit(n));
     }
 
+    // 7. Atom: Variable
     Ok(AwkExpr::Var(trimmed.to_string()))
 }
 

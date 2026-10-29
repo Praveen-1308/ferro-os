@@ -627,6 +627,75 @@ fn execute_privileged_process(
 }
 
 // ============================================================================
+// auth Applet (Identity inspection & authentication subsystem)
+// ============================================================================
+
+pub fn run_auth(args: &[String]) -> ExitCode {
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("FerroOS User Authentication & Identity Inspection Utility");
+        println!("Usage: auth [COMMAND | OPTIONS]");
+        println!("Commands:");
+        println!("  status           Display current user identity and privilege authorization (default)");
+        println!("  list             List all local users and groups in system registry");
+        println!("  verify <user>    Verify user existence and sudo authorization");
+        println!("Options:");
+        println!("  -c, --check      Validate authentication subsystem integrity");
+        println!("  -h, --help       Display this help message");
+        return ExitCode::SUCCESS;
+    }
+
+    let subcmd = args.first().map(|s| s.as_str()).unwrap_or("status");
+    match subcmd {
+        "status" | "-c" | "--check" => {
+            #[cfg(unix)]
+            let caller_uid = unsafe { libc::getuid() };
+            #[cfg(not(unix))]
+            let caller_uid = 1000;
+
+            let username = lookup_user_by_uid(caller_uid)
+                .map(|u| u.name)
+                .unwrap_or_else(|| env::var("USER").unwrap_or_else(|_| "ferro".to_string()));
+
+            let is_sudo = is_user_authorized_sudo(&username);
+            println!("FerroOS Identity & Authentication Subsystem: ACTIVE");
+            println!("Current User:  {} (uid={})", username, caller_uid);
+            println!("Sudo Privs:    {}", if is_sudo { "AUTHORIZED" } else { "DENIED" });
+            ExitCode::SUCCESS
+        }
+        "list" => {
+            println!("=== FerroOS Registered Users ===");
+            for u in get_users() {
+                println!("  {:<12} uid={:<5} gid={:<5} home={}", u.name, u.uid, u.gid, u.home);
+            }
+            println!("\n=== FerroOS Registered Groups ===");
+            for g in get_groups() {
+                println!("  {:<12} gid={:<5} members={}", g.name, g.gid, g.members.join(","));
+            }
+            ExitCode::SUCCESS
+        }
+        "verify" => {
+            if args.len() < 2 {
+                eprintln!("auth: missing username for verify");
+                return ExitCode::from(1);
+            }
+            let target = &args[1];
+            if let Some(user) = lookup_user_by_name(target) {
+                let is_sudo = is_user_authorized_sudo(target);
+                println!("User '{}' found: uid={} gid={} sudo={}", target, user.uid, user.gid, if is_sudo { "yes" } else { "no" });
+                ExitCode::SUCCESS
+            } else {
+                eprintln!("auth: user '{}' not found", target);
+                ExitCode::from(1)
+            }
+        }
+        other => {
+            eprintln!("auth: unknown command '{}' (try 'auth --help')", other);
+            ExitCode::from(1)
+        }
+    }
+}
+
+// ============================================================================
 // SNTP Client (ntp / timesync / ntpdate)
 // ============================================================================
 

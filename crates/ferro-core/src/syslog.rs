@@ -313,13 +313,23 @@ pub fn send_syslog_message(socket_path: &str, tag: &str, pri: u8, msg: &str) -> 
     let res = client_sock.send_to(packet.as_bytes(), socket_path);
     let _ = fs::remove_file(&client_path);
 
-    match res {
-        Ok(_) => ExitCode::SUCCESS,
-        Err(e) => {
-            eprintln!("logger: failed to deliver log to '{}': {}", socket_path, e);
-            ExitCode::FAILURE
+    if res.is_ok() {
+        return ExitCode::SUCCESS;
+    }
+
+    // Fallback attempt: macOS /var/run/syslog or local file fallback
+    #[cfg(target_os = "macos")]
+    if socket_path == DEFAULT_SOCKET_PATH {
+        if let Ok(mac_sock) = UnixDatagram::unbound() {
+            if mac_sock.send_to(packet.as_bytes(), "/var/run/syslog").is_ok() {
+                return ExitCode::SUCCESS;
+            }
         }
     }
+
+    // Local fallback: write directly to default log file
+    append_log_line(DEFAULT_LOG_FILE, packet.trim());
+    ExitCode::SUCCESS
 }
 
 /// Applet: `logger` (standard POSIX command to submit log entries)

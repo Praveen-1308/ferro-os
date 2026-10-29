@@ -18,7 +18,7 @@
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader, Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -209,17 +209,21 @@ pub fn run_pgrep(args: &[String]) -> ExitCode {
     let mut matched = 0;
 
     for proc in procs {
+        let pat_lower = pat.to_lowercase();
+        let comm_lower = proc.comm.to_lowercase();
+        let cmd_lower = proc.cmdline.to_lowercase();
+
         let is_match = if full_cmdline {
             if exact {
-                proc.cmdline == pat || proc.comm == pat
+                proc.cmdline == pat || proc.comm == pat || cmd_lower == pat_lower
             } else {
-                proc.cmdline.contains(&pat) || proc.comm.contains(&pat)
+                cmd_lower.contains(&pat_lower) || comm_lower.contains(&pat_lower)
             }
         } else {
             if exact {
-                proc.comm == pat
+                proc.comm == pat || comm_lower == pat_lower
             } else {
-                proc.comm.contains(&pat)
+                comm_lower.contains(&pat_lower) || cmd_lower.contains(&pat_lower)
             }
         };
 
@@ -281,21 +285,28 @@ pub fn run_pkill(args: &[String]) -> ExitCode {
     let mut signaled = 0;
 
     for proc in procs {
+        let pat_lower = pat.to_lowercase();
+        let comm_lower = proc.comm.to_lowercase();
+        let cmd_lower = proc.cmdline.to_lowercase();
+
         let is_match = if full_cmdline {
             if exact {
-                proc.cmdline == pat || proc.comm == pat
+                proc.cmdline == pat || proc.comm == pat || cmd_lower == pat_lower
             } else {
-                proc.cmdline.contains(&pat) || proc.comm.contains(&pat)
+                cmd_lower.contains(&pat_lower) || comm_lower.contains(&pat_lower)
             }
         } else {
             if exact {
-                proc.comm == pat
+                proc.comm == pat || comm_lower == pat_lower
             } else {
-                proc.comm.contains(&pat)
+                comm_lower.contains(&pat_lower) || cmd_lower.contains(&pat_lower)
             }
         };
 
         if is_match {
+            if proc.pid <= 1 {
+                continue;
+            }
             #[cfg(unix)]
             unsafe {
                 if libc::kill(proc.pid, signal) == 0 {
@@ -352,6 +363,10 @@ pub fn run_killall(args: &[String]) -> ExitCode {
         let mut found = false;
         for proc in &procs {
             if proc.comm == name {
+                if proc.pid <= 1 {
+                    eprintln!("killall: refusing to kill PID {} ({}) - protected init process", proc.pid, proc.comm);
+                    continue;
+                }
                 #[cfg(unix)]
                 unsafe {
                     if libc::kill(proc.pid, signal) == 0 {
@@ -968,7 +983,16 @@ pub fn run_nice(args: &[String]) -> ExitCode {
     let prog = &args[cmd_idx];
     let prog_args = &args[cmd_idx + 1..];
 
-    match Command::new(prog).args(prog_args).status() {
+    let mut command_proc = if super::is_internal_applet(prog) {
+        let exe = env::current_exe().unwrap_or_else(|_| PathBuf::from("ferro-core"));
+        let mut c = Command::new(exe);
+        c.arg(prog);
+        c
+    } else {
+        Command::new(prog)
+    };
+
+    match command_proc.args(prog_args).status() {
         Ok(st) => ExitCode::from(st.code().unwrap_or(0) as u8),
         Err(e) => {
             eprintln!("nice: {}: {}", prog, e);
@@ -1024,6 +1048,12 @@ pub fn run_renice(args: &[String]) -> ExitCode {
         }
     };
 
+    if pids.is_empty() {
+        eprintln!("renice: missing process ID (PID)");
+        return ExitCode::from(1);
+    }
+
+    let mut exit_code = ExitCode::SUCCESS;
     for pid in pids {
         #[cfg(unix)]
         unsafe {
@@ -1033,11 +1063,12 @@ pub fn run_renice(args: &[String]) -> ExitCode {
             } else {
                 let err = io::Error::last_os_error();
                 eprintln!("renice: failed to set priority for {}: {}", pid, err);
+                exit_code = ExitCode::from(1);
             }
         }
     }
 
-    ExitCode::SUCCESS
+    exit_code
 }
 
 // ============================================================================
@@ -1318,10 +1349,21 @@ pub fn run_shuf(args: &[String]) -> ExitCode {
             i += 1;
         } else if arg == "-i" || arg == "--input-range" {
             if i + 1 < args.len() {
-                if let Some((lo, hi)) = args[i + 1].split_once('-') {
+                let range_str = &args[i + 1];
+                if let Some((lo, hi)) = range_str.split_once('-') {
                     if let (Ok(l), Ok(h)) = (lo.parse::<i64>(), hi.parse::<i64>()) {
+                        if l > h {
+                            eprintln!("shuf: invalid input range: '{}-{}'", l, h);
+                            return ExitCode::from(1);
+                        }
                         input_range = Some((l, h));
+                    } else {
+                        eprintln!("shuf: invalid input range: '{}'", range_str);
+                        return ExitCode::from(1);
                     }
+                } else {
+                    eprintln!("shuf: invalid input range: '{}'", range_str);
+                    return ExitCode::from(1);
                 }
                 i += 2;
             } else {
@@ -1331,8 +1373,18 @@ pub fn run_shuf(args: &[String]) -> ExitCode {
         } else if let Some(r) = arg.strip_prefix("-i") {
             if let Some((lo, hi)) = r.split_once('-') {
                 if let (Ok(l), Ok(h)) = (lo.parse::<i64>(), hi.parse::<i64>()) {
+                    if l > h {
+                        eprintln!("shuf: invalid input range: '{}-{}'", l, h);
+                        return ExitCode::from(1);
+                    }
                     input_range = Some((l, h));
+                } else {
+                    eprintln!("shuf: invalid input range: '{}'", r);
+                    return ExitCode::from(1);
                 }
+            } else {
+                eprintln!("shuf: invalid input range: '{}'", r);
+                return ExitCode::from(1);
             }
             i += 1;
         } else if arg == "-e" || arg == "--echo" {

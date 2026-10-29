@@ -406,6 +406,15 @@ pub fn run_proc_kill(args: &[String]) -> ExitCode {
         }
     };
 
+    if pid <= 0 {
+        eprintln!("proc-kill: refusing to signal PID {} (kernel/process-group protection)", pid);
+        return ExitCode::FAILURE;
+    }
+    if pid == 1 {
+        eprintln!("proc-kill: operation not permitted: PID 1 (init) is protected");
+        return ExitCode::FAILURE;
+    }
+
     // 1. Inspect target before sending signal
     let target = get_process_by_pid(pid);
     let comm = target.as_ref().map(|t| t.comm.clone()).unwrap_or_else(|| "unknown".to_string());

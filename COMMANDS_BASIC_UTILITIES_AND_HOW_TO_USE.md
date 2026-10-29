@@ -1,7 +1,7 @@
 # FerroOS Commands, Basic Utilities & Usage Manual
 ### *Complete Catalog of Implemented Applets, Practical Playbooks, and Forward Gap Analysis*
 
-FerroOS incorporates [`ferro-core`](file:///Users/praveenkumar/rust%20os/crates/ferro-core/src/main.rs), an ultra-compact, high-performance, multi-call userspace binary written in **100% pure Rust** with zero external C runtime dependencies (`libc = "0.2"`, `flate2 = "1.0"` with safe `miniz_oxide`). Consolidating all traditional GNU coreutils, util-linux, procps, networking binaries, archival engines, modern cloud/container utilities, and cross-platform developer shims into a single **1.3 MB executable**, `ferro-core` provides **218 registered applets** symlinked across `/bin` and `/usr/bin`.
+FerroOS incorporates [`ferro-core`](file:///Users/praveenkumar/rust%20os/crates/ferro-core/src/main.rs), an ultra-compact, high-performance, multi-call userspace binary written in **100% pure Rust** with zero external C runtime dependencies (`libc = "0.2"`, `flate2 = "1.0"` with safe `miniz_oxide`). Consolidating all traditional GNU coreutils, util-linux, procps, networking binaries, archival engines, modern cloud/container utilities, and cross-platform developer shims into a single **1.8 MB executable**, `ferro-core` provides **220 registered applets** symlinked across `/bin` and `/usr/bin`.
 
 This document tracks every implemented command, its syntax, options, and practical usage, followed by a comprehensive **Gap Analysis** tracking what more is needed for complete parity with enterprise Linux distributions (Ubuntu 24.04 LTS, Debian 12, Alpine 3.20, Windows, and macOS). For a detailed multi-OS comparative audit, refer to [MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md](file:///Users/praveenkumar/rust%20os/docs/MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md).
 
@@ -603,6 +603,25 @@ This document tracks every implemented command, its syntax, options, and practic
   ```bash
   sudo systemctl restart ferro-superd
   su - ferro
+  ```
+
+### `auth`
+- **Syntax**: `auth [status | list | verify <user> | --check]`
+- **Description**: Inspects identity subsystem integrity, lists local user registries and group allocations, and audits sudo privilege authorization.
+- **Usage Examples**:
+  ```bash
+  auth status
+  auth list
+  auth verify ferro
+  ```
+
+### `zeroize`
+- **Syntax**: `zeroize [-t] [-d] <FILE>...`
+- **Description**: Cryptographic memory and disk block sanitization utility defending against **CWE-226 (Sensitive Information in Residual Memory/Disk)**. Overwrites allocated blocks with zeroes and applies compiler memory fences before optional unlinking (`-d`).
+- **Usage Examples**:
+  ```bash
+  zeroize --test                 # verify in-memory compiler-barrier zeroization
+  zeroize -d private_key.pem     # overwrite physical disk blocks and unlink
   ```
 
 ### `sandbox` (Landlock LSM)
@@ -1230,18 +1249,27 @@ For complete multi-OS comparative audit findings and package-level taxonomy, see
 To verify all utilities, run the continuous integration test harnesses:
 
 ```bash
-# 1. Run all workspace unit tests (85 tests)
+# 1. Run all workspace unit tests (93 tests passing)
 cargo test --workspace
 
-# 2. Build the optimized release binary
+# 2. Build the optimized release binary (1.8 MB pure-Rust executable)
 cargo build --release --bin ferro-core
 
-# 3. Run the Supervisor & Micro-Container Test Suite
-python3 tools/test_supervisor_and_container.py
+# 3. Run the Master Multi-Iteration Testing Suite (3 Iterations, 288 Empirical Tests)
+python3 tools/run_multi_iteration_applet_matrix.py
 
-# 4. Run the Sandbox & Storage Differential Parity Suite (vs Ubuntu 24.04)
-python3 tools/test_sandbox_and_storage_differential.py
+# 4. Run Individual Domain Cluster Harnesses:
+python3 tools/test_cluster1_stream_text.py              # Cluster 1: Stream & Text (65 tests)
+python3 tools/test_cluster2_proc_concurrency.py         # Cluster 2: Process & Concurrency (35 tests)
+python3 tools/test_cluster3_fs_storage.py               # Cluster 3: Storage & Archival (35 tests)
+python3 tools/test_cluster4_net_cloud_shell.py          # Cluster 4: Net & Systems (51 tests)
+python3 tools/test_cluster5_kernel_virtualization_game.py # Cluster 5: Kernel & Gaming (31 tests)
 
-# 5. List all registered applets (210 applets)
+# 5. Run Real-World Production Failure Harnesses:
+python3 tools/test_real_world_zombie_and_ghost_scenarios.py # Zombie reap & signal coalescing
+python3 tools/exhaustive_real_world_applet_matrix.py        # 6-Dimension Core Matrix (63 tests)
+
+# 6. List all registered applets (220 applets)
 ./target/release/ferro-core --list-applets
+```
 ```

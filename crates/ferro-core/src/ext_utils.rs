@@ -861,6 +861,11 @@ pub fn run_tree(args: &[String]) -> ExitCode {
     }
 
     let root_path = target_dir.unwrap_or_else(|| ".".to_string());
+    let p = Path::new(&root_path);
+    if !p.exists() {
+        eprintln!("{}: [error opening dir]", root_path);
+        return ExitCode::from(1);
+    }
     println!("{}", root_path);
 
     let mut dir_count = 0usize;

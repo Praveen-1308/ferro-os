@@ -677,10 +677,12 @@ pub fn run_du(args: &[String]) -> ExitCode {
         targets.push(".");
     }
 
+    let mut exit_code = ExitCode::SUCCESS;
     for target in targets {
         let p = Path::new(target);
         if !p.exists() {
             eprintln!("du: cannot access '{}': No such file or directory", target);
+            exit_code = ExitCode::from(1);
             continue;
         }
         let (total_bytes, entries) = scan_dir_usage(p, all_files);
@@ -695,7 +697,7 @@ pub fn run_du(args: &[String]) -> ExitCode {
         }
     }
 
-    ExitCode::SUCCESS
+    exit_code
 }
 
 fn format_du_size(bytes: u64, human: bool) -> String {
@@ -825,6 +827,7 @@ pub fn run_cut(args: &[String]) -> ExitCode {
         files.push("-".to_string());
     }
 
+    let mut exit_code = ExitCode::SUCCESS;
     for file in files {
         let reader: Box<dyn BufRead> = if file == "-" {
             Box::new(BufReader::new(io::stdin()))
@@ -833,6 +836,7 @@ pub fn run_cut(args: &[String]) -> ExitCode {
                 Ok(f) => Box::new(BufReader::new(f)),
                 Err(e) => {
                     eprintln!("cut: {}: {}", file, e);
+                    exit_code = ExitCode::from(1);
                     continue;
                 }
             }
@@ -872,7 +876,7 @@ pub fn run_cut(args: &[String]) -> ExitCode {
         }
     }
 
-    ExitCode::SUCCESS
+    exit_code
 }
 
 fn parse_ranges(spec: &str) -> Option<Vec<usize>> {
@@ -1171,7 +1175,13 @@ pub fn run_tr(args: &[String]) -> ExitCode {
             }
         }
 
-        let _ = out_handle.write_all(&output);
+        if let Err(e) = out_handle.write_all(&output) {
+            if e.kind() == io::ErrorKind::BrokenPipe {
+                return ExitCode::SUCCESS;
+            }
+            eprintln!("tr: standard output: {}", e);
+            return ExitCode::from(1);
+        }
     }
 
     let _ = out_handle.flush();
@@ -1310,18 +1320,38 @@ pub fn run_seq(args: &[String]) -> ExitCode {
         return ExitCode::from(1);
     }
 
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
     let mut current = first;
     let mut first_item = true;
 
     while (step > 0 && current <= last) || (step < 0 && current >= last) {
         if !first_item {
-            print!("{}", separator);
+            if let Err(e) = write!(handle, "{}", separator) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+                eprintln!("seq: write error: {}", e);
+                return ExitCode::from(1);
+            }
         }
-        print!("{}", current);
+        if let Err(e) = write!(handle, "{}", current) {
+            if e.kind() == io::ErrorKind::BrokenPipe {
+                return ExitCode::SUCCESS;
+            }
+            eprintln!("seq: write error: {}", e);
+            return ExitCode::from(1);
+        }
         first_item = false;
         current += step;
     }
-    println!();
+    if let Err(e) = writeln!(handle) {
+        if e.kind() == io::ErrorKind::BrokenPipe {
+            return ExitCode::SUCCESS;
+        }
+        eprintln!("seq: write error: {}", e);
+        return ExitCode::from(1);
+    }
 
     ExitCode::SUCCESS
 }

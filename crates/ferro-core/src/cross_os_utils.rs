@@ -16,6 +16,7 @@
 //!   - `pbpaste` (Clipboard output stream)
 //!   - `open`, `start` (Desktop launcher / xdg-open bridge)
 
+use std::env;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, BufReader, Read, Seek, SeekFrom, Write};
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
@@ -419,7 +420,7 @@ fn parse_block_size(s: &str) -> Option<usize> {
 // ============================================================================
 
 pub fn run_mknod(args: &[String]) -> ExitCode {
-    if args.is_empty() || args[0] == "--help" || args[0] == "-h" {
+    if args.iter().any(|a| a == "--help" || a == "-h") {
         println!("Usage: mknod [OPTION]... NAME TYPE [MAJOR MINOR]");
         println!("Create the special file NAME of the given TYPE.");
         println!("  b      create a block (buffered) special file");
@@ -427,6 +428,11 @@ pub fn run_mknod(args: &[String]) -> ExitCode {
         println!("  p      create a FIFO (named pipe)");
         println!("  -m MODE  set file permission bits to MODE, not a=rw - umask");
         return ExitCode::SUCCESS;
+    }
+
+    if args.is_empty() {
+        eprintln!("mknod: missing operand");
+        return ExitCode::from(1);
     }
 
     let mut mode_octal = 0o666u32;
@@ -504,11 +510,16 @@ pub fn run_mknod(args: &[String]) -> ExitCode {
 }
 
 pub fn run_mkfifo(args: &[String]) -> ExitCode {
-    if args.is_empty() || args[0] == "--help" || args[0] == "-h" {
+    if args.iter().any(|a| a == "--help" || a == "-h") {
         println!("Usage: mkfifo [OPTION]... NAME...");
         println!("Create named pipes (FIFOs) with the given NAMEs.");
         println!("  -m, --mode=MODE   set file permission bits to MODE");
         return ExitCode::SUCCESS;
+    }
+
+    if args.is_empty() {
+        eprintln!("mkfifo: missing operand");
+        return ExitCode::from(1);
     }
 
     let mut mode_octal = 0o666u32;
@@ -594,7 +605,16 @@ pub fn run_time(args: &[String]) -> ExitCode {
 
     let start_instant = Instant::now();
 
-    let mut child = match Command::new(command).args(cmd_args).spawn() {
+    let mut command_proc = if super::is_internal_applet(command) {
+        let exe = env::current_exe().unwrap_or_else(|_| PathBuf::from("ferro-core"));
+        let mut c = Command::new(exe);
+        c.arg(command);
+        c
+    } else {
+        Command::new(command)
+    };
+
+    let mut child = match command_proc.args(cmd_args).spawn() {
         Ok(c) => c,
         Err(e) => {
             eprintln!("time: cannot run '{}': {}", command, e);
@@ -671,7 +691,7 @@ pub fn run_pidof(args: &[String]) -> ExitCode {
                         .unwrap_or_default()
                         .trim()
                         .to_string();
-                    if names.iter().any(|&n| n == comm) {
+                    if names.iter().any(|&n| n.eq_ignore_ascii_case(&comm) || comm.to_lowercase().contains(&n.to_lowercase())) {
                         matched_pids.push(pid);
                         if single {
                             break;
@@ -692,7 +712,7 @@ pub fn run_pidof(args: &[String]) -> ExitCode {
                                 .file_name()
                                 .map(|s| s.to_string_lossy().to_string())
                                 .unwrap_or_else(|| parts[1].to_string());
-                            if names.iter().any(|&n| n == comm) {
+                            if names.iter().any(|&n| n.eq_ignore_ascii_case(&comm) || comm.to_lowercase().contains(&n.to_lowercase())) {
                                 matched_pids.push(pid);
                                 if single {
                                     break;
@@ -725,12 +745,22 @@ pub fn run_flock(args: &[String]) -> ExitCode {
     }
 
     let mut nonblock = false;
+    let mut shared = false;
     let mut file_idx = 0;
 
     while file_idx < args.len() {
         if args[file_idx] == "-n" || args[file_idx] == "--nonblock" {
             nonblock = true;
             file_idx += 1;
+        } else if args[file_idx] == "-s" || args[file_idx] == "--shared" {
+            shared = true;
+            file_idx += 1;
+        } else if args[file_idx] == "-x" || args[file_idx] == "--exclusive" {
+            shared = false;
+            file_idx += 1;
+        } else if args[file_idx] == "--" {
+            file_idx += 1;
+            break;
         } else if !args[file_idx].starts_with('-') {
             break;
         } else {
@@ -758,7 +788,7 @@ pub fn run_flock(args: &[String]) -> ExitCode {
     #[cfg(unix)]
     unsafe {
         use std::os::unix::io::AsRawFd;
-        let mut flags = libc::LOCK_EX;
+        let mut flags = if shared { libc::LOCK_SH } else { libc::LOCK_EX };
         if nonblock {
             flags |= libc::LOCK_NB;
         }
@@ -768,7 +798,16 @@ pub fn run_flock(args: &[String]) -> ExitCode {
         }
     }
 
-    let status = match Command::new(cmd).args(cmd_args).status() {
+    let mut command_proc = if super::is_internal_applet(cmd) {
+        let exe = env::current_exe().unwrap_or_else(|_| PathBuf::from("ferro-core"));
+        let mut c = Command::new(exe);
+        c.arg(cmd);
+        c
+    } else {
+        Command::new(cmd)
+    };
+
+    let status = match command_proc.args(cmd_args).status() {
         Ok(s) => s,
         Err(e) => {
             eprintln!("flock: cannot execute '{}': {}", cmd, e);
@@ -784,16 +823,30 @@ pub fn run_flock(args: &[String]) -> ExitCode {
 // ============================================================================
 
 pub fn run_nc(args: &[String]) -> ExitCode {
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("Usage: nc [options] [destination] [port]");
+        println!("Usage: netcat [options] [destination] [port]");
+        println!("Arbitrary TCP and UDP connections and listens.");
+        println!("  -l, --listen     listen mode, for inbound connects");
+        println!("  -z               zero-I/O mode [used for scanning]");
+        println!("  -v               verbose");
+        println!("  -p, --port PORT  specify local port for connects and listens");
+        println!("  -w, --timeout S  timeout for connects and final net reads");
+        println!("  -h, --help       display this help");
+        return ExitCode::SUCCESS;
+    }
+
     let mut listen = false;
     let mut zero_io = false;
     let mut verbose = false;
+    let mut timeout_dur = Duration::from_secs(2);
     let mut port_str: Option<String> = None;
     let mut host_str: Option<String> = None;
 
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-l" {
+        if arg == "-l" || arg == "--listen" {
             listen = true;
             i += 1;
         } else if arg == "-z" {
@@ -802,9 +855,24 @@ pub fn run_nc(args: &[String]) -> ExitCode {
         } else if arg == "-v" {
             verbose = true;
             i += 1;
-        } else if arg == "-p" && i + 1 < args.len() {
+        } else if (arg == "-p" || arg == "--port") && i + 1 < args.len() {
             port_str = Some(args[i + 1].clone());
             i += 2;
+        } else if (arg == "-w" || arg == "--timeout") && i + 1 < args.len() {
+            if let Ok(secs) = args[i + 1].parse::<u64>() {
+                timeout_dur = Duration::from_secs(secs);
+            }
+            i += 2;
+        } else if arg.starts_with('-') && !arg.starts_with("--") && arg.len() > 1 && arg[1..].chars().all(|c| "lzv".contains(c)) {
+            for c in arg[1..].chars() {
+                match c {
+                    'l' => listen = true,
+                    'z' => zero_io = true,
+                    'v' => verbose = true,
+                    _ => {}
+                }
+            }
+            i += 1;
         } else if !arg.starts_with('-') {
             if host_str.is_none() {
                 host_str = Some(arg.clone());
@@ -871,10 +939,23 @@ pub fn run_nc(args: &[String]) -> ExitCode {
 
     if zero_io {
         // Port knock / probe mode
-        match TcpStream::connect_timeout(
-            &target.to_socket_addrs().ok().and_then(|mut a| a.next()).unwrap_or_else(|| "127.0.0.1:0".parse().unwrap()),
-            Duration::from_secs(2),
-        ) {
+        let socket_addr = match target.to_socket_addrs() {
+            Ok(mut addrs) => match addrs.next() {
+                Some(a) => a,
+                None => {
+                    eprintln!("nc: cannot resolve {}: unknown host", host);
+                    return ExitCode::from(1);
+                }
+            },
+            Err(e) => {
+                if verbose {
+                    eprintln!("nc: cannot resolve {}: {}", host, e);
+                }
+                return ExitCode::from(1);
+            }
+        };
+
+        match TcpStream::connect_timeout(&socket_addr, timeout_dur) {
             Ok(_) => {
                 if verbose {
                     println!("Connection to {} port {} [tcp/*] succeeded!", host, port);
@@ -1056,8 +1137,16 @@ pub fn run_taskkill(args: &[String]) -> ExitCode {
 
     if let Some(img) = image_name {
         let clean = img.trim_end_matches(".exe").to_string();
+        if clean == "init" || clean == "ferro-init" || clean == "launchd" {
+            eprintln!("taskkill: ERROR: Process '{}' is protected init and cannot be terminated.", clean);
+            return ExitCode::FAILURE;
+        }
         super::extra_utils::run_pkill(&[signal_str.to_string(), clean])
     } else if let Some(p) = pid {
+        if p <= 0 || p == 1 {
+            eprintln!("taskkill: ERROR: Process with PID {} is a critical system process and cannot be terminated.", p);
+            return ExitCode::FAILURE;
+        }
         super::run_kill(&[signal_str.to_string(), p.to_string()])
     } else {
         eprintln!("taskkill: syntax error. Specify /IM imagename or /PID processid (try 'taskkill --help')");

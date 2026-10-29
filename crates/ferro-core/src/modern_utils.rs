@@ -60,7 +60,9 @@ pub fn run_envsubst(args: &[String]) -> ExitCode {
                     }
                     in_var = true;
                 } else if in_var {
-                    if c.is_alphanumeric() || c == '_' {
+                    if c == '{' {
+                        continue;
+                    } else if c.is_alphanumeric() || c == '_' {
                         cur.push(c);
                     } else {
                         if !cur.is_empty() {
@@ -722,17 +724,21 @@ pub fn run_dig(args: &[String]) -> ExitCode {
     let mut port: u16 = 53;
     let mut domain = String::new();
     let mut qtype_str = "A".to_string();
+    let mut short_mode = false;
 
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
-        if let Some(s) = arg.strip_prefix('@') {
+        if arg == "+short" || arg == "--short" {
+            short_mode = true;
+            i += 1;
+        } else if let Some(s) = arg.strip_prefix('@') {
             server = s.to_string();
             i += 1;
         } else if (arg == "-p" || arg == "--port") && i + 1 < args.len() {
             port = args[i + 1].parse::<u16>().unwrap_or(53);
             i += 2;
-        } else if !arg.starts_with('-') {
+        } else if !arg.starts_with('-') && !arg.starts_with('+') {
             if domain.is_empty() {
                 domain = arg.clone();
             } else {
@@ -786,6 +792,13 @@ pub fn run_dig(args: &[String]) -> ExitCode {
     let elapsed = start.elapsed();
 
     let answers = parse_dns_response(&response_buf[..n]);
+
+    if short_mode {
+        for ans in &answers {
+            println!("{}", ans.data);
+        }
+        return ExitCode::SUCCESS;
+    }
 
     println!("; <<>> FerroOS DiG 2.3.0 <<>> @{} {} {}", server, domain, qtype_str);
     println!(";; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 4660");
@@ -984,13 +997,18 @@ fn chrono_lite_timestamp() -> String {
 // ============================================================================
 
 pub fn run_gnu_install(args: &[String]) -> ExitCode {
-    if args.is_empty() || args.iter().any(|a| a == "--help" || a == "-h") {
+    if args.iter().any(|a| a == "--help" || a == "-h") {
         println!("Usage: install [-d] [-m MODE] [-v] SOURCE... DEST");
         println!("Copy SOURCE to DEST or create directories (-d).");
         println!("  -d, --directory   treat all arguments as directory names");
         println!("  -m, --mode=MODE   set permission mode (octal, default 0755)");
         println!("  -v, --verbose     print name of each created file/directory");
         return ExitCode::SUCCESS;
+    }
+
+    if args.is_empty() {
+        eprintln!("install: missing file operand");
+        return ExitCode::from(1);
     }
 
     let mut directory_mode = false;
@@ -1008,10 +1026,10 @@ pub fn run_gnu_install(args: &[String]) -> ExitCode {
             verbose = true;
             i += 1;
         } else if arg == "-m" && i + 1 < args.len() {
-            mode_octal = u32::from_str_radix(args[i + 1].trim_start_matches('0'), 8).unwrap_or(0o755);
+            mode_octal = u32::from_str_radix(&args[i + 1], 8).unwrap_or(0o755);
             i += 2;
         } else if let Some(m) = arg.strip_prefix("--mode=") {
-            mode_octal = u32::from_str_radix(m.trim_start_matches('0'), 8).unwrap_or(0o755);
+            mode_octal = u32::from_str_radix(m, 8).unwrap_or(0o755);
             i += 1;
         } else if !arg.starts_with('-') {
             files.push(arg.clone());
@@ -1102,7 +1120,11 @@ pub fn run_patch(args: &[String]) -> ExitCode {
             patch_file = Some(args[i + 1].clone());
             i += 2;
         } else if !arg.starts_with('-') {
-            target_override = Some(arg.clone());
+            if target_override.is_none() {
+                target_override = Some(arg.clone());
+            } else if patch_file.is_none() {
+                patch_file = Some(arg.clone());
+            }
             i += 1;
         } else {
             i += 1;

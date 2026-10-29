@@ -227,13 +227,22 @@ pub fn is_assignment(token: &str) -> Option<(String, String)> {
 // ==============================================================================
 
 pub fn run_test(args: &[String]) -> ExitCode {
+    run_test_internal(false, args)
+}
+
+pub fn run_bracket(args: &[String]) -> ExitCode {
+    run_test_internal(true, args)
+}
+
+fn run_test_internal(is_bracket: bool, args: &[String]) -> ExitCode {
     let mut tokens: Vec<String> = args.to_vec();
 
-    // If invoked as `[`, remove optional trailing `]`
-    if let Some(last) = tokens.last() {
-        if last == "]" {
-            tokens.pop();
+    if is_bracket {
+        if tokens.last().map(|s| s.as_str()) != Some("]") {
+            eprintln!("[: missing ']'");
+            return ExitCode::from(2);
         }
+        tokens.pop();
     }
 
     if tokens.is_empty() {
@@ -251,64 +260,74 @@ pub fn run_test(args: &[String]) -> ExitCode {
         return if invert { ExitCode::SUCCESS } else { ExitCode::FAILURE };
     }
 
-    let result = evaluate_test_expr(&tokens);
-    let final_res = if invert { !result } else { result };
-
-    if final_res {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::FAILURE
+    match evaluate_test_expr_checked(&tokens) {
+        Ok(result) => {
+            let final_res = if invert { !result } else { result };
+            if final_res {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            }
+        }
+        Err(err_msg) => {
+            let prefix = if is_bracket { "[" } else { "test" };
+            eprintln!("{}: {}", prefix, err_msg);
+            ExitCode::from(2)
+        }
     }
 }
 
-fn evaluate_test_expr(tokens: &[String]) -> bool {
+fn evaluate_test_expr_checked(tokens: &[String]) -> Result<bool, String> {
     match tokens.len() {
         1 => {
             // Non-empty string is true
-            !tokens[0].is_empty()
+            Ok(!tokens[0].is_empty())
         }
         2 => {
             let op = tokens[0].as_str();
             let arg = &tokens[1];
             let p = Path::new(arg);
             match op {
-                "-f" => p.is_file(),
-                "-d" => p.is_dir(),
-                "-e" => p.exists(),
-                "-s" => fs::metadata(p).map(|m| m.len() > 0).unwrap_or(false),
+                "-f" => Ok(p.is_file()),
+                "-d" => Ok(p.is_dir()),
+                "-e" => Ok(p.exists()),
+                "-s" => Ok(fs::metadata(p).map(|m| m.len() > 0).unwrap_or(false)),
                 "-r" => {
                     #[cfg(unix)]
                     {
                         use std::ffi::CString;
-                        CString::new(arg.as_str()).map(|c| unsafe { libc::access(c.as_ptr(), libc::R_OK) == 0 }).unwrap_or(false)
+                        Ok(CString::new(arg.as_str()).map(|c| unsafe { libc::access(c.as_ptr(), libc::R_OK) == 0 }).unwrap_or(false))
                     }
                     #[cfg(not(unix))]
-                    p.exists()
+                    Ok(p.exists())
                 }
                 "-w" => {
                     #[cfg(unix)]
                     {
                         use std::ffi::CString;
-                        CString::new(arg.as_str()).map(|c| unsafe { libc::access(c.as_ptr(), libc::W_OK) == 0 }).unwrap_or(false)
+                        Ok(CString::new(arg.as_str()).map(|c| unsafe { libc::access(c.as_ptr(), libc::W_OK) == 0 }).unwrap_or(false))
                     }
                     #[cfg(not(unix))]
-                    p.exists()
+                    Ok(p.exists())
                 }
                 "-x" => {
                     #[cfg(unix)]
                     {
                         use std::ffi::CString;
-                        CString::new(arg.as_str()).map(|c| unsafe { libc::access(c.as_ptr(), libc::X_OK) == 0 }).unwrap_or(false)
+                        Ok(CString::new(arg.as_str()).map(|c| unsafe { libc::access(c.as_ptr(), libc::X_OK) == 0 }).unwrap_or(false))
                     }
                     #[cfg(not(unix))]
-                    p.exists()
+                    Ok(p.exists())
                 }
-                "-L" | "-h" => fs::symlink_metadata(p)
+                "-L" | "-h" => Ok(fs::symlink_metadata(p)
                     .map(|m| m.file_type().is_symlink())
-                    .unwrap_or(false),
-                "-z" => arg.is_empty(),
-                "-n" => !arg.is_empty(),
-                _ => false,
+                    .unwrap_or(false)),
+                "-z" => Ok(arg.is_empty()),
+                "-n" => Ok(!arg.is_empty()),
+                "-eq" | "-ne" | "-lt" | "-gt" | "-le" | "-ge" => {
+                    Err(format!("missing argument after '{}'", op))
+                }
+                _ => Ok(false),
             }
         }
         3 => {
@@ -317,51 +336,50 @@ fn evaluate_test_expr(tokens: &[String]) -> bool {
             let right = &tokens[2];
 
             match op {
-                "=" | "==" => left == right,
-                "!=" => left != right,
+                "=" | "==" => Ok(left == right),
+                "!=" => Ok(left != right),
                 "-eq" => {
-                    let l = left.parse::<i64>().unwrap_or(i64::MIN);
-                    let r = right.parse::<i64>().unwrap_or(i64::MAX);
-                    l == r
+                    let l = left.parse::<i64>().map_err(|_| format!("{}: integer expression expected", left))?;
+                    let r = right.parse::<i64>().map_err(|_| format!("{}: integer expression expected", right))?;
+                    Ok(l == r)
                 }
                 "-ne" => {
-                    let l = left.parse::<i64>().unwrap_or(i64::MIN);
-                    let r = right.parse::<i64>().unwrap_or(i64::MAX);
-                    l != r
+                    let l = left.parse::<i64>().map_err(|_| format!("{}: integer expression expected", left))?;
+                    let r = right.parse::<i64>().map_err(|_| format!("{}: integer expression expected", right))?;
+                    Ok(l != r)
                 }
                 "-lt" => {
-                    let l = left.parse::<i64>().unwrap_or(0);
-                    let r = right.parse::<i64>().unwrap_or(0);
-                    l < r
+                    let l = left.parse::<i64>().map_err(|_| format!("{}: integer expression expected", left))?;
+                    let r = right.parse::<i64>().map_err(|_| format!("{}: integer expression expected", right))?;
+                    Ok(l < r)
                 }
                 "-gt" => {
-                    let l = left.parse::<i64>().unwrap_or(0);
-                    let r = right.parse::<i64>().unwrap_or(0);
-                    l > r
+                    let l = left.parse::<i64>().map_err(|_| format!("{}: integer expression expected", left))?;
+                    let r = right.parse::<i64>().map_err(|_| format!("{}: integer expression expected", right))?;
+                    Ok(l > r)
                 }
                 "-le" => {
-                    let l = left.parse::<i64>().unwrap_or(0);
-                    let r = right.parse::<i64>().unwrap_or(0);
-                    l <= r
+                    let l = left.parse::<i64>().map_err(|_| format!("{}: integer expression expected", left))?;
+                    let r = right.parse::<i64>().map_err(|_| format!("{}: integer expression expected", right))?;
+                    Ok(l <= r)
                 }
                 "-ge" => {
-                    let l = left.parse::<i64>().unwrap_or(0);
-                    let r = right.parse::<i64>().unwrap_or(0);
-                    l >= r
+                    let l = left.parse::<i64>().map_err(|_| format!("{}: integer expression expected", left))?;
+                    let r = right.parse::<i64>().map_err(|_| format!("{}: integer expression expected", right))?;
+                    Ok(l >= r)
                 }
-                _ => false,
+                _ => Ok(false),
             }
         }
         _ => {
-            // Complex expression: check if wrapped in parentheses or contains binary connectives
             if tokens[0] == "-f" {
-                Path::new(&tokens[1]).is_file()
+                Ok(Path::new(&tokens[1]).is_file())
             } else if tokens[0] == "-d" {
-                Path::new(&tokens[1]).is_dir()
+                Ok(Path::new(&tokens[1]).is_dir())
             } else if tokens[0] == "-e" {
-                Path::new(&tokens[1]).exists()
+                Ok(Path::new(&tokens[1]).exists())
             } else {
-                !tokens.join(" ").trim().is_empty()
+                Ok(!tokens.join(" ").trim().is_empty())
             }
         }
     }
