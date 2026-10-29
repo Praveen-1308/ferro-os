@@ -25,6 +25,7 @@ pub mod service;
 pub mod zeroize;
 pub mod auth;
 pub mod standard_utils;
+pub mod sys_utils;
 
 #[cfg(target_os = "linux")]
 extern "C" {
@@ -187,6 +188,19 @@ fn main() -> ExitCode {
         "printenv" => standard_utils::run_printenv(&command_args),
         "wget" => standard_utils::run_wget(&command_args),
         "ping" => standard_utils::run_ping(&command_args),
+        "base64" => sys_utils::run_base64(&command_args),
+        "xargs" => sys_utils::run_xargs(&command_args),
+        "sed" => sys_utils::run_sed(&command_args),
+        "tar" => sys_utils::run_tar(&command_args),
+        "timeout" => sys_utils::run_timeout(&command_args),
+        "nohup" => sys_utils::run_nohup(&command_args),
+        "tty" => sys_utils::run_tty(&command_args),
+        "diff" => sys_utils::run_diff(&command_args),
+        "cmp" => sys_utils::run_cmp(&command_args),
+        "chroot" => sys_utils::run_chroot(&command_args),
+        "sysctl" => sys_utils::run_sysctl(&command_args),
+        "lsblk" => sys_utils::run_lsblk(&command_args),
+        "blkid" => sys_utils::run_blkid(&command_args),
         "help" | "--help" | "-h" => {
             print_usage();
             ExitCode::SUCCESS
@@ -711,7 +725,9 @@ pub const ALL_APPLETS: &[&str] = &[
     "sudo", "su", "ntp", "timesync", "ntpdate",
     "true", "false", "basename", "dirname", "readlink", "realpath", "mktemp",
     "date", "du", "cut", "sort", "uniq", "tr", "yes", "seq", "sha256sum",
-    "printenv", "wget", "ping"
+    "printenv", "wget", "ping",
+    "base64", "xargs", "sed", "tar", "timeout", "nohup", "tty",
+    "diff", "cmp", "chroot", "sysctl", "lsblk", "blkid"
 ];
 
 fn is_internal_applet(cmd: &str) -> bool {
@@ -1119,6 +1135,19 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "printenv" => standard_utils::run_printenv(args),
         "wget" => standard_utils::run_wget(args),
         "ping" => standard_utils::run_ping(args),
+        "base64" => sys_utils::run_base64(args),
+        "xargs" => sys_utils::run_xargs(args),
+        "sed" => sys_utils::run_sed(args),
+        "tar" => sys_utils::run_tar(args),
+        "timeout" => sys_utils::run_timeout(args),
+        "nohup" => sys_utils::run_nohup(args),
+        "tty" => sys_utils::run_tty(args),
+        "diff" => sys_utils::run_diff(args),
+        "cmp" => sys_utils::run_cmp(args),
+        "chroot" => sys_utils::run_chroot(args),
+        "sysctl" => sys_utils::run_sysctl(args),
+        "lsblk" => sys_utils::run_lsblk(args),
+        "blkid" => sys_utils::run_blkid(args),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
             ExitCode::from(127)
