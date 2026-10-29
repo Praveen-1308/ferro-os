@@ -8,6 +8,7 @@ FerroOS enforces a **Zero-Trust, Memory-Safe Security Architecture** spanning th
 
 | Topic | Document | Summary |
 | :--- | :--- | :--- |
+| **OS Principles & Vulnerability Taxonomy** | [OS_DESIGN_PRINCIPLES_AND_VULNERABILITY_TAXONOMY.md](OS_DESIGN_PRINCIPLES_AND_VULNERABILITY_TAXONOMY.md) | Classical systems literature (Saltzer-Schroeder, OSTEP, TLPI, seL4), 6 universal OS vulnerability classes, and cloud defense rules. |
 | **Landlock Sandboxing & Profiles** | [LANDLOCK_SANDBOXING.md](LANDLOCK_SANDBOXING.md) | Unprivileged path delegation, selectable sandbox profiles (`strict`, `shared`, `broker`, `dev`), multi-sandbox shared memory pools. |
 | **Kernel Hardening & CWE Defenses**| [SYSTEM_HARDENING_AND_CWE.md](SYSTEM_HARDENING_AND_CWE.md) | KSPP sysctls, zeroize memory wiping, non-root execution (UID 1000), CWE mitigation matrix. |
 | **Chaos & Threat Models** | [../testing/CHAOS_AND_NEGATIVE_SCENARIOS.md](../testing/CHAOS_AND_NEGATIVE_SCENARIOS.md) | Empirical testing of 9 negative scenarios: OOM bombs, fork bombs, broker crashes, malformed configs, path traversals. |
