@@ -130,10 +130,13 @@ jobs:
 
       - name: Compile Release Binaries & Pure-Rust cdylib
         run: |
-          cargo build --release -p ferro-init -p ferro-core -p ferro-pkg -p ferro-io
+          cargo build --release --workspace
           echo "$GITHUB_WORKSPACE/target/release" >> $GITHUB_PATH
           sudo cp target/release/ferro-core /usr/local/bin/ || true
           sudo cp target/release/ferro-init /usr/local/sbin/ || true
+          sudo cp target/release/ferro-pkg /usr/local/bin/ || true
+          sudo cp target/release/ferro-superd /usr/local/bin/ || true
+          sudo cp target/release/ferrocage /usr/local/bin/ || true
           sudo cp target/release/libferro_io.so /usr/lib/libferro_io.so || true
 
       - name: Run Pure-Rust Execution Principles Suite
@@ -141,6 +144,18 @@ jobs:
 
       - name: Run Cloud FHS 3.0 & Sticky-Bit Security Standards
         run: python3 tools/test_pure_rust_os_standards.py
+
+      - name: Run Differential Parity Engine (30/30 GNU Coreutils Parity)
+        run: python3 tools/differential_parity_engine.py
+
+      - name: Run Selectable Sandbox Profiles & Multi-Sandbox Shared Memory Mesh
+        run: python3 tools/test_sandbox_profiles_and_mesh.py
+
+      - name: Run Next-Gen Service Supervisor (ferro-superd) & Container Runtime (ferrocage)
+        run: sudo env "PATH=$PATH" python3 tools/test_supervisor_and_container.py
+
+      - name: Run 9-Scenario Negative Chaos & Adversarial Threat Suite
+        run: sudo env "PATH=$PATH" python3 tools/test_negative_scenarios_and_chaos.py
 
       - name: Run Comprehensive Vulnerability Audit Suite
         run: python3 tools/test_vulnerability_audit.py
@@ -151,12 +166,21 @@ jobs:
       - name: Verify Python Language Runtime & rpk Package Management
         run: python3 tools/test_ferro_os_python_runtime.py
 
-      - name: Build Autonomous 2.9MB Pure-Rust RootFS & Scratch Container Image
-        run: python3 tools/build_pure_rust_os.py
+      - name: Run Full Codebase Survey & Architectural Graph Validator
+        run: python3 tools/survey_full_ferro_os.py
 
-      - name: Verify Container Execution on Cloud Kernel (ferro-os-pure:latest)
+      - name: Build All 5 Pure-Rust Appliances (Cloud, Desktop, Gaming, Enterprise, Universal)
+        run: python3 tools/build_pure_rust_os.py --edition all
+
+      - name: Verify Multi-Edition Appliance Container Executions
         run: |
-          echo "Testing real command execution on cloud runner:"
+          echo "Testing real command execution across all 5 appliances on cloud runner:"
+          docker run --rm ferro-os-cloud:latest /usr/bin/cat /etc/os-release | grep -q "FERRO_EDITION=\"cloud\""
+          docker run --rm ferro-os-desktop:latest /usr/bin/cat /etc/os-release | grep -q "FERRO_EDITION=\"desktop\""
+          docker run --rm ferro-os-gaming:latest /usr/bin/cat /etc/os-release | grep -q "FERRO_EDITION=\"gaming\""
+          docker run --rm ferro-os-enterprise:latest /usr/bin/cat /etc/os-release | grep -q "FERRO_EDITION=\"enterprise\""
+          docker run --rm ferro-os-pure:latest /usr/bin/cat /etc/os-release | grep -q "FERRO_EDITION=\"pure\""
+          
           docker run --rm ferro-os-pure:latest /usr/bin/ferro-core whoami
           docker run --rm ferro-os-pure:latest /usr/bin/ferro-core id
           docker run --rm ferro-os-pure:latest /usr/bin/ferro-core uname -a
@@ -167,7 +191,7 @@ jobs:
           docker run --rm ferro-os-pure:latest /usr/bin/sh -c "echo 'Real Cloud Container OS Execution Verified' && whoami && id && pwd"
           docker run --rm ferro-os-pure:latest /usr/bin/hackbench -g 2 -l 20 -s 64
           docker run --rm ferro-os-pure:latest /usr/bin/bench-fsync -n 4 -s 128
-          echo "✅ FerroOS pure-Rust OS container successfully executed on cloud Linux kernel!"
+          echo "✅ FerroOS pure-Rust OS appliances successfully executed on cloud Linux kernel!"
 
   bare-metal-os-qemu-boot:
     name: Bare-Metal Real OS Boot & Hardware QEMU Suite

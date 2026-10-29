@@ -497,11 +497,17 @@ FerroOS adheres strictly to the **Filesystem Hierarchy Standard (FHS 3.0)** with
 
 ## 🚀 Quick Start
 
-### 1. Build the Autonomous Pure-Rust RootFS & Container Image
+### 1. Build the Autonomous Pure-Rust RootFS & Multi-Edition Appliances
 
 ```bash
-# Build the 2.92 MB compressed rootfs archive and ferro-os-pure:latest Docker image
-python3 tools/build_pure_rust_os.py
+# Build all 5 specialized pure-Rust appliances and Docker images
+python3 tools/build_pure_rust_os.py --edition all
+
+# Or build a specific target edition:
+python3 tools/build_pure_rust_os.py --edition cloud       # 3.61 MB micro-appliance (ferro-os-cloud:latest)
+python3 tools/build_pure_rust_os.py --edition desktop     # 4.10 MB Wayland GUI + noVNC (ferro-os-desktop:latest)
+python3 tools/build_pure_rust_os.py --edition gaming      # 4.10 MB sched_ext + Proton (ferro-os-gaming:latest)
+python3 tools/build_pure_rust_os.py --edition enterprise  # 3.61 MB AS/400 5250 batch (ferro-os-enterprise:latest)
 ```
 
 ### 2. Run the Autonomous Pure-Rust Container
@@ -509,6 +515,12 @@ python3 tools/build_pure_rust_os.py
 ```bash
 # Launch interactive pure-Rust shell inside the scratch container
 docker run -it --rm ferro-os-pure:latest /usr/bin/sh
+
+# Or run any specialized edition container:
+docker run -it --rm ferro-os-cloud:latest /usr/bin/sh
+docker run -it --rm ferro-os-desktop:latest /usr/bin/sh
+docker run -it --rm ferro-os-gaming:latest /usr/bin/sh
+docker run -it --rm ferro-os-enterprise:latest /usr/bin/sh
 
 # Check identity and environment
 ferro-os:/$ whoami

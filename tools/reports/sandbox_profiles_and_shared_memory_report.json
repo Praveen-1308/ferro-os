@@ -1,23 +1,23 @@
 {
   "profile_strict": {
     "status": "PASS",
-    "latency_ms": 2.2069290025683586,
+    "latency_ms": 2.0231990001775557,
     "blocked": true
   },
   "profile_shared_multi_sandbox": {
     "status": "PASS",
     "shm_pool": "/dev/shm/ferro_cluster_pool",
-    "producer_ms": 1.79633100196952,
-    "consumer_ms": 2.976637999381637,
+    "producer_ms": 1.5337580007326324,
+    "consumer_ms": 3.312574001029134,
     "payload_verified": true
   },
   "profile_broker": {
     "status": "PASS",
     "gateway_dir": "/tmp/ferro_gateway_broker",
-    "latency_ms": 1.4468970002781134
+    "latency_ms": 1.5210030014713993
   },
   "profile_dev": {
     "status": "PASS",
-    "latency_ms": 1.3747189987043384
+    "latency_ms": 1.3722330004384276
   }
 }

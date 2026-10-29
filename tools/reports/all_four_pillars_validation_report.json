@@ -2,15 +2,15 @@
   "pillar_1_security": {
     "ro_write_blocked": {
       "status": "PASS",
-      "latency_ms": 2.0637220004573464
+      "latency_ms": 3.02786900101637
     },
     "etc_write_blocked": {
       "status": "PASS",
-      "latency_ms": 1.6908900015550898
+      "latency_ms": 2.4723919996176846
     },
     "rw_write_succeeded": {
       "status": "PASS",
-      "latency_ms": 1.569707999806269,
+      "latency_ms": 2.3492609998356784,
       "content": "PILLAR1_LANDLOCK_STORAGE_SUCCESS"
     }
   },
@@ -23,20 +23,20 @@
   "pillar_3_container": {
     "container_engine": {
       "status": "PASS",
-      "cid": "b57ab1869ff7",
-      "startup_ms": 1.6672799993102672
+      "cid": "eb572d015dc8",
+      "startup_ms": 2.3620819993084297
     }
   },
   "pillar_4_cloud": {
     "cloud_init_imds": {
       "status": "PASS",
-      "latency_ms": 1.82630400013295,
+      "latency_ms": 2.8754889990523225,
       "hostname": "ferro-cloud-node-01.us-east.compute.internal",
       "ssh_key_verified": true
     },
     "disk_scanner": {
       "status": "PASS",
-      "latency_ms": 1.334354001301108
+      "latency_ms": 1.8845249996957136
     }
   }
 }
