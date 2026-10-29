@@ -126,6 +126,56 @@ FerroOS replaces legacy multi-package userlands with modular, functional Rust co
 
 ---
 
+## 🌐 The Four Connected Editions of FerroOS
+
+FerroOS provides a unified pure-Rust kernel and userspace foundation that powers **four specialized operating system editions**:
+
+```mermaid
+flowchart TD
+    CORE["FerroOS Pure-Rust Core Engine\n(ferro-init • ferro-core • ferro-superd • ferro sandbox • ferro-pkg)"]
+
+    subgraph E1 ["☁️ 1. Cloud Server Edition"]
+        C_SVC["$12 Server Challenge Microservices"]
+        C_SUPER["ferro-superd (2.66 MB RAM, Cgroup v2)"]
+        C_CAGE["ferrocage (Sub-2ms Micro-Containers)"]
+        C_IMDS["cloud_init Autonomous IMDS & Disk Scanner"]
+    end
+
+    subgraph E2 ["🖥️ 2. Desktop & Web Edition"]
+        D_COMP["ferro-compositor (GPU Wayland, Acrylic Blur)"]
+        D_GUI["ferro-gui (Framebuffer /dev/fb0, font8x8)"]
+        D_PORTAL["xdg-desktop-portal-ferro"]
+        D_WEB["Web Desktop Streaming (noVNC Port 6080)"]
+    end
+
+    subgraph E3 ["🎮 3. Gaming & Proton Edition"]
+        G_SCHED["sched_ext Real-Time Gaming Policy (500µs)"]
+        G_MODE["Dynamic GameMode Engine (Nice -10)"]
+        G_VULKAN["DXVK & VKD3D Vulkan Mapping"]
+        G_WINE["Wine / Proton / Box64 & PE/MSI Inspector"]
+    end
+
+    subgraph E4 ["🏛️ 4. AS/400 Enterprise Edition"]
+        A_BATCH["Parallel Batch Processing Queues"]
+        A_5250["5250 Green-Screen Terminal (Web Port 8080)"]
+        A_LEDGER["Continuous ACID Ledger Journal"]
+    end
+
+    CORE --> E1
+    CORE --> E2
+    CORE --> E3
+    CORE --> E4
+```
+
+1. **☁️ Cloud Server Edition**: Autonomous micro-appliance replacing Docker and systemd. 3.59 MB rootfs, 2.66 MB background RAM, 1,858 req/s throughput in the $12 Challenge.
+2. **🖥️ Desktop & Web Edition**: Pure-Rust graphical stack (`ferro-compositor` Wayland compositor with Dual-Kawase blur, `ferro-gui` `/dev/fb0` framebuffer fallback, `xdg-desktop-portal-ferro`, and HTML5 browser-based Web Desktop streaming on port 6080).
+3. **🎮 Gaming & Proton Edition**: Real-time `sched_ext` scheduler (500 µs target slice, sub-50µs wakeup jitter), dynamic GameMode (Nice -10 priority boost), DXVK/VKD3D Vulkan mapping, and native Windows binary execution via Wine/Proton and `ferro-pkg` PE/MSI inspection.
+4. **🏛️ AS/400 Enterprise Edition**: High-concurrency enterprise batch processing, 5250 green-screen terminal emulation over web/telnet, and continuous ACID ledger durability.
+
+> 🌐 **Interactive Architecture Explorer**: Explore every module, struct, function, and edition link in the standalone visual graph: [`docs/ferro_os_architecture_graph.html`](docs/ferro_os_architecture_graph.html).
+
+---
+
 ## 🏛️ The Four Strategic Pillars of FerroOS Cloud Architecture
 
 To eliminate the sprawling daemon sprawl, security vulnerabilities, and container overhead of legacy Linux distributions, FerroOS implements four foundational pure-Rust architectural pillars:

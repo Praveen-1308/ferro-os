@@ -1,7 +1,7 @@
 {
   "metadata": {
     "title": "FerroOS Complete Codebase Survey",
-    "timestamp": "2026-10-29T10:33:30Z",
+    "timestamp": "2026-10-29T11:01:12Z",
     "rust_files_count": 26,
     "total_lines": 22824,
     "code_lines": 19817,
@@ -11,32 +11,139 @@
     "structs_count": 49,
     "enums_count": 12,
     "functions_count": 519,
-    "insights_count": 98
+    "insights_count": 109
   },
+  "editions": [
+    {
+      "id": "edition_cloud",
+      "name": "Cloud Server Edition",
+      "badge": "\u2601\ufe0f Cloud Server",
+      "color": "#38bdf8",
+      "description": "Pure-Rust autonomous cloud appliance. Eliminates Docker, containerd, and systemd. Features Landlock LSM sandboxing, ferro-superd Cgroup v2 supervisor (2.66 MB RAM), and ferrocage sub-2ms micro-containers. Tested in $12 challenge.",
+      "metrics": {
+        "rootfs_size": "3.59 MB",
+        "daemon_ram": "2.66 MB",
+        "throughput": "1,858 req/s",
+        "cold_startup": "1 ms"
+      },
+      "node_ids": [
+        "init_pid1",
+        "superd_daemon",
+        "cage_engine",
+        "sand_strict",
+        "init_cloud",
+        "init_disk",
+        "tool_12dollar"
+      ]
+    },
+    {
+      "id": "edition_desktop",
+      "name": "Desktop & Web Edition",
+      "badge": "\ud83d\udda5\ufe0f Desktop & Web",
+      "color": "#10b981",
+      "description": "Pure-Rust graphical desktop stack. GPU Wayland compositor with Dual-Kawase acrylic blur, lightweight framebuffer window manager (/dev/fb0), XDG desktop portal, and remote HTML5 Web Desktop streaming (port 6080).",
+      "metrics": {
+        "compositor": "Pure Rust Wayland",
+        "framebuffer": "/dev/fb0 (Zero X11)",
+        "web_port": "6080 (HTML5 Canvas)",
+        "blur": "Dual-Kawase GPU"
+      },
+      "node_ids": [
+        "comp_wayland",
+        "gui_framebuffer",
+        "portal_xdg",
+        "web_desktop_stream",
+        "core_shell"
+      ]
+    },
+    {
+      "id": "edition_gaming",
+      "name": "Gaming & Proton Edition",
+      "badge": "\ud83c\udfae Gaming & Proton",
+      "color": "#a855f7",
+      "description": "Real-time gaming performance engine. Sched_ext GameMode scheduling (500\u00b5s slice, <50\u00b5s jitter), automatic Nice -10 CPU priority, Vulkan DXVK/VKD3D mapping, PE/MSI binary inspection, and Wine/Proton/Box64 compatibility.",
+      "metrics": {
+        "task_slice": "500 \u00b5s target",
+        "wakeup_jitter": "< 50 \u00b5s",
+        "dxvk": "DXVK_ASYNC=1",
+        "driver": "Mesa Vulkan ICD"
+      },
+      "node_ids": [
+        "game_sched_ext",
+        "game_gamemode",
+        "game_dxvk_vkd3d",
+        "game_proton_wine",
+        "game_pe_msi",
+        "pkg_rpk"
+      ]
+    },
+    {
+      "id": "edition_as400",
+      "name": "AS/400 Enterprise Edition",
+      "badge": "\ud83c\udfdb\ufe0f AS/400 Enterprise",
+      "color": "#f59e0b",
+      "description": "High-throughput parallel enterprise batch processing. Multi-worker ledger queues, 5250 green-screen terminal emulation over web/telnet, continuous ACID ledger journaling, and automated payroll/inventory reconciliations.",
+      "metrics": {
+        "batch_workers": "Parallel Multi-Worker",
+        "terminal": "5250 Emulation (Web)",
+        "durability": "100% ACID Ledger",
+        "rss_per_worker": "14 MB"
+      },
+      "node_ids": [
+        "as400_batch",
+        "as400_5250",
+        "as400_ledger",
+        "tool_chaos"
+      ]
+    }
+  ],
   "layers": [
     {
       "id": "layer_0",
       "name": "Layer 0: Hardware & Cloud Hypervisor",
       "color": "#64748b",
-      "description": "Underlying physical & virtual hardware abstractions: x86_64/aarch64 CPU registers, NVMe SSDs, VirtIO block devices, Serial TTY, and Cloud IMDS (169.254.169.254).",
+      "description": "Underlying physical & virtual hardware abstractions: x86_64/aarch64 CPU registers, NVMe SSDs, VirtIO block devices, DRM GPU display outputs, and Cloud IMDS (169.254.169.254).",
       "components": [
         {
           "id": "hw_cpu",
           "name": "CPU & MMU (x86_64 / aarch64)",
           "type": "Hardware",
-          "details": "4-8 Cores, Hardware Page Tables, SIMD instructions, Memory Hierarchy"
+          "details": "4-8 Cores, Hardware Page Tables, SIMD instructions, Memory Hierarchy",
+          "editions": [
+            "edition_cloud",
+            "edition_desktop",
+            "edition_gaming",
+            "edition_as400"
+          ]
         },
         {
           "id": "hw_nvme",
           "name": "NVMe / VirtIO Physical Storage",
           "type": "Storage",
-          "details": "Direct hardware write path, 350+ GB capacity, PCI-e Gen4 throughput"
+          "details": "Direct hardware write path, 350+ GB capacity, PCI-e Gen4 throughput",
+          "editions": [
+            "edition_cloud",
+            "edition_as400"
+          ]
+        },
+        {
+          "id": "hw_gpu",
+          "name": "GPU DRM/KMS Hardware",
+          "type": "Graphics Hardware",
+          "details": "Intel Iris/Xe, AMD RDNA/Radeon, ARM Mali Panfrost, Qualcomm Adreno scanout",
+          "editions": [
+            "edition_desktop",
+            "edition_gaming"
+          ]
         },
         {
           "id": "hw_imds",
           "name": "Cloud IMDS (169.254.169.254)",
           "type": "Hypervisor",
-          "details": "Autonomous metadata endpoint for AWS, GCP, Azure, and Hetzner"
+          "details": "Autonomous metadata endpoint for AWS, GCP, Azure, and Hetzner",
+          "editions": [
+            "edition_cloud"
+          ]
         }
       ]
     },
@@ -44,31 +151,49 @@
       "id": "layer_1",
       "name": "Layer 1: Linux Kernel ABI & LSM Subsystems",
       "color": "#0284c7",
-      "description": "Kernel-level security, resource controllers, and virtualization primitives invoked directly without runtime daemon intermediaries.",
+      "description": "Kernel-level security, schedulers, and controllers invoked directly without runtime daemon intermediaries.",
       "components": [
         {
           "id": "abi_landlock",
           "name": "Landlock LSM (ABI v1-v4)",
           "type": "Kernel LSM",
-          "details": "Unprivileged filesystem path restriction at hardware syscall speed (11ms)"
+          "details": "Unprivileged filesystem path restriction at hardware syscall speed (11ms)",
+          "editions": [
+            "edition_cloud",
+            "edition_desktop",
+            "edition_gaming",
+            "edition_as400"
+          ]
         },
         {
           "id": "abi_cgroups",
           "name": "Cgroups v2 Unified Hierarchy",
           "type": "Kernel Controller",
-          "details": "cpu.max, memory.max, memory.swap.max=0, pids.max, cpu.weight"
+          "details": "cpu.max, memory.max, memory.swap.max=0, pids.max, cpu.weight",
+          "editions": [
+            "edition_cloud",
+            "edition_gaming",
+            "edition_as400"
+          ]
         },
         {
           "id": "abi_namespaces",
           "name": "Linux Namespaces",
           "type": "Virtualization",
-          "details": "CLONE_NEWPID, CLONE_NEWNS, CLONE_NEWNET, CLONE_NEWUSER rootless mapping"
+          "details": "CLONE_NEWPID, CLONE_NEWNS, CLONE_NEWNET, CLONE_NEWUSER rootless mapping",
+          "editions": [
+            "edition_cloud",
+            "edition_gaming"
+          ]
         },
         {
-          "id": "abi_seccomp",
-          "name": "Seccomp-BPF & PR_SET_NO_NEW_PRIVS",
-          "type": "Security",
-          "details": "Syscall white-listing, capability stripping, and privilege elevation prevention"
+          "id": "game_sched_ext",
+          "name": "sched_ext Gaming Scheduler",
+          "type": "Kernel Scheduler",
+          "details": "Real-time task scheduling (500\u00b5s slice, <50\u00b5s jitter) prioritizing game rendering",
+          "editions": [
+            "edition_gaming"
+          ]
         }
       ]
     },
@@ -87,25 +212,42 @@
           "id": "init_pid1",
           "name": "ferro-init (PID 1)",
           "type": "Init",
-          "details": "Sub-millisecond bootstrap, early /sys, /proc, /dev, /tmp mount, zombie reaping"
+          "details": "Sub-millisecond bootstrap, early /sys, /proc, /dev, /tmp mount, zombie reaping",
+          "editions": [
+            "edition_cloud",
+            "edition_desktop",
+            "edition_gaming",
+            "edition_as400"
+          ]
         },
         {
           "id": "init_fdstore",
           "name": "fdstore Crash Recovery",
           "type": "Reliability",
-          "details": "Preserves open file descriptors across supervisor restarts without socket loss"
+          "details": "Preserves open file descriptors across supervisor restarts without socket loss",
+          "editions": [
+            "edition_cloud",
+            "edition_as400"
+          ]
         },
         {
           "id": "init_cloud",
           "name": "cloud_init Autonomous IMDS",
           "type": "Cloud Provisioning",
-          "details": "Scans AWS/GCP/Azure IMDS, provisions eth0, injects SSH public keys (0600)"
+          "details": "Scans AWS/GCP/Azure IMDS, provisions eth0, injects SSH public keys (0600)",
+          "editions": [
+            "edition_cloud"
+          ]
         },
         {
           "id": "init_disk",
           "name": "disk Block Scanner",
           "type": "Storage",
-          "details": "Autonomous discovery of NVMe, SCSI, VirtIO disks, ext4/btrfs mounting"
+          "details": "Autonomous discovery of NVMe, SCSI, VirtIO disks, ext4/btrfs mounting",
+          "editions": [
+            "edition_cloud",
+            "edition_as400"
+          ]
         }
       ]
     },
@@ -123,25 +265,41 @@
           "id": "superd_daemon",
           "name": "ferro-superd Daemon",
           "type": "Supervisor",
-          "details": "483 KB pure-Rust daemon, 2.66 MB background RAM (vs 231 MB Docker/containerd)"
+          "details": "483 KB pure-Rust daemon, 2.66 MB background RAM (vs 231 MB Docker/containerd)",
+          "editions": [
+            "edition_cloud",
+            "edition_as400",
+            "edition_desktop"
+          ]
         },
         {
           "id": "superd_cgroup",
           "name": "Cgroup v2 Resource Manager",
           "type": "Resource Control",
-          "details": "Direct control of memory.max, memory.swap.max, cpu.max, pids.max"
+          "details": "Direct control of memory.max, memory.swap.max, cpu.max, pids.max",
+          "editions": [
+            "edition_cloud",
+            "edition_as400"
+          ]
         },
         {
           "id": "superd_watchdog",
           "name": "Health Engine & Backoff Watchdog",
           "type": "Resilience",
-          "details": "Periodic health checks, crash detection in <250ms, exponential backoff retries"
+          "details": "Periodic health checks, crash detection in <250ms, exponential backoff retries",
+          "editions": [
+            "edition_cloud",
+            "edition_as400"
+          ]
         },
         {
-          "id": "superd_ipc",
-          "name": "JSON-RPC UNIX Domain Socket",
-          "type": "Control Plane",
-          "details": "/run/ferro/superd.sock bounded reader, survives 1,000 adversarial buffer bombs"
+          "id": "game_gamemode",
+          "name": "Dynamic GameMode Engine",
+          "type": "Resource Governor",
+          "details": "Automatic Nice -10 CPU priority boost & throttling of background services",
+          "editions": [
+            "edition_gaming"
+          ]
         }
       ]
     },
@@ -158,19 +316,29 @@
           "id": "cage_engine",
           "name": "ferrocage Engine",
           "type": "Micro-Container",
-          "details": "1.7 ms micro-container startup (~200x faster than Docker), 0 MB background daemon"
+          "details": "1.7 ms micro-container startup (~200x faster than Docker), 0 MB background daemon",
+          "editions": [
+            "edition_cloud",
+            "edition_gaming"
+          ]
         },
         {
           "id": "cage_ns",
           "name": "Namespace Virtualizer",
           "type": "Isolation",
-          "details": "CLONE_NEWPID + CLONE_NEWNS + CLONE_NEWUSER UID/GID map without root privileges"
+          "details": "CLONE_NEWPID + CLONE_NEWNS + CLONE_NEWUSER UID/GID map without root privileges",
+          "editions": [
+            "edition_cloud"
+          ]
         },
         {
           "id": "cage_vols",
           "name": "Host Volume Bind Mounts",
           "type": "Storage",
-          "details": "-v host:container direct bind mounting delegating disk access with 0 overhead"
+          "details": "-v host:container direct bind mounting delegating disk access with 0 overhead",
+          "editions": [
+            "edition_cloud"
+          ]
         }
       ]
     },
@@ -187,25 +355,38 @@
           "id": "sand_strict",
           "name": "Profile 'strict'",
           "type": "Profile",
-          "details": "Maximum isolation: locked root, dropped capabilities, private network, zero ambient authority"
+          "details": "Maximum isolation: locked root, dropped capabilities, private network, zero ambient authority",
+          "editions": [
+            "edition_cloud"
+          ]
         },
         {
           "id": "sand_shared",
           "name": "Profile 'shared' (SHM Mesh)",
           "type": "Profile",
-          "details": "Multi-sandbox cooperative processing via zero-copy /dev/shm/ferro_<pool> pools"
+          "details": "Multi-sandbox cooperative processing via zero-copy /dev/shm/ferro_<pool> pools",
+          "editions": [
+            "edition_cloud",
+            "edition_as400"
+          ]
         },
         {
           "id": "sand_broker",
           "name": "Profile 'broker' (Gateway)",
           "type": "Profile",
-          "details": "Strict communication routing exclusively through authorized UNIX domain socket gateways"
+          "details": "Strict communication routing exclusively through authorized UNIX domain socket gateways",
+          "editions": [
+            "edition_cloud"
+          ]
         },
         {
-          "id": "sand_dev",
-          "name": "Profile 'dev' (Permissive)",
-          "type": "Profile",
-          "details": "Developer mode with relaxed path isolation and security violation audit logging"
+          "id": "game_proton_wine",
+          "name": "Wine / Proton Subsystem",
+          "type": "Translation Layer",
+          "details": "Windows ABI emulation under sandboxed user permissions (/usr/bin/wine64)",
+          "editions": [
+            "edition_gaming"
+          ]
         }
       ]
     },
@@ -213,7 +394,7 @@
       "id": "layer_6",
       "name": "Layer 6: Package Governance & Registry",
       "color": "#0891b2",
-      "description": "ferro-pkg: Autonomous binary packaging system supporting native RPK archives, cryptographic integrity verification, atomic rollbacks, and Debian .deb compatibility.",
+      "description": "ferro-pkg: Autonomous binary packaging system supporting native RPK archives, cryptographic integrity verification, atomic rollbacks, and PE/MSI inspection.",
       "crates": [
         "crates/ferro-pkg"
       ],
@@ -222,122 +403,207 @@
           "id": "pkg_rpk",
           "name": "RPK Binary Package Engine",
           "type": "Package Manager",
-          "details": "Fast pure-Rust format, zstd compression, cryptographic SHA-256 signing"
+          "details": "Fast pure-Rust format, zstd compression, cryptographic SHA-256 signing",
+          "editions": [
+            "edition_cloud",
+            "edition_desktop",
+            "edition_gaming",
+            "edition_as400"
+          ]
         },
         {
           "id": "pkg_tx",
           "name": "Transactional Atomicity",
           "type": "Rollback",
-          "details": "Atomic snapshot installs; zero partial state on installation interruption"
+          "details": "Atomic snapshot installs; zero partial state on installation interruption",
+          "editions": [
+            "edition_cloud",
+            "edition_as400"
+          ]
         },
         {
-          "id": "pkg_apt",
-          "name": "Debian .deb Compatibility",
-          "type": "Compatibility",
-          "details": "Direct parsing and extraction of Debian packages without dpkg/apt"
+          "id": "game_pe_msi",
+          "name": "PE & MSI Binary Inspector",
+          "type": "Package Analysis",
+          "details": "Native extraction of Windows PE32/PE32+ and MSI headers for Wine/Proton dependency mapping",
+          "editions": [
+            "edition_gaming"
+          ]
         }
       ]
     },
     {
       "id": "layer_7",
-      "name": "Layer 7: Pure-Rust Core Utilities & Shell",
+      "name": "Layer 7: Graphical Desktop, Core Utilities & Shell",
       "color": "#ea580c",
-      "description": "ferro-core: Complete 30/30 GNU coreutils parity suite implemented in pure Rust without external C dependencies, plus interactive Unix shell.",
+      "description": "Pure-Rust graphical compositor, framebuffer window manager, 30/30 GNU coreutils parity suite, and interactive shell.",
       "crates": [
-        "crates/ferro-core/src/main.rs",
-        "crates/ferro-core/src/shell.rs"
+        "crates/ferro-compositor",
+        "crates/ferro-gui",
+        "crates/xdg-desktop-portal-ferro",
+        "crates/ferro-core"
       ],
       "components": [
         {
+          "id": "comp_wayland",
+          "name": "ferro-compositor (Wayland)",
+          "type": "Compositor",
+          "details": "GPU-accelerated Wayland compositor, Dual-Kawase acrylic blur, Layer-shell protocols",
+          "editions": [
+            "edition_desktop",
+            "edition_gaming"
+          ]
+        },
+        {
+          "id": "gui_framebuffer",
+          "name": "ferro-gui (Framebuffer)",
+          "type": "Window Manager",
+          "details": "Direct /dev/fb0 double-buffered framebuffer rendering, font8x8 ASCII rasterizer",
+          "editions": [
+            "edition_desktop"
+          ]
+        },
+        {
+          "id": "portal_xdg",
+          "name": "xdg-desktop-portal-ferro",
+          "type": "Portal",
+          "details": "Native XDG desktop portal integration for file pickers, screencasting, notifications",
+          "editions": [
+            "edition_desktop",
+            "edition_gaming"
+          ]
+        },
+        {
           "id": "core_files",
-          "name": "File & Directory Suite",
+          "name": "30/30 GNU Parity Coreutils",
           "type": "Coreutils",
-          "details": "ls, cp, mv, rm, mkdir, rmdir, touch, cat, head, tail, stat, chmod, chown"
-        },
-        {
-          "id": "core_text",
-          "name": "Text Processing Engine",
-          "type": "Coreutils",
-          "details": "grep, sed, awk, wc, diff, sort, uniq, cut, tr, tee"
-        },
-        {
-          "id": "core_sys",
-          "name": "System Diagnostics Suite",
-          "type": "Coreutils",
-          "details": "ps, top, kill, df, du, free, uname, mount, umount, dmesg"
+          "details": "Complete GNU/POSIX parity: ls, cp, mv, grep, sed, awk, ps, top, kill, df, free, etc.",
+          "editions": [
+            "edition_cloud",
+            "edition_desktop",
+            "edition_gaming",
+            "edition_as400"
+          ]
         },
         {
           "id": "core_shell",
           "name": "Interactive Ferro Shell",
           "type": "Shell",
-          "details": "Command history, pipelines (|), I/O redirection (<, >, >>), job control"
+          "details": "Command history, pipelines (|), I/O redirection (<, >, >>), job control",
+          "editions": [
+            "edition_cloud",
+            "edition_desktop",
+            "edition_as400"
+          ]
         }
       ]
     },
     {
       "id": "layer_8",
-      "name": "Layer 8: High-Throughput I/O & Networking",
+      "name": "Layer 8: High-Throughput I/O & Streaming",
       "color": "#4f46e5",
-      "description": "ferro-io, sshd, dhcp & syslog: High-velocity asynchronous I/O primitives, embedded SSH server, pure-Rust DHCP client, and kmsg kernel logging.",
+      "description": "ferro-io, sshd, dhcp, Web Desktop streaming, and Vulkan translation layers.",
       "crates": [
         "crates/ferro-io",
-        "crates/ferro-core/src/sshd.rs",
-        "crates/ferro-core/src/dhcp.rs",
-        "crates/ferro-core/src/syslog.rs"
+        "crates/ferro-core",
+        "tools/verify-web-desktop.sh"
       ],
       "components": [
         {
           "id": "io_buffers",
           "name": "ferro-io Buffer Pools",
           "type": "I/O Engine",
-          "details": "Zero-copy ring buffers, async event multiplexing, buffer reuse without heap allocation"
+          "details": "Zero-copy ring buffers, async event multiplexing, buffer reuse without heap allocation",
+          "editions": [
+            "edition_cloud",
+            "edition_as400"
+          ]
+        },
+        {
+          "id": "web_desktop_stream",
+          "name": "Web Desktop Streaming (Port 6080)",
+          "type": "Remote Desktop",
+          "details": "HTML5 canvas live streaming over WebSocket / noVNC / KasmVNC for browser-based access",
+          "editions": [
+            "edition_desktop"
+          ]
+        },
+        {
+          "id": "game_dxvk_vkd3d",
+          "name": "DXVK & VKD3D Vulkan Mapping",
+          "type": "Graphics Translation",
+          "details": "DirectX 9/10/11/12 to Vulkan mapping (DXVK_ASYNC=1, State Cache enabled)",
+          "editions": [
+            "edition_gaming"
+          ]
         },
         {
           "id": "net_sshd",
-          "name": "Embedded SSH Daemon",
+          "name": "Embedded SSH Server",
           "type": "Networking",
-          "details": "Pure-Rust SSH protocol handler with public-key cryptographic authentication"
-        },
-        {
-          "id": "net_dhcp",
-          "name": "Autonomous DHCP Client",
-          "type": "Networking",
-          "details": "Sub-millisecond IP leasing, default gateway configuration, and DNS resolution"
+          "details": "Pure-Rust SSH protocol handler with public-key cryptographic authentication",
+          "editions": [
+            "edition_cloud",
+            "edition_desktop",
+            "edition_as400"
+          ]
         }
       ]
     },
     {
       "id": "layer_9",
-      "name": "Layer 9: Tooling, Benchmarks & Adversarial Chaos",
+      "name": "Layer 9: Enterprise Workloads, Benchmarks & Chaos Suites",
       "color": "#be123c",
-      "description": "Comprehensive test engines, the $12 server challenge harness, high-throughput SQLite WAL benchmarks, and 9-vector adversarial chaos qualification suites.",
+      "description": "AS/400 batch processing, 5250 terminal emulation, $12 Challenge SQLite WAL suite, and 9-vector adversarial chaos qualification.",
       "crates": [
         "tools/"
       ],
       "components": [
         {
+          "id": "as400_batch",
+          "name": "AS/400 Parallel Batch Engine",
+          "type": "Batch Processing",
+          "details": "Parallel multi-worker accounting, payroll, and inventory batch runs (14 MB RSS)",
+          "editions": [
+            "edition_as400"
+          ]
+        },
+        {
+          "id": "as400_5250",
+          "name": "5250 Terminal Emulation",
+          "type": "Terminal Emulation",
+          "details": "Green-screen 5250 terminal rendering over Telnet (port 23) and Web HTML5 (port 8080)",
+          "editions": [
+            "edition_as400"
+          ]
+        },
+        {
+          "id": "as400_ledger",
+          "name": "ACID Ledger Queue",
+          "type": "Durability",
+          "details": "Continuous transaction journal with 100% atomic reconciliation",
+          "editions": [
+            "edition_as400"
+          ]
+        },
+        {
           "id": "tool_12dollar",
-          "name": "$12 Challenge Harness",
+          "name": "$12 Challenge WAL Benchmark",
           "type": "Benchmark",
-          "details": "High-throughput 4-core 8GB SQLite WAL benchmark (1,858 req/s vs Ubuntu collapse)"
+          "details": "High-throughput 4-core 8GB SQLite WAL benchmark (1,858 req/s vs Ubuntu collapse)",
+          "editions": [
+            "edition_cloud"
+          ]
         },
         {
           "id": "tool_chaos",
-          "name": "Adversarial Chaos Suite",
+          "name": "9-Vector Adversarial Chaos Suite",
           "type": "Chaos Test",
-          "details": "9 threat models: path traversal, root defacement, OOM bombs, fork bombs, SIGKILL durability"
-        },
-        {
-          "id": "tool_parity",
-          "name": "GNU Parity Verification Engine",
-          "type": "Verification",
-          "details": "Automated 30/30 GNU vs FerroOS behavioral and argument compatibility checker"
-        },
-        {
-          "id": "tool_builder",
-          "name": "Autonomous Appliance Builder",
-          "type": "Packaging",
-          "details": "Creates 3.59 MB pure-Rust bootable rootfs containing all four strategic pillars"
+          "details": "Path traversal, root defacement, OOM bombs, fork bombs, SIGKILL durability",
+          "editions": [
+            "edition_cloud",
+            "edition_as400"
+          ]
         }
       ]
     }
@@ -425,6 +691,10 @@
           "text": "dual-Kawase acrylic blur shaders, and graceful single-pass box blur fallbacks."
         },
         {
+          "line": 14,
+          "text": "Surface Layer placement for Wayland layer-shell protocol"
+        },
+        {
           "line": 32,
           "text": "GPU Hardware Driver Target (Invariant 4)"
         },
@@ -433,12 +703,20 @@
           "text": "Shader Pipeline Execution Backend (Invariant 4)"
         },
         {
+          "line": 62,
+          "text": "Managed Wayland client window surface"
+        },
+        {
           "line": 78,
           "text": "Auto-detect GPU Driver Target & Shader Pipeline (Invariant 4)"
         },
         {
           "line": 141,
           "text": "Default to graceful software fallback if no hardware GPU or in container/VM"
+        },
+        {
+          "line": 180,
+          "text": "Register a new Wayland client surface"
         },
         {
           "line": 230,
@@ -1874,8 +2152,16 @@
           "text": "4. Attach to cgroup v2 root"
         },
         {
+          "line": 5592,
+          "text": "FerroOS Extensible CPU Scheduler (sched_ext / SCX & Adaptive Latency Engine)"
+        },
+        {
           "line": 5709,
           "text": "4. Fallback to temp dir"
+        },
+        {
+          "line": 5779,
+          "text": "1. Check sched_ext interface"
         },
         {
           "line": 5866,
@@ -1888,6 +2174,26 @@
         {
           "line": 6274,
           "text": "FerroOS Steam & Proton Multi-Architecture Gaming Layer (Box64/FEX & DXVK)"
+        },
+        {
+          "line": 6513,
+          "text": "5. GameMode & Latency Scheduler"
+        },
+        {
+          "line": 6673,
+          "text": "2. proton-ferro wrapper script"
+        },
+        {
+          "line": 6798,
+          "text": "1. Engage GameMode & Latency Scheduler"
+        },
+        {
+          "line": 6885,
+          "text": "3. Restore GameMode & Scheduler to Balanced"
+        },
+        {
+          "line": 6978,
+          "text": "1. Engage GameMode & Low-Latency Scheduler Profile"
         },
         {
           "line": 7080,
@@ -5425,7 +5731,12 @@
       ],
       "traits": [],
       "syscalls_and_abi": [],
-      "insights": [],
+      "insights": [
+        {
+          "line": 1,
+          "text": "xdg-desktop-portal-ferro: Native Wayland Desktop Portal for FerroOS."
+        }
+      ],
       "sample_comments": [
         {
           "line": 1,
@@ -5523,6 +5834,11 @@
     },
     {
       "file": "crates/ferro-compositor/src/main.rs",
+      "line": 14,
+      "text": "Surface Layer placement for Wayland layer-shell protocol"
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
       "line": 32,
       "text": "GPU Hardware Driver Target (Invariant 4)"
     },
@@ -5533,6 +5849,11 @@
     },
     {
       "file": "crates/ferro-compositor/src/main.rs",
+      "line": 62,
+      "text": "Managed Wayland client window surface"
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
       "line": 78,
       "text": "Auto-detect GPU Driver Target & Shader Pipeline (Invariant 4)"
     },
@@ -5540,6 +5861,11 @@
       "file": "crates/ferro-compositor/src/main.rs",
       "line": 141,
       "text": "Default to graceful software fallback if no hardware GPU or in container/VM"
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "line": 180,
+      "text": "Register a new Wayland client surface"
     },
     {
       "file": "crates/ferro-compositor/src/main.rs",
@@ -5638,8 +5964,18 @@
     },
     {
       "file": "crates/ferro-core/src/main.rs",
+      "line": 5592,
+      "text": "FerroOS Extensible CPU Scheduler (sched_ext / SCX & Adaptive Latency Engine)"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
       "line": 5709,
       "text": "4. Fallback to temp dir"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 5779,
+      "text": "1. Check sched_ext interface"
     },
     {
       "file": "crates/ferro-core/src/main.rs",
@@ -5655,6 +5991,31 @@
       "file": "crates/ferro-core/src/main.rs",
       "line": 6274,
       "text": "FerroOS Steam & Proton Multi-Architecture Gaming Layer (Box64/FEX & DXVK)"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 6513,
+      "text": "5. GameMode & Latency Scheduler"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 6673,
+      "text": "2. proton-ferro wrapper script"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 6798,
+      "text": "1. Engage GameMode & Latency Scheduler"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 6885,
+      "text": "3. Restore GameMode & Scheduler to Balanced"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 6978,
+      "text": "1. Engage GameMode & Low-Latency Scheduler Profile"
     },
     {
       "file": "crates/ferro-core/src/main.rs",
@@ -5995,6 +6356,11 @@
       "file": "crates/ferrocage/src/main.rs",
       "line": 3,
       "text": "native Linux namespaces, Cgroups v2 isolation, and a complete Docker-compatible CLI."
+    },
+    {
+      "file": "crates/xdg-desktop-portal-ferro/src/main.rs",
+      "line": 1,
+      "text": "xdg-desktop-portal-ferro: Native Wayland Desktop Portal for FerroOS."
     }
   ]
 }

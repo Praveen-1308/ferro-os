@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """
-FerroOS Full-Stack Codebase Survey & Interactive Graph Generator
-================================================================
+FerroOS Full-Stack Codebase Survey & Unified Architecture Graph Generator
+========================================================================
 Surveys every line of code, comment, struct, function, and Linux kernel ABI
-across the entire FerroOS operating system implementation.
+across all four specialized editions of FerroOS:
+  1. Cloud Server Edition (Pure Rust micro-appliance, $12 challenge, superd, ferrocage)
+  2. Desktop & Web Edition (Wayland compositor, framebuffer /dev/fb0, XDG portal, noVNC)
+  3. Gaming & Proton Edition (sched_ext, GameMode Nice -10, DXVK/VKD3D, Wine, PE/MSI)
+  4. AS/400 Enterprise Edition (Parallel batch processing, 5250 terminal, ACID ledgers)
+
 Generates:
-  1. Structured JSON survey dataset: tools/reports/ferro_os_full_codebase_survey.json
-  2. Interactive single-file visual HTML graph: docs/ferro_os_architecture_graph.html
+  - Structured survey JSON: tools/reports/ferro_os_full_codebase_survey.json
+  - Standalone interactive HTML graph: docs/ferro_os_architecture_graph.html
 """
 
 import os
@@ -46,7 +51,6 @@ def scan_rust_file(file_path: str) -> Dict[str, Any]:
     in_block_comment = False
     current_block_comment = []
 
-    # Regex patterns
     struct_pat = re.compile(r"^\s*(?:pub(?:\([^)]+\))?\s+)?struct\s+([A-Za-z0-9_]+)")
     enum_pat = re.compile(r"^\s*(?:pub(?:\([^)]+\))?\s+)?enum\s+([A-Za-z0-9_]+)")
     fn_pat = re.compile(r"^\s*(?:pub(?:\([^)]+\))?\s+)?(?:async\s+)?(?:unsafe\s+)?fn\s+([A-Za-z0-9_]+)")
@@ -60,7 +64,6 @@ def scan_rust_file(file_path: str) -> Dict[str, Any]:
             blank_lines += 1
             continue
 
-        # Block comment handling
         if in_block_comment:
             comment_lines += 1
             if "*/" in line:
@@ -91,7 +94,6 @@ def scan_rust_file(file_path: str) -> Dict[str, Any]:
 
         code_lines += 1
 
-        # Check definitions
         m_struct = struct_pat.search(line)
         if m_struct:
             structs.append({"name": m_struct.group(1), "line": idx})
@@ -108,13 +110,11 @@ def scan_rust_file(file_path: str) -> Dict[str, Any]:
         if m_trait:
             traits.append({"name": m_trait.group(1), "line": idx})
 
-        # Syscall/ABI references
         for sc in syscall_pat.findall(line):
             if sc not in syscalls_and_abi:
                 syscalls_and_abi.append(sc)
 
-    # Filter out architectural insights from comments
-    insight_keywords = ["invariant", "architecture", "security", "zero-copy", "atomic", "cgroup", "landlock", "sandbox", "memory", "perf", "cache", "wal", "lock", "fail", "fallback"]
+    insight_keywords = ["invariant", "architecture", "security", "zero-copy", "atomic", "cgroup", "landlock", "sandbox", "memory", "perf", "cache", "wal", "lock", "fail", "fallback", "wayland", "gamemode", "sched_ext", "proton", "as400", "batch"]
     insights = []
     for c in comments:
         txt = c["text"]
@@ -139,31 +139,71 @@ def scan_rust_file(file_path: str) -> Dict[str, Any]:
     }
 
 # ==============================================================================
-# 2. Architectural Layer Model
+# 2. Editions & Multi-Architecture Layer Model
 # ==============================================================================
+
+FERRO_EDITIONS = [
+    {
+        "id": "edition_cloud",
+        "name": "Cloud Server Edition",
+        "badge": "☁️ Cloud Server",
+        "color": "#38bdf8",
+        "description": "Pure-Rust autonomous cloud appliance. Eliminates Docker, containerd, and systemd. Features Landlock LSM sandboxing, ferro-superd Cgroup v2 supervisor (2.66 MB RAM), and ferrocage sub-2ms micro-containers. Tested in $12 challenge.",
+        "metrics": {"rootfs_size": "3.59 MB", "daemon_ram": "2.66 MB", "throughput": "1,858 req/s", "cold_startup": "1 ms"},
+        "node_ids": ["init_pid1", "superd_daemon", "cage_engine", "sand_strict", "init_cloud", "init_disk", "tool_12dollar"]
+    },
+    {
+        "id": "edition_desktop",
+        "name": "Desktop & Web Edition",
+        "badge": "🖥️ Desktop & Web",
+        "color": "#10b981",
+        "description": "Pure-Rust graphical desktop stack. GPU Wayland compositor with Dual-Kawase acrylic blur, lightweight framebuffer window manager (/dev/fb0), XDG desktop portal, and remote HTML5 Web Desktop streaming (port 6080).",
+        "metrics": {"compositor": "Pure Rust Wayland", "framebuffer": "/dev/fb0 (Zero X11)", "web_port": "6080 (HTML5 Canvas)", "blur": "Dual-Kawase GPU"},
+        "node_ids": ["comp_wayland", "gui_framebuffer", "portal_xdg", "web_desktop_stream", "core_shell"]
+    },
+    {
+        "id": "edition_gaming",
+        "name": "Gaming & Proton Edition",
+        "badge": "🎮 Gaming & Proton",
+        "color": "#a855f7",
+        "description": "Real-time gaming performance engine. Sched_ext GameMode scheduling (500µs slice, <50µs jitter), automatic Nice -10 CPU priority, Vulkan DXVK/VKD3D mapping, PE/MSI binary inspection, and Wine/Proton/Box64 compatibility.",
+        "metrics": {"task_slice": "500 µs target", "wakeup_jitter": "< 50 µs", "dxvk": "DXVK_ASYNC=1", "driver": "Mesa Vulkan ICD"},
+        "node_ids": ["game_sched_ext", "game_gamemode", "game_dxvk_vkd3d", "game_proton_wine", "game_pe_msi", "pkg_rpk"]
+    },
+    {
+        "id": "edition_as400",
+        "name": "AS/400 Enterprise Edition",
+        "badge": "🏛️ AS/400 Enterprise",
+        "color": "#f59e0b",
+        "description": "High-throughput parallel enterprise batch processing. Multi-worker ledger queues, 5250 green-screen terminal emulation over web/telnet, continuous ACID ledger journaling, and automated payroll/inventory reconciliations.",
+        "metrics": {"batch_workers": "Parallel Multi-Worker", "terminal": "5250 Emulation (Web)", "durability": "100% ACID Ledger", "rss_per_worker": "14 MB"},
+        "node_ids": ["as400_batch", "as400_5250", "as400_ledger", "tool_chaos"]
+    }
+]
 
 ARCHITECTURAL_LAYERS = [
     {
         "id": "layer_0",
         "name": "Layer 0: Hardware & Cloud Hypervisor",
         "color": "#64748b",
-        "description": "Underlying physical & virtual hardware abstractions: x86_64/aarch64 CPU registers, NVMe SSDs, VirtIO block devices, Serial TTY, and Cloud IMDS (169.254.169.254).",
+        "description": "Underlying physical & virtual hardware abstractions: x86_64/aarch64 CPU registers, NVMe SSDs, VirtIO block devices, DRM GPU display outputs, and Cloud IMDS (169.254.169.254).",
         "components": [
-            {"id": "hw_cpu", "name": "CPU & MMU (x86_64 / aarch64)", "type": "Hardware", "details": "4-8 Cores, Hardware Page Tables, SIMD instructions, Memory Hierarchy"},
-            {"id": "hw_nvme", "name": "NVMe / VirtIO Physical Storage", "type": "Storage", "details": "Direct hardware write path, 350+ GB capacity, PCI-e Gen4 throughput"},
-            {"id": "hw_imds", "name": "Cloud IMDS (169.254.169.254)", "type": "Hypervisor", "details": "Autonomous metadata endpoint for AWS, GCP, Azure, and Hetzner"}
+            {"id": "hw_cpu", "name": "CPU & MMU (x86_64 / aarch64)", "type": "Hardware", "details": "4-8 Cores, Hardware Page Tables, SIMD instructions, Memory Hierarchy", "editions": ["edition_cloud", "edition_desktop", "edition_gaming", "edition_as400"]},
+            {"id": "hw_nvme", "name": "NVMe / VirtIO Physical Storage", "type": "Storage", "details": "Direct hardware write path, 350+ GB capacity, PCI-e Gen4 throughput", "editions": ["edition_cloud", "edition_as400"]},
+            {"id": "hw_gpu", "name": "GPU DRM/KMS Hardware", "type": "Graphics Hardware", "details": "Intel Iris/Xe, AMD RDNA/Radeon, ARM Mali Panfrost, Qualcomm Adreno scanout", "editions": ["edition_desktop", "edition_gaming"]},
+            {"id": "hw_imds", "name": "Cloud IMDS (169.254.169.254)", "type": "Hypervisor", "details": "Autonomous metadata endpoint for AWS, GCP, Azure, and Hetzner", "editions": ["edition_cloud"]}
         ]
     },
     {
         "id": "layer_1",
         "name": "Layer 1: Linux Kernel ABI & LSM Subsystems",
         "color": "#0284c7",
-        "description": "Kernel-level security, resource controllers, and virtualization primitives invoked directly without runtime daemon intermediaries.",
+        "description": "Kernel-level security, schedulers, and controllers invoked directly without runtime daemon intermediaries.",
         "components": [
-            {"id": "abi_landlock", "name": "Landlock LSM (ABI v1-v4)", "type": "Kernel LSM", "details": "Unprivileged filesystem path restriction at hardware syscall speed (11ms)"},
-            {"id": "abi_cgroups", "name": "Cgroups v2 Unified Hierarchy", "type": "Kernel Controller", "details": "cpu.max, memory.max, memory.swap.max=0, pids.max, cpu.weight"},
-            {"id": "abi_namespaces", "name": "Linux Namespaces", "type": "Virtualization", "details": "CLONE_NEWPID, CLONE_NEWNS, CLONE_NEWNET, CLONE_NEWUSER rootless mapping"},
-            {"id": "abi_seccomp", "name": "Seccomp-BPF & PR_SET_NO_NEW_PRIVS", "type": "Security", "details": "Syscall white-listing, capability stripping, and privilege elevation prevention"}
+            {"id": "abi_landlock", "name": "Landlock LSM (ABI v1-v4)", "type": "Kernel LSM", "details": "Unprivileged filesystem path restriction at hardware syscall speed (11ms)", "editions": ["edition_cloud", "edition_desktop", "edition_gaming", "edition_as400"]},
+            {"id": "abi_cgroups", "name": "Cgroups v2 Unified Hierarchy", "type": "Kernel Controller", "details": "cpu.max, memory.max, memory.swap.max=0, pids.max, cpu.weight", "editions": ["edition_cloud", "edition_gaming", "edition_as400"]},
+            {"id": "abi_namespaces", "name": "Linux Namespaces", "type": "Virtualization", "details": "CLONE_NEWPID, CLONE_NEWNS, CLONE_NEWNET, CLONE_NEWUSER rootless mapping", "editions": ["edition_cloud", "edition_gaming"]},
+            {"id": "game_sched_ext", "name": "sched_ext Gaming Scheduler", "type": "Kernel Scheduler", "details": "Real-time task scheduling (500µs slice, <50µs jitter) prioritizing game rendering", "editions": ["edition_gaming"]}
         ]
     },
     {
@@ -173,10 +213,10 @@ ARCHITECTURAL_LAYERS = [
         "description": "ferro-init & cloud_init: Pure-Rust PID 1 bootstrap, early pseudofs mounting, autonomous IMDS cloud network discovery, and block storage scanning.",
         "crates": ["crates/ferro-init", "crates/ferro-core/src/cloud_init.rs", "crates/ferro-core/src/disk.rs"],
         "components": [
-            {"id": "init_pid1", "name": "ferro-init (PID 1)", "type": "Init", "details": "Sub-millisecond bootstrap, early /sys, /proc, /dev, /tmp mount, zombie reaping"},
-            {"id": "init_fdstore", "name": "fdstore Crash Recovery", "type": "Reliability", "details": "Preserves open file descriptors across supervisor restarts without socket loss"},
-            {"id": "init_cloud", "name": "cloud_init Autonomous IMDS", "type": "Cloud Provisioning", "details": "Scans AWS/GCP/Azure IMDS, provisions eth0, injects SSH public keys (0600)"},
-            {"id": "init_disk", "name": "disk Block Scanner", "type": "Storage", "details": "Autonomous discovery of NVMe, SCSI, VirtIO disks, ext4/btrfs mounting"}
+            {"id": "init_pid1", "name": "ferro-init (PID 1)", "type": "Init", "details": "Sub-millisecond bootstrap, early /sys, /proc, /dev, /tmp mount, zombie reaping", "editions": ["edition_cloud", "edition_desktop", "edition_gaming", "edition_as400"]},
+            {"id": "init_fdstore", "name": "fdstore Crash Recovery", "type": "Reliability", "details": "Preserves open file descriptors across supervisor restarts without socket loss", "editions": ["edition_cloud", "edition_as400"]},
+            {"id": "init_cloud", "name": "cloud_init Autonomous IMDS", "type": "Cloud Provisioning", "details": "Scans AWS/GCP/Azure IMDS, provisions eth0, injects SSH public keys (0600)", "editions": ["edition_cloud"]},
+            {"id": "init_disk", "name": "disk Block Scanner", "type": "Storage", "details": "Autonomous discovery of NVMe, SCSI, VirtIO disks, ext4/btrfs mounting", "editions": ["edition_cloud", "edition_as400"]}
         ]
     },
     {
@@ -186,10 +226,10 @@ ARCHITECTURAL_LAYERS = [
         "description": "ferro-superd: Ultra-lightweight process supervisor replacing systemd. Enforces Cgroup v2 quotas, ring-buffer logging, backoff auto-restarts, and IPC control.",
         "crates": ["crates/ferro-superd", "crates/ferro-core/src/service.rs"],
         "components": [
-            {"id": "superd_daemon", "name": "ferro-superd Daemon", "type": "Supervisor", "details": "483 KB pure-Rust daemon, 2.66 MB background RAM (vs 231 MB Docker/containerd)"},
-            {"id": "superd_cgroup", "name": "Cgroup v2 Resource Manager", "type": "Resource Control", "details": "Direct control of memory.max, memory.swap.max, cpu.max, pids.max"},
-            {"id": "superd_watchdog", "name": "Health Engine & Backoff Watchdog", "type": "Resilience", "details": "Periodic health checks, crash detection in <250ms, exponential backoff retries"},
-            {"id": "superd_ipc", "name": "JSON-RPC UNIX Domain Socket", "type": "Control Plane", "details": "/run/ferro/superd.sock bounded reader, survives 1,000 adversarial buffer bombs"}
+            {"id": "superd_daemon", "name": "ferro-superd Daemon", "type": "Supervisor", "details": "483 KB pure-Rust daemon, 2.66 MB background RAM (vs 231 MB Docker/containerd)", "editions": ["edition_cloud", "edition_as400", "edition_desktop"]},
+            {"id": "superd_cgroup", "name": "Cgroup v2 Resource Manager", "type": "Resource Control", "details": "Direct control of memory.max, memory.swap.max, cpu.max, pids.max", "editions": ["edition_cloud", "edition_as400"]},
+            {"id": "superd_watchdog", "name": "Health Engine & Backoff Watchdog", "type": "Resilience", "details": "Periodic health checks, crash detection in <250ms, exponential backoff retries", "editions": ["edition_cloud", "edition_as400"]},
+            {"id": "game_gamemode", "name": "Dynamic GameMode Engine", "type": "Resource Governor", "details": "Automatic Nice -10 CPU priority boost & throttling of background services", "editions": ["edition_gaming"]}
         ]
     },
     {
@@ -199,9 +239,9 @@ ARCHITECTURAL_LAYERS = [
         "description": "ferrocage: Autonomous micro-container runner replacing Docker & containerd. Sub-2ms cold startup, rootless user namespaces, and host volume bind mounts.",
         "crates": ["crates/ferrocage"],
         "components": [
-            {"id": "cage_engine", "name": "ferrocage Engine", "type": "Micro-Container", "details": "1.7 ms micro-container startup (~200x faster than Docker), 0 MB background daemon"},
-            {"id": "cage_ns", "name": "Namespace Virtualizer", "type": "Isolation", "details": "CLONE_NEWPID + CLONE_NEWNS + CLONE_NEWUSER UID/GID map without root privileges"},
-            {"id": "cage_vols", "name": "Host Volume Bind Mounts", "type": "Storage", "details": "-v host:container direct bind mounting delegating disk access with 0 overhead"}
+            {"id": "cage_engine", "name": "ferrocage Engine", "type": "Micro-Container", "details": "1.7 ms micro-container startup (~200x faster than Docker), 0 MB background daemon", "editions": ["edition_cloud", "edition_gaming"]},
+            {"id": "cage_ns", "name": "Namespace Virtualizer", "type": "Isolation", "details": "CLONE_NEWPID + CLONE_NEWNS + CLONE_NEWUSER UID/GID map without root privileges", "editions": ["edition_cloud"]},
+            {"id": "cage_vols", "name": "Host Volume Bind Mounts", "type": "Storage", "details": "-v host:container direct bind mounting delegating disk access with 0 overhead", "editions": ["edition_cloud"]}
         ]
     },
     {
@@ -211,60 +251,63 @@ ARCHITECTURAL_LAYERS = [
         "description": "ferro sandbox: Multi-profile Landlock LSM security framework. Selectable profiles (strict, shared, broker, dev) and zero-copy shared memory pools.",
         "crates": ["crates/ferro-core/src/main.rs (run_sandbox)"],
         "components": [
-            {"id": "sand_strict", "name": "Profile 'strict'", "type": "Profile", "details": "Maximum isolation: locked root, dropped capabilities, private network, zero ambient authority"},
-            {"id": "sand_shared", "name": "Profile 'shared' (SHM Mesh)", "type": "Profile", "details": "Multi-sandbox cooperative processing via zero-copy /dev/shm/ferro_<pool> pools"},
-            {"id": "sand_broker", "name": "Profile 'broker' (Gateway)", "type": "Profile", "details": "Strict communication routing exclusively through authorized UNIX domain socket gateways"},
-            {"id": "sand_dev", "name": "Profile 'dev' (Permissive)", "type": "Profile", "details": "Developer mode with relaxed path isolation and security violation audit logging"}
+            {"id": "sand_strict", "name": "Profile 'strict'", "type": "Profile", "details": "Maximum isolation: locked root, dropped capabilities, private network, zero ambient authority", "editions": ["edition_cloud"]},
+            {"id": "sand_shared", "name": "Profile 'shared' (SHM Mesh)", "type": "Profile", "details": "Multi-sandbox cooperative processing via zero-copy /dev/shm/ferro_<pool> pools", "editions": ["edition_cloud", "edition_as400"]},
+            {"id": "sand_broker", "name": "Profile 'broker' (Gateway)", "type": "Profile", "details": "Strict communication routing exclusively through authorized UNIX domain socket gateways", "editions": ["edition_cloud"]},
+            {"id": "game_proton_wine", "name": "Wine / Proton Subsystem", "type": "Translation Layer", "details": "Windows ABI emulation under sandboxed user permissions (/usr/bin/wine64)", "editions": ["edition_gaming"]}
         ]
     },
     {
         "id": "layer_6",
         "name": "Layer 6: Package Governance & Registry",
         "color": "#0891b2",
-        "description": "ferro-pkg: Autonomous binary packaging system supporting native RPK archives, cryptographic integrity verification, atomic rollbacks, and Debian .deb compatibility.",
+        "description": "ferro-pkg: Autonomous binary packaging system supporting native RPK archives, cryptographic integrity verification, atomic rollbacks, and PE/MSI inspection.",
         "crates": ["crates/ferro-pkg"],
         "components": [
-            {"id": "pkg_rpk", "name": "RPK Binary Package Engine", "type": "Package Manager", "details": "Fast pure-Rust format, zstd compression, cryptographic SHA-256 signing"},
-            {"id": "pkg_tx", "name": "Transactional Atomicity", "type": "Rollback", "details": "Atomic snapshot installs; zero partial state on installation interruption"},
-            {"id": "pkg_apt", "name": "Debian .deb Compatibility", "type": "Compatibility", "details": "Direct parsing and extraction of Debian packages without dpkg/apt"}
+            {"id": "pkg_rpk", "name": "RPK Binary Package Engine", "type": "Package Manager", "details": "Fast pure-Rust format, zstd compression, cryptographic SHA-256 signing", "editions": ["edition_cloud", "edition_desktop", "edition_gaming", "edition_as400"]},
+            {"id": "pkg_tx", "name": "Transactional Atomicity", "type": "Rollback", "details": "Atomic snapshot installs; zero partial state on installation interruption", "editions": ["edition_cloud", "edition_as400"]},
+            {"id": "game_pe_msi", "name": "PE & MSI Binary Inspector", "type": "Package Analysis", "details": "Native extraction of Windows PE32/PE32+ and MSI headers for Wine/Proton dependency mapping", "editions": ["edition_gaming"]}
         ]
     },
     {
         "id": "layer_7",
-        "name": "Layer 7: Pure-Rust Core Utilities & Shell",
+        "name": "Layer 7: Graphical Desktop, Core Utilities & Shell",
         "color": "#ea580c",
-        "description": "ferro-core: Complete 30/30 GNU coreutils parity suite implemented in pure Rust without external C dependencies, plus interactive Unix shell.",
-        "crates": ["crates/ferro-core/src/main.rs", "crates/ferro-core/src/shell.rs"],
+        "description": "Pure-Rust graphical compositor, framebuffer window manager, 30/30 GNU coreutils parity suite, and interactive shell.",
+        "crates": ["crates/ferro-compositor", "crates/ferro-gui", "crates/xdg-desktop-portal-ferro", "crates/ferro-core"],
         "components": [
-            {"id": "core_files", "name": "File & Directory Suite", "type": "Coreutils", "details": "ls, cp, mv, rm, mkdir, rmdir, touch, cat, head, tail, stat, chmod, chown"},
-            {"id": "core_text", "name": "Text Processing Engine", "type": "Coreutils", "details": "grep, sed, awk, wc, diff, sort, uniq, cut, tr, tee"},
-            {"id": "core_sys", "name": "System Diagnostics Suite", "type": "Coreutils", "details": "ps, top, kill, df, du, free, uname, mount, umount, dmesg"},
-            {"id": "core_shell", "name": "Interactive Ferro Shell", "type": "Shell", "details": "Command history, pipelines (|), I/O redirection (<, >, >>), job control"}
+            {"id": "comp_wayland", "name": "ferro-compositor (Wayland)", "type": "Compositor", "details": "GPU-accelerated Wayland compositor, Dual-Kawase acrylic blur, Layer-shell protocols", "editions": ["edition_desktop", "edition_gaming"]},
+            {"id": "gui_framebuffer", "name": "ferro-gui (Framebuffer)", "type": "Window Manager", "details": "Direct /dev/fb0 double-buffered framebuffer rendering, font8x8 ASCII rasterizer", "editions": ["edition_desktop"]},
+            {"id": "portal_xdg", "name": "xdg-desktop-portal-ferro", "type": "Portal", "details": "Native XDG desktop portal integration for file pickers, screencasting, notifications", "editions": ["edition_desktop", "edition_gaming"]},
+            {"id": "core_files", "name": "30/30 GNU Parity Coreutils", "type": "Coreutils", "details": "Complete GNU/POSIX parity: ls, cp, mv, grep, sed, awk, ps, top, kill, df, free, etc.", "editions": ["edition_cloud", "edition_desktop", "edition_gaming", "edition_as400"]},
+            {"id": "core_shell", "name": "Interactive Ferro Shell", "type": "Shell", "details": "Command history, pipelines (|), I/O redirection (<, >, >>), job control", "editions": ["edition_cloud", "edition_desktop", "edition_as400"]}
         ]
     },
     {
         "id": "layer_8",
-        "name": "Layer 8: High-Throughput I/O & Networking",
+        "name": "Layer 8: High-Throughput I/O & Streaming",
         "color": "#4f46e5",
-        "description": "ferro-io, sshd, dhcp & syslog: High-velocity asynchronous I/O primitives, embedded SSH server, pure-Rust DHCP client, and kmsg kernel logging.",
-        "crates": ["crates/ferro-io", "crates/ferro-core/src/sshd.rs", "crates/ferro-core/src/dhcp.rs", "crates/ferro-core/src/syslog.rs"],
+        "description": "ferro-io, sshd, dhcp, Web Desktop streaming, and Vulkan translation layers.",
+        "crates": ["crates/ferro-io", "crates/ferro-core", "tools/verify-web-desktop.sh"],
         "components": [
-            {"id": "io_buffers", "name": "ferro-io Buffer Pools", "type": "I/O Engine", "details": "Zero-copy ring buffers, async event multiplexing, buffer reuse without heap allocation"},
-            {"id": "net_sshd", "name": "Embedded SSH Daemon", "type": "Networking", "details": "Pure-Rust SSH protocol handler with public-key cryptographic authentication"},
-            {"id": "net_dhcp", "name": "Autonomous DHCP Client", "type": "Networking", "details": "Sub-millisecond IP leasing, default gateway configuration, and DNS resolution"}
+            {"id": "io_buffers", "name": "ferro-io Buffer Pools", "type": "I/O Engine", "details": "Zero-copy ring buffers, async event multiplexing, buffer reuse without heap allocation", "editions": ["edition_cloud", "edition_as400"]},
+            {"id": "web_desktop_stream", "name": "Web Desktop Streaming (Port 6080)", "type": "Remote Desktop", "details": "HTML5 canvas live streaming over WebSocket / noVNC / KasmVNC for browser-based access", "editions": ["edition_desktop"]},
+            {"id": "game_dxvk_vkd3d", "name": "DXVK & VKD3D Vulkan Mapping", "type": "Graphics Translation", "details": "DirectX 9/10/11/12 to Vulkan mapping (DXVK_ASYNC=1, State Cache enabled)", "editions": ["edition_gaming"]},
+            {"id": "net_sshd", "name": "Embedded SSH Server", "type": "Networking", "details": "Pure-Rust SSH protocol handler with public-key cryptographic authentication", "editions": ["edition_cloud", "edition_desktop", "edition_as400"]}
         ]
     },
     {
         "id": "layer_9",
-        "name": "Layer 9: Tooling, Benchmarks & Adversarial Chaos",
+        "name": "Layer 9: Enterprise Workloads, Benchmarks & Chaos Suites",
         "color": "#be123c",
-        "description": "Comprehensive test engines, the $12 server challenge harness, high-throughput SQLite WAL benchmarks, and 9-vector adversarial chaos qualification suites.",
+        "description": "AS/400 batch processing, 5250 terminal emulation, $12 Challenge SQLite WAL suite, and 9-vector adversarial chaos qualification.",
         "crates": ["tools/"],
         "components": [
-            {"id": "tool_12dollar", "name": "$12 Challenge Harness", "type": "Benchmark", "details": "High-throughput 4-core 8GB SQLite WAL benchmark (1,858 req/s vs Ubuntu collapse)"},
-            {"id": "tool_chaos", "name": "Adversarial Chaos Suite", "type": "Chaos Test", "details": "9 threat models: path traversal, root defacement, OOM bombs, fork bombs, SIGKILL durability"},
-            {"id": "tool_parity", "name": "GNU Parity Verification Engine", "type": "Verification", "details": "Automated 30/30 GNU vs FerroOS behavioral and argument compatibility checker"},
-            {"id": "tool_builder", "name": "Autonomous Appliance Builder", "type": "Packaging", "details": "Creates 3.59 MB pure-Rust bootable rootfs containing all four strategic pillars"}
+            {"id": "as400_batch", "name": "AS/400 Parallel Batch Engine", "type": "Batch Processing", "details": "Parallel multi-worker accounting, payroll, and inventory batch runs (14 MB RSS)", "editions": ["edition_as400"]},
+            {"id": "as400_5250", "name": "5250 Terminal Emulation", "type": "Terminal Emulation", "details": "Green-screen 5250 terminal rendering over Telnet (port 23) and Web HTML5 (port 8080)", "editions": ["edition_as400"]},
+            {"id": "as400_ledger", "name": "ACID Ledger Queue", "type": "Durability", "details": "Continuous transaction journal with 100% atomic reconciliation", "editions": ["edition_as400"]},
+            {"id": "tool_12dollar", "name": "$12 Challenge WAL Benchmark", "type": "Benchmark", "details": "High-throughput 4-core 8GB SQLite WAL benchmark (1,858 req/s vs Ubuntu collapse)", "editions": ["edition_cloud"]},
+            {"id": "tool_chaos", "name": "9-Vector Adversarial Chaos Suite", "type": "Chaos Test", "details": "Path traversal, root defacement, OOM bombs, fork bombs, SIGKILL durability", "editions": ["edition_cloud", "edition_as400"]}
         ]
     }
 ]
@@ -317,11 +360,6 @@ def execute_survey() -> Dict[str, Any]:
     total_all_lines = total_code + total_comments + total_blanks
     overall_density = round((total_comments / total_all_lines * 100) if total_all_lines > 0 else 0, 1)
 
-    print("-" * 80)
-    print(f"  TOTALS: {len(rust_files)} Rust Files | Code: {total_code:,} | Comments: {total_comments:,} ({overall_density}%) | Blank: {total_blanks:,} | Total: {total_all_lines:,}")
-    print(f"  SYMBOLS: Structs: {total_structs:,} | Enums: {total_enums:,} | Functions: {total_functions:,} | Extracted Insights: {len(all_insights):,}")
-    print("=" * 80)
-
     survey_data = {
         "metadata": {
             "title": "FerroOS Complete Codebase Survey",
@@ -337,12 +375,12 @@ def execute_survey() -> Dict[str, Any]:
             "functions_count": total_functions,
             "insights_count": len(all_insights)
         },
+        "editions": FERRO_EDITIONS,
         "layers": ARCHITECTURAL_LAYERS,
         "files": scanned_files,
         "insights": all_insights
     }
 
-    # Save JSON report
     out_json = os.path.join(REPORTS_DIR, "ferro_os_full_codebase_survey.json")
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     with open(out_json, "w") as f:
@@ -356,13 +394,12 @@ def execute_survey() -> Dict[str, Any]:
 # ==============================================================================
 
 def generate_interactive_html(survey_data: Dict[str, Any]):
-    print("\n🎨 Generating Interactive Architecture Graph HTML...")
+    print("\n🎨 Generating Unified 4-Edition Architecture Graph HTML...")
 
-    # Build Graph Nodes & Edges
     nodes = []
     edges = []
 
-    # 1. Layer Nodes
+    # 1. Layer Nodes & Components
     for layer in survey_data["layers"]:
         nodes.append({
             "id": layer["id"],
@@ -372,10 +409,10 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
             "color": layer["color"],
             "radius": 28,
             "description": layer["description"],
-            "type": "Layer"
+            "type": "Layer",
+            "editions": ["edition_cloud", "edition_desktop", "edition_gaming", "edition_as400"]
         })
 
-        # Component Nodes
         for comp in layer.get("components", []):
             nodes.append({
                 "id": comp["id"],
@@ -385,7 +422,8 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
                 "color": layer["color"],
                 "radius": 18,
                 "description": comp["details"],
-                "type": comp.get("type", "Component")
+                "type": comp.get("type", "Component"),
+                "editions": comp.get("editions", ["edition_cloud"])
             })
             edges.append({
                 "source": layer["id"],
@@ -412,27 +450,49 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
     for s, t in layer_links:
         edges.append({"source": s, "target": t, "type": "structural_flow"})
 
+    # Specific Cross-Edition Functional Links
+    cross_links = [
+        ("game_sched_ext", "game_gamemode", "scheduler_link"),
+        ("game_gamemode", "superd_daemon", "priority_boost"),
+        ("comp_wayland", "gui_framebuffer", "display_fallback"),
+        ("comp_wayland", "portal_xdg", "portal_integration"),
+        ("comp_wayland", "web_desktop_stream", "stream_scanout"),
+        ("game_dxvk_vkd3d", "game_proton_wine", "vulkan_mapping"),
+        ("game_pe_msi", "game_proton_wine", "binary_headers"),
+        ("as400_batch", "as400_ledger", "atomic_commits"),
+        ("as400_batch", "as400_5250", "terminal_display"),
+        ("superd_daemon", "sand_strict", "supervision_link"),
+        ("superd_daemon", "as400_batch", "batch_supervision")
+    ]
+    for s, t, typ in cross_links:
+        edges.append({"source": s, "target": t, "type": typ})
+
     # Key Source Files as nodes attached to layers
     file_layer_map = {
-        "crates/ferro-init/src/main.rs": "layer_2",
-        "crates/ferro-init/src/fdstore.rs": "layer_2",
-        "crates/ferro-core/src/cloud_init.rs": "layer_2",
-        "crates/ferro-core/src/disk.rs": "layer_2",
-        "crates/ferro-superd/src/main.rs": "layer_3",
-        "crates/ferro-core/src/service.rs": "layer_3",
-        "crates/ferrocage/src/main.rs": "layer_4",
-        "crates/ferro-core/src/main.rs": "layer_7",
-        "crates/ferro-core/src/shell.rs": "layer_7",
-        "crates/ferro-pkg/src/main.rs": "layer_6",
-        "crates/ferro-io/src/lib.rs": "layer_8",
-        "crates/ferro-core/src/sshd.rs": "layer_8",
-        "crates/ferro-core/src/dhcp.rs": "layer_8"
+        "crates/ferro-init/src/main.rs": ("layer_2", ["edition_cloud", "edition_desktop", "edition_gaming", "edition_as400"]),
+        "crates/ferro-init/src/fdstore.rs": ("layer_2", ["edition_cloud", "edition_as400"]),
+        "crates/ferro-core/src/cloud_init.rs": ("layer_2", ["edition_cloud"]),
+        "crates/ferro-core/src/disk.rs": ("layer_2", ["edition_cloud", "edition_as400"]),
+        "crates/ferro-superd/src/main.rs": ("layer_3", ["edition_cloud", "edition_as400", "edition_desktop"]),
+        "crates/ferro-core/src/service.rs": ("layer_3", ["edition_cloud", "edition_as400"]),
+        "crates/ferrocage/src/main.rs": ("layer_4", ["edition_cloud", "edition_gaming"]),
+        "crates/ferro-core/src/main.rs": ("layer_7", ["edition_cloud", "edition_desktop", "edition_gaming", "edition_as400"]),
+        "crates/ferro-core/src/shell.rs": ("layer_7", ["edition_cloud", "edition_desktop", "edition_as400"]),
+        "crates/ferro-compositor/src/main.rs": ("layer_7", ["edition_desktop", "edition_gaming"]),
+        "crates/ferro-gui/src/main.rs": ("layer_7", ["edition_desktop"]),
+        "crates/xdg-desktop-portal-ferro/src/main.rs": ("layer_7", ["edition_desktop", "edition_gaming"]),
+        "crates/ferro-pkg/src/main.rs": ("layer_6", ["edition_cloud", "edition_desktop", "edition_gaming", "edition_as400"]),
+        "crates/ferro-pkg/src/pe.rs": ("layer_6", ["edition_gaming"]),
+        "crates/ferro-pkg/src/msi.rs": ("layer_6", ["edition_gaming"]),
+        "crates/ferro-io/src/lib.rs": ("layer_8", ["edition_cloud", "edition_as400"]),
+        "crates/ferro-core/src/sshd.rs": ("layer_8", ["edition_cloud", "edition_desktop", "edition_as400"]),
+        "crates/ferro-core/src/dhcp.rs": ("layer_8", ["edition_cloud", "edition_desktop"])
     }
 
     for f_info in survey_data["files"]:
         f_rel = f_info["file"]
         if f_rel in file_layer_map:
-            l_id = file_layer_map[f_rel]
+            l_id, ed_list = file_layer_map[f_rel]
             f_id = f"file_{f_info['name']}"
             nodes.append({
                 "id": f_id,
@@ -443,7 +503,8 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
                 "radius": 14,
                 "description": f"Source File: {f_rel} | Lines: {f_info['total_lines']} ({f_info['code_lines']} code, {f_info['comment_lines']} comments)",
                 "file_data": f_info,
-                "type": "Rust Source File"
+                "type": "Rust Source File",
+                "editions": ed_list
             })
             edges.append({"source": l_id, "target": f_id, "type": "implemented_in"})
 
@@ -452,7 +513,7 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FerroOS: Complete Kernel-to-Userspace Architectural Graph & Codebase Survey</title>
+    <title>FerroOS: Unified Architecture Graph (Cloud, Desktop, Gaming, AS/400)</title>
     <style>
         :root {{
             --bg-dark: #0a0f1d;
@@ -502,7 +563,7 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
         .brand-icon {{
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, #38bdf8, #6366f1);
+            background: linear-gradient(135deg, #38bdf8, #a855f7);
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -532,7 +593,7 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
         /* Stats Bar */
         .stats-strip {{
             display: flex;
-            gap: 20px;
+            gap: 18px;
             align-items: center;
             font-size: 13px;
             font-family: var(--font-mono);
@@ -550,6 +611,43 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
             color: var(--text-muted);
             font-size: 11px;
             text-transform: uppercase;
+        }}
+
+        /* Edition Filter Bar */
+        .edition-bar {{
+            height: 48px;
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 24px;
+            z-index: 45;
+        }}
+        .edition-btn {{
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }}
+        .edition-btn:hover {{
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--text-primary);
+            border-color: var(--accent-cyan);
+        }}
+        .edition-btn.active {{
+            background: rgba(56, 189, 248, 0.2);
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
         }}
 
         /* Main Workspace Container */
@@ -589,6 +687,29 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
         .search-input:focus {{
             border-color: var(--accent-cyan);
             box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+        }}
+
+        .edition-info-card {{
+            margin: 12px 16px 0 16px;
+            padding: 12px;
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 8px;
+            display: none;
+        }}
+        .edition-info-card.visible {{
+            display: block;
+        }}
+        .edition-card-title {{
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 4px;
+        }}
+        .edition-card-desc {{
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
         }}
 
         .layer-list {{
@@ -673,7 +794,7 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
             top: 20px;
             right: 20px;
             width: 440px;
-            max-height: calc(100vh - 104px);
+            max-height: calc(100vh - 150px);
             background: var(--bg-panel);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border);
@@ -791,8 +912,8 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
             <div class="brand-icon">⬡</div>
             <div>
                 <div class="brand-title">
-                    FerroOS Architecture Graph & Full Codebase Survey
-                    <span class="brand-tag">Autonomous Pure-Rust</span>
+                    FerroOS Unified Architecture Graph & Full Codebase Survey
+                    <span class="brand-tag">Four Connected Editions</span>
                 </div>
             </div>
         </div>
@@ -806,7 +927,7 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
                 <span class="stat-lbl">Rust Code</span>
             </div>
             <div class="stat-item">
-                <span class="stat-val">{survey_data['metadata']['comment_lines']:,} ({survey_data['metadata']['comment_density_pct']}%)</span>
+                <span class="stat-val">{survey_data['metadata']['comment_lines']:,}</span>
                 <span class="stat-lbl">Comments</span>
             </div>
             <div class="stat-item">
@@ -824,6 +945,16 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
         </div>
     </header>
 
+    <!-- Edition Selector Bar -->
+    <div class="edition-bar">
+        <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Editions:</span>
+        <button class="edition-btn active" data-edition="all" onclick="filterEdition('all')">🌐 All Systems (Full Ecosystem)</button>
+        <button class="edition-btn" data-edition="edition_cloud" onclick="filterEdition('edition_cloud')">☁️ Cloud Server Edition</button>
+        <button class="edition-btn" data-edition="edition_desktop" onclick="filterEdition('edition_desktop')">🖥️ Desktop & Web Edition</button>
+        <button class="edition-btn" data-edition="edition_gaming" onclick="filterEdition('edition_gaming')">🎮 Gaming & Proton Edition</button>
+        <button class="edition-btn" data-edition="edition_as400" onclick="filterEdition('edition_as400')">🏛️ AS/400 Enterprise Edition</button>
+    </div>
+
     <!-- Main Body -->
     <div class="app-body">
 
@@ -831,6 +962,10 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
         <aside class="sidebar">
             <div class="search-box">
                 <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search layers, structs, functions, syscalls...">
+            </div>
+            <div class="edition-info-card" id="editionCard">
+                <div class="edition-card-title" id="edCardTitle">Edition Overview</div>
+                <div class="edition-card-desc" id="edCardDesc">Description</div>
             </div>
             <div class="layer-list" id="layerList">
                 <!-- Injected via JS -->
@@ -844,7 +979,7 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
             <!-- Floating Controls -->
             <div class="controls-overlay">
                 <button class="btn" onclick="resetZoom()">⟲ Reset Zoom</button>
-                <button class="btn" onclick="toggleLayout()">⚡ Toggle Hierarchy / Force</button>
+                <button class="btn" onclick="toggleLayout()">⚡ Toggle Hierarchy / Radial</button>
                 <span style="color: var(--text-muted);">| Pan: Drag Canvas • Zoom: Mouse Wheel • Select: Click Node</span>
             </div>
 
@@ -866,29 +1001,29 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
         </main>
     </div>
 
-    <!-- Graph Visualization Logic (Pure Canvas / SVG Force Physics) -->
+    <!-- Graph Visualization Logic -->
     <script>
         const graphData = {{
             nodes: {json.dumps(nodes)},
             edges: {json.dumps(edges)},
-            layers: {json.dumps(survey_data['layers'])}
+            layers: {json.dumps(survey_data['layers'])},
+            editions: {json.dumps(survey_data['editions'])}
         }};
 
-        // State
-        let transform = {{ x: 200, y: 150, k: 0.85 }};
+        let transform = {{ x: 220, y: 120, k: 0.8 }};
         let isDragging = false;
         let dragStart = {{ x: 0, y: 0 }};
         let selectedNode = null;
+        let activeEdition = 'all';
         let isHierarchical = true;
 
         const svg = document.getElementById('viewport');
         const layerListEl = document.getElementById('layerList');
         const searchInput = document.getElementById('searchInput');
 
-        // Render Layers into Sidebar
         function renderSidebar() {{
             layerListEl.innerHTML = '';
-            graphData.layers.forEach((layer, idx) => {{
+            graphData.layers.forEach((layer) => {{
                 const item = document.createElement('div');
                 item.className = 'layer-item';
                 item.dataset.layerId = layer.id;
@@ -909,14 +1044,33 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
             }});
         }}
 
-        // Layout Nodes
+        function filterEdition(editionId) {{
+            activeEdition = editionId;
+            document.querySelectorAll('.edition-btn').forEach(btn => {{
+                btn.classList.toggle('active', btn.dataset.edition === editionId);
+            }});
+
+            const edCard = document.getElementById('editionCard');
+            if (editionId === 'all') {{
+                edCard.classList.remove('visible');
+            }} else {{
+                const edObj = graphData.editions.find(e => e.id === editionId);
+                if (edObj) {{
+                    edCard.classList.add('visible');
+                    document.getElementById('edCardTitle').textContent = edObj.badge;
+                    document.getElementById('edCardDesc').textContent = edObj.description;
+                }}
+            }}
+
+            draw();
+        }}
+
         function layoutNodes() {{
             const width = svg.clientWidth || 1200;
             const height = svg.clientHeight || 800;
 
             if (isHierarchical) {{
-                // Hierarchical layout top-to-bottom across 10 layers
-                const layerYGap = 160;
+                const layerYGap = 150;
                 const startY = 80;
 
                 graphData.layers.forEach((layer, layerIdx) => {{
@@ -929,18 +1083,17 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
                         layerNode.y = y;
                     }}
 
-                    const compXStart = 480;
-                    const compXGap = 160;
+                    const compXStart = 460;
+                    const compXGap = 170;
                     childNodes.forEach((child, childIdx) => {{
                         child.x = compXStart + (childIdx * compXGap);
-                        child.y = y + (childIdx % 2 === 0 ? -20 : 20);
+                        child.y = y + (childIdx % 2 === 0 ? -25 : 25);
                     }});
                 }});
             }} else {{
-                // Circular layout
                 const cx = width / 2;
                 const cy = height / 2;
-                const radius = Math.min(width, height) * 0.4;
+                const radius = Math.min(width, height) * 0.42;
                 graphData.nodes.forEach((n, idx) => {{
                     const angle = (idx / graphData.nodes.length) * 2 * Math.PI;
                     n.x = cx + Math.cos(angle) * radius;
@@ -949,51 +1102,64 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
             }}
         }}
 
-        // Draw Graph
         function draw() {{
             svg.innerHTML = '';
 
             const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             g.setAttribute('transform', `translate(${{transform.x}}, ${{transform.y}}) scale(${{transform.k}})`);
 
-            // 1. Draw Edges
+            // Edges
             graphData.edges.forEach(edge => {{
                 const s = graphData.nodes.find(n => n.id === edge.source);
                 const t = graphData.nodes.find(n => n.id === edge.target);
                 if (s && t) {{
+                    const sMatch = activeEdition === 'all' || (s.editions && s.editions.includes(activeEdition));
+                    const tMatch = activeEdition === 'all' || (t.editions && t.editions.includes(activeEdition));
+                    const isDimmed = !sMatch || !tMatch;
+
                     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                     line.setAttribute('x1', s.x);
                     line.setAttribute('y1', s.y);
                     line.setAttribute('x2', t.x);
                     line.setAttribute('y2', t.y);
-                    line.setAttribute('stroke', edge.type === 'structural_flow' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(148, 163, 184, 0.2)');
-                    line.setAttribute('stroke-width', edge.type === 'structural_flow' ? '2.5' : '1.5');
+
                     if (edge.type === 'structural_flow') {{
+                        line.setAttribute('stroke', isDimmed ? 'rgba(148, 163, 184, 0.08)' : 'rgba(56, 189, 248, 0.45)');
+                        line.setAttribute('stroke-width', '2.5');
                         line.setAttribute('stroke-dasharray', '5,5');
+                    }} else if (edge.type === 'scheduler_link' || edge.type === 'priority_boost' || edge.type === 'vulkan_mapping') {{
+                        line.setAttribute('stroke', isDimmed ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.6)');
+                        line.setAttribute('stroke-width', '2');
+                    }} else {{
+                        line.setAttribute('stroke', isDimmed ? 'rgba(148, 163, 184, 0.05)' : 'rgba(148, 163, 184, 0.25)');
+                        line.setAttribute('stroke-width', '1.5');
                     }}
                     g.appendChild(line);
                 }}
             }});
 
-            // 2. Draw Nodes
+            // Nodes
             graphData.nodes.forEach(node => {{
+                const isMatch = activeEdition === 'all' || (node.editions && node.editions.includes(activeEdition));
+
                 const nodeG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 nodeG.setAttribute('transform', `translate(${{node.x}}, ${{node.y}})`);
                 nodeG.style.cursor = 'pointer';
+                nodeG.style.opacity = isMatch ? '1.0' : '0.15';
 
-                // Circle
                 const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 circle.setAttribute('r', node.radius);
                 circle.setAttribute('fill', node.color);
-                circle.setAttribute('stroke', selectedNode && selectedNode.id === node.id ? '#ffffff' : 'rgba(255, 255, 255, 0.2)');
+                circle.setAttribute('stroke', selectedNode && selectedNode.id === node.id ? '#ffffff' : 'rgba(255, 255, 255, 0.25)');
                 circle.setAttribute('stroke-width', selectedNode && selectedNode.id === node.id ? '3' : '1.5');
-                circle.setAttribute('filter', 'drop-shadow(0 0 6px ' + node.color + '88)');
+                if (isMatch) {{
+                    circle.setAttribute('filter', 'drop-shadow(0 0 6px ' + node.color + '88)');
+                }}
 
-                // Label
                 const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                 text.setAttribute('y', node.radius + 14);
                 text.setAttribute('text-anchor', 'middle');
-                text.setAttribute('fill', '#f8fafc');
+                text.setAttribute('fill', isMatch ? '#f8fafc' : '#64748b');
                 text.setAttribute('font-size', node.group === 'layer' ? '12px' : '10px');
                 text.setAttribute('font-weight', node.group === 'layer' ? '700' : '500');
                 text.setAttribute('font-family', 'sans-serif');
@@ -1013,7 +1179,6 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
             svg.appendChild(g);
         }}
 
-        // Selection & Inspector
         function selectNode(node) {{
             selectedNode = node;
             draw();
@@ -1048,7 +1213,7 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
                 metricsEl.innerHTML = `
                     <div class="ins-metric"><span class="ins-val">LSM</span><span class="ins-lbl">Security</span></div>
                     <div class="ins-metric"><span class="ins-val">&lt; 1ms</span><span class="ins-lbl">Latency</span></div>
-                    <div class="ins-metric"><span class="ins-val">0 MB</span><span class="ins-lbl">Daemon RSS</span></div>
+                    <div class="ins-metric"><span class="ins-val">Pure Rust</span><span class="ins-lbl">Runtime</span></div>
                 `;
                 extraEl.innerHTML = '';
             }}
@@ -1074,7 +1239,7 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
         }}
 
         function resetZoom() {{
-            transform = {{ x: 200, y: 150, k: 0.85 }};
+            transform = {{ x: 220, y: 120, k: 0.8 }};
             draw();
         }}
 
@@ -1084,7 +1249,6 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
             draw();
         }}
 
-        // Canvas Pan & Zoom Events
         svg.addEventListener('mousedown', e => {{
             isDragging = true;
             dragStart = {{ x: e.clientX - transform.x, y: e.clientY - transform.y }};
@@ -1110,7 +1274,6 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
             draw();
         }});
 
-        // Search Filter
         searchInput.addEventListener('input', e => {{
             const query = e.target.value.toLowerCase().trim();
             if (!query) {{
@@ -1123,7 +1286,6 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
             }});
         }});
 
-        // Initialize
         window.addEventListener('resize', () => {{
             layoutNodes();
             draw();
@@ -1142,7 +1304,6 @@ def generate_interactive_html(survey_data: Dict[str, Any]):
     with open(out_html, "w", encoding="utf-8") as f:
         f.write(html_content)
 
-    # Also duplicate into reports for ease of access
     dup_html = os.path.join(REPORTS_DIR, "ferro_os_architecture_graph.html")
     with open(dup_html, "w", encoding="utf-8") as f:
         f.write(html_content)

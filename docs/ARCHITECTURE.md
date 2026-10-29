@@ -129,7 +129,78 @@ flowchart TD
 
 ---
 
-## 4. Sandboxed Disk Storage Architecture
+## 4. The Four Connected Editions of FerroOS
+
+FerroOS is designed around a single, unified pure-Rust core that powers four specialized operating system profiles:
+
+```mermaid
+flowchart TD
+    CORE["FerroOS Pure-Rust Autonomous Core\n(ferro-init • ferro-core • ferro-superd • ferro sandbox • ferro-pkg)"]
+
+    subgraph E1 ["1. Cloud Server Edition"]
+        C_SVC["High-Throughput Microservices ($12 Challenge)"]
+        C_SUPER["ferro-superd (2.66 MB RAM)"]
+        C_CAGE["ferrocage (Sub-2ms Containers)"]
+        C_IMDS["cloud_init Autonomous IMDS"]
+    end
+
+    subgraph E2 ["2. Desktop & Web Edition"]
+        D_COMP["ferro-compositor (GPU Wayland)"]
+        D_GUI["ferro-gui (Framebuffer /dev/fb0)"]
+        D_PORTAL["xdg-desktop-portal-ferro"]
+        D_WEB["Web Desktop Streaming (Port 6080)"]
+    end
+
+    subgraph E3 ["3. Gaming & Proton Edition"]
+        G_SCHED["sched_ext Real-Time Gaming Policy"]
+        G_MODE["Dynamic GameMode (Nice -10)"]
+        G_VULKAN["DXVK & VKD3D Vulkan Mapping"]
+        G_WINE["Wine / Proton / Box64 / PE-MSI"]
+    end
+
+    subgraph E4 ["4. AS/400 Enterprise Edition"]
+        A_BATCH["Parallel Batch Queue Engine"]
+        A_5250["5250 Green-Screen Terminal (Web)"]
+        A_LEDGER["Continuous ACID Ledger Journal"]
+    end
+
+    CORE --> E1
+    CORE --> E2
+    CORE --> E3
+    CORE --> E4
+```
+
+### Edition 1: Cloud Server Edition
+- **Target**: Autonomous, high-density cloud computing droplets and hyperscaler instances (AWS, GCP, Azure, Hetzner).
+- **Core Stack**: `ferro-init`, `ferro-superd`, `ferrocage`, `ferro sandbox` with Landlock LSM, and autonomous `cloud-init` IMDS (`169.254.169.254`).
+- **Performance**: 3.59 MB rootfs, 2.66 MB supervisor memory, 1,858 req/s throughput in the $12 server challenge with zero Docker/containerd daemon footprint.
+
+### Edition 2: Desktop & Web Desktop Edition
+- **Target**: Ultra-fast graphical workstations, embedded kiosks, and browser-accessible cloud desktops.
+- **Graphical Stack**:
+  - `ferro-compositor`: GPU-accelerated Wayland compositor featuring DRM/KMS scanout, layer-shell protocols (`Background`, `Bottom`, `Top`, `Overlay`), damage tracking, and Dual-Kawase acrylic blur shaders.
+  - `ferro-gui`: Double-buffered direct framebuffer (`/dev/fb0`) window manager with `font8x8` ASCII bitmap rendering for zero-X11/zero-Wayland fallback.
+  - `xdg-desktop-portal-ferro`: Native XDG desktop portal integration for file pickers, screencasting, and system notifications.
+  - **Web Desktop**: HTML5 canvas live streaming over WebSocket / noVNC on port 6080 for remote browser access from any device.
+
+### Edition 3: Gaming & Proton Edition
+- **Target**: Low-latency, high-frame-rate native and Windows gaming on Linux.
+- **Gaming Stack**:
+  - **`sched_ext` Gaming Policy**: Real-time task scheduling (500 µs target slice, sub-50µs wakeup jitter) elevating rendering threads.
+  - **Dynamic GameMode Engine**: Automatic Nice -10 CPU priority boost, GPU performance governor, and background task cgroup throttling.
+  - **DirectX -> Vulkan Translation**: DXVK (D3D9/10/11) and VKD3D (D3D12) with `DXVK_ASYNC=1` state cache integration.
+  - **Wine / Proton & Multi-Arch Translation**: Native execution of Windows binaries via Wine64 and Box64/FEX-Emu bridges on ARM64; PE32/PE32+ and MSI header inspection in `ferro-pkg`.
+
+### Edition 4: AS/400 Enterprise Workload Edition
+- **Target**: Mission-critical banking, accounting, and high-concurrency enterprise batch transaction processing.
+- **Enterprise Stack**:
+  - **Parallel Batch Queue Engine**: Multi-worker concurrent accounting, payroll, and inventory batch runs with sub-15 MB RAM per worker.
+  - **5250 Terminal Emulation**: Green-screen 5250 terminal rendering over Telnet (port 23) and Web HTML5 (port 8080).
+  - **ACID Ledger Durability**: Continuous transaction journaling with 100% atomic reconciliation.
+
+---
+
+## 5. Sandboxed Disk Storage Architecture
 
 When a workload is sandboxed, how does it write to disk?
 1. **LSM Path Filtering**: Kernel Landlock intercepts every `open(O_WRONLY)` or `unlink()` syscall. If the target path is not in the process's authorized `--rw` ruleset, the kernel aborts with `EACCES` before the filesystem driver is reached.
@@ -138,7 +209,7 @@ When a workload is sandboxed, how does it write to disk?
 
 ---
 
-## 5. Head-to-Head Parity and Empirical Benchmarks
+## 6. Head-to-Head Parity and Empirical Benchmarks
 
 | Metric | FerroOS Pure Rust Core | Ubuntu Server 24.04 (Docker/systemd) | Measured Advantage |
 | :--- | :--- | :--- | :--- |
@@ -146,13 +217,21 @@ When a workload is sandboxed, how does it write to disk?
 | **Sandboxed Storage Write** | **1.6 ms** | **358.3 ms** | **~220x faster I/O initialization** |
 | **Kernel Security Block** | **1.7 ms** (Landlock LSM) | **341.5 ms** (AppArmor / remount) | **~190x faster security enforcement** |
 | **Container Startup Latency** | **1.7 ms** (`ferrocage`) | **350+ ms** (`docker run`) | Sub-millisecond container spin-up |
-| **Supervisor Binary Size** | **463 KB** (`ferro-superd`) | **~30 MB** (`systemd`) | **98.4% smaller footprint** |
+| **Supervisor Binary Size** | **483 KB** (`ferro-superd`) | **~30 MB** (`systemd`) | **98.4% smaller footprint** |
 | **Container Engine Size** | **495 KB** (`ferrocage`) | **~60 MB** (`dockerd` + `containerd`) | **99.1% smaller footprint** |
 | **Autonomous OS Rootfs** | **3.59 MB** (`ferro-os-pure:latest`) | **455 MB** (Ubuntu Minimal) | **99.2% diet reduction** |
 
 ---
 
-## 6. Remote Cloud-Build Workflow (GitHub Actions)
+## 7. Interactive Architectural Graph & Codebase Survey
+
+An interactive, standalone visual architecture explorer is generated directly from the codebase survey:
+- **Interactive Graph**: [`docs/ferro_os_architecture_graph.html`](file:///home/tarun-kumar/Desktop/sample%20os%20/docs/ferro_os_architecture_graph.html)
+- **Features**: Toggle between Hierarchical and Radial views, filter by edition (Cloud Server, Desktop & Web, Gaming & Proton, AS/400 Enterprise), search symbols and functions, and view live codebase metrics.
+
+---
+
+## 8. Remote Cloud-Build Workflow (GitHub Actions)
 
 Because building kernels, disk images, and root filesystems consumes heavy CPU and storage, the build process is offloaded entirely to GitHub:
 
@@ -169,7 +248,7 @@ flowchart LR
 
 ---
 
-## 4. Boot Sequence Timing Target
+## 9. Boot Sequence Timing Target
 
 | Stage | Expected Duration |
 | :--- | :--- |
