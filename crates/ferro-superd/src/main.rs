@@ -182,9 +182,12 @@ impl Supervisor {
             if path.extension().and_then(|s| s.to_str()) == Some("toml") {
                 match parse_service_toml(&path) {
                     Ok(config) => {
-                        if !lock.contains_key(&config.name) {
-                            println!("[ferro-superd] Loaded manifest for service: {}", config.name);
-                            let name = config.name.clone();
+                        let name = config.name.clone();
+                        if let Some(svc) = lock.get_mut(&name) {
+                            svc.config = config;
+                            println!("[ferro-superd] Updated manifest for service: {}", name);
+                        } else {
+                            println!("[ferro-superd] Loaded manifest for service: {}", name);
                             let svc = ManagedService::new(config);
                             lock.insert(name, svc);
                         }
@@ -344,6 +347,8 @@ fn setup_cgroup_v2(config: &ServiceConfig, pid: u32) {
         let bytes = mb * 1024 * 1024;
         let mem_file = cg_path.join("memory.max");
         let _ = fs::write(mem_file, format!("{}\n", bytes));
+        let swap_file = cg_path.join("memory.swap.max");
+        let _ = fs::write(swap_file, "0\n");
     }
 
     // Memory high warning
@@ -587,7 +592,9 @@ fn run_ipc_server(supervisor: Arc<Supervisor>) {
 }
 
 fn handle_client(stream: &mut UnixStream, supervisor: &Supervisor) {
-    let mut reader = BufReader::new(stream.try_clone().unwrap());
+    let Ok(clone) = stream.try_clone() else { return; };
+    use std::io::Read;
+    let mut reader = BufReader::new(clone.take(65536));
     let mut line = String::new();
 
     if reader.read_line(&mut line).is_ok() {

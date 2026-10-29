@@ -1,0 +1,64 @@
+[
+  {
+    "scenario": "Hostile Path Traversal & Secret Exfiltration",
+    "ferroos_status": "BLOCKED",
+    "ferroos_latency_ms": 11.83,
+    "ubuntu_status": "FAILED",
+    "ubuntu_latency_ms": 316.88,
+    "protection_mechanism": "Landlock LSM Kernel Syscall Interception"
+  },
+  {
+    "scenario": "Host Root Filesystem Defacement & Write Tampering",
+    "ferroos_status": "IMMUTABLE",
+    "ferroos_latency_ms": 11.01,
+    "ubuntu_status": "TAMPERED",
+    "ubuntu_latency_ms": 340.68,
+    "protection_mechanism": "Landlock LSM Kernel Invariant + Read-Only Delegation"
+  },
+  {
+    "scenario": "Privilege Escalation & Capability Hijacking",
+    "ferroos_status": "SECURE_DROPPED",
+    "ferroos_latency_ms": 14.62,
+    "ubuntu_status": "PERMISSIVE_RAW_CAPS",
+    "ubuntu_latency_ms": 329.88,
+    "protection_mechanism": "PR_SET_NO_NEW_PRIVS + Capability Masking"
+  },
+  {
+    "scenario": "Hostile OOM Memory Bomb Allocation Spike",
+    "ferroos_status": "CONTAINED_AND_ISOLATED",
+    "service_state": "failed",
+    "supervisor_resilience": "ONLINE",
+    "protection_mechanism": "Cgroups v2 memory.max Quota Enforcement"
+  },
+  {
+    "scenario": "Fork Bomb & PID Space Exhaustion Attack",
+    "ferroos_status": "BLOCKED_EAGAIN",
+    "configured_pids_max": 30,
+    "protection_mechanism": "Cgroups v2 pids.max Ceiling Control"
+  },
+  {
+    "scenario": "Hard Sudden Termination (SIGKILL) During ACID WAL Write",
+    "supervisor_recovery": "AUTO_RESTARTED",
+    "wal_database_integrity": "OK",
+    "rows_persisted": 1602,
+    "protection_mechanism": "Atomic WAL Frame Replay + Supervisor Backoff Watchdog"
+  },
+  {
+    "scenario": "IPC Socket Flooding & Garbage Payload Attack",
+    "connections_tested": 1000,
+    "supervisor_status": "RESILIENT_ONLINE",
+    "post_attack_latency_ms": 2.06,
+    "protection_mechanism": "Bounded Reader Buffering + Isolated Connection Workers"
+  },
+  {
+    "scenario": "Shared Memory Pool Poisoning & Mid-Write Crash",
+    "ferroos_status": "AUTO_RECOVERED",
+    "protection_mechanism": "Frame Header Sequence Validation & Atomic Pool Reinitialization"
+  },
+  {
+    "scenario": "Broker Gateway Death & Broken Pipe Recovery",
+    "pipe_exception_handling": "GRACEFUL_EPIPE",
+    "supervisor_auto_recovery": "AUTO_RESTARTED",
+    "protection_mechanism": "Supervisor Backoff Watchdog + Socket Reset Detection"
+  }
+]
