@@ -28,6 +28,7 @@ pub mod standard_utils;
 pub mod sys_utils;
 pub mod extra_utils;
 pub mod ext_utils;
+pub mod cross_os_utils;
 
 #[cfg(target_os = "linux")]
 extern "C" {
@@ -236,6 +237,27 @@ fn main() -> ExitCode {
         "unlink" => ext_utils::run_unlink(&command_args),
         "factor" => ext_utils::run_factor(&command_args),
         "logname" => ext_utils::run_logname(&command_args),
+        "gzip" => cross_os_utils::run_gzip(&command_args),
+        "gunzip" => cross_os_utils::run_gunzip(&command_args),
+        "zcat" => cross_os_utils::run_zcat(&command_args),
+        "dd" => cross_os_utils::run_dd(&command_args),
+        "mknod" => cross_os_utils::run_mknod(&command_args),
+        "mkfifo" => cross_os_utils::run_mkfifo(&command_args),
+        "time" => cross_os_utils::run_time(&command_args),
+        "pidof" => cross_os_utils::run_pidof(&command_args),
+        "flock" => cross_os_utils::run_flock(&command_args),
+        "nc" | "netcat" => cross_os_utils::run_nc(&command_args),
+        "route" => cross_os_utils::run_route(&command_args),
+        "printf" => run_printf(&command_args),
+        "rmdir" => run_rmdir(&command_args),
+        "cls" => cross_os_utils::run_cls(&command_args),
+        "tasklist" => cross_os_utils::run_tasklist(&command_args),
+        "taskkill" => cross_os_utils::run_taskkill(&command_args),
+        "ipconfig" => cross_os_utils::run_ipconfig(&command_args),
+        "where" => cross_os_utils::run_where(&command_args),
+        "pbcopy" | "clip" => cross_os_utils::run_pbcopy(&command_args),
+        "pbpaste" => cross_os_utils::run_pbpaste(&command_args),
+        "open" | "start" => cross_os_utils::run_open(&command_args),
         "help" | "--help" | "-h" => {
             print_usage();
             ExitCode::SUCCESS
@@ -767,7 +789,10 @@ pub const ALL_APPLETS: &[&str] = &[
     "tac", "rev", "nl", "paste", "fold", "watch",
     "xxd", "hexdump", "nice", "renice", "md5sum", "sha1sum", "shuf",
     "file", "strings", "split", "comm", "truncate", "tree", "cal",
-    "lscpu", "lsmod", "lspci", "ifconfig", "link", "unlink", "factor", "logname"
+    "lscpu", "lsmod", "lspci", "ifconfig", "link", "unlink", "factor", "logname",
+    "gzip", "gunzip", "zcat", "dd", "mknod", "mkfifo", "time", "pidof", "flock",
+    "nc", "netcat", "route", "printf", "rmdir",
+    "cls", "tasklist", "taskkill", "ipconfig", "where", "pbcopy", "clip", "pbpaste", "open", "start"
 ];
 
 fn is_internal_applet(cmd: &str) -> bool {
@@ -1221,6 +1246,27 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "unlink" => ext_utils::run_unlink(args),
         "factor" => ext_utils::run_factor(args),
         "logname" => ext_utils::run_logname(args),
+        "gzip" => cross_os_utils::run_gzip(args),
+        "gunzip" => cross_os_utils::run_gunzip(args),
+        "zcat" => cross_os_utils::run_zcat(args),
+        "dd" => cross_os_utils::run_dd(args),
+        "mknod" => cross_os_utils::run_mknod(args),
+        "mkfifo" => cross_os_utils::run_mkfifo(args),
+        "time" => cross_os_utils::run_time(args),
+        "pidof" => cross_os_utils::run_pidof(args),
+        "flock" => cross_os_utils::run_flock(args),
+        "nc" | "netcat" => cross_os_utils::run_nc(args),
+        "route" => cross_os_utils::run_route(args),
+        "printf" => run_printf(args),
+        "rmdir" => run_rmdir(args),
+        "cls" => cross_os_utils::run_cls(args),
+        "tasklist" => cross_os_utils::run_tasklist(args),
+        "taskkill" => cross_os_utils::run_taskkill(args),
+        "ipconfig" => cross_os_utils::run_ipconfig(args),
+        "where" => cross_os_utils::run_where(args),
+        "pbcopy" | "clip" => cross_os_utils::run_pbcopy(args),
+        "pbpaste" => cross_os_utils::run_pbpaste(args),
+        "open" | "start" => cross_os_utils::run_open(args),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
             ExitCode::from(127)
@@ -1591,6 +1637,195 @@ fn run_mkdir(args: &[String]) -> ExitCode {
     } else {
         ExitCode::FAILURE
     }
+}
+
+pub(crate) fn run_rmdir(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("rmdir: missing operand");
+        return ExitCode::FAILURE;
+    }
+
+    let mut parents = false;
+    let mut targets = Vec::new();
+
+    for arg in args {
+        if arg == "-p" || arg == "--parents" {
+            parents = true;
+        } else if arg == "--help" || arg == "-h" {
+            println!("Usage: rmdir [OPTION]... DIRECTORY...");
+            println!("Remove the DIRECTORY(ies), if they are empty.");
+            println!("  -p, --parents   remove DIRECTORY and its ancestors; e.g., 'rmdir -p a/b/c' is");
+            println!("                  similar to 'rmdir a/b/c a/b a'");
+            return ExitCode::SUCCESS;
+        } else if !arg.starts_with('-') {
+            targets.push(PathBuf::from(arg));
+        }
+    }
+
+    if targets.is_empty() {
+        eprintln!("rmdir: missing operand");
+        return ExitCode::FAILURE;
+    }
+
+    let mut exit_code = ExitCode::SUCCESS;
+    for target in targets {
+        if parents {
+            let mut cur: Option<PathBuf> = Some(target);
+            while let Some(dir) = cur {
+                if dir.as_os_str().is_empty() || dir == Path::new(".") || dir == Path::new("/") {
+                    break;
+                }
+                if let Err(e) = fs::remove_dir(&dir) {
+                    eprintln!("rmdir: failed to remove '{}': {}", dir.display(), e);
+                    exit_code = ExitCode::FAILURE;
+                    break;
+                }
+                cur = dir.parent().map(|p| p.to_path_buf());
+            }
+        } else {
+            if let Err(e) = fs::remove_dir(&target) {
+                eprintln!("rmdir: failed to remove '{}': {}", target.display(), e);
+                exit_code = ExitCode::FAILURE;
+            }
+        }
+    }
+
+    exit_code
+}
+
+pub(crate) fn run_printf(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("printf: usage: printf FORMAT [ARGUMENT...]");
+        return ExitCode::FAILURE;
+    }
+
+    if args[0] == "--help" || args[0] == "-h" {
+        println!("Usage: printf FORMAT [ARGUMENT...]");
+        println!("Format and print ARGUMENT(s) according to FORMAT.");
+        return ExitCode::SUCCESS;
+    }
+
+    let format_str = &args[0];
+    let arg_values = &args[1..];
+    let mut arg_idx = 0;
+
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
+    loop {
+        let initial_arg_idx = arg_idx;
+        let mut chars = format_str.chars().peekable();
+
+        while let Some(c) = chars.next() {
+            if c == '\\' {
+                match chars.next() {
+                    Some('n') => { let _ = out.write_all(b"\n"); }
+                    Some('t') => { let _ = out.write_all(b"\t"); }
+                    Some('r') => { let _ = out.write_all(b"\r"); }
+                    Some('0') => {
+                        let mut octal = String::new();
+                        while let Some(&oc) = chars.peek() {
+                            if ('0'..='7').contains(&oc) && octal.len() < 3 {
+                                octal.push(chars.next().unwrap());
+                            } else {
+                                break;
+                            }
+                        }
+                        let val = u8::from_str_radix(&octal, 8).unwrap_or(0);
+                        let _ = out.write_all(&[val]);
+                    }
+                    Some('\\') => { let _ = out.write_all(b"\\"); }
+                    Some(other) => { let _ = write!(out, "\\{}", other); }
+                    None => { let _ = out.write_all(b"\\"); }
+                }
+            } else if c == '%' {
+                if let Some(&'%') = chars.peek() {
+                    chars.next();
+                    let _ = out.write_all(b"%");
+                    continue;
+                }
+
+                let mut spec = String::new();
+                let mut conversion: Option<char> = None;
+
+                while let Some(sc) = chars.next() {
+                    if "sdixXoucbfge".contains(sc) {
+                        conversion = Some(sc);
+                        break;
+                    } else {
+                        spec.push(sc);
+                    }
+                }
+
+                let current_arg = if arg_idx < arg_values.len() {
+                    let a = &arg_values[arg_idx];
+                    arg_idx += 1;
+                    a.as_str()
+                } else {
+                    ""
+                };
+
+                match conversion {
+                    Some('s') => {
+                        let _ = write!(out, "{}", current_arg);
+                    }
+                    Some('d') | Some('i') => {
+                        let val = current_arg.parse::<i64>().unwrap_or(0);
+                        let _ = write!(out, "{}", val);
+                    }
+                    Some('u') => {
+                        let val = current_arg.parse::<u64>().unwrap_or(0);
+                        let _ = write!(out, "{}", val);
+                    }
+                    Some('x') => {
+                        let val = current_arg.parse::<u64>().unwrap_or(0);
+                        let _ = write!(out, "{:x}", val);
+                    }
+                    Some('X') => {
+                        let val = current_arg.parse::<u64>().unwrap_or(0);
+                        let _ = write!(out, "{:X}", val);
+                    }
+                    Some('o') => {
+                        let val = current_arg.parse::<u64>().unwrap_or(0);
+                        let _ = write!(out, "{:o}", val);
+                    }
+                    Some('c') => {
+                        let ch = current_arg.chars().next().unwrap_or('\0');
+                        let _ = write!(out, "{}", ch);
+                    }
+                    Some('b') => {
+                        let mut bchars = current_arg.chars().peekable();
+                        while let Some(bc) = bchars.next() {
+                            if bc == '\\' {
+                                match bchars.next() {
+                                    Some('n') => { let _ = out.write_all(b"\n"); }
+                                    Some('t') => { let _ = out.write_all(b"\t"); }
+                                    Some('r') => { let _ = out.write_all(b"\r"); }
+                                    Some('c') => return ExitCode::SUCCESS,
+                                    Some(other) => { let _ = write!(out, "\\{}", other); }
+                                    None => { let _ = out.write_all(b"\\"); }
+                                }
+                            } else {
+                                let _ = write!(out, "{}", bc);
+                            }
+                        }
+                    }
+                    _ => {
+                        let _ = write!(out, "%{}{}", spec, conversion.unwrap_or(' '));
+                    }
+                }
+            } else {
+                let _ = write!(out, "{}", c);
+            }
+        }
+
+        if arg_idx >= arg_values.len() || arg_idx == initial_arg_idx {
+            break;
+        }
+    }
+
+    let _ = out.flush();
+    ExitCode::SUCCESS
 }
 
 fn run_rm(args: &[String]) -> ExitCode {
@@ -2498,7 +2733,7 @@ fn print_wc_row(count_l: bool, count_w: bool, count_b: bool, l: u64, w: u64, b: 
     println!("{}", parts.join(" "));
 }
 
-fn run_which(args: &[String]) -> ExitCode {
+pub(crate) fn run_which(args: &[String]) -> ExitCode {
     if args.is_empty() {
         return ExitCode::FAILURE;
     }
@@ -2705,7 +2940,7 @@ fn run_ps(_args: &[String]) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-fn run_kill(args: &[String]) -> ExitCode {
+pub(crate) fn run_kill(args: &[String]) -> ExitCode {
     if args.is_empty() {
         eprintln!("kill: missing pid");
         return ExitCode::FAILURE;

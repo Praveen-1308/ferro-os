@@ -50,6 +50,7 @@ dependencies = [
 name = "ferro-core"
 version = "2.3.0"
 dependencies = [
+ "flate2",
  "libc",
 ]
 

@@ -23,6 +23,10 @@ use std::process::{Command, ExitCode, Stdio};
 use std::thread;
 use std::time::{Duration, Instant, UNIX_EPOCH};
 
+use flate2::read::GzDecoder;
+use flate2::write::GzEncoder;
+use flate2::Compression;
+
 // ============================================================================
 // base64 (RFC 4648 Standard)
 // ============================================================================
@@ -633,6 +637,7 @@ pub fn run_tar(args: &[String]) -> ExitCode {
     let mut extract = false;
     let mut list = false;
     let mut verbose = false;
+    let mut gzip_mode = false;
     let mut archive_file: Option<String> = None;
     let mut target_dir = PathBuf::from(".");
     let mut members = Vec::new();
@@ -651,6 +656,9 @@ pub fn run_tar(args: &[String]) -> ExitCode {
             i += 1;
         } else if arg == "-v" || arg == "--verbose" {
             verbose = true;
+            i += 1;
+        } else if arg == "-z" || arg == "--gzip" {
+            gzip_mode = true;
             i += 1;
         } else if arg == "-f" || arg == "--file" {
             if i + 1 < args.len() {
@@ -682,6 +690,7 @@ pub fn run_tar(args: &[String]) -> ExitCode {
                         'x' => extract = true,
                         't' => list = true,
                         'v' => verbose = true,
+                        'z' => gzip_mode = true,
                         _ => {}
                     }
                 }
@@ -717,7 +726,7 @@ pub fn run_tar(args: &[String]) -> ExitCode {
             eprintln!("tar: cowardly refusing to create an empty archive");
             return ExitCode::from(1);
         }
-        create_tar_archive(&archive, &members, &target_dir, verbose)
+        create_tar_archive(&archive, &members, &target_dir, verbose, gzip_mode)
     } else if extract {
         extract_tar_archive(&archive, &target_dir, verbose)
     } else {
@@ -725,8 +734,8 @@ pub fn run_tar(args: &[String]) -> ExitCode {
     }
 }
 
-fn create_tar_archive(archive_path: &str, members: &[String], base_dir: &Path, verbose: bool) -> ExitCode {
-    let mut writer: Box<dyn Write> = if archive_path == "-" {
+fn create_tar_archive(archive_path: &str, members: &[String], base_dir: &Path, verbose: bool, gzip_mode: bool) -> ExitCode {
+    let raw_writer: Box<dyn Write> = if archive_path == "-" {
         Box::new(io::stdout().lock())
     } else {
         match File::create(archive_path) {
@@ -736,6 +745,12 @@ fn create_tar_archive(archive_path: &str, members: &[String], base_dir: &Path, v
                 return ExitCode::from(1);
             }
         }
+    };
+
+    let mut writer: Box<dyn Write> = if gzip_mode || archive_path.ends_with(".gz") || archive_path.ends_with(".tgz") {
+        Box::new(GzEncoder::new(raw_writer, Compression::default()))
+    } else {
+        raw_writer
     };
 
     for member in members {
@@ -869,16 +884,30 @@ fn write_tar_entry<W: Write>(writer: &mut W, path: &Path, display_name: &str, ve
     Ok(())
 }
 
-fn extract_tar_archive(archive_path: &str, target_dir: &Path, verbose: bool) -> ExitCode {
-    let mut reader: Box<dyn Read> = if archive_path == "-" {
-        Box::new(io::stdin().lock())
+fn open_tar_reader(archive_path: &str) -> io::Result<Box<dyn Read>> {
+    let mut input: Box<dyn Read> = if archive_path == "-" {
+        Box::new(io::stdin())
     } else {
-        match File::open(archive_path) {
-            Ok(f) => Box::new(f),
-            Err(e) => {
-                eprintln!("tar: {}: {}", archive_path, e);
-                return ExitCode::from(1);
-            }
+        Box::new(File::open(archive_path)?)
+    };
+
+    let mut magic = [0u8; 2];
+    let n = input.read(&mut magic)?;
+    if n == 2 && magic[0] == 0x1f && magic[1] == 0x8b {
+        let chain = io::Cursor::new(magic).chain(input);
+        Ok(Box::new(GzDecoder::new(chain)))
+    } else {
+        let chain = io::Cursor::new(magic[..n].to_vec()).chain(input);
+        Ok(Box::new(chain))
+    }
+}
+
+fn extract_tar_archive(archive_path: &str, target_dir: &Path, verbose: bool) -> ExitCode {
+    let mut reader = match open_tar_reader(archive_path) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("tar: {}: {}", archive_path, e);
+            return ExitCode::from(1);
         }
     };
 
@@ -960,15 +989,11 @@ fn extract_tar_archive(archive_path: &str, target_dir: &Path, verbose: bool) -> 
 }
 
 fn list_tar_archive(archive_path: &str, verbose: bool) -> ExitCode {
-    let mut reader: Box<dyn Read> = if archive_path == "-" {
-        Box::new(io::stdin().lock())
-    } else {
-        match File::open(archive_path) {
-            Ok(f) => Box::new(f),
-            Err(e) => {
-                eprintln!("tar: {}: {}", archive_path, e);
-                return ExitCode::from(1);
-            }
+    let mut reader = match open_tar_reader(archive_path) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("tar: {}: {}", archive_path, e);
+            return ExitCode::from(1);
         }
     };
 

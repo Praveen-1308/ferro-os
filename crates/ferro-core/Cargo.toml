@@ -6,3 +6,4 @@ authors = ["Praveen Kumar Gorle"]
 description = "Multi-call core utilities and shell for FerroOS written in Rust"
 [dependencies]
 libc = "0.2"
+flate2 = "1.0"

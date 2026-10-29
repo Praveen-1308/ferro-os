@@ -1,9 +1,9 @@
 # FerroOS Commands, Basic Utilities & Usage Manual
 ### *Complete Catalog of Implemented Applets, Practical Playbooks, and Forward Gap Analysis*
 
-FerroOS incorporates [`ferro-core`](file:///Users/praveenkumar/rust%20os/crates/ferro-core/src/main.rs), an ultra-compact, high-performance, multi-call userspace binary written in **100% pure Rust** with zero external C runtime dependencies. Consolidating all traditional GNU coreutils, util-linux, procps, and networking binaries into a single **1.2 MB executable**, `ferro-core` provides **168 registered applets** symlinked across `/bin` and `/usr/bin`.
+FerroOS incorporates [`ferro-core`](file:///Users/praveenkumar/rust%20os/crates/ferro-core/src/main.rs), an ultra-compact, high-performance, multi-call userspace binary written in **100% pure Rust** with zero external C runtime dependencies (`libc = "0.2"`, `flate2 = "1.0"` with safe `miniz_oxide`). Consolidating all traditional GNU coreutils, util-linux, procps, networking binaries, archival engines, and cross-platform developer shims into a single **1.3 MB executable**, `ferro-core` provides **192 registered applets** symlinked across `/bin` and `/usr/bin`.
 
-This document tracks every implemented command, its syntax, options, and practical usage, followed by a comprehensive **Gap Analysis** tracking what more is needed for complete parity with enterprise Linux distributions (Ubuntu 24.04 LTS, Debian 12, Alpine 3.20).
+This document tracks every implemented command, its syntax, options, and practical usage, followed by a comprehensive **Gap Analysis** tracking what more is needed for complete parity with enterprise Linux distributions (Ubuntu 24.04 LTS, Debian 12, Alpine 3.20, Windows, and macOS). For a detailed multi-OS comparative audit, refer to [MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md](file:///Users/praveenkumar/rust%20os/docs/MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md).
 
 ---
 
@@ -19,8 +19,10 @@ This document tracks every implemented command, its syntax, options, and practic
 9. [Category 8: Hardware, Kernel & System Diagnostics](#9-category-8-hardware-kernel--system-diagnostics)
 10. [Category 9: Network Diagnostics & Socket Telemetry](#10-category-9-network-diagnostics--socket-telemetry)
 11. [Category 10: FerroOS Engine Pillars & Micro-Containers](#11-category-10-ferroos-engine-pillars--micro-containers)
-12. [Gap Analysis & Roadmap: What More We Need](#12-gap-analysis--roadmap-what-more-we-need)
-13. [Verification & Differential Parity Test Suite](#13-verification--differential-parity-test-suite)
+12. [Category 11: Cross-OS Compression, Block I/O & Networking](#12-category-11-cross-os-compression-block-io--networking)
+13. [Category 12: Cross-Platform Ergonomics & Developer Shims](#13-category-12-cross-platform-ergonomics--developer-shims)
+14. [Gap Analysis & Roadmap: What More We Need](#14-gap-analysis--roadmap-what-more-we-need)
+15. [Verification & Differential Parity Test Suite](#15-verification--differential-parity-test-suite)
 
 ---
 
@@ -789,35 +791,193 @@ This document tracks every implemented command, its syntax, options, and practic
 
 ---
 
-## 12. Gap Analysis & Roadmap: What More We Need
+## 12. Category 11: Cross-OS Compression, Block I/O & Networking
 
-To guide future engineering sessions and track what remains to achieve **100% parity** with standard Ubuntu/Debian/BusyBox environments, the following gap analysis categorizes planned utilities:
+### `gzip`, `gunzip` & `zcat`
+- **Syntax**: 
+  - `gzip [-c] [-d] [-f] [-k] [-1..-9] [FILE...]`
+  - `gunzip [-c] [-f] [-k] [FILE.gz...]`
+  - `zcat [FILE.gz...]`
+- **Description**: RFC 1952 DEFLATE stream compression and decompression in 100% pure Rust. `gzip` replaces files with `.gz` variants (or writes to stdout with `-c`). `zcat` streams decompressed bytes directly to stdout without intermediate temporary disk files.
+- **Usage Examples**:
+  ```bash
+  # Compress log file
+  gzip -9 /var/log/syslog
 
-| Priority | Utility | Functionality / Purpose | Target Milestone |
-| :--- | :--- | :--- | :--- |
-| **High** | `gzip`, `gunzip`, `zcat` | RFC 1952 DEFLATE / GZIP compression and decompression for logs and packages | v2.4 |
-| **High** | `bzip2`, `bunzip2` | Bzip2 block-sorting compression algorithm | v2.4 |
-| **High** | `xz`, `unxz` | LZMA / XZ compression for kernel images and packages | v2.4 |
-| **High** | `zip`, `unzip` | Standard ZIP archive extraction and packing | v2.4 |
-| **High** | `dd` | Bit-level data duplication, block copying (`if=`, `of=`, `bs=`, `count=`, `conv=fsync`) | v2.4 |
-| **Medium** | `losetup` | Loop device setup and detachment (`/dev/loopX`) for mounting ISO/disk images | v2.5 |
-| **Medium** | `patch` | Applies unified diff files to source code trees | v2.5 |
-| **Medium** | `cpio` | Archive format essential for `initramfs` creation and extraction | v2.5 |
-| **Medium** | `time` | High-precision process execution timing (real, user, sys CPU time) | v2.5 |
-| **Medium** | `top` / `htop` | Interactive ncurses terminal process monitor with CPU/RAM usage bars | v2.5 |
-| **Medium** | `fdisk` / `parted` | Partition table manipulation (MBR and GPT) | v2.5 |
-| **Low** | `cron` / `crontab` | Recurring background job scheduler daemon | v2.6 |
-| **Low** | `strace` | Dynamic system call tracer via `ptrace(2)` | v2.6 |
-| **Low** | `iptables` / `nftables` | Packet filtering and NAT rule configuration | v2.6 |
+  # Decompress without deleting original
+  gunzip -k /var/log/syslog.gz
+
+  # Inspect compressed log in real-time
+  zcat /var/log/syslog.gz | grep "ERROR"
+  ```
+
+### `dd`
+- **Syntax**: `dd [if=FILE] [of=FILE] [bs=BYTES] [count=N] [skip=N] [seek=N] [conv=fsync] [status=none]`
+- **Description**: Standard block-level data duplication and stream transfer utility. Supports custom block sizes (`bs=512`, `bs=4k`, `bs=1M`), block skipping, seeking, fsync flushing, and quiet execution.
+- **Usage Examples**:
+  ```bash
+  # Create 64 MB zero-filled disk image
+  dd if=/dev/zero of=/var/disks/swap.img bs=1M count=64 conv=fsync
+
+  # Benchmark unbuffered disk block write
+  dd if=/dev/zero of=/tmp/bench.bin bs=1M count=100 conv=fsync
+  ```
+
+### `mknod` & `mkfifo`
+- **Syntax**: 
+  - `mknod [-m MODE] NAME TYPE [MAJOR MINOR]`
+  - `mkfifo [-m MODE] NAME...`
+- **Description**: Creates special device nodes (block `b`, character `c`, or FIFO `p`) or POSIX named FIFO pipes via direct kernel system calls.
+- **Usage Examples**:
+  ```bash
+  # Create named pipe for IPC
+  mkfifo /tmp/log_pipe
+
+  # Create character device node
+  mknod /dev/null_test c 1 3
+  ```
+
+### `time`
+- **Syntax**: `time [-p] [-v] COMMAND [ARGS...]`
+- **Description**: High-resolution execution timer and resource profiler. Outputs standard POSIX 3-line format (`real`, `user`, `sys` time) with `-p`, and reports peak RSS and page faults with `-v`.
+- **Usage Examples**:
+  ```bash
+  time -p ferro-core printf "profiling execution\n"
+  time -v rpk search postgres
+  ```
+
+### `pidof`
+- **Syntax**: `pidof [-s] NAME...`
+- **Description**: Locates the process IDs of running programs by matching their executable name. Supports `-s` for single-shot output.
+- **Usage Examples**:
+  ```bash
+  pidof ferro-superd
+  pidof -s sshd
+  ```
+
+### `flock`
+- **Syntax**: `flock [-s] [-x] [-n] [-u] FILE COMMAND [ARGS...]`
+- **Description**: Manages kernel advisory file locks from shell scripts, preventing race conditions across concurrent container jobs or build tasks.
+- **Usage Examples**:
+  ```bash
+  flock /tmp/build.lock make -j4
+  flock -n /var/run/cron.lock /usr/bin/backup-job
+  ```
+
+### `nc` / `netcat`
+- **Syntax**: `nc [-l] [-p PORT] [-w TIMEOUT] [-z] [HOST] [PORT]`
+- **Description**: Versatile networking tool for TCP connection probing (`-z`), listening servers (`-l`), and bidirectional payload streaming.
+- **Usage Examples**:
+  ```bash
+  # Port readiness probe (health check)
+  nc -z 127.0.0.1 8080 && echo "Service online"
+
+  # Lightweight listener
+  nc -l -p 9000
+  ```
+
+### `route`
+- **Syntax**: `route [-n]`
+- **Description**: Displays the kernel IP routing table (`Destination`, `Gateway`, `Genmask`, `Flags`, `Metric`, `Ref`, `Iface`) conforming to standard net-tools format.
+- **Usage Examples**:
+  ```bash
+  route -n
+  ```
+
+### `printf`
+- **Syntax**: `printf FORMAT [ARG...]`
+- **Description**: Pure-Rust formatted output utility supporting `%s`, `%d`, `%i`, `%u`, `%x`, `%f`, and standard escape sequences (`\n`, `\t`, `\r`, `\\`).
+- **Usage Examples**:
+  ```bash
+  printf "Node: %s | CPU Usage: %d%%\n" "prod-01" 42
+  ```
+
+### `rmdir`
+- **Syntax**: `rmdir [-p] DIRECTORY...`
+- **Description**: Removes empty directories from the filesystem, optionally removing parent directories along the specified path with `-p`.
+- **Usage Examples**:
+  ```bash
+  rmdir /tmp/scratch_dir
+  rmdir -p /var/log/apps/legacy
+  ```
 
 ---
 
-## 13. Verification & Differential Parity Test Suite
+## 13. Category 12: Cross-Platform Ergonomics & Developer Shims
+
+FerroOS eliminates developer cognitive friction by providing non-colliding native applets and shims for Windows and macOS reflexes:
+
+### `cls`
+- **Syntax**: `cls`
+- **Description**: Clears the terminal screen by issuing the ANSI clear sequence `\x1B[2J\x1B[H`. Directly fulfills Windows developer muscle memory.
+
+### `tasklist`
+- **Syntax**: `tasklist`
+- **Description**: Displays running processes in authentic Windows CMD 4-column tabular format (`Image Name`, `PID`, `Session Name`, `Mem Usage`).
+
+### `taskkill`
+- **Syntax**: `taskkill [/f] [/im IMAGE_NAME] [/pid PID]`
+- **Description**: Terminates processes using Windows command flags (`/f` for forceful SIGKILL, `/im` for process name matching, `/pid` for numeric ID).
+
+### `ipconfig`
+- **Syntax**: `ipconfig [/all] [/flushdns]`
+- **Description**: Displays IP configuration for all network interfaces. Supports `/flushdns` to clear FerroOS's local in-memory DNS cache.
+
+### `where`
+- **Syntax**: `where PROGRAM...`
+- **Description**: Resolves executable paths across `$PATH`, matching Windows CMD `where.exe` behavior without needing `which`.
+
+### `pbcopy` & `clip`
+- **Syntax**: `pbcopy` or `clip`
+- **Description**: Copies standard input into the terminal clipboard buffer using OSC 52 ANSI escape sequences.
+
+### `pbpaste`
+- **Syntax**: `pbpaste`
+- **Description**: Pastes clipboard contents directly to standard output.
+
+### `open` & `start`
+- **Syntax**: `open [FILE|URL]` or `start [FILE|URL]`
+- **Description**: Universal desktop launcher delegating to default file handlers or browsers.
+
+---
+
+## 14. Gap Analysis & Roadmap: What More We Need
+
+For complete multi-OS comparative audit findings and package-level taxonomy, see [MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md](file:///Users/praveenkumar/rust%20os/docs/MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md).
+
+| Priority | Utility | Functionality / Purpose | Status / Milestone |
+| :--- | :--- | :--- | :--- |
+| **Complete** | `gzip`, `gunzip`, `zcat` | RFC 1952 DEFLATE stream compression and decompression | **Implemented in v2.3+** |
+| **Complete** | `dd` | Bit-level data duplication and block copying (`if=`, `of=`, `bs=`, `conv=fsync`) | **Implemented in v2.3+** |
+| **Complete** | `time` | High-precision process timing (real, user, sys CPU time, RSS) | **Implemented in v2.3+** |
+| **Complete** | `pidof` | Process ID lookup by executable name (`-s` single shot) | **Implemented in v2.3+** |
+| **Complete** | `flock` | Kernel advisory file locks (`-s`, `-x`, `-n`) | **Implemented in v2.3+** |
+| **Complete** | `nc` / `netcat` | TCP streaming, port readiness probing (`-z`), listener (`-l`) | **Implemented in v2.3+** |
+| **Complete** | `route` | Kernel IP routing table inspection (net-tools format) | **Implemented in v2.3+** |
+| **Complete** | `printf` | POSIX formatted string generator (`%s`, `%d`, `%x`) | **Implemented in v2.3+** |
+| **Complete** | `rmdir` | Empty directory removal (`-p` parent hierarchy) | **Implemented in v2.3+** |
+| **Complete** | `mknod`, `mkfifo` | Device node and named pipe creation (`libc::mknod`, `libc::mkfifo`) | **Implemented in v2.3+** |
+| **Complete** | `cls`, `tasklist`, `where` | Windows developer ergonomic shims | **Implemented in v2.3+** |
+| **High** | `bzip2`, `bunzip2` | Bzip2 block-sorting compression algorithm | Roadmap v2.4 |
+| **High** | `xz`, `unxz` | LZMA2 / XZ compression for kernel images and packages | Roadmap v2.4 |
+| **High** | `zip`, `unzip` | Standard PKZIP archive extraction and packing | Roadmap v2.4 |
+| **Medium** | `losetup` | Loop device setup and detachment (`/dev/loopX`) for mounting ISO/disk images | Roadmap v2.5 |
+| **Medium** | `patch` | Applies unified diff files to source code trees | Roadmap v2.5 |
+| **Medium** | `cpio` | Archive format essential for `initramfs` creation and extraction | Roadmap v2.5 |
+| **Medium** | `top` / `htop` | Interactive terminal process monitor with CPU/RAM usage bars | Roadmap v2.5 |
+| **Medium** | `fdisk` / `parted` | Partition table manipulation (MBR and GPT) | Roadmap v2.5 |
+| **Low** | `cron` / `crontab` | Recurring background job scheduler daemon | Roadmap v2.6 |
+| **Low** | `strace` | Dynamic system call tracer via `ptrace(2)` | Roadmap v2.6 |
+| **Low** | `iptables` / `nftables` | Packet filtering and NAT rule configuration | Roadmap v2.6 |
+
+---
+
+## 15. Verification & Differential Parity Test Suite
 
 To verify all utilities, run the continuous integration test harnesses:
 
 ```bash
-# 1. Run all workspace unit tests (78 tests)
+# 1. Run all workspace unit tests (79 tests)
 cargo test --workspace
 
 # 2. Build the optimized release binary
@@ -829,6 +989,6 @@ python3 tools/test_supervisor_and_container.py
 # 4. Run the Sandbox & Storage Differential Parity Suite (vs Ubuntu 24.04)
 python3 tools/test_sandbox_and_storage_differential.py
 
-# 5. List all registered applets (168 applets)
+# 5. List all registered applets (192 applets)
 ./target/release/ferro-core --list-applets
 ```
