@@ -29,6 +29,7 @@ pub mod sys_utils;
 pub mod extra_utils;
 pub mod ext_utils;
 pub mod cross_os_utils;
+pub mod modern_utils;
 
 #[cfg(target_os = "linux")]
 extern "C" {
@@ -139,7 +140,16 @@ fn main() -> ExitCode {
         "sched" | "scx" => run_sched(&command_args),
         "game" | "proton" => run_game(&command_args),
         "win" | "win-run" | "wine" => run_win_run(&command_args),
-        "install" | "installer" => run_install(&command_args),
+        "installer" => run_install(&command_args),
+        "install" => {
+            if command_args.iter().any(|a| a == "-d" || a == "--directory" || a == "-m" || a.starts_with("--mode=") || a == "-v")
+                || (!command_args.iter().any(|a| a.starts_with("--target") || a.starts_with("--format")) && command_args.len() >= 2)
+            {
+                modern_utils::run_gnu_install(&command_args)
+            } else {
+                run_install(&command_args)
+            }
+        }
         "snapshot" | "snap" => run_snapshot(&command_args),
         "ai-mode" | "ai" => run_ai_mode(&command_args),
         "sandbox" | "landlock" => run_sandbox(&command_args),
@@ -258,6 +268,19 @@ fn main() -> ExitCode {
         "pbcopy" | "clip" => cross_os_utils::run_pbcopy(&command_args),
         "pbpaste" => cross_os_utils::run_pbpaste(&command_args),
         "open" | "start" => cross_os_utils::run_open(&command_args),
+        "envsubst" => modern_utils::run_envsubst(&command_args),
+        "uuidgen" | "uuid" => modern_utils::run_uuidgen(&command_args),
+        "unzip" => modern_utils::run_unzip(&command_args),
+        "lsof" => modern_utils::run_lsof(&command_args),
+        "fuser" => modern_utils::run_fuser(&command_args),
+        "dig" => modern_utils::run_dig(&command_args),
+        "nslookup" => modern_utils::run_nslookup(&command_args),
+        "host" => modern_utils::run_host(&command_args),
+        "patch" => modern_utils::run_patch(&command_args),
+        "json" => modern_utils::run_json(&command_args),
+        "ssl-check" | "cert" => modern_utils::run_ssl_check(&command_args),
+        "lsattr" => modern_utils::run_lsattr(&command_args),
+        "chattr" => modern_utils::run_chattr(&command_args),
         "help" | "--help" | "-h" => {
             print_usage();
             ExitCode::SUCCESS
@@ -792,7 +815,9 @@ pub const ALL_APPLETS: &[&str] = &[
     "lscpu", "lsmod", "lspci", "ifconfig", "link", "unlink", "factor", "logname",
     "gzip", "gunzip", "zcat", "dd", "mknod", "mkfifo", "time", "pidof", "flock",
     "nc", "netcat", "route", "printf", "rmdir",
-    "cls", "tasklist", "taskkill", "ipconfig", "where", "pbcopy", "clip", "pbpaste", "open", "start"
+    "cls", "tasklist", "taskkill", "ipconfig", "where", "pbcopy", "clip", "pbpaste", "open", "start",
+    "envsubst", "uuidgen", "uuid", "unzip", "lsof", "fuser", "dig", "nslookup", "host",
+    "patch", "json", "ssl-check", "cert", "lsattr", "chattr"
 ];
 
 fn is_internal_applet(cmd: &str) -> bool {
@@ -1171,7 +1196,16 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "sched" | "scx" => run_sched(args),
         "game" | "proton" => run_game(args),
         "win" | "win-run" | "wine" => run_win_run(args),
-        "install" | "installer" => run_install(args),
+        "installer" => run_install(args),
+        "install" => {
+            if args.iter().any(|a| a == "-d" || a == "--directory" || a == "-m" || a.starts_with("--mode=") || a == "-v")
+                || (!args.iter().any(|a| a.starts_with("--target") || a.starts_with("--format")) && args.len() >= 2)
+            {
+                modern_utils::run_gnu_install(args)
+            } else {
+                run_install(args)
+            }
+        },
         "snapshot" | "snap" => run_snapshot(args),
         "ai-mode" | "ai" => run_ai_mode(args),
         "sandbox" | "landlock" => run_sandbox(args),
@@ -1267,6 +1301,19 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "pbcopy" | "clip" => cross_os_utils::run_pbcopy(args),
         "pbpaste" => cross_os_utils::run_pbpaste(args),
         "open" | "start" => cross_os_utils::run_open(args),
+        "envsubst" => modern_utils::run_envsubst(args),
+        "uuidgen" | "uuid" => modern_utils::run_uuidgen(args),
+        "unzip" => modern_utils::run_unzip(args),
+        "lsof" => modern_utils::run_lsof(args),
+        "fuser" => modern_utils::run_fuser(args),
+        "dig" => modern_utils::run_dig(args),
+        "nslookup" => modern_utils::run_nslookup(args),
+        "host" => modern_utils::run_host(args),
+        "patch" => modern_utils::run_patch(args),
+        "json" => modern_utils::run_json(args),
+        "ssl-check" | "cert" => modern_utils::run_ssl_check(args),
+        "lsattr" => modern_utils::run_lsattr(args),
+        "chattr" => modern_utils::run_chattr(args),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
             ExitCode::from(127)

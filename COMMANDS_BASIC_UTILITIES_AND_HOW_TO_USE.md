@@ -1,7 +1,7 @@
 # FerroOS Commands, Basic Utilities & Usage Manual
 ### *Complete Catalog of Implemented Applets, Practical Playbooks, and Forward Gap Analysis*
 
-FerroOS incorporates [`ferro-core`](file:///Users/praveenkumar/rust%20os/crates/ferro-core/src/main.rs), an ultra-compact, high-performance, multi-call userspace binary written in **100% pure Rust** with zero external C runtime dependencies (`libc = "0.2"`, `flate2 = "1.0"` with safe `miniz_oxide`). Consolidating all traditional GNU coreutils, util-linux, procps, networking binaries, archival engines, and cross-platform developer shims into a single **1.3 MB executable**, `ferro-core` provides **192 registered applets** symlinked across `/bin` and `/usr/bin`.
+FerroOS incorporates [`ferro-core`](file:///Users/praveenkumar/rust%20os/crates/ferro-core/src/main.rs), an ultra-compact, high-performance, multi-call userspace binary written in **100% pure Rust** with zero external C runtime dependencies (`libc = "0.2"`, `flate2 = "1.0"` with safe `miniz_oxide`). Consolidating all traditional GNU coreutils, util-linux, procps, networking binaries, archival engines, modern cloud/container utilities, and cross-platform developer shims into a single **1.3 MB executable**, `ferro-core` provides **207 registered applets** symlinked across `/bin` and `/usr/bin`.
 
 This document tracks every implemented command, its syntax, options, and practical usage, followed by a comprehensive **Gap Analysis** tracking what more is needed for complete parity with enterprise Linux distributions (Ubuntu 24.04 LTS, Debian 12, Alpine 3.20, Windows, and macOS). For a detailed multi-OS comparative audit, refer to [MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md](file:///Users/praveenkumar/rust%20os/docs/MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md).
 
@@ -21,8 +21,9 @@ This document tracks every implemented command, its syntax, options, and practic
 11. [Category 10: FerroOS Engine Pillars & Micro-Containers](#11-category-10-ferroos-engine-pillars--micro-containers)
 12. [Category 11: Cross-OS Compression, Block I/O & Networking](#12-category-11-cross-os-compression-block-io--networking)
 13. [Category 12: Cross-Platform Ergonomics & Developer Shims](#13-category-12-cross-platform-ergonomics--developer-shims)
-14. [Gap Analysis & Roadmap: What More We Need](#14-gap-analysis--roadmap-what-more-we-need)
-15. [Verification & Differential Parity Test Suite](#15-verification--differential-parity-test-suite)
+14. [Category 13: Modern Cloud, Container & Systems Administration](#14-category-13-modern-cloud-container--systems-administration)
+15. [Gap Analysis & Roadmap: What More We Need](#15-gap-analysis--roadmap-what-more-we-need)
+16. [Verification & Differential Parity Test Suite](#16-verification--differential-parity-test-suite)
 
 ---
 
@@ -941,13 +942,152 @@ FerroOS eliminates developer cognitive friction by providing non-colliding nativ
 
 ---
 
-## 14. Gap Analysis & Roadmap: What More We Need
+## 14. Category 13: Modern Cloud, Container & Systems Administration
+
+FerroOS incorporates modern utilities specifically addressing areas where DevOps practitioners, container builders, and systems engineers struggle on minimal distributions:
+
+### `envsubst`
+- **Syntax**: `envsubst [SHELL-FORMAT] [FILE]`
+- **Description**: Substitutes environment variable values into templates. Supports `${VAR}` and `$VAR`. When `SHELL-FORMAT` is specified (e.g. `'$PORT,$HOST'`), only the named variables are substituted, leaving other expressions untouched.
+- **Usage Examples**:
+  ```bash
+  # Standard template rendering in container entrypoint
+  envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+
+  # Filtered substitution
+  envsubst '$API_URL,$PORT' < config.template.json > config.json
+  ```
+
+### `uuidgen` / `uuid`
+- **Syntax**: `uuidgen [-r] [-t] [-n COUNT]`
+- **Description**: Generates RFC 4122 v4 Universally Unique Identifiers (UUIDs) using high-entropy cryptographic seeds.
+- **Usage Examples**:
+  ```bash
+  uuidgen
+  uuidgen -n 5
+  ```
+
+### `unzip`
+- **Syntax**: `unzip [-l] [-q] [-o] [-d DIR] ZIPFILE [FILE...]`
+- **Description**: 100% pure-Rust PKZIP archive extractor and contents lister. Decompresses both stored (uncompressed) and DEFLATE compressed files, protecting against zip-slip directory traversals.
+- **Usage Examples**:
+  ```bash
+  # Inspect archive without extraction
+  unzip -l release.zip
+
+  # Extract into target directory
+  unzip release.zip -d /opt/app
+  ```
+
+### `lsof`
+- **Syntax**: `lsof [-i [:[PORT]]] [-p PID] [FILE]`
+- **Description**: Queries open files, network sockets, and listening ports across all processes, directly solving `EADDRINUSE` port conflict errors.
+- **Usage Examples**:
+  ```bash
+  # Find what process is holding port 8080
+  lsof -i :8080
+
+  # List open files for process
+  lsof -p 1240
+  ```
+
+### `fuser`
+- **Syntax**: `fuser [-k] [-v] [FILE|PORT/tcp|PORT/udp]`
+- **Description**: Identifies processes using files or network sockets. With `-k`, automatically terminates the offending process with `SIGKILL`.
+- **Usage Examples**:
+  ```bash
+  # Identify PID using port 3000
+  fuser 3000/tcp
+
+  # Terminate process holding port 8080
+  fuser -k 8080/tcp
+  ```
+
+### `dig`, `nslookup` & `host`
+- **Syntax**: 
+  - `dig [@SERVER] [-p PORT] DOMAIN [TYPE]`
+  - `nslookup DOMAIN [SERVER]`
+  - `host DOMAIN [SERVER]`
+- **Description**: Pure-Rust DNS client querying standard A, AAAA, CNAME, TXT, and MX records against custom nameservers or default resolvers.
+- **Usage Examples**:
+  ```bash
+  dig @1.1.1.1 google.com A
+  nslookup internal.cluster.local 10.96.0.10
+  host api.github.com
+  ```
+
+### `install` (GNU Mode / File Copier)
+- **Syntax**: `install [-d] [-m MODE] [-v] SOURCE... DEST`
+- **Description**: GNU-compatible file and directory installation tool used by standard Makefiles and build scripts (`install -d -m 755 /usr/local/bin`).
+- **Usage Examples**:
+  ```bash
+  install -d -m 755 /usr/local/bin
+  install -m 755 -v build/mydaemon /usr/local/bin/
+  ```
+
+### `patch`
+- **Syntax**: `patch [-p NUM] [-R] [-i PATCHFILE] [ORIGFILE]`
+- **Description**: Applies unified diff patches (`diff -u`) to source trees, supporting path segment stripping (`-p1`) and reverse patching (`-R`).
+- **Usage Examples**:
+  ```bash
+  patch -p1 < bugfix.patch
+  patch -i update.patch /var/www/index.html
+  ```
+
+### `json`
+- **Syntax**: `json [-p] [-r] [--keys] [SELECTOR] [FILE]`
+- **Description**: Lightweight streaming JSON parser, pretty-printer, and property query tool for cloud metadata and REST APIs.
+- **Usage Examples**:
+  ```bash
+  # Pretty-print JSON
+  cat payload.json | json -p
+
+  # Extract nested field
+  curl -s http://api/info | json -r .version
+
+  # List top-level keys
+  cat data.json | json --keys
+  ```
+
+### `ssl-check` / `cert`
+- **Syntax**: `ssl-check [-p PORT] HOST`
+- **Description**: Diagnostic utility for testing TLS endpoints, verifying X.509 validity dates, and diagnosing certificate expiration.
+- **Usage Examples**:
+  ```bash
+  ssl-check google.com
+  ssl-check -p 8443 internal.vault.service
+  ```
+
+### `lsattr` & `chattr`
+- **Syntax**: 
+  - `lsattr [-R] [FILE...]`
+  - `chattr [+-=flags] [FILE...]`
+- **Description**: Inspects and configures Linux ext4/btrfs/xfs inode attributes (`+i` immutable, `+a` append-only).
+- **Usage Examples**:
+  ```bash
+  lsattr /etc/resolv.conf
+  chattr +i /etc/resolv.conf
+  ```
+
+---
+
+## 15. Gap Analysis & Roadmap: What More We Need
 
 For complete multi-OS comparative audit findings and package-level taxonomy, see [MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md](file:///Users/praveenkumar/rust%20os/docs/MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md).
 
 | Priority | Utility | Functionality / Purpose | Status / Milestone |
 | :--- | :--- | :--- | :--- |
 | **Complete** | `gzip`, `gunzip`, `zcat` | RFC 1952 DEFLATE stream compression and decompression | **Implemented in v2.3+** |
+| **Complete** | `unzip` | Pure-Rust PKZIP archive extraction and inspection (`-l`, `-d`) | **Implemented in v2.3+** |
+| **Complete** | `envsubst` | Environment variable template substitution in containers | **Implemented in v2.3+** |
+| **Complete** | `uuidgen` / `uuid` | RFC 4122 v4 Universally Unique Identifier generation | **Implemented in v2.3+** |
+| **Complete** | `lsof`, `fuser` | Port conflict resolver and file descriptor inspector (`-k`, `-i`) | **Implemented in v2.3+** |
+| **Complete** | `dig`, `nslookup`, `host` | Pure-Rust DNS client (A, AAAA, CNAME, TXT, MX) | **Implemented in v2.3+** |
+| **Complete** | `install` (GNU) | Standard Makefile binary installation and mode configuration | **Implemented in v2.3+** |
+| **Complete** | `patch` | POSIX unified diff patch applier (`-p NUM`, `-R`) | **Implemented in v2.3+** |
+| **Complete** | `json` | Streaming JSON parser, query selector, and formatter | **Implemented in v2.3+** |
+| **Complete** | `ssl-check` / `cert` | TLS certificate expiration and endpoint security probe | **Implemented in v2.3+** |
+| **Complete** | `lsattr`, `chattr` | Inode attribute inspection and immutable control | **Implemented in v2.3+** |
 | **Complete** | `dd` | Bit-level data duplication and block copying (`if=`, `of=`, `bs=`, `conv=fsync`) | **Implemented in v2.3+** |
 | **Complete** | `time` | High-precision process timing (real, user, sys CPU time, RSS) | **Implemented in v2.3+** |
 | **Complete** | `pidof` | Process ID lookup by executable name (`-s` single shot) | **Implemented in v2.3+** |
@@ -960,9 +1100,7 @@ For complete multi-OS comparative audit findings and package-level taxonomy, see
 | **Complete** | `cls`, `tasklist`, `where` | Windows developer ergonomic shims | **Implemented in v2.3+** |
 | **High** | `bzip2`, `bunzip2` | Bzip2 block-sorting compression algorithm | Roadmap v2.4 |
 | **High** | `xz`, `unxz` | LZMA2 / XZ compression for kernel images and packages | Roadmap v2.4 |
-| **High** | `zip`, `unzip` | Standard PKZIP archive extraction and packing | Roadmap v2.4 |
 | **Medium** | `losetup` | Loop device setup and detachment (`/dev/loopX`) for mounting ISO/disk images | Roadmap v2.5 |
-| **Medium** | `patch` | Applies unified diff files to source code trees | Roadmap v2.5 |
 | **Medium** | `cpio` | Archive format essential for `initramfs` creation and extraction | Roadmap v2.5 |
 | **Medium** | `top` / `htop` | Interactive terminal process monitor with CPU/RAM usage bars | Roadmap v2.5 |
 | **Medium** | `fdisk` / `parted` | Partition table manipulation (MBR and GPT) | Roadmap v2.5 |
@@ -972,12 +1110,12 @@ For complete multi-OS comparative audit findings and package-level taxonomy, see
 
 ---
 
-## 15. Verification & Differential Parity Test Suite
+## 16. Verification & Differential Parity Test Suite
 
 To verify all utilities, run the continuous integration test harnesses:
 
 ```bash
-# 1. Run all workspace unit tests (79 tests)
+# 1. Run all workspace unit tests (80 tests)
 cargo test --workspace
 
 # 2. Build the optimized release binary
@@ -989,6 +1127,6 @@ python3 tools/test_supervisor_and_container.py
 # 4. Run the Sandbox & Storage Differential Parity Suite (vs Ubuntu 24.04)
 python3 tools/test_sandbox_and_storage_differential.py
 
-# 5. List all registered applets (192 applets)
+# 5. List all registered applets (207 applets)
 ./target/release/ferro-core --list-applets
 ```
