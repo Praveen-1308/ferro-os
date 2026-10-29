@@ -796,14 +796,28 @@ root ALL=(ALL:ALL) ALL
             let _ = fs::write("/etc/shells", shells);
         }
 
-        // Standard user home directories
+        if !Path::new("/etc/resolv.conf").exists() {
+            let resolv = "nameserver 1.1.1.1\nnameserver 8.8.8.8\n";
+            let _ = fs::write("/etc/resolv.conf", resolv);
+        }
+
+        // Standard user home directories and persistent temporary storage
         let _ = fs::create_dir_all("/root");
         let _ = fs::create_dir_all("/home/ferro");
+        let _ = fs::create_dir_all("/var/tmp");
+        let _ = fs::create_dir_all("/usr/bin");
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let _ = fs::set_permissions("/root", fs::Permissions::from_mode(0o700));
             let _ = fs::set_permissions("/home/ferro", fs::Permissions::from_mode(0o755));
+            let _ = fs::set_permissions("/var/tmp", fs::Permissions::from_mode(0o1777));
+
+            // Standard /usr/bin/env shebang interpreter symlink
+            let env_link = Path::new("/usr/bin/env");
+            if !env_link.exists() {
+                let _ = std::os::unix::fs::symlink("/bin/ferro-core", env_link);
+            }
         }
     }
 

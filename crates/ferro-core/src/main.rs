@@ -24,6 +24,7 @@ pub mod syslog;
 pub mod service;
 pub mod zeroize;
 pub mod auth;
+pub mod standard_utils;
 
 #[cfg(target_os = "linux")]
 extern "C" {
@@ -167,6 +168,25 @@ fn main() -> ExitCode {
         "sudo" => auth::run_sudo(&command_args),
         "su" => auth::run_su(&command_args),
         "ntp" | "timesync" | "ntpdate" => auth::run_ntp(&command_args),
+        "true" | ":" => standard_utils::run_true(&command_args),
+        "false" => standard_utils::run_false(&command_args),
+        "basename" => standard_utils::run_basename(&command_args),
+        "dirname" => standard_utils::run_dirname(&command_args),
+        "readlink" => standard_utils::run_readlink(&command_args),
+        "realpath" => standard_utils::run_realpath(&command_args),
+        "mktemp" => standard_utils::run_mktemp(&command_args),
+        "date" => standard_utils::run_date(&command_args),
+        "du" => standard_utils::run_du(&command_args),
+        "cut" => standard_utils::run_cut(&command_args),
+        "sort" => standard_utils::run_sort(&command_args),
+        "uniq" => standard_utils::run_uniq(&command_args),
+        "tr" => standard_utils::run_tr(&command_args),
+        "yes" => standard_utils::run_yes(&command_args),
+        "seq" => standard_utils::run_seq(&command_args),
+        "sha256sum" => standard_utils::run_sha256sum(&command_args),
+        "printenv" => standard_utils::run_printenv(&command_args),
+        "wget" => standard_utils::run_wget(&command_args),
+        "ping" => standard_utils::run_ping(&command_args),
         "help" | "--help" | "-h" => {
             print_usage();
             ExitCode::SUCCESS
@@ -688,7 +708,10 @@ pub const ALL_APPLETS: &[&str] = &[
     "ferrod", "syslogd", "logger", "logs", "log", "journalctl", "dmesg",
     "server-suite", "server", "disk", "cloud-init", "cloudinit", "sshd", "ssh-server",
     "netstat", "ss", "service", "ferro-service", "container", "ferrocage", "cage",
-    "sudo", "su", "ntp", "timesync", "ntpdate"
+    "sudo", "su", "ntp", "timesync", "ntpdate",
+    "true", "false", "basename", "dirname", "readlink", "realpath", "mktemp",
+    "date", "du", "cut", "sort", "uniq", "tr", "yes", "seq", "sha256sum",
+    "printenv", "wget", "ping"
 ];
 
 fn is_internal_applet(cmd: &str) -> bool {
@@ -724,6 +747,22 @@ fn install_symlinks(target_dir_str: &str, force: bool) -> ExitCode {
             }
         }
     }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::symlink;
+        // Standard Unix /usr/bin/env shebang resolution
+        let usr_bin = Path::new("/usr/bin");
+        let _ = fs::create_dir_all(usr_bin);
+        let env_link = usr_bin.join("env");
+        if !env_link.exists() {
+            let _ = symlink(&exe_path, &env_link);
+        }
+        let sh_link = usr_bin.join("sh");
+        if !sh_link.exists() {
+            let _ = symlink(&exe_path, &sh_link);
+        }
+    }
+
     if preserved > 0 {
         println!("[ferro-core] Successfully installed {} applet symlinks to {} (preserved {} native binaries)", installed, target_dir_str, preserved);
     } else {
@@ -1061,6 +1100,25 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "sudo" => auth::run_sudo(args),
         "su" => auth::run_su(args),
         "ntp" | "timesync" | "ntpdate" => auth::run_ntp(args),
+        "true" | ":" => standard_utils::run_true(args),
+        "false" => standard_utils::run_false(args),
+        "basename" => standard_utils::run_basename(args),
+        "dirname" => standard_utils::run_dirname(args),
+        "readlink" => standard_utils::run_readlink(args),
+        "realpath" => standard_utils::run_realpath(args),
+        "mktemp" => standard_utils::run_mktemp(args),
+        "date" => standard_utils::run_date(args),
+        "du" => standard_utils::run_du(args),
+        "cut" => standard_utils::run_cut(args),
+        "sort" => standard_utils::run_sort(args),
+        "uniq" => standard_utils::run_uniq(args),
+        "tr" => standard_utils::run_tr(args),
+        "yes" => standard_utils::run_yes(args),
+        "seq" => standard_utils::run_seq(args),
+        "sha256sum" => standard_utils::run_sha256sum(args),
+        "printenv" => standard_utils::run_printenv(args),
+        "wget" => standard_utils::run_wget(args),
+        "ping" => standard_utils::run_ping(args),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
             ExitCode::from(127)

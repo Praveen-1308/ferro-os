@@ -334,9 +334,12 @@ root ALL=(ALL:ALL) ALL
 ";
     let _ = fs::write(format!("{}/etc/sudoers", install_mount), sudoers);
     let _ = fs::write(format!("{}/etc/shells", install_mount), "/bin/sh\n/bin/bash\n/bin/ferro-core\n");
+    let _ = fs::write(format!("{}/etc/resolv.conf", install_mount), "nameserver 1.1.1.1\nnameserver 8.8.8.8\n");
 
     let _ = fs::create_dir_all(format!("{}/root", install_mount));
     let _ = fs::create_dir_all(format!("{}/home/ferro", install_mount));
+    let _ = fs::create_dir_all(format!("{}/var/tmp", install_mount));
+    let _ = fs::create_dir_all(format!("{}/usr/bin", install_mount));
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -344,6 +347,12 @@ root ALL=(ALL:ALL) ALL
         let _ = fs::set_permissions(format!("{}/etc/sudoers", install_mount), fs::Permissions::from_mode(0o440));
         let _ = fs::set_permissions(format!("{}/root", install_mount), fs::Permissions::from_mode(0o700));
         let _ = fs::set_permissions(format!("{}/home/ferro", install_mount), fs::Permissions::from_mode(0o755));
+        let _ = fs::set_permissions(format!("{}/var/tmp", install_mount), fs::Permissions::from_mode(0o1777));
+
+        let env_link = format!("{}/usr/bin/env", install_mount);
+        if !Path::new(&env_link).exists() {
+            let _ = std::os::unix::fs::symlink("/bin/ferro-core", &env_link);
+        }
     }
 
     // Write marker flag
