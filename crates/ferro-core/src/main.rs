@@ -2442,7 +2442,16 @@ fn run_grep(args: &[String]) -> ExitCode {
                 } else {
                     sub.to_string()
                 };
-                if check_line.contains(&s) {
+                let matches_sub = if s.starts_with('^') && s.ends_with('$') && s.len() >= 2 {
+                    check_line == &s[1..s.len() - 1]
+                } else if s.starts_with('^') {
+                    check_line.starts_with(&s[1..])
+                } else if s.ends_with('$') {
+                    check_line.ends_with(&s[..s.len() - 1])
+                } else {
+                    check_line.contains(&s)
+                };
+                if matches_sub {
                     matches = true;
                     break;
                 }
@@ -2547,9 +2556,21 @@ fn run_head(args: &[String]) -> ExitCode {
         let arg = &args[i];
         if arg == "-n" && i + 1 < args.len() {
             i += 1;
-            count = args[i].parse().unwrap_or(10);
+            match args[i].parse::<usize>() {
+                Ok(c) => count = c,
+                Err(_) => {
+                    eprintln!("head: invalid number of lines: '{}'", args[i]);
+                    return ExitCode::from(1);
+                }
+            }
         } else if arg.starts_with("-n") && arg.len() > 2 {
-            count = arg[2..].parse().unwrap_or(10);
+            match arg[2..].parse::<usize>() {
+                Ok(c) => count = c,
+                Err(_) => {
+                    eprintln!("head: invalid number of lines: '{}'", &arg[2..]);
+                    return ExitCode::from(1);
+                }
+            }
         } else if arg.starts_with('-') && arg.len() > 1 && arg[1..].chars().all(|c| c.is_ascii_digit()) {
             count = arg[1..].parse().unwrap_or(10);
         } else if !arg.starts_with('-') {
@@ -2624,9 +2645,21 @@ fn run_tail(args: &[String]) -> ExitCode {
             follow = true;
         } else if arg == "-n" && i + 1 < args.len() {
             i += 1;
-            count = args[i].parse().unwrap_or(10);
+            match args[i].parse::<usize>() {
+                Ok(c) => count = c,
+                Err(_) => {
+                    eprintln!("tail: invalid number of lines: '{}'", args[i]);
+                    return ExitCode::from(1);
+                }
+            }
         } else if arg.starts_with("-n") && arg.len() > 2 {
-            count = arg[2..].parse().unwrap_or(10);
+            match arg[2..].parse::<usize>() {
+                Ok(c) => count = c,
+                Err(_) => {
+                    eprintln!("tail: invalid number of lines: '{}'", &arg[2..]);
+                    return ExitCode::from(1);
+                }
+            }
         } else if arg.starts_with('-') && arg.len() > 1 && arg[1..].chars().all(|c| c.is_ascii_digit()) {
             count = arg[1..].parse().unwrap_or(10);
         } else if !arg.starts_with('-') && file.is_none() {
