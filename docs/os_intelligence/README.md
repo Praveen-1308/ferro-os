@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 45 | **Last Sweep**: 2026-10-28 10:27:22 UTC
+**Active Tracked Incidents**: 46 | **Last Sweep**: 2026-10-29 10:47:03 UTC
 
 ---
 
@@ -58,6 +58,7 @@
 | `REDDIT-SYSADMIN-1xhh6yk` | **Linux Server Administration** | reminiscing the golden years. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xhh6yk.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xhh6yk.md) |
 | `REDDIT-SYSADMIN-1xgte6q` | **Linux Server Administration** | Tech moving too fast, layoffs everywhere. how are you coping? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xgte6q.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xgte6q.md) |
 | `REDDIT-SYSADMIN-1xherwo` | **Linux Server Administration** | A piece of advice for all the junior sysadmins and help desk guys out there | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xherwo.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xherwo.md) |
+| `REDDIT-SYSADMIN-1xhkai0` | **Linux Server Administration** | Microsoft's October Patch Tuesday fixed 1,413 vulnerabilities. In one month. That's more than they patched in any single year on record. One was already being actively exploited. CISA told federal agencies to patch it within 3 days. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xhkai0.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xhkai0.md) |
 
 ---
 
