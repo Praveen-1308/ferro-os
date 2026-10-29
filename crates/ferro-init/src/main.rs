@@ -47,8 +47,10 @@ mod linux_init {
     }
 
     pub fn run() -> Result<(), Box<dyn std::error::Error>> {
-        println!("{}", BANNER);
-        println!("[ferro-init] Initializing FerroOS PID 1 (Rust Core)...");
+        if !is_quiet_boot() {
+            println!("{}", BANNER);
+            println!("[ferro-init] Initializing FerroOS PID 1 (Rust Core)...");
+        }
 
         // 1. Mount virtual filesystems first so we have /proc, /sys, /dev, /tmp
         mount_essential_filesystems();
@@ -579,8 +581,6 @@ mod linux_init {
 
     fn enter_main_supervisor(_safe_mode: bool) {
         loop {
-            println!("[ferro-init] Spawning login session (/bin/sh)...");
-
             let mut shell_cmd = if Path::new("/bin/sh").exists() {
                 Command::new("/bin/sh")
             } else if Path::new("/bin/ferro-core").exists() {
@@ -599,16 +599,7 @@ mod linux_init {
                 continue;
             };
 
-            match shell_cmd.status() {
-                Ok(status) => {
-                    println!("[ferro-init] Session exited with: {:?}", status);
-                }
-                Err(e) => {
-                    eprintln!("[ferro-init] Failed to execute shell: {}", e);
-                    std::thread::sleep(std::time::Duration::from_secs(1));
-                }
-            }
-
+            let _ = shell_cmd.status();
             reap_zombies();
         }
     }
@@ -691,6 +682,36 @@ mod linux_init {
 
         if check_immutable_cmdline() {
             setup_immutable_overlay_storage("");
+        }
+
+        ensure_standard_system_files();
+    }
+
+    fn is_quiet_boot() -> bool {
+        fs::read_to_string("/proc/cmdline")
+            .map(|s| s.split_whitespace().any(|token| token == "quiet"))
+            .unwrap_or(false)
+    }
+
+    fn ensure_standard_system_files() {
+        let os_release = "NAME=\"FerroOS\"\nVERSION=\"2.3.0\"\nID=ferro\nID_LIKE=linux\nPRETTY_NAME=\"FerroOS 2.3.0 (Cloud Native)\"\nVERSION_ID=\"2.3.0\"\nHOME_URL=\"https://github.com/Praveen-1308/ferro-os\"\n";
+        let _ = fs::create_dir_all("/etc");
+        if !Path::new("/etc/os-release").exists() {
+            let _ = fs::write("/etc/os-release", os_release);
+        }
+        let _ = fs::create_dir_all("/usr/lib");
+        if !Path::new("/usr/lib/os-release").exists() {
+            let _ = fs::write("/usr/lib/os-release", os_release);
+        }
+        if !Path::new("/etc/issue").exists() {
+            let _ = fs::write("/etc/issue", "FerroOS 2.3.0 \\n \\l\n\n");
+        }
+        if !Path::new("/etc/hosts").exists() {
+            let hosts = "127.0.0.1\tlocalhost\n::1\t\tlocalhost ip6-localhost ip6-loopback\n127.0.1.1\tferro\n";
+            let _ = fs::write("/etc/hosts", hosts);
+        }
+        if !Path::new("/etc/hostname").exists() {
+            let _ = fs::write("/etc/hostname", "ferro\n");
         }
     }
 

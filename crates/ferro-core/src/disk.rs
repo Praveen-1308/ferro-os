@@ -265,6 +265,16 @@ vm.dirty_background_bytes = 67108864\n\
 vm.dirty_bytes = 268435456\n";
     let _ = fs::write(format!("{}/99-ferro-cloud.conf", sysctl_dir), sysctl_content);
 
+    // Standard Linux release metadata (/etc/os-release & /etc/issue)
+    let os_release = "NAME=\"FerroOS\"\nVERSION=\"2.3.0\"\nID=ferro\nID_LIKE=linux\nPRETTY_NAME=\"FerroOS 2.3.0 (Cloud Native)\"\nVERSION_ID=\"2.3.0\"\nHOME_URL=\"https://github.com/Praveen-1308/ferro-os\"\n";
+    let _ = fs::write(format!("{}/etc/os-release", install_mount), os_release);
+    let _ = fs::create_dir_all(format!("{}/usr/lib", install_mount));
+    let _ = fs::write(format!("{}/usr/lib/os-release", install_mount), os_release);
+    let _ = fs::write(format!("{}/etc/issue", install_mount), "FerroOS 2.3.0 \\n \\l\n\n");
+    let _ = fs::write(format!("{}/etc/hostname", install_mount), "ferro\n");
+    let hosts_content = "127.0.0.1\tlocalhost\n::1\t\tlocalhost ip6-localhost ip6-loopback\n127.0.1.1\tferro\n";
+    let _ = fs::write(format!("{}/etc/hosts", install_mount), hosts_content);
+
     // Write marker flag
     let _ = fs::write(format!("{}/etc/ferro_persistent_root", install_mount), "FERRO_PERSISTENT_ROOT=1\n");
 

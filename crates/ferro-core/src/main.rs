@@ -163,14 +163,13 @@ fn main() -> ExitCode {
         "ss" => run_ss(&command_args),
         "service" | "ferro-service" => service::run_service(&command_args),
         "container" | "ferrocage" | "cage" => run_ferrocage(&command_args),
-        "help" => {
+        "help" | "--help" | "-h" => {
             print_usage();
             ExitCode::SUCCESS
         }
         _ => {
-            eprintln!("ferro-core: unknown applet '{}'", command_name);
-            print_usage();
-            ExitCode::FAILURE
+            eprintln!("ferro-core: applet not found: '{}' (try 'ferro-core --help')", command_name);
+            ExitCode::from(127)
         }
     }
 }
@@ -213,6 +212,46 @@ extern "C" fn shell_sigint_handler(_sig: libc::c_int) {
     }
 }
 
+fn get_shell_prompt() -> String {
+    if let Ok(ps1) = env::var("PS1") {
+        return ps1;
+    }
+    if let Some(ps1) = shell::get_var("PS1") {
+        return ps1;
+    }
+
+    let is_root = unsafe {
+        #[cfg(unix)]
+        { libc::geteuid() == 0 }
+        #[cfg(not(unix))]
+        { false }
+    };
+
+    let user = if is_root {
+        "root".to_string()
+    } else {
+        env::var("USER").unwrap_or_else(|_| "user".to_string())
+    };
+
+    let host = fs::read_to_string("/etc/hostname")
+        .map(|s| s.trim().to_string())
+        .unwrap_or_else(|_| "ferro".to_string());
+
+    let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
+    let home = env::var("HOME").unwrap_or_else(|_| if is_root { "/root".to_string() } else { "/home/user".to_string() });
+
+    let cwd_display = if cwd.to_string_lossy() == home {
+        "~".to_string()
+    } else if let Ok(rel) = cwd.strip_prefix(&home) {
+        format!("~/{}", rel.display())
+    } else {
+        cwd.display().to_string()
+    };
+
+    let sym = if is_root { "#" } else { "$" };
+    format!("{}@{}:{}{} ", user, host, cwd_display, sym)
+}
+
 fn run_sh(args: &[String]) -> ExitCode {
     if args.len() >= 2 && args[0] == "-c" {
         let cmd_str = &args[1];
@@ -240,16 +279,12 @@ fn run_sh(args: &[String]) -> ExitCode {
         libc::signal(libc::SIGINT, shell_sigint_handler as *const () as usize);
     }
 
-    println!("Welcome to FerroOS Shell (Rust)");
-    println!("Type 'help' for builtins, or run any system command (e.g. python3).");
-
     let stdin = io::stdin();
     let mut stdout = io::stdout();
 
     loop {
         reap_shell_zombies();
-        let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
-        print!("ferro-os:{}$ ", cwd.display());
+        print!("{}", get_shell_prompt());
         let _ = stdout.flush();
 
         let mut line = String::new();
@@ -722,14 +757,32 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
     match cmd.as_str() {
         "[" | "test" => return shell::run_test(args),
         "cd" => {
+            let oldpwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("/")).to_string_lossy().to_string();
             let target = if args.is_empty() {
-                shell::get_var("HOME").unwrap_or_else(|| "/root".to_string())
+                env::var("HOME").ok().or_else(|| shell::get_var("HOME")).unwrap_or_else(|| "/root".to_string())
+            } else if args[0] == "-" {
+                if let Some(prev) = env::var("OLDPWD").ok().or_else(|| shell::get_var("OLDPWD")) {
+                    println!("{}", prev);
+                    prev
+                } else {
+                    eprintln!("cd: OLDPWD not set");
+                    return ExitCode::FAILURE;
+                }
             } else {
                 args[0].clone()
             };
+
             if let Err(e) = env::set_current_dir(&target) {
                 eprintln!("cd: {}: {}", target, e);
                 return ExitCode::FAILURE;
+            }
+
+            env::set_var("OLDPWD", &oldpwd);
+            shell::set_var("OLDPWD", &oldpwd);
+            if let Ok(new_cwd) = env::current_dir() {
+                let s = new_cwd.to_string_lossy().to_string();
+                env::set_var("PWD", &s);
+                shell::set_var("PWD", &s);
             }
             return ExitCode::SUCCESS;
         }
@@ -742,11 +795,18 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
             return execute_single_command(&sub_cmd);
         }
         "export" => {
-            if let Some(first_arg) = args.first() {
-                if let Some((k, v)) = shell::is_assignment(first_arg) {
+            if args.is_empty() {
+                for (k, v) in env::vars() {
+                    println!("declare -x {}=\"{}\"", k, v);
+                }
+                return ExitCode::SUCCESS;
+            }
+            for arg in args {
+                if let Some((k, v)) = shell::is_assignment(arg) {
                     shell::set_var(&k, &v);
-                } else if let Some(val) = shell::get_var(first_arg) {
-                    env::set_var(first_arg, val);
+                    env::set_var(&k, &v);
+                } else if let Some(val) = shell::get_var(arg) {
+                    env::set_var(arg, val);
                 }
             }
             return ExitCode::SUCCESS;
@@ -904,7 +964,17 @@ fn execute_single_command(raw_line: &str) -> ExitCode {
                 ExitCode::from(status.code().unwrap_or(1) as u8)
             }
         }
-        Err(_) => dispatch_internal_applet(cmd, args),
+        Err(e) => {
+            if is_internal_applet(cmd) {
+                dispatch_internal_applet(cmd, args)
+            } else if e.kind() == std::io::ErrorKind::PermissionDenied {
+                eprintln!("sh: {}: Permission denied", cmd);
+                ExitCode::from(126)
+            } else {
+                eprintln!("sh: {}: command not found", cmd);
+                ExitCode::from(127)
+            }
+        }
     }
 }
 
@@ -985,7 +1055,7 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "container" | "ferrocage" | "cage" => run_ferrocage(args),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
-            ExitCode::FAILURE
+            ExitCode::from(127)
         }
     }
 }
