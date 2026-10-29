@@ -32,6 +32,7 @@ pub mod cross_os_utils;
 pub mod modern_utils;
 pub mod awk;
 pub mod editor;
+pub mod proc_ledger;
 
 #[cfg(target_os = "linux")]
 extern "C" {
@@ -286,6 +287,14 @@ fn main() -> ExitCode {
         "awk" => awk::run_awk(&command_args),
         "vi" => editor::run_vi(&command_args),
         "ed" => editor::run_ed(&command_args),
+        "proc-ledger" => proc_ledger::run_proc_ledger(&command_args),
+        "proc-kill" => proc_ledger::run_proc_kill(&command_args),
+        "pstree" => proc_ledger::run_pstree(&command_args),
+        "ghost-hunter" => proc_ledger::run_ghost_hunter(&command_args),
+        "dos2unix" => modern_utils::run_dos2unix(&command_args),
+        "unix2dos" => modern_utils::run_unix2dos(&command_args),
+        "sponge" => modern_utils::run_sponge(&command_args),
+        "ts" => modern_utils::run_ts(&command_args),
         "help" | "--help" | "-h" => {
             print_usage();
             ExitCode::SUCCESS
@@ -823,7 +832,9 @@ pub const ALL_APPLETS: &[&str] = &[
     "cls", "tasklist", "taskkill", "ipconfig", "where", "pbcopy", "clip", "pbpaste", "open", "start",
     "envsubst", "uuidgen", "uuid", "unzip", "lsof", "fuser", "dig", "nslookup", "host",
     "patch", "json", "ssl-check", "cert", "lsattr", "chattr",
-    "awk", "vi", "ed"
+    "awk", "vi", "ed",
+    "proc-ledger", "proc-kill", "pstree", "ghost-hunter",
+    "dos2unix", "unix2dos", "sponge", "ts"
 ];
 
 fn is_internal_applet(cmd: &str) -> bool {
@@ -1323,6 +1334,14 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "awk" => awk::run_awk(args),
         "vi" => editor::run_vi(args),
         "ed" => editor::run_ed(args),
+        "proc-ledger" => proc_ledger::run_proc_ledger(args),
+        "proc-kill" => proc_ledger::run_proc_kill(args),
+        "pstree" => proc_ledger::run_pstree(args),
+        "ghost-hunter" => proc_ledger::run_ghost_hunter(args),
+        "dos2unix" => modern_utils::run_dos2unix(args),
+        "unix2dos" => modern_utils::run_unix2dos(args),
+        "sponge" => modern_utils::run_sponge(args),
+        "ts" => modern_utils::run_ts(args),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
             ExitCode::from(127)
@@ -3003,31 +3022,66 @@ pub(crate) fn run_kill(args: &[String]) -> ExitCode {
     }
 
     let mut signal = 15; // SIGTERM
-    let mut pid_str = &args[0];
+    let mut pid_opt = None;
+    let mut verify = false;
 
-    if args.len() >= 2 && args[0].starts_with('-') {
-        signal = args[0][1..].parse().unwrap_or(15);
-        pid_str = &args[1];
+    for arg in args {
+        if arg == "-v" || arg == "--verify" {
+            verify = true;
+        } else if arg.starts_with('-') && arg.len() > 1 && pid_opt.is_none() {
+            if let Ok(sig) = arg[1..].parse::<i32>() {
+                signal = sig;
+            }
+        } else if let Ok(p) = arg.parse::<i32>() {
+            pid_opt = Some(p);
+        }
     }
 
-    if let Ok(pid) = pid_str.parse::<i32>() {
-        #[cfg(target_os = "linux")]
-        unsafe {
-            if kill(pid, signal) != 0 {
-                let err = io::Error::last_os_error();
-                eprintln!("kill: ({}): {}", pid, err);
-                return ExitCode::FAILURE;
+    let pid = match pid_opt {
+        Some(p) => p,
+        None => {
+            eprintln!("kill: valid numeric PID required");
+            return ExitCode::FAILURE;
+        }
+    };
+
+    let target_comm = proc_ledger::get_process_by_pid(pid).map(|p| p.comm);
+
+    #[cfg(unix)]
+    unsafe {
+        if libc::kill(pid, signal) != 0 {
+            let err = io::Error::last_os_error();
+            eprintln!("kill: ({}): {}", pid, err);
+            return ExitCode::FAILURE;
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        println!("Simulated: sending signal {} to pid {}", signal, pid);
+    }
+
+    if verify {
+        let verification = proc_ledger::verify_process_termination(pid, target_comm.as_deref(), 250);
+        match verification {
+            proc_ledger::PostKillVerification::SafelyTerminated => {
+                println!("kill: [VERIFIED] PID {} terminated cleanly. Resources returned safely.", pid);
+            }
+            proc_ledger::PostKillVerification::BecameZombie { ppid, comm } => {
+                eprintln!("kill: [WARNING] PID {} ({}) is now a GHOST/ZOMBIE. Parent PPID {} has not reaped it.", pid, comm, ppid);
+            }
+            proc_ledger::PostKillVerification::StuckInDState { wchan, comm } => {
+                eprintln!("kill: [ALERT] PID {} ({}) FAILED to terminate: stuck in D-state (wchan: {}).", pid, comm, wchan);
+            }
+            proc_ledger::PostKillVerification::RespawnedBySupervisor { new_pid, comm } => {
+                eprintln!("kill: [NOTICE] PID {} ({}) terminated, but supervisor respawned NEW PID {}.", pid, comm, new_pid);
+            }
+            proc_ledger::PostKillVerification::StillRunning { state, comm } => {
+                eprintln!("kill: [NOTICE] PID {} ({}) still running in state {:?}.", pid, comm, state);
             }
         }
-        #[cfg(not(target_os = "linux"))]
-        {
-            println!("Simulated: sending signal {} to pid {}", signal, pid);
-        }
-        ExitCode::SUCCESS
-    } else {
-        eprintln!("kill: invalid pid '{}'", pid_str);
-        ExitCode::FAILURE
     }
+
+    ExitCode::SUCCESS
 }
 
 fn run_uptime(_args: &[String]) -> ExitCode {

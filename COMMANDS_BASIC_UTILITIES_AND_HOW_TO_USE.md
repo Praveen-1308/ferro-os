@@ -1,7 +1,7 @@
 # FerroOS Commands, Basic Utilities & Usage Manual
 ### *Complete Catalog of Implemented Applets, Practical Playbooks, and Forward Gap Analysis*
 
-FerroOS incorporates [`ferro-core`](file:///Users/praveenkumar/rust%20os/crates/ferro-core/src/main.rs), an ultra-compact, high-performance, multi-call userspace binary written in **100% pure Rust** with zero external C runtime dependencies (`libc = "0.2"`, `flate2 = "1.0"` with safe `miniz_oxide`). Consolidating all traditional GNU coreutils, util-linux, procps, networking binaries, archival engines, modern cloud/container utilities, and cross-platform developer shims into a single **1.3 MB executable**, `ferro-core` provides **210 registered applets** symlinked across `/bin` and `/usr/bin`.
+FerroOS incorporates [`ferro-core`](file:///Users/praveenkumar/rust%20os/crates/ferro-core/src/main.rs), an ultra-compact, high-performance, multi-call userspace binary written in **100% pure Rust** with zero external C runtime dependencies (`libc = "0.2"`, `flate2 = "1.0"` with safe `miniz_oxide`). Consolidating all traditional GNU coreutils, util-linux, procps, networking binaries, archival engines, modern cloud/container utilities, and cross-platform developer shims into a single **1.3 MB executable**, `ferro-core` provides **218 registered applets** symlinked across `/bin` and `/usr/bin`.
 
 This document tracks every implemented command, its syntax, options, and practical usage, followed by a comprehensive **Gap Analysis** tracking what more is needed for complete parity with enterprise Linux distributions (Ubuntu 24.04 LTS, Debian 12, Alpine 3.20, Windows, and macOS). For a detailed multi-OS comparative audit, refer to [MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md](file:///Users/praveenkumar/rust%20os/docs/MULTI_OS_COMMANDS_AND_UTILITIES_COMPARATIVE_ANALYSIS.md).
 
@@ -1102,6 +1102,84 @@ FerroOS incorporates modern utilities specifically addressing areas where DevOps
 
   # Inspect all lines with line numbers
   printf ",n\nq\n" | ed /etc/hosts
+  ```
+
+### `proc-ledger` (Process Lifecycle & Relationship Ledger)
+- **Syntax**: `proc-ledger [--active | --idle | --ghosts]`
+- **Description**: Relational process ledger separating active CPU-consuming workloads from idle/safely-parked daemons and alerting to ghost/zombies. Solves process ambiguity by explicitly confirming dormant state and zero leaked CPU cycles.
+- **Usage Examples**:
+  ```bash
+  # View complete dual-table ledger
+  proc-ledger
+
+  # Show only executing active workloads
+  proc-ledger --active
+
+  # Show only zombie (Z) and stuck D-state processes
+  proc-ledger --ghosts
+  ```
+
+### `proc-kill` (Verified Process Termination)
+- **Syntax**: `proc-kill [-signal] <PID>`
+- **Description**: Enhanced process termination utility that sends the signal and immediately executes a post-termination verification probe. Confirms whether the process actually died, freed its resources, became a zombie, or hung in D-state. Also available via standard `kill -v <PID>`.
+- **Usage Examples**:
+  ```bash
+  # Terminate and verify clean exit
+  proc-kill 1420
+
+  # Force kill with post-mortem diagnosis
+  proc-kill -9 1420
+  ```
+
+### `pstree` (Visual Process Hierarchy Tree)
+- **Syntax**: `pstree`
+- **Description**: Visualizes running processes as an ASCII tree rooted at PID 1, displaying parent-child relationships, sub-workers, and category tags.
+- **Usage Examples**:
+  ```bash
+  pstree
+  ```
+
+### `ghost-hunter` (Dead & Stuck Resource Detector)
+- **Syntax**: `ghost-hunter`
+- **Description**: Proactively scans the operating system for zombie processes (`Z`), uninterruptible disk-sleep processes (`D`), and unlinked open deleted files holding disk blocks.
+- **Usage Examples**:
+  ```bash
+  ghost-hunter
+  ```
+
+### `dos2unix` & `unix2dos` (Cross-OS Line Break Cleaner)
+- **Syntax**: 
+  - `dos2unix [FILE...]`
+  - `unix2dos [FILE...]`
+- **Description**: Converts CRLF (`\r\n`) to LF (`\n`) and strips UTF-8 BOMs in-place or via stdin, eliminating the `\r: command not found` error across cross-platform repositories.
+- **Usage Examples**:
+  ```bash
+  # Clean script in place
+  dos2unix deploy.sh
+
+  # Pipeline conversion
+  cat windows.txt | dos2unix > unix.txt
+  ```
+
+### `sponge` (Atomic Pipeline Soak & Write)
+- **Syntax**: `sponge [FILE]`
+- **Description**: Buffers all standard input in memory before opening and writing to the target file atomically via temporary swap. Prevents the disastrous 0-byte file truncation bug when reading and writing to the same file (`cat file | grep -v bad | sponge file`).
+- **Usage Examples**:
+  ```bash
+  # Safely filter a file in-place without wiping it
+  grep -v "unwanted" config.json | sponge config.json
+  ```
+
+### `ts` (Real-Time Stream Timestamping)
+- **Syntax**: `ts [FORMAT]`
+- **Description**: Prepends precise timestamps to every line of standard input in real time. Default format is `[%H:%M:%S]`. Supports `%Y`, `%m`, `%d`, `%H`, `%M`, `%S`, and `%ms`.
+- **Usage Examples**:
+  ```bash
+  # Timestamp compiler or build logs
+  make build | ts "[%Y-%m-%d %H:%M:%S]"
+
+  # Timestamp ping or network tests
+  ping 1.1.1.1 | ts
   ```
 
 ---

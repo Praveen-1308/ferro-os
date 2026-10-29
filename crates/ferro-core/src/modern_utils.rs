@@ -1678,6 +1678,229 @@ pub fn run_chattr(args: &[String]) -> ExitCode {
 }
 
 // ============================================================================
+// dos2unix & unix2dos
+// ============================================================================
+
+pub fn run_dos2unix(args: &[String]) -> ExitCode {
+    let mut files = Vec::new();
+    for arg in args {
+        if arg == "-h" || arg == "--help" {
+            println!("Usage: dos2unix [file...]");
+            println!("Convert CRLF line breaks to LF and strip UTF-8 BOM in-place or via stdin.");
+            return ExitCode::SUCCESS;
+        } else if !arg.starts_with('-') {
+            files.push(arg.as_str());
+        }
+    }
+
+    if files.is_empty() {
+        let mut buf = Vec::new();
+        if io::stdin().read_to_end(&mut buf).is_err() {
+            return ExitCode::FAILURE;
+        }
+        let cleaned = strip_crlf(&buf);
+        let _ = io::stdout().write_all(&cleaned);
+        let _ = io::stdout().flush();
+        return ExitCode::SUCCESS;
+    }
+
+    let mut success = true;
+    for file in files {
+        match fs::read(file) {
+            Ok(buf) => {
+                let cleaned = strip_crlf(&buf);
+                if let Err(e) = fs::write(file, cleaned) {
+                    eprintln!("dos2unix: failed to write {}: {}", file, e);
+                    success = false;
+                }
+            }
+            Err(e) => {
+                eprintln!("dos2unix: cannot read {}: {}", file, e);
+                success = false;
+            }
+        }
+    }
+
+    if success { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+}
+
+pub fn strip_crlf(data: &[u8]) -> Vec<u8> {
+    let slice = if data.starts_with(&[0xEF, 0xBB, 0xBF]) {
+        &data[3..]
+    } else {
+        data
+    };
+
+    let mut out = Vec::with_capacity(slice.len());
+    let mut i = 0;
+    while i < slice.len() {
+        if slice[i] == b'\r' && i + 1 < slice.len() && slice[i + 1] == b'\n' {
+            out.push(b'\n');
+            i += 2;
+        } else {
+            out.push(slice[i]);
+            i += 1;
+        }
+    }
+    out
+}
+
+pub fn run_unix2dos(args: &[String]) -> ExitCode {
+    let mut files = Vec::new();
+    for arg in args {
+        if arg == "-h" || arg == "--help" {
+            println!("Usage: unix2dos [file...]");
+            println!("Convert LF line breaks to CRLF in-place or via stdin.");
+            return ExitCode::SUCCESS;
+        } else if !arg.starts_with('-') {
+            files.push(arg.as_str());
+        }
+    }
+
+    if files.is_empty() {
+        let mut buf = Vec::new();
+        if io::stdin().read_to_end(&mut buf).is_err() {
+            return ExitCode::FAILURE;
+        }
+        let converted = convert_to_crlf(&buf);
+        let _ = io::stdout().write_all(&converted);
+        let _ = io::stdout().flush();
+        return ExitCode::SUCCESS;
+    }
+
+    let mut success = true;
+    for file in files {
+        match fs::read(file) {
+            Ok(buf) => {
+                let converted = convert_to_crlf(&buf);
+                if let Err(e) = fs::write(file, converted) {
+                    eprintln!("unix2dos: failed to write {}: {}", file, e);
+                    success = false;
+                }
+            }
+            Err(e) => {
+                eprintln!("unix2dos: cannot read {}: {}", file, e);
+                success = false;
+            }
+        }
+    }
+
+    if success { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+}
+
+pub fn convert_to_crlf(data: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(data.len() + data.len() / 20);
+    let mut i = 0;
+    while i < data.len() {
+        if data[i] == b'\n' {
+            if i == 0 || data[i - 1] != b'\r' {
+                out.push(b'\r');
+            }
+            out.push(b'\n');
+        } else {
+            out.push(data[i]);
+        }
+        i += 1;
+    }
+    out
+}
+
+// ============================================================================
+// sponge (Buffers standard input and writes atomically to a file)
+// ============================================================================
+
+pub fn run_sponge(args: &[String]) -> ExitCode {
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("Usage: sponge [file]");
+        println!("Soak up standard input and write to a file, preventing 0-byte pipe truncations.");
+        return ExitCode::SUCCESS;
+    }
+
+    let target_file = args.iter().find(|a| !a.starts_with('-')).map(|s| s.as_str());
+
+    let mut buffer = Vec::new();
+    if let Err(e) = io::stdin().read_to_end(&mut buffer) {
+        eprintln!("sponge: error reading standard input: {}", e);
+        return ExitCode::FAILURE;
+    }
+
+    if let Some(target) = target_file {
+        let target_path = Path::new(target);
+        let parent = target_path.parent().unwrap_or_else(|| Path::new("."));
+        let temp_name = format!(".sponge_tmp_{}_{}", std::process::id(), target_path.file_name().unwrap_or_default().to_string_lossy());
+        let temp_path = parent.join(temp_name);
+
+        if let Err(e) = fs::write(&temp_path, &buffer) {
+            eprintln!("sponge: failed to write temporary buffer: {}", e);
+            let _ = fs::remove_file(&temp_path);
+            return ExitCode::FAILURE;
+        }
+
+        if let Err(_e) = fs::rename(&temp_path, target_path) {
+            if let Err(e2) = fs::write(target_path, &buffer) {
+                eprintln!("sponge: failed to write {}: {}", target, e2);
+                let _ = fs::remove_file(&temp_path);
+                return ExitCode::FAILURE;
+            }
+            let _ = fs::remove_file(&temp_path);
+        }
+    } else {
+        let _ = io::stdout().write_all(&buffer);
+        let _ = io::stdout().flush();
+    }
+
+    ExitCode::SUCCESS
+}
+
+// ============================================================================
+// ts (Prepend timestamps to every line of stdin)
+// ============================================================================
+
+pub fn run_ts(args: &[String]) -> ExitCode {
+    use std::io::BufRead;
+
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("Usage: ts [format]");
+        println!("Timestamp input lines from stdin. Default format is '[%H:%M:%S]'.");
+        return ExitCode::SUCCESS;
+    }
+
+    let format_str = args.iter().find(|a| !a.starts_with('-')).cloned().unwrap_or_else(|| "[%H:%M:%S]".to_string());
+
+    let stdin = io::stdin();
+    let reader = stdin.lock();
+    let stdout = io::stdout();
+    let mut writer = stdout.lock();
+
+    for line_res in reader.lines() {
+        match line_res {
+            Ok(line) => {
+                let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+                let (year, month, day, hour, minute, second, _) = super::standard_utils::break_down_timestamp(now.as_secs());
+                let sub_ms = now.subsec_millis();
+
+                let mut ts = format_str.clone();
+                ts = ts.replace("%Y", &format!("{:04}", year));
+                ts = ts.replace("%m", &format!("{:02}", month));
+                ts = ts.replace("%d", &format!("{:02}", day));
+                ts = ts.replace("%H", &format!("{:02}", hour));
+                ts = ts.replace("%M", &format!("{:02}", minute));
+                ts = ts.replace("%S", &format!("{:02}", second));
+                ts = ts.replace("%ms", &format!("{:03}", sub_ms));
+
+                if writeln!(writer, "{} {}", ts, line).is_err() {
+                    break;
+                }
+            }
+            Err(e) if e.kind() == io::ErrorKind::BrokenPipe => break,
+            Err(_) => break,
+        }
+    }
+
+    ExitCode::SUCCESS
+}
+
+// ============================================================================
 // Unit Tests
 // ============================================================================
 
@@ -1739,5 +1962,21 @@ mod tests {
         let modified = fs::read_to_string(&target).unwrap();
         assert_eq!(modified, "alpha\nbeta patched\ngamma\n");
         let _ = fs::remove_file(&target);
+    }
+
+    #[test]
+    fn test_dos2unix_and_unix2dos_roundtrip() {
+        let windows_data = b"line1\r\nline2\r\nline3\r\n";
+        let cleaned = strip_crlf(windows_data);
+        assert_eq!(cleaned, b"line1\nline2\nline3\n");
+
+        // UTF-8 BOM stripping
+        let with_bom = b"\xEF\xBB\xBFhello\r\nworld\r\n";
+        let bom_cleaned = strip_crlf(with_bom);
+        assert_eq!(bom_cleaned, b"hello\nworld\n");
+
+        // Convert back to CRLF
+        let crlf_converted = convert_to_crlf(&cleaned);
+        assert_eq!(crlf_converted, windows_data);
     }
 }
