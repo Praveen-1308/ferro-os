@@ -189,73 +189,7 @@ fn handle_run(args: &[String]) -> ExitCode {
         cmd.args(&cmd_parts[1..]);
     }
 
-    #[cfg(target_os = "linux")]
-    unsafe {
-        use std::os::unix::process::CommandExt;
-        let vols = volumes.clone();
-        cmd.pre_exec(move || {
-            if !vols.is_empty() {
-                let uid = libc::getuid();
-                let gid = libc::getgid();
-
-                // 1. Create a private mount namespace (support rootless with CLONE_NEWUSER)
-                let unshared = if libc::unshare(libc::CLONE_NEWNS) == 0 {
-                    true
-                } else if libc::unshare(libc::CLONE_NEWUSER | libc::CLONE_NEWNS) == 0 {
-                    let _ = std::fs::write("/proc/self/setgroups", "deny");
-                    let _ = std::fs::write("/proc/self/uid_map", format!("0 {} 1\n", uid));
-                    let _ = std::fs::write("/proc/self/gid_map", format!("0 {} 1\n", gid));
-                    true
-                } else {
-                    false
-                };
-
-                if unshared {
-                    let none_str = std::ffi::CString::new("none").unwrap();
-                    libc::mount(
-                        std::ptr::null(),
-                        none_str.as_ptr(),
-                        std::ptr::null(),
-                        libc::MS_REC | libc::MS_PRIVATE,
-                        std::ptr::null(),
-                    );
-
-                    for vol in &vols {
-                        let parts: Vec<&str> = vol.split(':').collect();
-                        if parts.len() >= 2 {
-                            let host_path = parts[0];
-                            let dest_path = parts[1];
-                            let is_ro = parts.get(2).map(|s| *s == "ro").unwrap_or(false);
-
-                            let _ = std::fs::create_dir_all(dest_path);
-
-                            let c_host = std::ffi::CString::new(host_path).unwrap();
-                            let c_dest = std::ffi::CString::new(dest_path).unwrap();
-
-                            if libc::mount(
-                                c_host.as_ptr(),
-                                c_dest.as_ptr(),
-                                std::ptr::null(),
-                                libc::MS_BIND,
-                                std::ptr::null(),
-                            ) == 0 {
-                                if is_ro {
-                                    libc::mount(
-                                        std::ptr::null(),
-                                        c_dest.as_ptr(),
-                                        std::ptr::null(),
-                                        libc::MS_BIND | libc::MS_REMOUNT | libc::MS_RDONLY,
-                                        std::ptr::null(),
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            Ok(())
-        });
-    }
+    configure_container_isolation(&mut cmd, &name, &image, &volumes, &network);
 
     if detach {
         if let Ok(f) = log_file {
@@ -481,6 +415,7 @@ fn handle_start(args: &[String]) -> ExitCode {
         if state.command.len() > 1 {
             cmd.args(&state.command[1..]);
         }
+        configure_container_isolation(&mut cmd, &state.name, &state.image, &state.volumes, &state.network);
         cmd.stdout(Stdio::null());
         cmd.stderr(Stdio::null());
         cmd.stdin(Stdio::null());
@@ -620,10 +555,11 @@ fn handle_exec(args: &[String]) -> ExitCode {
             return ExitCode::FAILURE;
         }
 
-        let pid = state.pid.unwrap();
+        let _pid = state.pid.unwrap();
 
         #[cfg(target_os = "linux")]
         {
+            let pid = _pid;
             // Join container namespaces via setns()
             let ns_types = ["mnt", "net", "ipc", "uts", "pid"];
             for ns in &ns_types {
@@ -669,6 +605,195 @@ fn handle_images(_args: &[String]) -> ExitCode {
         }
     }
     ExitCode::SUCCESS
+}
+
+fn configure_container_isolation(
+    cmd: &mut Command,
+    name: &str,
+    image: &str,
+    volumes: &[String],
+    network: &str,
+) {
+    #[cfg(target_os = "linux")]
+    unsafe {
+        use std::os::unix::process::CommandExt;
+        let vols = volumes.to_vec();
+        let net_mode = network.to_string();
+        let c_name = name.to_string();
+        let image_name = image.to_string();
+        let images_root = get_images_dir();
+
+        cmd.pre_exec(move || {
+            let uid = libc::getuid();
+            let gid = libc::getgid();
+
+            // 1. Mandatory namespace isolation for every container:
+            // UTS (hostname), IPC (shared mem), Mount (private fs).
+            let mut clone_flags = libc::CLONE_NEWNS | libc::CLONE_NEWUTS | libc::CLONE_NEWIPC;
+            if net_mode != "host" {
+                clone_flags |= libc::CLONE_NEWNET;
+            }
+
+            // Unshare namespaces (support rootless with CLONE_NEWUSER if unprivileged)
+            let unshared = if libc::unshare(clone_flags) == 0 {
+                true
+            } else if libc::unshare(clone_flags | libc::CLONE_NEWUSER) == 0 {
+                let _ = std::fs::write("/proc/self/setgroups", "deny");
+                let _ = std::fs::write("/proc/self/uid_map", format!("0 {} 1\n", uid));
+                let _ = std::fs::write("/proc/self/gid_map", format!("0 {} 1\n", gid));
+                true
+            } else if libc::unshare(libc::CLONE_NEWNS) == 0 {
+                true
+            } else {
+                false
+            };
+
+            if unshared {
+                // Ensure mounts do not propagate back to host
+                let none_str = std::ffi::CString::new("none").unwrap();
+                libc::mount(
+                    std::ptr::null(),
+                    none_str.as_ptr(),
+                    std::ptr::null(),
+                    libc::MS_REC | libc::MS_PRIVATE,
+                    std::ptr::null(),
+                );
+
+                // Set private container hostname in UTS namespace
+                if let Ok(c_host) = std::ffi::CString::new(c_name.as_str()) {
+                    let _ = libc::sethostname(c_host.as_ptr(), c_name.len());
+                }
+
+                // Check if rootfs directory exists
+                let dedicated_img = PathBuf::from(&images_root).join(&image_name);
+                let direct_img = PathBuf::from(&image_name);
+                let rootfs_path = if dedicated_img.is_dir() {
+                    Some(dedicated_img)
+                } else if direct_img.is_dir() {
+                    Some(direct_img)
+                } else {
+                    None
+                };
+
+                if let Some(rootfs) = rootfs_path {
+                    // Jail process inside container rootfs: bind-mount volumes into rootfs
+                    for vol in &vols {
+                        let parts: Vec<&str> = vol.split(':').collect();
+                        if parts.len() >= 2 {
+                            let host_path = parts[0];
+                            let dest_rel = parts[1].trim_start_matches('/');
+                            let is_ro = parts.get(2).map(|s| *s == "ro").unwrap_or(false);
+
+                            let target_path = rootfs.join(dest_rel);
+                            let _ = std::fs::create_dir_all(&target_path);
+
+                            if let (Ok(c_host), Ok(c_dest)) = (
+                                std::ffi::CString::new(host_path),
+                                std::ffi::CString::new(target_path.to_string_lossy().as_bytes()),
+                            ) {
+                                if libc::mount(
+                                    c_host.as_ptr(),
+                                    c_dest.as_ptr(),
+                                    std::ptr::null(),
+                                    libc::MS_BIND,
+                                    std::ptr::null(),
+                                ) == 0 {
+                                    if is_ro {
+                                        libc::mount(
+                                            std::ptr::null(),
+                                            c_dest.as_ptr(),
+                                            std::ptr::null(),
+                                            libc::MS_BIND | libc::MS_REMOUNT | libc::MS_RDONLY,
+                                            std::ptr::null(),
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Chroot into rootfs
+                    if let Ok(c_root) = std::ffi::CString::new(rootfs.to_string_lossy().as_bytes()) {
+                        if libc::chroot(c_root.as_ptr()) == 0 {
+                            let c_slash = std::ffi::CString::new("/").unwrap();
+                            let _ = libc::chdir(c_slash.as_ptr());
+                        }
+                    }
+                } else {
+                    // If no separate rootfs image exists, mount volumes into host-isolated mount namespace
+                    for vol in &vols {
+                        let parts: Vec<&str> = vol.split(':').collect();
+                        if parts.len() >= 2 {
+                            let host_path = parts[0];
+                            let dest_path = parts[1];
+                            let is_ro = parts.get(2).map(|s| *s == "ro").unwrap_or(false);
+
+                            let _ = std::fs::create_dir_all(dest_path);
+
+                            if let (Ok(c_host), Ok(c_dest)) = (
+                                std::ffi::CString::new(host_path),
+                                std::ffi::CString::new(dest_path),
+                            ) {
+                                if libc::mount(
+                                    c_host.as_ptr(),
+                                    c_dest.as_ptr(),
+                                    std::ptr::null(),
+                                    libc::MS_BIND,
+                                    std::ptr::null(),
+                                ) == 0 {
+                                    if is_ro {
+                                        libc::mount(
+                                            std::ptr::null(),
+                                            c_dest.as_ptr(),
+                                            std::ptr::null(),
+                                            libc::MS_BIND | libc::MS_REMOUNT | libc::MS_RDONLY,
+                                            std::ptr::null(),
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Ok(())
+        });
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = (cmd, name, image, network);
+        for vol in volumes {
+            let parts: Vec<&str> = vol.split(':').collect();
+            if parts.len() >= 2 {
+                let host_path = parts[0];
+                let dest_path = parts[1];
+                let is_ro = parts.get(2).map(|s| *s == "ro").unwrap_or(false);
+
+                let _ = std::fs::remove_dir_all(dest_path);
+                let _ = std::fs::remove_file(dest_path);
+
+                if let Some(parent) = Path::new(dest_path).parent() {
+                    let _ = std::fs::create_dir_all(parent);
+                }
+
+                #[cfg(unix)]
+                {
+                    if is_ro {
+                        let _ = std::fs::create_dir_all(dest_path);
+                        if let Ok(meta) = std::fs::metadata(dest_path) {
+                            let mut perms = meta.permissions();
+                            use std::os::unix::fs::PermissionsExt;
+                            perms.set_mode(0o555);
+                            let _ = std::fs::set_permissions(dest_path, perms);
+                        }
+                    } else {
+                        let _ = std::os::unix::fs::symlink(host_path, dest_path);
+                    }
+                }
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

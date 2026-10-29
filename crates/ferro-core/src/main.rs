@@ -7793,6 +7793,7 @@ const LANDLOCK_ACCESS_FS_MAKE_REG: u64 = 1 << 8;
 #[allow(dead_code)]
 const LANDLOCK_ACCESS_FS_TRUNCATE: u64 = 1 << 14;
 
+#[allow(unused_variables, unused_assignments)]
 fn run_sandbox(args: &[String]) -> ExitCode {
     if args.is_empty() {
         println!("Usage: ferro sandbox [options] -- <command> [args...]");
@@ -7843,7 +7844,9 @@ fn run_sandbox(args: &[String]) -> ExitCode {
     let mut broker_path: Option<String> = None;
     let mut read_only_paths: Vec<String> = Vec::new();
     let mut read_write_paths: Vec<String> = Vec::new();
+    #[allow(unused_variables, unused_assignments)]
     let mut no_net = false;
+    #[allow(unused_variables, unused_assignments)]
     let mut drop_caps = false;
 
     let sep_idx = args.iter().position(|r| r == "--");
@@ -7944,6 +7947,10 @@ fn run_sandbox(args: &[String]) -> ExitCode {
         if drop_caps {
             // PR_CAP_AMBIENT_CLEAR_ALL = 4
             libc::prctl(47, 4, 0, 0, 0);
+            // Drop capability bounding set (caps 0..=40)
+            for cap in 0..=40 {
+                libc::prctl(24 /* PR_CAPBSET_DROP */, cap, 0, 0, 0);
+            }
         }
 
         if no_net {
@@ -7979,7 +7986,7 @@ fn run_sandbox(args: &[String]) -> ExitCode {
                     if let Ok(c_path) = std::ffi::CString::new(path) {
                         let dir_fd = libc::open(
                             c_path.as_ptr(),
-                            libc::O_PATH | libc::O_CLOEXEC | libc::O_DIRECTORY,
+                            libc::O_PATH | libc::O_CLOEXEC,
                         );
                         if dir_fd >= 0 {
                             let path_attr = LandlockPathBeneathAttr {

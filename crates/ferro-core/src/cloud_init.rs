@@ -43,14 +43,15 @@ pub fn run_cloud_init(args: &[String]) -> ExitCode {
     // 2. Fetch & Set Hostname
     println!("[cloud-init] [1/3] Querying Instance Hostname...");
     if let Some(hostname) = http_get(custom_host, custom_port, "/latest/meta-data/hostname") {
-        let clean_hostname = hostname.trim();
-        if !clean_hostname.is_empty() {
+        if let Some(clean_hostname) = sanitize_hostname(&hostname) {
             println!("   • Discovered Cloud Hostname: {}", clean_hostname);
             if !dry_run {
                 let _ = fs::write("/etc/hostname", format!("{}\n", clean_hostname));
-                set_system_hostname(clean_hostname);
-                append_to_hosts(clean_hostname);
+                set_system_hostname(&clean_hostname);
+                append_to_hosts(&clean_hostname);
             }
+        } else {
+            println!("   [!] Warning: Invalid or malformed cloud hostname received from metadata endpoint; ignoring");
         }
     } else {
         println!("   • Hostname metadata not supplied by hypervisor.");
@@ -139,18 +140,78 @@ fn probe_metadata_service(host: &str, port: u16) -> bool {
     }
 }
 
+fn sanitize_hostname(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() || trimmed.len() > 64 {
+        return None;
+    }
+    // Only allow alphanumeric, hyphen, dot; cannot start or end with hyphen
+    if trimmed.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '.')
+        && !trimmed.starts_with('-')
+        && !trimmed.ends_with('-')
+    {
+        Some(trimmed.to_string())
+    } else {
+        None
+    }
+}
+
+fn get_imds_token(host: &str, port: u16) -> Option<String> {
+    let addr_str = format!("{}:{}", host, port);
+    let socket_addr = addr_str.parse::<SocketAddr>().ok()?;
+    let mut stream = TcpStream::connect_timeout(&socket_addr, Duration::from_millis(300)).ok()?;
+    let _ = stream.set_read_timeout(Some(Duration::from_millis(500)));
+
+    let request = format!(
+        "PUT /latest/api/token HTTP/1.1\r\n\
+        Host: {}\r\n\
+        X-aws-ec2-metadata-token-ttl-seconds: 21600\r\n\
+        User-Agent: FerroOS-CloudInit/2.3.0\r\n\
+        Connection: close\r\n\r\n",
+        host
+    );
+
+    if stream.write_all(request.as_bytes()).is_err() {
+        return None;
+    }
+    let mut response = Vec::new();
+    if stream.read_to_end(&mut response).is_err() {
+        return None;
+    }
+    let response_str = String::from_utf8_lossy(&response);
+    let mut parts = response_str.splitn(2, "\r\n\r\n");
+    let header = parts.next()?;
+    let body = parts.next()?;
+    if header.contains(" 200 OK") || header.contains(" 200 ") {
+        let token = body.trim().to_string();
+        if !token.is_empty() {
+            return Some(token);
+        }
+    }
+    None
+}
+
 fn http_get(host: &str, port: u16, path: &str) -> Option<String> {
     let addr_str = format!("{}:{}", host, port);
     let socket_addr = addr_str.parse::<SocketAddr>().ok()?;
     let mut stream = TcpStream::connect_timeout(&socket_addr, Duration::from_millis(800)).ok()?;
     let _ = stream.set_read_timeout(Some(Duration::from_millis(1200)));
 
+    // Optional IMDSv2 token for AWS
+    let token_header = if let Some(t) = get_imds_token(host, port) {
+        format!("X-aws-ec2-metadata-token: {}\r\n", t)
+    } else {
+        String::new()
+    };
+
     let request = format!(
         "GET {} HTTP/1.0\r\n\
         Host: {}\r\n\
         User-Agent: FerroOS-CloudInit/2.3.0\r\n\
-        Connection: close\r\n\r\n",
-        path, host
+        Metadata-Flavor: Google\r\n\
+        Metadata: true\r\n\
+        {}Connection: close\r\n\r\n",
+        path, host, token_header
     );
 
     if stream.write_all(request.as_bytes()).is_err() {
@@ -190,20 +251,34 @@ fn set_system_hostname(name: &str) {
 }
 
 fn append_to_hosts(name: &str) {
-    let hosts_path = "/etc/hosts";
-    let entry = format!("127.0.1.1 {}\n", name);
-    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(hosts_path) {
-        let _ = file.write_all(entry.as_bytes());
+    if let Some(clean) = sanitize_hostname(name) {
+        let hosts_path = "/etc/hosts";
+        let entry = format!("127.0.1.1 {}\n", clean);
+        if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(hosts_path) {
+            let _ = file.write_all(entry.as_bytes());
+        }
     }
 }
 
 fn inject_authorized_key(key: &str) {
+    // Strip any internal or external newlines to prevent authorized_keys option/command injection
+    let sanitized_key: String = key.chars().filter(|c| *c != '\r' && *c != '\n').collect();
+    let clean = sanitized_key.trim();
+    if clean.is_empty() {
+        return;
+    }
+    // Must start with valid SSH key prefix
+    if !clean.starts_with("ssh-") && !clean.starts_with("ecdsa-") {
+        println!("   [!] Warning: Skipping invalid SSH key format: {}", clean);
+        return;
+    }
+
     let auth_keys_path = "/root/.ssh/authorized_keys";
-    let key_line = format!("{}\n", key.trim());
+    let key_line = format!("{}\n", clean);
 
     // Check if key already exists to prevent duplicate entries
     if let Ok(existing) = fs::read_to_string(auth_keys_path) {
-        if existing.contains(key.trim()) {
+        if existing.contains(clean) {
             return;
         }
     }

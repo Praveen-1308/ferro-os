@@ -225,6 +225,45 @@ impl Supervisor {
             cmd.current_dir(&svc.config.working_dir);
         }
 
+        let resolved_uid = if let Some(ref u) = svc.config.user {
+            match resolve_user_uid(u) {
+                Some(uid) => Some(uid),
+                None => {
+                    svc.state = ServiceState::Failed;
+                    let err = format!("Configured user '{}' not found in system databases", u);
+                    svc.append_log(&err);
+                    return Err(err);
+                }
+            }
+        } else {
+            None
+        };
+
+        let resolved_gid = if let Some(ref g) = svc.config.group {
+            match resolve_group_gid(g) {
+                Some(gid) => Some(gid),
+                None => {
+                    svc.state = ServiceState::Failed;
+                    let err = format!("Configured group '{}' not found in system databases", g);
+                    svc.append_log(&err);
+                    return Err(err);
+                }
+            }
+        } else {
+            None
+        };
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+            if let Some(gid) = resolved_gid {
+                cmd.gid(gid);
+            }
+            if let Some(uid) = resolved_uid {
+                cmd.uid(uid);
+            }
+        }
+
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
 
@@ -592,6 +631,7 @@ fn run_ipc_server(supervisor: Arc<Supervisor>) {
 }
 
 fn handle_client(stream: &mut UnixStream, supervisor: &Supervisor) {
+    let peer_creds = get_peer_credentials(stream);
     let Ok(clone) = stream.try_clone() else { return; };
     use std::io::Read;
     let mut reader = BufReader::new(clone.take(65536));
@@ -599,13 +639,14 @@ fn handle_client(stream: &mut UnixStream, supervisor: &Supervisor) {
 
     if reader.read_line(&mut line).is_ok() {
         let trimmed = line.trim();
-        let response = dispatch_ipc_command(trimmed, supervisor);
+        let caller_uid = peer_creds.map(|(u, _)| u);
+        let response = dispatch_ipc_command(trimmed, supervisor, caller_uid);
         let _ = stream.write_all(response.as_bytes());
         let _ = stream.write_all(b"\n");
     }
 }
 
-fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor) -> String {
+fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor, caller_uid: Option<u32>) -> String {
     // Parse action from simple JSON
     let action = extract_json_field(cmd_json, "action").unwrap_or_default();
     let service = extract_json_field(cmd_json, "service");
@@ -633,6 +674,14 @@ fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor) -> String {
         }
         "start" => {
             if let Some(name) = service {
+                let authorized = {
+                    let lock = supervisor.services.lock().unwrap();
+                    let svc_user = lock.get(&name).and_then(|s| s.config.user.as_deref());
+                    is_authorized_for_service(caller_uid, svc_user)
+                };
+                if !authorized {
+                    return r#"{"status":"error","message":"Permission denied: modifying service state requires root privileges or service ownership"}"#.to_string();
+                }
                 match supervisor.start_service(&name) {
                     Ok(pid) => format!(r#"{{"status":"ok","message":"Started service {}","pid":{}}}"#, name, pid),
                     Err(e) => format!(r#"{{"status":"error","message":"{}"}}"#, escape_json(&e)),
@@ -643,6 +692,14 @@ fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor) -> String {
         }
         "stop" => {
             if let Some(name) = service {
+                let authorized = {
+                    let lock = supervisor.services.lock().unwrap();
+                    let svc_user = lock.get(&name).and_then(|s| s.config.user.as_deref());
+                    is_authorized_for_service(caller_uid, svc_user)
+                };
+                if !authorized {
+                    return r#"{"status":"error","message":"Permission denied: modifying service state requires root privileges or service ownership"}"#.to_string();
+                }
                 match supervisor.stop_service(&name, 5) {
                     Ok(_) => format!(r#"{{"status":"ok","message":"Stopped service {}"}}"#, name),
                     Err(e) => format!(r#"{{"status":"error","message":"{}"}}"#, escape_json(&e)),
@@ -653,6 +710,14 @@ fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor) -> String {
         }
         "restart" => {
             if let Some(name) = service {
+                let authorized = {
+                    let lock = supervisor.services.lock().unwrap();
+                    let svc_user = lock.get(&name).and_then(|s| s.config.user.as_deref());
+                    is_authorized_for_service(caller_uid, svc_user)
+                };
+                if !authorized {
+                    return r#"{"status":"error","message":"Permission denied: modifying service state requires root privileges or service ownership"}"#.to_string();
+                }
                 match supervisor.restart_service(&name) {
                     Ok(pid) => format!(r#"{{"status":"ok","message":"Restarted service {}","pid":{}}}"#, name, pid),
                     Err(e) => format!(r#"{{"status":"error","message":"{}"}}"#, escape_json(&e)),
@@ -701,11 +766,125 @@ fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor) -> String {
             }
         }
         "reload" => {
+            if !is_authorized_for_service(caller_uid, None) {
+                return r#"{"status":"error","message":"Permission denied: reloading manifests requires root privileges"}"#.to_string();
+            }
             supervisor.load_manifests();
             r#"{"status":"ok","message":"Manifests reloaded successfully"}"#.to_string()
         }
         _ => format!(r#"{{"status":"error","message":"Unknown action '{}'"}}"#, escape_json(&action)),
     }
+}
+
+fn is_authorized_for_service(caller_uid: Option<u32>, svc_user: Option<&str>) -> bool {
+    let Some(caller) = caller_uid else { return true; };
+    if caller == 0 {
+        return true;
+    }
+    #[cfg(unix)]
+    unsafe {
+        if caller == libc::getuid() {
+            return true;
+        }
+    }
+    if let Some(user) = svc_user {
+        if let Some(uid) = resolve_user_uid(user) {
+            return caller == uid;
+        }
+    }
+    false
+}
+
+#[cfg(target_os = "linux")]
+fn get_peer_credentials(stream: &UnixStream) -> Option<(u32, u32)> {
+    use std::os::unix::io::AsRawFd;
+    let fd = stream.as_raw_fd();
+    unsafe {
+        let mut ucred: libc::ucred = std::mem::zeroed();
+        let mut len = std::mem::size_of::<libc::ucred>() as libc::socklen_t;
+        if libc::getsockopt(
+            fd,
+            libc::SOL_SOCKET,
+            libc::SO_PEERCRED,
+            &mut ucred as *mut _ as *mut libc::c_void,
+            &mut len,
+        ) == 0 {
+            Some((ucred.uid, ucred.gid))
+        } else {
+            None
+        }
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn get_peer_credentials(stream: &UnixStream) -> Option<(u32, u32)> {
+    use std::os::unix::io::AsRawFd;
+    let fd = stream.as_raw_fd();
+    unsafe {
+        let mut uid: libc::uid_t = 0;
+        let mut gid: libc::gid_t = 0;
+        if libc::getpeereid(fd, &mut uid, &mut gid) == 0 {
+            Some((uid as u32, gid as u32))
+        } else {
+            None
+        }
+    }
+}
+
+fn resolve_user_uid(user: &str) -> Option<u32> {
+    if let Ok(uid) = user.parse::<u32>() {
+        return Some(uid);
+    }
+    if let Ok(content) = fs::read_to_string("/etc/passwd") {
+        for line in content.lines() {
+            let parts: Vec<&str> = line.split(':').collect();
+            if parts.len() >= 3 && parts[0] == user {
+                if let Ok(uid) = parts[2].parse::<u32>() {
+                    return Some(uid);
+                }
+            }
+        }
+    }
+    #[cfg(unix)]
+    {
+        if let Ok(c_user) = std::ffi::CString::new(user) {
+            unsafe {
+                let pw = libc::getpwnam(c_user.as_ptr());
+                if !pw.is_null() {
+                    return Some((*pw).pw_uid);
+                }
+            }
+        }
+    }
+    None
+}
+
+fn resolve_group_gid(group: &str) -> Option<u32> {
+    if let Ok(gid) = group.parse::<u32>() {
+        return Some(gid);
+    }
+    if let Ok(content) = fs::read_to_string("/etc/group") {
+        for line in content.lines() {
+            let parts: Vec<&str> = line.split(':').collect();
+            if parts.len() >= 3 && parts[0] == group {
+                if let Ok(gid) = parts[2].parse::<u32>() {
+                    return Some(gid);
+                }
+            }
+        }
+    }
+    #[cfg(unix)]
+    {
+        if let Ok(c_group) = std::ffi::CString::new(group) {
+            unsafe {
+                let gr = libc::getgrnam(c_group.as_ptr());
+                if !gr.is_null() {
+                    return Some((*gr).gr_gid);
+                }
+            }
+        }
+    }
+    None
 }
 
 // ---------------------------------------------------------------------------

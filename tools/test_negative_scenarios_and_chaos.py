@@ -26,7 +26,7 @@ import threading
 import subprocess
 from typing import Dict, Any, List
 
-WORKSPACE = "/home/tarun-kumar/Desktop/sample os "
+WORKSPACE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CORE_BIN = os.path.join(WORKSPACE, "target/release/ferro-core")
 SUPERD_BIN = os.path.join(WORKSPACE, "target/release/ferro-superd")
 TOOLS_DIR = os.path.join(WORKSPACE, "tools")
@@ -47,6 +47,9 @@ def setup_chaos_env():
         os.makedirs(d, exist_ok=True)
     if os.path.exists("/dev/shm/ferro_chaos_pool"):
         try: os.remove("/dev/shm/ferro_chaos_pool")
+        except Exception: pass
+    if os.path.exists("/tmp/ferro_chaos_pool"):
+        try: os.remove("/tmp/ferro_chaos_pool")
         except Exception: pass
 
 def start_chaos_supervisor() -> subprocess.Popen:
@@ -279,7 +282,7 @@ sys.stdout.flush()
 chunks = []
 for i in range(100):
     chunks.append(bytearray(20 * 1024 * 1024))
-    time.sleep(0.02)
+    time.sleep(0.005)
 sys.exit(0)
 """)
 
@@ -516,7 +519,7 @@ def test_scenario_7_ipc_flooding_and_garbage(sup_proc: subprocess.Popen) -> Dict
 
 def test_scenario_8_shared_memory_poisoning() -> Dict[str, Any]:
     print("\n--- [Scenario 8] Shared Memory Pool Poisoning & Mid-Write Crash Recovery ---")
-    shm_pool = "/dev/shm/ferro_chaos_pool"
+    shm_pool = "/dev/shm/ferro_chaos_pool" if os.path.exists("/dev/shm") else "/tmp/ferro_chaos_pool"
     
     # 1. Initialize shared memory pool with magic header
     with open(shm_pool, "wb") as f:
@@ -557,7 +560,7 @@ except Exception as err:
         "--profile", "shared",
         "--shm", "chaos_pool",
         "--ro", "/usr", "--ro", "/lib", "--ro", "/lib64", "--ro", "/etc",
-        "--rw", "/dev/shm",
+        "--rw", "/dev/shm" if os.path.exists("/dev/shm") else "/tmp",
         "--ro", CHAOS_DIR,
         "--",
         "python3", consumer_script

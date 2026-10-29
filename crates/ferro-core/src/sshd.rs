@@ -34,9 +34,9 @@ pub fn run_sshd(args: &[String]) -> ExitCode {
     // 2. Ensure Cryptographic Host Keys exist or generate fallback markers
     ensure_host_keys();
 
-    // 3. Optional external Dropbear or OpenSSH binary fallback
-    let use_system = args.iter().any(|a| a == "--system" || a == "--openssh" || a == "--dropbear");
-    if use_system {
+    // 3. Prefer external Dropbear or OpenSSH binary if available
+    let force_native = args.iter().any(|a| a == "--native");
+    if !force_native {
         if Path::new("/usr/sbin/dropbear").exists() {
             println!("[sshd] Found native dropbear daemon. Supervising dropbear on port {}...", port);
             let status = Command::new("/usr/sbin/dropbear")
@@ -123,6 +123,13 @@ fn handle_client(mut stream: TcpStream) {
 
     println!("[sshd] Client ID ({}): {}", peer_addr, client_banner.trim());
 
+    let mut stream_write = stream.try_clone().unwrap();
+
+    // Enforce administrative credential authentication before granting interactive shell
+    if !authenticate_client(&mut reader, &mut stream_write, &peer_addr) {
+        return;
+    }
+
     // 3. Spawn authenticated interactive shell session or command runner
     let welcome_msg = format!(
         "\r\n\
@@ -139,7 +146,6 @@ fn handle_client(mut stream: TcpStream) {
         peer_addr
     );
 
-    let mut stream_write = stream.try_clone().unwrap();
     let _ = stream_write.write_all(welcome_msg.as_bytes());
 
     // Launch shell attached to stream
@@ -191,4 +197,37 @@ fn handle_client(mut stream: TcpStream) {
     let _ = in_thread.join();
     let _ = out_thread.join();
     println!("[sshd] Connection closed for {}", peer_addr);
+}
+
+fn authenticate_client(reader: &mut BufReader<TcpStream>, writer: &mut TcpStream, peer_addr: &str) -> bool {
+    let auth_token = std::env::var("FERRO_SSH_AUTH_TOKEN")
+        .or_else(|_| std::env::var("FERRO_SSH_PASSWORD"))
+        .ok()
+        .or_else(|| fs::read_to_string("/etc/ferro/ssh_auth").map(|s| s.trim().to_string()).ok());
+
+    let Some(valid_token) = auth_token else {
+        println!("[sshd] ❌ No authentication credential configured (/etc/ferro/ssh_auth or FERRO_SSH_AUTH_TOKEN); rejecting unauthenticated connection from {}", peer_addr);
+        let _ = writer.write_all(b"\r\n[sshd] Access denied: No authentication credential configured for native shell.\r\nConfigure FERRO_SSH_AUTH_TOKEN or install OpenSSH/Dropbear.\r\n");
+        let _ = writer.flush();
+        return false;
+    };
+
+    let _ = writer.write_all(b"FerroOS Secure Remote Administration (Authentication Required)\r\nPassword / Token: ");
+    let _ = writer.flush();
+
+    let mut input = String::new();
+    if reader.read_line(&mut input).is_err() {
+        return false;
+    }
+
+    let input_clean = input.trim();
+    if input_clean == valid_token {
+        println!("[sshd] Peer {} authenticated successfully as root", peer_addr);
+        true
+    } else {
+        println!("[sshd] ❌ Authentication failed for peer {}", peer_addr);
+        let _ = writer.write_all(b"\r\nAuthentication failed: permission denied.\r\n");
+        let _ = writer.flush();
+        false
+    }
 }
