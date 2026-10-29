@@ -2235,7 +2235,7 @@ python3 tools/live_user_simulator.py --host 172.28.0.2 --port 8088 --users 1000 
         id: "python",
         name: "Python 3 Runtime & Testing Engine",
         purpose: "Python 3.11/3.14 interpreter, pip package manager, psutil telemetry",
-        guidance: "Use this for pytn5250 AS/400 terminal emulation, REST API client testing, and regression loops.",
+        guidance: "Use this for high-throughput automation, REST API client testing, and regression loops.",
         sizeMb: 35.0,
         idleRamMb: 5.2,
         loopRamMb: 8.0,
@@ -2465,7 +2465,7 @@ python3 tools/live_user_simulator.py --host 172.28.0.2 --port 8088 --users 1000 
         "[0.8s] Extracting pure-Rust base rootfs (2.92 MB: ferro-init PID 1, ferro-core, rpk)...",
         selectedModules.glibc ? "[1.6s] Layering Debian 12 Glibc ABI substrate & dynamic linker symlinks..." : "[1.6s] Skipping C libraries (Pure-Rust ABI mode active)...",
         selectedModules.mimalloc_io ? "[2.4s] Injecting libferro_io.so (io_uring SQPOLL) & mimalloc 2.1 zero-delay purger..." : "[2.4s] Standard POSIX I/O mode...",
-        selectedModules.python ? "[3.2s] Bundling Python 3 runtime & pytn5250 / API / DB testing shims..." : "[3.2s] Python layer omitted...",
+        selectedModules.python ? "[3.2s] Bundling Python 3 runtime & API / DB testing shims..." : "[3.2s] Python layer omitted...",
         selectedModules.database ? "[3.8s] Linking high-throughput SQLite engine with lookaside memory..." : "[3.8s] SQLite layer omitted...",
         selectedModules.baremetal_iso ? "[4.4s] Generating hybrid UEFI/BIOS MBR bootable ISO image..." : "[4.4s] Packing OCI container image layer...",
         "[5.0s] Artifact synthesis complete! Preparing browser payload..."

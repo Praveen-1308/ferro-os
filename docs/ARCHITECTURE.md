@@ -158,16 +158,9 @@ flowchart TD
         G_WINE["Wine / Proton / Box64 / PE-MSI"]
     end
 
-    subgraph E4 ["4. AS/400 Enterprise Edition"]
-        A_BATCH["Parallel Batch Queue Engine"]
-        A_5250["5250 Green-Screen Terminal (Web)"]
-        A_LEDGER["Continuous ACID Ledger Journal"]
-    end
-
     CORE --> E1
     CORE --> E2
     CORE --> E3
-    CORE --> E4
 ```
 
 ### Edition 1: Cloud Server Edition
@@ -191,43 +184,7 @@ flowchart TD
   - **DirectX -> Vulkan Translation**: DXVK (D3D9/10/11) and VKD3D (D3D12) with `DXVK_ASYNC=1` state cache integration.
   - **Wine / Proton & Multi-Arch Translation**: Native execution of Windows binaries via Wine64 and Box64/FEX-Emu bridges on ARM64; PE32/PE32+ and MSI header inspection in `ferro-pkg`.
 
-### Edition 4: AS/400 Enterprise Workload Edition
-- **Target**: Mission-critical banking, accounting, and high-concurrency enterprise batch transaction processing.
-- **Enterprise Stack**:
-  - **Parallel Batch Queue Engine**: Multi-worker concurrent accounting, payroll, and inventory batch runs with sub-15 MB RAM per worker.
-  - **5250 Terminal Emulation**: Green-screen 5250 terminal rendering over Telnet (port 23) and Web HTML5 (port 8080).
-  - **ACID Ledger Durability**: Continuous transaction journaling with 100% atomic reconciliation.
-
----
-
-## 5. Sandboxed Disk Storage Architecture
-
-When a workload is sandboxed, how does it write to disk?
-1. **LSM Path Filtering**: Kernel Landlock intercepts every `open(O_WRONLY)` or `unlink()` syscall. If the target path is not in the process's authorized `--rw` ruleset, the kernel aborts with `EACCES` before the filesystem driver is reached.
-2. **Physical Disk Pass-Through**: For paths registered in `--rw`, the syscall passes through directly to the underlying filesystem driver (ext4, XFS, NVMe) with zero virtualization overhead.
-3. **Container Volume Isolation**: In `ferrocage`, private mount namespaces ensure the container has no visibility into other host directories, while bind-mounted storage targets map 1:1 to host storage.
-
----
-
-## 6. Head-to-Head Parity and Empirical Benchmarks
-
-| Metric | FerroOS Pure Rust Core | Ubuntu Server 24.04 (Docker/systemd) | Measured Advantage |
-| :--- | :--- | :--- | :--- |
-| **GNU Coreutils Parity** | **100% (30/30 Differential Tests)** | Reference Baseline | Full POSIX & sysadmin CLI compatibility |
-| **Sandboxed Storage Write** | **1.6 ms** | **358.3 ms** | **~220x faster I/O initialization** |
-| **Kernel Security Block** | **1.7 ms** (Landlock LSM) | **341.5 ms** (AppArmor / remount) | **~190x faster security enforcement** |
-| **Container Startup Latency** | **1.7 ms** (`ferrocage`) | **350+ ms** (`docker run`) | Sub-millisecond container spin-up |
-| **Supervisor Binary Size** | **483 KB** (`ferro-superd`) | **~30 MB** (`systemd`) | **98.4% smaller footprint** |
-| **Container Engine Size** | **495 KB** (`ferrocage`) | **~60 MB** (`dockerd` + `containerd`) | **99.1% smaller footprint** |
-| **Autonomous OS Rootfs** | **3.59 MB** (`ferro-os-pure:latest`) | **455 MB** (Ubuntu Minimal) | **99.2% diet reduction** |
-
----
-
-## 7. Interactive Architectural Graph & Codebase Survey
-
-An interactive, standalone visual architecture explorer is generated directly from the codebase survey:
-- **Interactive Graph**: [`docs/ferro_os_architecture_graph.html`](file:///home/tarun-kumar/Desktop/sample%20os%20/docs/ferro_os_architecture_graph.html)
-- **Features**: Toggle between Hierarchical and Radial views, filter by edition (Cloud Server, Desktop & Web, Gaming & Proton, AS/400 Enterprise), search symbols and functions, and view live codebase metrics.
+- **Features**: Toggle between Hierarchical and Radial views, filter by edition (Cloud Server, Desktop & Web, Gaming & Proton), search symbols and functions, and view live codebase metrics.
 
 ---
 

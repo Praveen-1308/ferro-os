@@ -73,5 +73,4 @@ To ensure FerroOS runs existing bash scripts, cloud-init pipelines, and DevOps t
 * **Networking & DNS**: `ip`, `dhcp`, `udhcpc`, `dns-cache`, `dns`, `curl`, `fetch`, `netstat`, `ss`.
 * **System Services**: `supervise`, `service`, `container`, `cage`, `sandbox`, `fdstore`, `recovery`.
 * **Gaming & Desktop**: `gamemode`, `sched`, `scx`, `game`, `proton`, `win`, `wine`, `gui`, `desktop`, `compositor`, `portal`.
-* **Enterprise & AS/400**: `as400`, `tn5250`, `ebcdic`, `batch-worker`, `ledger`.
 * **Benchmarks**: `hackbench`, `bench-fsync`, `server-suite`, `httpd`, `serve`.

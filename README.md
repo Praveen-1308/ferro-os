@@ -8,7 +8,7 @@
 
 [![CI - Test & Lint Suite](https://github.com/Praveen-1308/ferro-os/actions/workflows/ci.yml/badge.svg)](https://github.com/Praveen-1308/ferro-os/actions/workflows/ci.yml)
 [![RootFS Size](https://img.shields.io/badge/RootFS%20Archive-3.61%20MB-blue.svg)](tools/build_pure_rust_os.py)
-[![Four Editions](https://img.shields.io/badge/Editions-4%20Specialized%20Profiles-purple.svg)](docs/editions/README.md)
+[![Three Editions](https://img.shields.io/badge/Editions-3%20Specialized%20Profiles-purple.svg)](docs/editions/README.md)
 [![Ubuntu Parity](https://img.shields.io/badge/Ubuntu%20Parity-100%25%20(30%2F30)-success.svg)](docs/operations/COREUTILS_AND_PARITY.md)
 [![Memory Safety](https://img.shields.io/badge/Memory%20Safety-100%25%20Safe%20Rust-brightgreen.svg)](crates/)
 [![Chaos Resilience](https://img.shields.io/badge/Chaos%20Defenses-9%2F9%20Passed-brightgreen.svg)](docs/testing/CHAOS_AND_NEGATIVE_SCENARIOS.md)
@@ -47,11 +47,10 @@ FerroOS (Pure-Rust Linux):    [ Kernel ] ---> [ ABI   ] ---> [ Safe Rust Userspa
 | :--- | :--- | :--- |
 | **Architectural Overview** | [**`docs/ARCHITECTURE.md`**](docs/ARCHITECTURE.md) | High-level 10-layer system topology, core Rust crates, Linux ABI compatibility, and design philosophy. |
 | **Visual Architecture Graph** | [**`docs/ferro_os_architecture_graph.html`**](docs/ferro_os_architecture_graph.html) | Interactive standalone SVG visualizer displaying all components, syscalls, structs, invariants, and edition filters. |
-| **All Four Editions** | [**`docs/editions/README.md`**](docs/editions/README.md) | Comprehensive overview and selection matrix across all four specialized FerroOS operating system profiles. |
+| **All Three Editions** | [**`docs/editions/README.md`**](docs/editions/README.md) | Comprehensive overview and selection matrix across the three specialized FerroOS operating system profiles. |
 | ├─ *Cloud Server Edition* | [**`docs/editions/CLOUD_SERVER.md`**](docs/editions/CLOUD_SERVER.md) | 3.61 MB micro-appliance for AWS/GCP/Azure, $12 challenge architecture, 2.66 MB supervisor RSS, and Cloud-Init. |
 | ├─ *Desktop & Web Edition* | [**`docs/editions/DESKTOP_WEB.md`**](docs/editions/DESKTOP_WEB.md) | Pure-Rust Wayland compositor (`ferro-compositor`), direct `/dev/fb0` GUI (`ferro-gui`), XDG portal, and HTML5 Web Desktop. |
-| ├─ *Gaming & Proton Edition* | [**`docs/editions/GAMING_PROTON.md`**](docs/editions/GAMING_PROTON.md) | `sched_ext` real-time 500µs slice scheduler, GameMode nice -10 elevation, Steam Proton runner, and PE/MSI parser. |
-| └─ *AS/400 Enterprise Edition* | [**`docs/editions/AS400_ENTERPRISE.md`**](docs/editions/AS400_ENTERPRISE.md) | Parallel multi-worker batch processing, IBM 5250 green-screen terminal gateway, continuous ACID transaction ledgers. |
+| └─ *Gaming & Proton Edition* | [**`docs/editions/GAMING_PROTON.md`**](docs/editions/GAMING_PROTON.md) | `sched_ext` real-time 500µs slice scheduler, GameMode nice -10 elevation, Steam Proton runner, and PE/MSI parser. |
 | **Security & Isolation** | [**`docs/security/README.md`**](docs/security/README.md) | Defense-in-depth security model spanning kernel hardening, Landlock LSM sandboxing, and memory safety. |
 | ├─ *Landlock Sandboxing* | [**`docs/security/LANDLOCK_SANDBOXING.md`**](docs/security/LANDLOCK_SANDBOXING.md) | Unprivileged path delegation, selectable profiles (`strict`, `shared`, `broker`, `dev`), multi-sandbox shared memory pools. |
 | └─ *Hardening & CWE Defenses* | [**`docs/security/SYSTEM_HARDENING_AND_CWE.md`**](docs/security/SYSTEM_HARDENING_AND_CWE.md) | KSPP kernel sysctls, zeroize memory clearing, non-root least-privilege (UID 1000), CWE mitigation matrix. |
@@ -71,9 +70,9 @@ FerroOS (Pure-Rust Linux):    [ Kernel ] ---> [ ABI   ] ---> [ Safe Rust Userspa
 
 ---
 
-## 🚀 The Four Connected Editions of FerroOS
+## 🚀 The Three Connected Editions of FerroOS
 
-FerroOS provides a single unified codebase that compiles into four specialized operating system profiles:
+FerroOS provides a single unified codebase that compiles into three specialized operating system profiles:
 
 ```mermaid
 graph TD
@@ -88,7 +87,6 @@ graph TD
     Foundation --> Cloud["☁️ 1. Cloud Server Edition<br/>• 3.61 MB RootFS • <3 MB RSS<br/>• ferro-superd + ferrocage<br/>• $12 Cloud Challenge Appliance"]
     Foundation --> Desktop["🖥️ 2. Desktop & Web Edition<br/>• 4.10 MB RootFS • ~15 MB RSS<br/>• ferro-compositor (Wayland)<br/>• ferro-gui (/dev/fb0) + noVNC 6080"]
     Foundation --> Gaming["🎮 3. Gaming & Proton Edition<br/>• 4.10 MB RootFS • ~12 MB RSS<br/>• sched_ext (500us slice)<br/>• GameMode (nice -10) + Proton PE"]
-    Foundation --> AS400["🏦 4. AS/400 Enterprise Edition<br/>• 3.61 MB RootFS • ~15 MB RSS<br/>• Parallel Batch Queue Workers<br/>• 5250 Terminal + ACID Ledgers"]
 ```
 
 | Edition | Primary Target | Compressed Size | Key Subsystems | Appliance Artifact |
@@ -96,7 +94,6 @@ graph TD
 | **Cloud Server** | AWS, GCP, Azure, Edge Kubernetes | **3.61 MB** | `ferro-superd`, `ferrocage`, Cgroups v2, Cloud-Init | `ferro_cloud_appliance.tar.gz` |
 | **Desktop & Web** | Laptops, Thin Clients, Cloud Streamers | **4.10 MB** | `ferro-compositor` (Wayland), `ferro-gui` (`/dev/fb0`), noVNC port 6080 | `ferro_desktop_appliance.tar.gz` |
 | **Gaming & Proton** | Gaming PCs, Handhelds, Cloud Gaming | **4.10 MB** | `sched_ext` (500µs slice), GameMode, Proton runner, DXVK | `ferro_gaming_appliance.tar.gz` |
-| **AS/400 Enterprise**| Banking, Mainframes, Batch Processing | **3.61 MB** | Multi-Worker Batch Queue, 5250 Terminal Gateway, ACID Ledgers | `ferro_enterprise_appliance.tar.gz` |
 | **Universal Master** | General Purpose, Evaluation, Scratch | **4.10 MB** | All 8 release binaries + all 90+ coreutils applets | `pure_rust_rootfs.tar.gz` |
 
 ---
@@ -110,7 +107,7 @@ An interactive, searchable version of this entire stack is available at **[`docs
 | Layer 10: User Workloads & Cloud Applications (Python, Redis, Web APIs)  |
 +--------------------------------------------------------------------------+
 | Layer 9:  Specialized Operating System Editions                          |
-|    [Cloud Server]   [Desktop & Web]   [Gaming & Proton]   [AS/400 Enterp]|
+|    [Cloud Server Edition]   [Desktop & Web Edition]   [Gaming & Proton]  |
 +--------------------------------------------------------------------------+
 | Layer 8:  Micro-Containerization & Isolation                             |
 |    - ferrocage: Sub-2ms container runtime (namespaces, pivot_root)       |
@@ -164,7 +161,6 @@ Concurrency Tier   Ubuntu 24.04 (Container)     FerroOS (Pure-Rust)     Outcome
 ### 3. Idle Userspace Memory Efficiency
 * **FerroOS Userspace RSS**: **2.66 MB** total idle resident set size.
 * **Ubuntu Server 24.04 RSS**: **110.0 MB** idle footprint (**41x larger**).
-* **AS/400 Enterprise Batch Memory**: **15.2 MB RSS** vs 110 MB Ubuntu (**5.9x reduction**).
 
 ---
 
@@ -175,14 +171,13 @@ Concurrency Tier   Ubuntu 24.04 (Container)     FerroOS (Pure-Rust)     Outcome
 Compile the 9 Rust crates and package the complete set of specialized appliances:
 
 ```bash
-# Build all 5 specialized pure-Rust appliances and Docker images
+# Build all specialized pure-Rust appliances and Docker images
 python3 tools/build_pure_rust_os.py --edition all
 
 # Or build a specific target edition:
 python3 tools/build_pure_rust_os.py --edition cloud       # 3.61 MB micro-appliance (ferro-os-cloud:latest)
 python3 tools/build_pure_rust_os.py --edition desktop     # 4.10 MB Wayland GUI + noVNC (ferro-os-desktop:latest)
 python3 tools/build_pure_rust_os.py --edition gaming      # 4.10 MB sched_ext + Proton (ferro-os-gaming:latest)
-python3 tools/build_pure_rust_os.py --edition enterprise  # 3.61 MB AS/400 5250 batch (ferro-os-enterprise:latest)
 python3 tools/build_pure_rust_os.py --edition universal   # 4.10 MB master rootfs (ferro-os-pure:latest)
 ```
 
@@ -196,7 +191,6 @@ docker run -it --rm ferro-os-pure:latest /usr/bin/sh
 docker run -it --rm ferro-os-cloud:latest /usr/bin/sh
 docker run -it --rm ferro-os-desktop:latest /usr/bin/sh
 docker run -it --rm ferro-os-gaming:latest /usr/bin/sh
-docker run -it --rm ferro-os-enterprise:latest /usr/bin/sh
 ```
 
 ### 3. Run the Automated Verification Suites
@@ -237,7 +231,7 @@ Experience the complete, end-to-end topological map of FerroOS in your browser:
 👉 **[Launch Interactive Architecture Graph (`docs/ferro_os_architecture_graph.html`)](docs/ferro_os_architecture_graph.html)**
 
 * **10 Execution Layers**: Visual representation from Bare-Metal Hardware $\rightarrow$ Kernel $\rightarrow$ POSIX $\rightarrow$ Daemons $\rightarrow$ 4 Editions $\rightarrow$ Workloads.
-* **Instant Edition Filtering**: Toggle between All Systems, Cloud Server, Desktop & Web, Gaming & Proton, and AS/400 Enterprise.
+* **Instant Edition Filtering**: Toggle between All Systems, Cloud Server, Desktop & Web, and Gaming & Proton.
 * **Symbol Inspector**: Click any node to view exact line counts, functions, data structures, and extracted architectural invariants.
 * **Zero External Dependencies**: Standalone offline SVG canvas with zero external CDN calls.
 

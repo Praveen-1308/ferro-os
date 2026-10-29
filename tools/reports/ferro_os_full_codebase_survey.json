@@ -1,7 +1,7 @@
 {
   "metadata": {
     "title": "FerroOS Complete Codebase Survey",
-    "timestamp": "2026-10-29T12:59:36Z",
+    "timestamp": "2026-10-29T13:55:06Z",
     "rust_files_count": 26,
     "total_lines": 22824,
     "code_lines": 19817,
@@ -76,25 +76,6 @@
         "game_pe_msi",
         "pkg_rpk"
       ]
-    },
-    {
-      "id": "edition_as400",
-      "name": "AS/400 Enterprise Edition",
-      "badge": "\ud83c\udfdb\ufe0f AS/400 Enterprise",
-      "color": "#f59e0b",
-      "description": "High-throughput parallel enterprise batch processing. Multi-worker ledger queues, 5250 green-screen terminal emulation over web/telnet, continuous ACID ledger journaling, and automated payroll/inventory reconciliations.",
-      "metrics": {
-        "batch_workers": "Parallel Multi-Worker",
-        "terminal": "5250 Emulation (Web)",
-        "durability": "100% ACID Ledger",
-        "rss_per_worker": "14 MB"
-      },
-      "node_ids": [
-        "as400_batch",
-        "as400_5250",
-        "as400_ledger",
-        "tool_chaos"
-      ]
     }
   ],
   "layers": [
@@ -112,8 +93,7 @@
           "editions": [
             "edition_cloud",
             "edition_desktop",
-            "edition_gaming",
-            "edition_as400"
+            "edition_gaming"
           ]
         },
         {
@@ -122,8 +102,7 @@
           "type": "Storage",
           "details": "Direct hardware write path, 350+ GB capacity, PCI-e Gen4 throughput",
           "editions": [
-            "edition_cloud",
-            "edition_as400"
+            "edition_cloud"
           ]
         },
         {
@@ -161,8 +140,7 @@
           "editions": [
             "edition_cloud",
             "edition_desktop",
-            "edition_gaming",
-            "edition_as400"
+            "edition_gaming"
           ]
         },
         {
@@ -172,8 +150,7 @@
           "details": "cpu.max, memory.max, memory.swap.max=0, pids.max, cpu.weight",
           "editions": [
             "edition_cloud",
-            "edition_gaming",
-            "edition_as400"
+            "edition_gaming"
           ]
         },
         {
@@ -216,8 +193,7 @@
           "editions": [
             "edition_cloud",
             "edition_desktop",
-            "edition_gaming",
-            "edition_as400"
+            "edition_gaming"
           ]
         },
         {
@@ -226,8 +202,7 @@
           "type": "Reliability",
           "details": "Preserves open file descriptors across supervisor restarts without socket loss",
           "editions": [
-            "edition_cloud",
-            "edition_as400"
+            "edition_cloud"
           ]
         },
         {
@@ -245,8 +220,7 @@
           "type": "Storage",
           "details": "Autonomous discovery of NVMe, SCSI, VirtIO disks, ext4/btrfs mounting",
           "editions": [
-            "edition_cloud",
-            "edition_as400"
+            "edition_cloud"
           ]
         }
       ]
@@ -268,7 +242,6 @@
           "details": "483 KB pure-Rust daemon, 2.66 MB background RAM (vs 231 MB Docker/containerd)",
           "editions": [
             "edition_cloud",
-            "edition_as400",
             "edition_desktop"
           ]
         },
@@ -278,8 +251,7 @@
           "type": "Resource Control",
           "details": "Direct control of memory.max, memory.swap.max, cpu.max, pids.max",
           "editions": [
-            "edition_cloud",
-            "edition_as400"
+            "edition_cloud"
           ]
         },
         {
@@ -288,8 +260,7 @@
           "type": "Resilience",
           "details": "Periodic health checks, crash detection in <250ms, exponential backoff retries",
           "editions": [
-            "edition_cloud",
-            "edition_as400"
+            "edition_cloud"
           ]
         },
         {
@@ -366,8 +337,7 @@
           "type": "Profile",
           "details": "Multi-sandbox cooperative processing via zero-copy /dev/shm/ferro_<pool> pools",
           "editions": [
-            "edition_cloud",
-            "edition_as400"
+            "edition_cloud"
           ]
         },
         {
@@ -407,8 +377,7 @@
           "editions": [
             "edition_cloud",
             "edition_desktop",
-            "edition_gaming",
-            "edition_as400"
+            "edition_gaming"
           ]
         },
         {
@@ -417,8 +386,7 @@
           "type": "Rollback",
           "details": "Atomic snapshot installs; zero partial state on installation interruption",
           "editions": [
-            "edition_cloud",
-            "edition_as400"
+            "edition_cloud"
           ]
         },
         {
@@ -481,8 +449,7 @@
           "editions": [
             "edition_cloud",
             "edition_desktop",
-            "edition_gaming",
-            "edition_as400"
+            "edition_gaming"
           ]
         },
         {
@@ -492,8 +459,7 @@
           "details": "Command history, pipelines (|), I/O redirection (<, >, >>), job control",
           "editions": [
             "edition_cloud",
-            "edition_desktop",
-            "edition_as400"
+            "edition_desktop"
           ]
         }
       ]
@@ -515,8 +481,7 @@
           "type": "I/O Engine",
           "details": "Zero-copy ring buffers, async event multiplexing, buffer reuse without heap allocation",
           "editions": [
-            "edition_cloud",
-            "edition_as400"
+            "edition_cloud"
           ]
         },
         {
@@ -544,48 +509,20 @@
           "details": "Pure-Rust SSH protocol handler with public-key cryptographic authentication",
           "editions": [
             "edition_cloud",
-            "edition_desktop",
-            "edition_as400"
+            "edition_desktop"
           ]
         }
       ]
     },
     {
       "id": "layer_9",
-      "name": "Layer 9: Enterprise Workloads, Benchmarks & Chaos Suites",
+      "name": "Layer 9: Workloads, Benchmarks & Chaos Suites",
       "color": "#be123c",
-      "description": "AS/400 batch processing, 5250 terminal emulation, $12 Challenge SQLite WAL suite, and 9-vector adversarial chaos qualification.",
+      "description": "$12 Challenge SQLite WAL suite, high-concurrency engines, and 9-vector adversarial chaos qualification.",
       "crates": [
         "tools/"
       ],
       "components": [
-        {
-          "id": "as400_batch",
-          "name": "AS/400 Parallel Batch Engine",
-          "type": "Batch Processing",
-          "details": "Parallel multi-worker accounting, payroll, and inventory batch runs (14 MB RSS)",
-          "editions": [
-            "edition_as400"
-          ]
-        },
-        {
-          "id": "as400_5250",
-          "name": "5250 Terminal Emulation",
-          "type": "Terminal Emulation",
-          "details": "Green-screen 5250 terminal rendering over Telnet (port 23) and Web HTML5 (port 8080)",
-          "editions": [
-            "edition_as400"
-          ]
-        },
-        {
-          "id": "as400_ledger",
-          "name": "ACID Ledger Queue",
-          "type": "Durability",
-          "details": "Continuous transaction journal with 100% atomic reconciliation",
-          "editions": [
-            "edition_as400"
-          ]
-        },
         {
           "id": "tool_12dollar",
           "name": "$12 Challenge WAL Benchmark",
@@ -601,8 +538,7 @@
           "type": "Chaos Test",
           "details": "Path traversal, root defacement, OOM bombs, fork bombs, SIGKILL durability",
           "editions": [
-            "edition_cloud",
-            "edition_as400"
+            "edition_cloud"
           ]
         }
       ]

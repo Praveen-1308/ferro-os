@@ -29,5 +29,4 @@ tools/benchmarks/**/enterprise_seed.db
 tools/reports/sustained_realworld_multi_os_matrix.json
 benchmarks/twelve-dollar-server-challenge/
 tools/scaling_experiment_output/
-tools/as400_worker_2min.py
 tools/run_capacity_scaling_experiment.py

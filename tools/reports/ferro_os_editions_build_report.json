@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-29T06:04:52Z",
-  "build_duration_seconds": 16.96,
-  "editions_built": 5,
+  "timestamp": "2026-10-29T08:25:28Z",
+  "build_duration_seconds": 13.7,
+  "editions_built": 4,
   "editions": [
     {
       "edition": "cloud",
       "archive": "/home/tarun-kumar/Desktop/sample os /build_out/ferro_cloud_appliance.tar.gz",
-      "size_mb": 3.611954689025879,
-      "sha256": "85fe5edccd4e022e5ab0447239b17688344fdd3b1dea6ddca7dd185271d5941b",
+      "size_mb": 3.611903190612793,
+      "sha256": "faf046af708f6505f3d39e2dce7d3a0dda42547676311520a9f4239a7780ab17",
       "docker_image": "ferro-os-cloud:latest",
       "binaries": [
         "ferro-init",
@@ -21,8 +21,8 @@
     {
       "edition": "desktop",
       "archive": "/home/tarun-kumar/Desktop/sample os /build_out/ferro_desktop_appliance.tar.gz",
-      "size_mb": 4.102672576904297,
-      "sha256": "dcb257f59a6edbe9f6d32668b2479633e44a9231c86275305b89e9536d8d61f4",
+      "size_mb": 4.102689743041992,
+      "sha256": "48e0f750ef950b19d242fe97bc42c83c27fcae95c3fa85813053a9e67c2f738b",
       "docker_image": "ferro-os-desktop:latest",
       "binaries": [
         "ferro-init",
@@ -39,8 +39,8 @@
     {
       "edition": "gaming",
       "archive": "/home/tarun-kumar/Desktop/sample os /build_out/ferro_gaming_appliance.tar.gz",
-      "size_mb": 4.102258682250977,
-      "sha256": "0834096459229cec727abb34049876cd7b2026202aa2b96f6538ef0ca53a677f",
+      "size_mb": 4.10227108001709,
+      "sha256": "47266c703ed4f0dfad4a90175b90977094a13b1dbf69a267fb9946ec6da026a9",
       "docker_image": "ferro-os-gaming:latest",
       "binaries": [
         "ferro-init",
@@ -55,25 +55,10 @@
       ]
     },
     {
-      "edition": "enterprise",
-      "archive": "/home/tarun-kumar/Desktop/sample os /build_out/ferro_enterprise_appliance.tar.gz",
-      "size_mb": 3.6120853424072266,
-      "sha256": "b9410a2161582c6c299a7c1a02e97e5ba5fc45159212a32354550db4c7c97d45",
-      "docker_image": "ferro-os-enterprise:latest",
-      "binaries": [
-        "ferro-init",
-        "ferro-core",
-        "ferro-pkg",
-        "ferro-superd",
-        "ferrocage",
-        "libferro_io.so"
-      ]
-    },
-    {
       "edition": "universal",
       "archive": "/home/tarun-kumar/Desktop/sample os /build_out/pure_rust_rootfs.tar.gz",
-      "size_mb": 4.102535247802734,
-      "sha256": "ab87b6af768947a526b337ecbd1dfa6fd966fbd1b47d507de30d18b277c1809f",
+      "size_mb": 4.1024980545043945,
+      "sha256": "083d49f092e8380ca9b1ca9988799d783acda6305a22597d43b8938bc5518065",
       "docker_image": "ferro-os-pure:latest",
       "binaries": [
         "ferro-init",

@@ -169,16 +169,15 @@ jobs:
       - name: Run Full Codebase Survey & Architectural Graph Validator
         run: python3 tools/survey_full_ferro_os.py
 
-      - name: Build All 5 Pure-Rust Appliances (Cloud, Desktop, Gaming, Enterprise, Universal)
+      - name: Build All 4 Pure-Rust Appliances (Cloud, Desktop, Gaming, Universal)
         run: python3 tools/build_pure_rust_os.py --edition all
 
       - name: Verify Multi-Edition Appliance Container Executions
         run: |
-          echo "Testing real command execution across all 5 appliances on cloud runner:"
+          echo "Testing real command execution across all appliances on cloud runner:"
           docker run --rm ferro-os-cloud:latest /usr/bin/cat /etc/os-release | grep -q "FERRO_EDITION=\"cloud\""
           docker run --rm ferro-os-desktop:latest /usr/bin/cat /etc/os-release | grep -q "FERRO_EDITION=\"desktop\""
           docker run --rm ferro-os-gaming:latest /usr/bin/cat /etc/os-release | grep -q "FERRO_EDITION=\"gaming\""
-          docker run --rm ferro-os-enterprise:latest /usr/bin/cat /etc/os-release | grep -q "FERRO_EDITION=\"enterprise\""
           docker run --rm ferro-os-pure:latest /usr/bin/cat /etc/os-release | grep -q "FERRO_EDITION=\"pure\""
           
           docker run --rm ferro-os-pure:latest /usr/bin/ferro-core whoami

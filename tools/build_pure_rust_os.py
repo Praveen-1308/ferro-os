@@ -9,12 +9,11 @@ Specifications:
   - FHS 3.0 directory tree with UsrMerge (/bin->/usr/bin, /sbin->/usr/sbin, /lib->/usr/lib, /lib64->/usr/lib)
   - Strict enterprise permissions: /tmp (1777 sticky bit), /etc/shadow (0600), /home/ferro (1000:1000)
   - Zero GNU coreutils / Busybox / Docker daemon dependencies
-  - Builds and packages 5 appliances:
+  - Builds and packages 4 appliances:
       1. Cloud Server Edition:      build_out/ferro_cloud_appliance.tar.gz      (ferro-os-cloud:latest)
       2. Desktop & Web Edition:     build_out/ferro_desktop_appliance.tar.gz    (ferro-os-desktop:latest)
       3. Gaming & Proton Edition:    build_out/ferro_gaming_appliance.tar.gz     (ferro-os-gaming:latest)
-      4. AS/400 Enterprise Edition:  build_out/ferro_enterprise_appliance.tar.gz (ferro-os-enterprise:latest)
-      5. Universal Pure-Rust RootFS: build_out/pure_rust_rootfs.tar.gz          (ferro-os-pure:latest)
+      4. Universal Pure-Rust RootFS: build_out/pure_rust_rootfs.tar.gz          (ferro-os-pure:latest)
   - Generates comprehensive telemetry report in tools/reports/ferro_os_editions_build_report.json
 """
 
@@ -433,61 +432,8 @@ def build_gaming_edition(target_rel):
         "binaries": ["ferro-init", "ferro-core", "ferro-pkg", "ferro-superd", "ferrocage", "ferro-gui", "ferro-compositor", "xdg-desktop-portal-ferro", "libferro_io.so"]
     }
 
-def build_enterprise_edition(target_rel):
-    """Builds Edition 4: AS/400 Enterprise Edition."""
-    name = "enterprise"
-    pretty = "FerroOS 2.3 AS/400 Enterprise Edition (Pure-Rust 5250 & Batch Processing)"
-    rootfs = os.path.join(BUILD_OUT, "rootfs_enterprise")
-    print(f"\n---> Building Edition: {pretty}")
-
-    create_base_fhs_tree(rootfs)
-    copy_shared_libs(rootfs)
-
-    # Binaries: Cloud core + superd + ferrocage
-    for b in ["ferro-init", "ferro-core", "ferro-pkg", "ferro-superd", "ferrocage"]:
-        src = os.path.join(target_rel, b)
-        dst_dir = "usr/sbin" if b == "ferro-init" else "usr/bin"
-        shutil.copy2(src, os.path.join(rootfs, dst_dir, b))
-
-    os.symlink("/usr/sbin/ferro-init", os.path.join(rootfs, "init"))
-    os.symlink("/usr/bin/ferro-pkg", os.path.join(rootfs, "usr/bin/rpk"))
-
-    so_src = os.path.join(target_rel, "libferro_io.so")
-    if os.path.exists(so_src):
-        shutil.copy2(so_src, os.path.join(rootfs, "usr/lib/libferro_io.so"))
-
-    install_coreutils_symlinks(rootfs, extra_applets=["as400", "tn5250", "ebcdic", "batch-worker", "ledger"])
-    install_system_configs(rootfs, name, pretty)
-
-    # AS/400 directories
-    os.makedirs(os.path.join(rootfs, "var/lib/ferro/as400/queues"), exist_ok=True)
-    os.makedirs(os.path.join(rootfs, "var/lib/ferro/as400/ledgers"), exist_ok=True)
-    os.makedirs(os.path.join(rootfs, "var/lib/ferro/as400/journals"), exist_ok=True)
-
-    with open(os.path.join(rootfs, "etc/ferro/edition.toml"), "w") as f:
-        f.write('[edition]\nname = "enterprise"\nprofile = "as400-enterprise"\ndescription = "AS/400 Parallel batch queue processing & 5250 terminal gateway"\n')
-
-    svc_dir = os.path.join(rootfs, "etc/ferro/services")
-    with open(os.path.join(svc_dir, "as400-batch.toml"), "w") as f:
-        f.write('name = "as400-batch"\ncommand = ["/usr/bin/ferro-core", "supervise", "--as400-worker", "2"]\nrestart = "always"\nuser = "ferro"\nmemory_max_mb = 128\n')
-
-    with open(os.path.join(svc_dir, "tn5250-gateway.toml"), "w") as f:
-        f.write('name = "tn5250-gateway"\ncommand = ["/usr/bin/ferro-core", "serve", "2300", "/var/lib/ferro/as400"]\nrestart = "always"\nuser = "ferro"\nmemory_max_mb = 64\n')
-
-    archive, sz, sha = package_rootfs(rootfs, "ferro_enterprise_appliance.tar.gz")
-    docker_ok = build_docker_image("ferro_enterprise_appliance.tar.gz", "Dockerfile.enterprise", "ferro-os-enterprise:latest")
-
-    return {
-        "edition": "enterprise",
-        "archive": archive,
-        "size_mb": sz / (1024 * 1024),
-        "sha256": sha,
-        "docker_image": "ferro-os-enterprise:latest" if docker_ok else None,
-        "binaries": ["ferro-init", "ferro-core", "ferro-pkg", "ferro-superd", "ferrocage", "libferro_io.so"]
-    }
-
 def build_universal_edition(target_rel):
-    """Builds Edition 5: Universal Pure-Rust RootFS (Backward compatible pure_rust_rootfs)."""
+    """Builds Edition 4: Universal Pure-Rust RootFS (Backward compatible pure_rust_rootfs)."""
     name = "pure"
     pretty = "FerroOS 2.3 Universal (Pure-Rust Linux OS)"
     rootfs = os.path.join(BUILD_OUT, "pure_rust_rootfs")
@@ -514,7 +460,7 @@ def build_universal_edition(target_rel):
     if os.path.exists(so_src):
         shutil.copy2(so_src, os.path.join(rootfs, "usr/lib/libferro_io.so"))
 
-    install_coreutils_symlinks(rootfs, extra_applets=["gui", "desktop", "compositor", "portal", "as400", "tn5250"])
+    install_coreutils_symlinks(rootfs, extra_applets=["gui", "desktop", "compositor", "portal"])
     install_system_configs(rootfs, name, pretty)
 
     # Portal configs
@@ -555,7 +501,7 @@ def build_universal_edition(target_rel):
 
 def main():
     parser = argparse.ArgumentParser(description="FerroOS Multi-Edition Pure-Rust Linux Builder")
-    parser.add_argument("--edition", choices=["all", "cloud", "desktop", "gaming", "enterprise", "pure", "universal"],
+    parser.add_argument("--edition", choices=["all", "cloud", "desktop", "gaming", "pure", "universal"],
                         default="all", help="Target edition to build (default: all)")
     parser.add_argument("--force-rebuild", action="store_true", help="Force recompilation of all Rust crates")
     args = parser.parse_args()
@@ -578,8 +524,6 @@ def main():
         editions_to_build.append("desktop")
     if args.edition in ("all", "gaming"):
         editions_to_build.append("gaming")
-    if args.edition in ("all", "enterprise"):
-        editions_to_build.append("enterprise")
     if args.edition in ("all", "pure", "universal"):
         editions_to_build.append("universal")
 
@@ -592,8 +536,6 @@ def main():
             res = build_desktop_edition(target_rel)
         elif ed == "gaming":
             res = build_gaming_edition(target_rel)
-        elif ed == "enterprise":
-            res = build_enterprise_edition(target_rel)
         elif ed == "universal":
             res = build_universal_edition(target_rel)
         results.append(res)

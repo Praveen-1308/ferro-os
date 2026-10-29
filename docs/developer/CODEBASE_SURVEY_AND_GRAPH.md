@@ -35,7 +35,6 @@ The complete operating system topology—from hardware peripherals and kernel pr
   - `Cloud Server Edition`
   - `Desktop & Web Edition`
   - `Gaming & Proton Edition`
-  - `AS/400 Enterprise Edition`
 * **Real-Time Search**: Search by component name, layer, struct, or syscall.
 * **Interactive Inspector Panel**: Click any node to view exact line counts, key functions, structs, and extracted source code invariants.
 

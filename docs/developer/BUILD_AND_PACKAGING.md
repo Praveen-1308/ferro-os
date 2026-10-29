@@ -56,9 +56,6 @@ python3 tools/build_pure_rust_os.py --edition desktop
 # Gaming & Proton Edition (4.10 MB)
 python3 tools/build_pure_rust_os.py --edition gaming
 
-# AS/400 Enterprise Edition (3.61 MB)
-python3 tools/build_pure_rust_os.py --edition enterprise
-
 # Universal Pure-Rust Master (4.10 MB)
 python3 tools/build_pure_rust_os.py --edition universal
 ```
