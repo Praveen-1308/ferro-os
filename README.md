@@ -21,6 +21,26 @@
 
 ---
 
+## 🌟 Dual-Track Architecture: Ship Now, Harden to Bare-Metal
+
+FerroOS follows an ambitious **Top-Down Systems Strategy** operating across two parallel tracks:
+
+| Dimension | **Track 1: Production Linux Distribution** | **Track 2: Bare-Metal Microkernel** |
+| :--- | :--- | :--- |
+| **Status** | **Production Ready** (Bootable ISO / QEMU / Docker) | **Active Development** (#![no_std] Bare-Metal) |
+| **Foundation** | Hardened Linux 6.1 LTS Kernel | Custom 64-bit Rust Microkernel (`kernel/`) |
+| **Userland** | Pure-Rust (`ferro-init`, `ferro-core`, `ferro-superd`) | Identical Pure-Rust Userland (Linux ABI) |
+| **Size** | 3.61 MB Compressed RootFS / 1.4 MB Initramfs | **55 KB** Kernel ELF Binary |
+| **Memory Safety** | 100% Safe Userspace (Zero C coreutils/daemons) | 100% Freestanding `#![no_std]` Safe Rust Core |
+| **Artifact** | [`distro/build/ferro-os-3.0.0.iso`](distro/) | [`kernel/target/x86_64-unknown-none/release/ferro-kernel`](kernel/) |
+| **Boot Command** | `./demos/qemu-run.sh iso` | `./demos/qemu-run.sh kernel` |
+
+> [!NOTE]
+> **Why Top-Down?** 99% of bare-metal hobby operating systems start bottom-up (bootloader, paging) and abandon development before ever implementing a working shell, coreutils, or package manager.  
+> FerroOS built **Layer 5 (the hardest part: 220+ applets, supervisor, container runtime, shell, and package manager) first**. By pairing it today with a minimal Linux kernel (Track 1 — like Android, ChromeOS, and Alpine) while building the bare-metal kernel in parallel (Track 2) with an identical syscall ABI, the userspace transfers seamlessly without recompilation.
+
+---
+
 ## 🌟 The Vision: Pure-Rust Linux Transformation
 
 Traditional Linux distributions force infrastructure into an acute systems dilemma:

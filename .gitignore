@@ -1,5 +1,7 @@
 /target
 /target_*
+distro/build/
+kernel/target/
 **/*.rs.bk
 *.iso
 *.img

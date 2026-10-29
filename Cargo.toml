@@ -11,6 +11,9 @@ members = [
     "crates/xdg-desktop-portal-ferro",
     "crates/ferro-io",
 ]
+exclude = [
+    "kernel",
+]
 
 [profile.release]
 opt-level = 3
