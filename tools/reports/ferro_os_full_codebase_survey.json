@@ -1,0 +1,6000 @@
+{
+  "metadata": {
+    "title": "FerroOS Complete Codebase Survey",
+    "timestamp": "2026-10-29T10:33:30Z",
+    "rust_files_count": 26,
+    "total_lines": 22824,
+    "code_lines": 19817,
+    "comment_lines": 860,
+    "blank_lines": 2147,
+    "comment_density_pct": 3.8,
+    "structs_count": 49,
+    "enums_count": 12,
+    "functions_count": 519,
+    "insights_count": 98
+  },
+  "layers": [
+    {
+      "id": "layer_0",
+      "name": "Layer 0: Hardware & Cloud Hypervisor",
+      "color": "#64748b",
+      "description": "Underlying physical & virtual hardware abstractions: x86_64/aarch64 CPU registers, NVMe SSDs, VirtIO block devices, Serial TTY, and Cloud IMDS (169.254.169.254).",
+      "components": [
+        {
+          "id": "hw_cpu",
+          "name": "CPU & MMU (x86_64 / aarch64)",
+          "type": "Hardware",
+          "details": "4-8 Cores, Hardware Page Tables, SIMD instructions, Memory Hierarchy"
+        },
+        {
+          "id": "hw_nvme",
+          "name": "NVMe / VirtIO Physical Storage",
+          "type": "Storage",
+          "details": "Direct hardware write path, 350+ GB capacity, PCI-e Gen4 throughput"
+        },
+        {
+          "id": "hw_imds",
+          "name": "Cloud IMDS (169.254.169.254)",
+          "type": "Hypervisor",
+          "details": "Autonomous metadata endpoint for AWS, GCP, Azure, and Hetzner"
+        }
+      ]
+    },
+    {
+      "id": "layer_1",
+      "name": "Layer 1: Linux Kernel ABI & LSM Subsystems",
+      "color": "#0284c7",
+      "description": "Kernel-level security, resource controllers, and virtualization primitives invoked directly without runtime daemon intermediaries.",
+      "components": [
+        {
+          "id": "abi_landlock",
+          "name": "Landlock LSM (ABI v1-v4)",
+          "type": "Kernel LSM",
+          "details": "Unprivileged filesystem path restriction at hardware syscall speed (11ms)"
+        },
+        {
+          "id": "abi_cgroups",
+          "name": "Cgroups v2 Unified Hierarchy",
+          "type": "Kernel Controller",
+          "details": "cpu.max, memory.max, memory.swap.max=0, pids.max, cpu.weight"
+        },
+        {
+          "id": "abi_namespaces",
+          "name": "Linux Namespaces",
+          "type": "Virtualization",
+          "details": "CLONE_NEWPID, CLONE_NEWNS, CLONE_NEWNET, CLONE_NEWUSER rootless mapping"
+        },
+        {
+          "id": "abi_seccomp",
+          "name": "Seccomp-BPF & PR_SET_NO_NEW_PRIVS",
+          "type": "Security",
+          "details": "Syscall white-listing, capability stripping, and privilege elevation prevention"
+        }
+      ]
+    },
+    {
+      "id": "layer_2",
+      "name": "Layer 2: Autonomous PID 1 Boot & Init",
+      "color": "#059669",
+      "description": "ferro-init & cloud_init: Pure-Rust PID 1 bootstrap, early pseudofs mounting, autonomous IMDS cloud network discovery, and block storage scanning.",
+      "crates": [
+        "crates/ferro-init",
+        "crates/ferro-core/src/cloud_init.rs",
+        "crates/ferro-core/src/disk.rs"
+      ],
+      "components": [
+        {
+          "id": "init_pid1",
+          "name": "ferro-init (PID 1)",
+          "type": "Init",
+          "details": "Sub-millisecond bootstrap, early /sys, /proc, /dev, /tmp mount, zombie reaping"
+        },
+        {
+          "id": "init_fdstore",
+          "name": "fdstore Crash Recovery",
+          "type": "Reliability",
+          "details": "Preserves open file descriptors across supervisor restarts without socket loss"
+        },
+        {
+          "id": "init_cloud",
+          "name": "cloud_init Autonomous IMDS",
+          "type": "Cloud Provisioning",
+          "details": "Scans AWS/GCP/Azure IMDS, provisions eth0, injects SSH public keys (0600)"
+        },
+        {
+          "id": "init_disk",
+          "name": "disk Block Scanner",
+          "type": "Storage",
+          "details": "Autonomous discovery of NVMe, SCSI, VirtIO disks, ext4/btrfs mounting"
+        }
+      ]
+    },
+    {
+      "id": "layer_3",
+      "name": "Layer 3: Process Supervision & Cgroups v2",
+      "color": "#d97706",
+      "description": "ferro-superd: Ultra-lightweight process supervisor replacing systemd. Enforces Cgroup v2 quotas, ring-buffer logging, backoff auto-restarts, and IPC control.",
+      "crates": [
+        "crates/ferro-superd",
+        "crates/ferro-core/src/service.rs"
+      ],
+      "components": [
+        {
+          "id": "superd_daemon",
+          "name": "ferro-superd Daemon",
+          "type": "Supervisor",
+          "details": "483 KB pure-Rust daemon, 2.66 MB background RAM (vs 231 MB Docker/containerd)"
+        },
+        {
+          "id": "superd_cgroup",
+          "name": "Cgroup v2 Resource Manager",
+          "type": "Resource Control",
+          "details": "Direct control of memory.max, memory.swap.max, cpu.max, pids.max"
+        },
+        {
+          "id": "superd_watchdog",
+          "name": "Health Engine & Backoff Watchdog",
+          "type": "Resilience",
+          "details": "Periodic health checks, crash detection in <250ms, exponential backoff retries"
+        },
+        {
+          "id": "superd_ipc",
+          "name": "JSON-RPC UNIX Domain Socket",
+          "type": "Control Plane",
+          "details": "/run/ferro/superd.sock bounded reader, survives 1,000 adversarial buffer bombs"
+        }
+      ]
+    },
+    {
+      "id": "layer_4",
+      "name": "Layer 4: Micro-Container & Isolation Engine",
+      "color": "#7c3aed",
+      "description": "ferrocage: Autonomous micro-container runner replacing Docker & containerd. Sub-2ms cold startup, rootless user namespaces, and host volume bind mounts.",
+      "crates": [
+        "crates/ferrocage"
+      ],
+      "components": [
+        {
+          "id": "cage_engine",
+          "name": "ferrocage Engine",
+          "type": "Micro-Container",
+          "details": "1.7 ms micro-container startup (~200x faster than Docker), 0 MB background daemon"
+        },
+        {
+          "id": "cage_ns",
+          "name": "Namespace Virtualizer",
+          "type": "Isolation",
+          "details": "CLONE_NEWPID + CLONE_NEWNS + CLONE_NEWUSER UID/GID map without root privileges"
+        },
+        {
+          "id": "cage_vols",
+          "name": "Host Volume Bind Mounts",
+          "type": "Storage",
+          "details": "-v host:container direct bind mounting delegating disk access with 0 overhead"
+        }
+      ]
+    },
+    {
+      "id": "layer_5",
+      "name": "Layer 5: Unprivileged Sandbox & Security Mesh",
+      "color": "#dc2626",
+      "description": "ferro sandbox: Multi-profile Landlock LSM security framework. Selectable profiles (strict, shared, broker, dev) and zero-copy shared memory pools.",
+      "crates": [
+        "crates/ferro-core/src/main.rs (run_sandbox)"
+      ],
+      "components": [
+        {
+          "id": "sand_strict",
+          "name": "Profile 'strict'",
+          "type": "Profile",
+          "details": "Maximum isolation: locked root, dropped capabilities, private network, zero ambient authority"
+        },
+        {
+          "id": "sand_shared",
+          "name": "Profile 'shared' (SHM Mesh)",
+          "type": "Profile",
+          "details": "Multi-sandbox cooperative processing via zero-copy /dev/shm/ferro_<pool> pools"
+        },
+        {
+          "id": "sand_broker",
+          "name": "Profile 'broker' (Gateway)",
+          "type": "Profile",
+          "details": "Strict communication routing exclusively through authorized UNIX domain socket gateways"
+        },
+        {
+          "id": "sand_dev",
+          "name": "Profile 'dev' (Permissive)",
+          "type": "Profile",
+          "details": "Developer mode with relaxed path isolation and security violation audit logging"
+        }
+      ]
+    },
+    {
+      "id": "layer_6",
+      "name": "Layer 6: Package Governance & Registry",
+      "color": "#0891b2",
+      "description": "ferro-pkg: Autonomous binary packaging system supporting native RPK archives, cryptographic integrity verification, atomic rollbacks, and Debian .deb compatibility.",
+      "crates": [
+        "crates/ferro-pkg"
+      ],
+      "components": [
+        {
+          "id": "pkg_rpk",
+          "name": "RPK Binary Package Engine",
+          "type": "Package Manager",
+          "details": "Fast pure-Rust format, zstd compression, cryptographic SHA-256 signing"
+        },
+        {
+          "id": "pkg_tx",
+          "name": "Transactional Atomicity",
+          "type": "Rollback",
+          "details": "Atomic snapshot installs; zero partial state on installation interruption"
+        },
+        {
+          "id": "pkg_apt",
+          "name": "Debian .deb Compatibility",
+          "type": "Compatibility",
+          "details": "Direct parsing and extraction of Debian packages without dpkg/apt"
+        }
+      ]
+    },
+    {
+      "id": "layer_7",
+      "name": "Layer 7: Pure-Rust Core Utilities & Shell",
+      "color": "#ea580c",
+      "description": "ferro-core: Complete 30/30 GNU coreutils parity suite implemented in pure Rust without external C dependencies, plus interactive Unix shell.",
+      "crates": [
+        "crates/ferro-core/src/main.rs",
+        "crates/ferro-core/src/shell.rs"
+      ],
+      "components": [
+        {
+          "id": "core_files",
+          "name": "File & Directory Suite",
+          "type": "Coreutils",
+          "details": "ls, cp, mv, rm, mkdir, rmdir, touch, cat, head, tail, stat, chmod, chown"
+        },
+        {
+          "id": "core_text",
+          "name": "Text Processing Engine",
+          "type": "Coreutils",
+          "details": "grep, sed, awk, wc, diff, sort, uniq, cut, tr, tee"
+        },
+        {
+          "id": "core_sys",
+          "name": "System Diagnostics Suite",
+          "type": "Coreutils",
+          "details": "ps, top, kill, df, du, free, uname, mount, umount, dmesg"
+        },
+        {
+          "id": "core_shell",
+          "name": "Interactive Ferro Shell",
+          "type": "Shell",
+          "details": "Command history, pipelines (|), I/O redirection (<, >, >>), job control"
+        }
+      ]
+    },
+    {
+      "id": "layer_8",
+      "name": "Layer 8: High-Throughput I/O & Networking",
+      "color": "#4f46e5",
+      "description": "ferro-io, sshd, dhcp & syslog: High-velocity asynchronous I/O primitives, embedded SSH server, pure-Rust DHCP client, and kmsg kernel logging.",
+      "crates": [
+        "crates/ferro-io",
+        "crates/ferro-core/src/sshd.rs",
+        "crates/ferro-core/src/dhcp.rs",
+        "crates/ferro-core/src/syslog.rs"
+      ],
+      "components": [
+        {
+          "id": "io_buffers",
+          "name": "ferro-io Buffer Pools",
+          "type": "I/O Engine",
+          "details": "Zero-copy ring buffers, async event multiplexing, buffer reuse without heap allocation"
+        },
+        {
+          "id": "net_sshd",
+          "name": "Embedded SSH Daemon",
+          "type": "Networking",
+          "details": "Pure-Rust SSH protocol handler with public-key cryptographic authentication"
+        },
+        {
+          "id": "net_dhcp",
+          "name": "Autonomous DHCP Client",
+          "type": "Networking",
+          "details": "Sub-millisecond IP leasing, default gateway configuration, and DNS resolution"
+        }
+      ]
+    },
+    {
+      "id": "layer_9",
+      "name": "Layer 9: Tooling, Benchmarks & Adversarial Chaos",
+      "color": "#be123c",
+      "description": "Comprehensive test engines, the $12 server challenge harness, high-throughput SQLite WAL benchmarks, and 9-vector adversarial chaos qualification suites.",
+      "crates": [
+        "tools/"
+      ],
+      "components": [
+        {
+          "id": "tool_12dollar",
+          "name": "$12 Challenge Harness",
+          "type": "Benchmark",
+          "details": "High-throughput 4-core 8GB SQLite WAL benchmark (1,858 req/s vs Ubuntu collapse)"
+        },
+        {
+          "id": "tool_chaos",
+          "name": "Adversarial Chaos Suite",
+          "type": "Chaos Test",
+          "details": "9 threat models: path traversal, root defacement, OOM bombs, fork bombs, SIGKILL durability"
+        },
+        {
+          "id": "tool_parity",
+          "name": "GNU Parity Verification Engine",
+          "type": "Verification",
+          "details": "Automated 30/30 GNU vs FerroOS behavioral and argument compatibility checker"
+        },
+        {
+          "id": "tool_builder",
+          "name": "Autonomous Appliance Builder",
+          "type": "Packaging",
+          "details": "Creates 3.59 MB pure-Rust bootable rootfs containing all four strategic pillars"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "name": "main.rs",
+      "total_lines": 359,
+      "code_lines": 296,
+      "comment_lines": 32,
+      "blank_lines": 31,
+      "comment_density_pct": 8.9,
+      "structs": [
+        {
+          "name": "DamageRect",
+          "line": 25
+        },
+        {
+          "name": "DisplayOutput",
+          "line": 51
+        },
+        {
+          "name": "WindowSurface",
+          "line": 64
+        },
+        {
+          "name": "CompositorState",
+          "line": 149
+        }
+      ],
+      "enums": [
+        {
+          "name": "LayerShellZone",
+          "line": 16
+        },
+        {
+          "name": "GpuDriverTarget",
+          "line": 34
+        },
+        {
+          "name": "ShaderPipelineBackend",
+          "line": 44
+        }
+      ],
+      "functions": [
+        {
+          "name": "detect_gpu_environment",
+          "line": 79
+        },
+        {
+          "name": "new",
+          "line": 159
+        },
+        {
+          "name": "create_surface",
+          "line": 181
+        },
+        {
+          "name": "record_damage",
+          "line": 219
+        },
+        {
+          "name": "composite_frame",
+          "line": 226
+        },
+        {
+          "name": "main",
+          "line": 263
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [
+        {
+          "line": 1,
+          "text": "ferro-compositor: High-Performance Wayland Compositor for FerroOS in Rust."
+        },
+        {
+          "line": 2,
+          "text": "Replaces legacy X11 / XFCE with a GPU-accelerated Wayland architecture."
+        },
+        {
+          "line": 4,
+          "text": "dual-Kawase acrylic blur shaders, and graceful single-pass box blur fallbacks."
+        },
+        {
+          "line": 32,
+          "text": "GPU Hardware Driver Target (Invariant 4)"
+        },
+        {
+          "line": 42,
+          "text": "Shader Pipeline Execution Backend (Invariant 4)"
+        },
+        {
+          "line": 78,
+          "text": "Auto-detect GPU Driver Target & Shader Pipeline (Invariant 4)"
+        },
+        {
+          "line": 141,
+          "text": "Default to graceful software fallback if no hardware GPU or in container/VM"
+        },
+        {
+          "line": 230,
+          "text": "Invariant 4: Dual-Kawase vs Single-Pass Box Blur Pipeline"
+        },
+        {
+          "line": 241,
+          "text": "2. Render background wallpaper"
+        },
+        {
+          "line": 248,
+          "text": "Graceful CPU/Software fallback:"
+        },
+        {
+          "line": 318,
+          "text": "3. Test Invariant 4: Hardware Acceleration & Fallback Pipeline Validation"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-compositor: High-Performance Wayland Compositor for FerroOS in Rust.",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Replaces legacy X11 / XFCE with a GPU-accelerated Wayland architecture.",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "Implements DRM/KMS scanout, layer-shell protocols, damage tracking,",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "dual-Kawase acrylic blur shaders, and graceful single-pass box blur fallbacks.",
+          "type": "module_doc"
+        },
+        {
+          "line": 14,
+          "text": "Surface Layer placement for Wayland layer-shell protocol",
+          "type": "item_doc"
+        },
+        {
+          "line": 23,
+          "text": "Damage rectangle defining dirty region on display",
+          "type": "item_doc"
+        },
+        {
+          "line": 32,
+          "text": "GPU Hardware Driver Target (Invariant 4)",
+          "type": "item_doc"
+        },
+        {
+          "line": 42,
+          "text": "Shader Pipeline Execution Backend (Invariant 4)",
+          "type": "item_doc"
+        },
+        {
+          "line": 49,
+          "text": "Hardware Display Output descriptor",
+          "type": "item_doc"
+        },
+        {
+          "line": 62,
+          "text": "Managed Wayland client window surface",
+          "type": "item_doc"
+        },
+        {
+          "line": 78,
+          "text": "Auto-detect GPU Driver Target & Shader Pipeline (Invariant 4)",
+          "type": "item_doc"
+        },
+        {
+          "line": 116,
+          "text": "Inspect Linux DRM subsystem if available",
+          "type": "line"
+        },
+        {
+          "line": 141,
+          "text": "Default to graceful software fallback if no hardware GPU or in container/VM",
+          "type": "line"
+        },
+        {
+          "line": 148,
+          "text": "Ferro-Compositor Core State Engine",
+          "type": "item_doc"
+        },
+        {
+          "line": 180,
+          "text": "Register a new Wayland client surface",
+          "type": "item_doc"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-core/src/bench_suite.rs",
+      "name": "bench_suite.rs",
+      "total_lines": 339,
+      "code_lines": 292,
+      "comment_lines": 15,
+      "blank_lines": 32,
+      "comment_density_pct": 4.4,
+      "structs": [],
+      "enums": [],
+      "functions": [
+        {
+          "name": "run_hackbench",
+          "line": 16
+        },
+        {
+          "name": "run_fsync_bench",
+          "line": 214
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [
+        {
+          "line": 1,
+          "text": "ferro-core: Pure-Rust High-Performance Benchmark Harnesses."
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-core: Pure-Rust High-Performance Benchmark Harnesses.",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "Replaces legacy C benchmark harnesses:",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "- `hackbench`: Unix domain socket & scheduler IPC throughput benchmark (replacing `hackbench.c`)",
+          "type": "module_doc"
+        },
+        {
+          "line": 5,
+          "text": "- `bench_fsync`: POSIX write & fsync latency and throughput benchmark (replacing `bench_fsync.c`)",
+          "type": "module_doc"
+        },
+        {
+          "line": 15,
+          "text": "Pure-Rust implementation of Linux scheduler & IPC hackbench",
+          "type": "item_doc"
+        },
+        {
+          "line": 100,
+          "text": "Setup groups",
+          "type": "line"
+        },
+        {
+          "line": 104,
+          "text": "Create receiver socket pairs",
+          "type": "line"
+        },
+        {
+          "line": 145,
+          "text": "Launch sender threads",
+          "type": "line"
+        },
+        {
+          "line": 176,
+          "text": "Await all senders",
+          "type": "line"
+        },
+        {
+          "line": 181,
+          "text": "Await all receivers",
+          "type": "line"
+        },
+        {
+          "line": 213,
+          "text": "Pure-Rust implementation of bench_fsync (POSIX write & fsync latency profiler)",
+          "type": "item_doc"
+        },
+        {
+          "line": 306,
+          "text": "Clean up temporary file",
+          "type": "line"
+        },
+        {
+          "line": 310,
+          "text": "Calculate percentiles",
+          "type": "line"
+        },
+        {
+          "line": 332,
+          "text": "Always print standard JSON format on stdout for benchmarking scripts",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-core/src/cloud_init.rs",
+      "name": "cloud_init.rs",
+      "total_lines": 227,
+      "code_lines": 183,
+      "comment_lines": 14,
+      "blank_lines": 30,
+      "comment_density_pct": 6.2,
+      "structs": [],
+      "enums": [],
+      "functions": [
+        {
+          "name": "run_cloud_init",
+          "line": 16
+        },
+        {
+          "name": "probe_metadata_service",
+          "line": 133
+        },
+        {
+          "name": "http_get",
+          "line": 142
+        },
+        {
+          "name": "set_system_hostname",
+          "line": 178
+        },
+        {
+          "name": "append_to_hosts",
+          "line": 192
+        },
+        {
+          "name": "inject_authorized_key",
+          "line": 200
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [
+        "libc::sethostname",
+        "libc::c_int"
+      ],
+      "insights": [],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-core cloud_init: Autonomous Cloud Provisioning & Metadata Ingestion Engine",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Compatible with AWS EC2 IMDS, GCP Compute Engine, Azure VM Metadata, and OpenStack.",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "Automatically provisions hostnames, injects SSH authorized_keys, and executes user-data bootstrapping scripts.",
+          "type": "module_doc"
+        },
+        {
+          "line": 27,
+          "text": "1. Check if IMDS is reachable",
+          "type": "line"
+        },
+        {
+          "line": 37,
+          "text": "Create required directories",
+          "type": "line"
+        },
+        {
+          "line": 43,
+          "text": "2. Fetch & Set Hostname",
+          "type": "line"
+        },
+        {
+          "line": 59,
+          "text": "3. Fetch & Inject SSH Public Keys",
+          "type": "line"
+        },
+        {
+          "line": 63,
+          "text": "Try standard EC2 / OpenStack paths",
+          "type": "line"
+        },
+        {
+          "line": 71,
+          "text": "Try alternative index list",
+          "type": "line"
+        },
+        {
+          "line": 100,
+          "text": "4. Fetch & Execute User-Data Bootstrapping Script",
+          "type": "line"
+        },
+        {
+          "line": 122,
+          "text": "Record provisioning log",
+          "type": "line"
+        },
+        {
+          "line": 170,
+          "text": "Check HTTP status code",
+          "type": "line"
+        },
+        {
+          "line": 204,
+          "text": "Check if key already exists to prevent duplicate entries",
+          "type": "line"
+        },
+        {
+          "line": 216,
+          "text": "Also replicate to default non-root user directory if present",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-core/src/dhcp.rs",
+      "name": "dhcp.rs",
+      "total_lines": 656,
+      "code_lines": 540,
+      "comment_lines": 45,
+      "blank_lines": 71,
+      "comment_density_pct": 6.9,
+      "structs": [
+        {
+          "name": "DhcpPacket",
+          "line": 32
+        }
+      ],
+      "enums": [],
+      "functions": [
+        {
+          "name": "new_discover",
+          "line": 54
+        },
+        {
+          "name": "new_request",
+          "line": 77
+        },
+        {
+          "name": "serialize",
+          "line": 106
+        },
+        {
+          "name": "deserialize",
+          "line": 179
+        },
+        {
+          "name": "get_interface_mac",
+          "line": 284
+        },
+        {
+          "name": "find_default_interface",
+          "line": 303
+        },
+        {
+          "name": "apply_ip_configuration",
+          "line": 317
+        },
+        {
+          "name": "apply_ip_configuration",
+          "line": 356
+        },
+        {
+          "name": "apply_default_gateway",
+          "line": 362
+        },
+        {
+          "name": "apply_default_gateway",
+          "line": 398
+        },
+        {
+          "name": "update_resolv_conf",
+          "line": 403
+        },
+        {
+          "name": "run_dhcp",
+          "line": 416
+        },
+        {
+          "name": "run_synthetic_dhcp_test",
+          "line": 614
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [
+        "libc::socket",
+        "libc::AF_INET",
+        "libc::SOCK_DGRAM",
+        "libc::ifreq",
+        "libc::c_char",
+        "libc::sockaddr",
+        "libc::sockaddr_in",
+        "libc::sa_family_t",
+        "libc::ioctl",
+        "libc::SIOCSIFADDR",
+        "libc::SIOCSIFNETMASK",
+        "libc::IFF_UP",
+        "libc::IFF_RUNNING",
+        "libc::c_short",
+        "libc::SIOCSIFFLAGS",
+        "libc::close",
+        "libc::rtentry",
+        "libc::RTF_UP",
+        "libc::RTF_GATEWAY",
+        "libc::c_ushort",
+        "libc::SIOCADDRT"
+      ],
+      "insights": [
+        {
+          "line": 10,
+          "text": "- Container & cloud metadata fallback when external DHCP is absent"
+        },
+        {
+          "line": 579,
+          "text": "Cloud / Container Environment Fallback:"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-core: Pure-Rust DHCP Client and Cloud IP Auto-Leasing Daemon (ferro-net).",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "Implements:",
+          "type": "module_doc"
+        },
+        {
+          "line": 5,
+          "text": "- RFC 2131 Dynamic Host Configuration Protocol (DHCPv4) client",
+          "type": "module_doc"
+        },
+        {
+          "line": 6,
+          "text": "- RFC 1533 DHCP Options parsing and synthesis (Subnet Mask, Router, DNS)",
+          "type": "module_doc"
+        },
+        {
+          "line": 7,
+          "text": "- Raw socket / UDP broadcast 255.255.255.255:67 -> 0.0.0.0:68 lease negotiation",
+          "type": "module_doc"
+        },
+        {
+          "line": 8,
+          "text": "- Linux ioctl network interface IP address and netmask configuration",
+          "type": "module_doc"
+        },
+        {
+          "line": 9,
+          "text": "- Automatic /etc/resolv.conf DNS nameserver synchronization",
+          "type": "module_doc"
+        },
+        {
+          "line": 10,
+          "text": "- Container & cloud metadata fallback when external DHCP is absent",
+          "type": "module_doc"
+        },
+        {
+          "line": 22,
+          "text": "DHCP Message Types (Option 53)",
+          "type": "line"
+        },
+        {
+          "line": 105,
+          "text": "Serialize packet into raw wire bytes (RFC 2131)",
+          "type": "item_doc"
+        },
+        {
+          "line": 127,
+          "text": "chaddr (MAC)",
+          "type": "line"
+        },
+        {
+          "line": 129,
+          "text": "remaining 10 bytes chaddr padding are already 0",
+          "type": "line"
+        },
+        {
+          "line": 131,
+          "text": "Append Magic Cookie",
+          "type": "line"
+        },
+        {
+          "line": 134,
+          "text": "Option 53: DHCP Message Type",
+          "type": "line"
+        },
+        {
+          "line": 139,
+          "text": "Option 61: Client Identifier (Hardware type 1 + MAC)",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-core/src/disk.rs",
+      "name": "disk.rs",
+      "total_lines": 246,
+      "code_lines": 206,
+      "comment_lines": 8,
+      "blank_lines": 32,
+      "comment_density_pct": 3.3,
+      "structs": [],
+      "enums": [],
+      "functions": [
+        {
+          "name": "run_disk",
+          "line": 10
+        },
+        {
+          "name": "list_block_devices",
+          "line": 55
+        },
+        {
+          "name": "find_mount_point",
+          "line": 105
+        },
+        {
+          "name": "mount_device",
+          "line": 119
+        },
+        {
+          "name": "mount_device",
+          "line": 147
+        },
+        {
+          "name": "umount_target",
+          "line": 153
+        },
+        {
+          "name": "umount_target",
+          "line": 169
+        },
+        {
+          "name": "install_to_disk",
+          "line": 174
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [
+        "mount",
+        "libc::mount",
+        "libc::MS_RELATIME",
+        "libc::umount2",
+        "libc::MNT_DETACH"
+      ],
+      "insights": [
+        {
+          "line": 1,
+          "text": "ferro-core disk: Block Storage, Partitioning, and Disk Management Engine"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-core disk: Block Storage, Partitioning, and Disk Management Engine",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Supports scanning real disks (/dev/vda, /dev/sda, /dev/nvme0n1), partition inspection,",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "mounting, and full persistent disk installation.",
+          "type": "module_doc"
+        },
+        {
+          "line": 77,
+          "text": "Skip loop devices and ram devices unless requested",
+          "type": "line"
+        },
+        {
+          "line": 199,
+          "text": "Mount partition",
+          "type": "line"
+        },
+        {
+          "line": 211,
+          "text": "Deploy core binaries",
+          "type": "line"
+        },
+        {
+          "line": 223,
+          "text": "Write persistent /etc/fstab",
+          "type": "line"
+        },
+        {
+          "line": 234,
+          "text": "Write marker flag",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "name": "main.rs",
+      "total_lines": 8349,
+      "code_lines": 7522,
+      "comment_lines": 171,
+      "blank_lines": 656,
+      "comment_density_pct": 2.0,
+      "structs": [
+        {
+          "name": "CommandRedirections",
+          "line": 328
+        },
+        {
+          "name": "IfaceEntry",
+          "line": 3447
+        },
+        {
+          "name": "DnsCacheEntry",
+          "line": 4515
+        },
+        {
+          "name": "BtrfsSubvolume",
+          "line": 7213
+        },
+        {
+          "name": "LandlockRulesetAttr",
+          "line": 7758
+        },
+        {
+          "name": "LandlockPathBeneathAttr",
+          "line": 7764
+        }
+      ],
+      "enums": [
+        {
+          "name": "BinaryFormat",
+          "line": 6278
+        }
+      ],
+      "functions": [
+        {
+          "name": "kill",
+          "line": 29
+        },
+        {
+          "name": "sync",
+          "line": 30
+        },
+        {
+          "name": "reboot",
+          "line": 31
+        },
+        {
+          "name": "main",
+          "line": 38
+        },
+        {
+          "name": "print_usage",
+          "line": 178
+        },
+        {
+          "name": "reap_shell_zombies",
+          "line": 201
+        },
+        {
+          "name": "run_sh",
+          "line": 216
+        },
+        {
+          "name": "is_exit_success",
+          "line": 279
+        },
+        {
+          "name": "split_compound_statements_quote_aware",
+          "line": 285
+        },
+        {
+          "name": "execute_compound_script",
+          "line": 321
+        },
+        {
+          "name": "parse_tokens",
+          "line": 335
+        },
+        {
+          "name": "split_pipeline_quote_aware",
+          "line": 400
+        },
+        {
+          "name": "extract_redirections_quote_aware",
+          "line": 432
+        },
+        {
+          "name": "execute_pipeline",
+          "line": 543
+        },
+        {
+          "name": "execute_piped_commands",
+          "line": 555
+        },
+        {
+          "name": "is_internal_applet",
+          "line": 654
+        },
+        {
+          "name": "install_symlinks",
+          "line": 658
+        },
+        {
+          "name": "execute_single_command",
+          "line": 695
+        },
+        {
+          "name": "dispatch_internal_applet",
+          "line": 911
+        },
+        {
+          "name": "run_ferrocage",
+          "line": 993
+        },
+        {
+          "name": "run_ls",
+          "line": 1022
+        },
+        {
+          "name": "format_file_mode",
+          "line": 1166
+        },
+        {
+          "name": "format_human_size",
+          "line": 1180
+        },
+        {
+          "name": "run_cat",
+          "line": 1192
+        },
+        {
+          "name": "run_echo",
+          "line": 1223
+        },
+        {
+          "name": "run_pwd",
+          "line": 1264
+        },
+        {
+          "name": "run_uname",
+          "line": 1277
+        },
+        {
+          "name": "run_clear",
+          "line": 1287
+        },
+        {
+          "name": "run_mkdir",
+          "line": 1293
+        },
+        {
+          "name": "run_rm",
+          "line": 1358
+        },
+        {
+          "name": "copy_file_zero_copy",
+          "line": 1423
+        },
+        {
+          "name": "copy_recursive",
+          "line": 1508
+        },
+        {
+          "name": "run_cp",
+          "line": 1524
+        },
+        {
+          "name": "run_mv",
+          "line": 1613
+        },
+        {
+          "name": "chmod_one_entry",
+          "line": 1683
+        },
+        {
+          "name": "chmod_recursive",
+          "line": 1704
+        },
+        {
+          "name": "run_chmod",
+          "line": 1718
+        },
+        {
+          "name": "run_grep",
+          "line": 1825
+        },
+        {
+          "name": "run_find",
+          "line": 1957
+        },
+        {
+          "name": "visit_dir",
+          "line": 1970
+        },
+        {
+          "name": "run_head",
+          "line": 1993
+        },
+        {
+          "name": "run_tail",
+          "line": 2067
+        },
+        {
+          "name": "run_wc",
+          "line": 2152
+        },
+        {
+          "name": "print_wc_row",
+          "line": 2252
+        },
+        {
+          "name": "run_which",
+          "line": 2263
+        },
+        {
+          "name": "run_env",
+          "line": 2298
+        },
+        {
+          "name": "run_sleep",
+          "line": 2377
+        },
+        {
+          "name": "run_free",
+          "line": 2387
+        },
+        {
+          "name": "run_df",
+          "line": 2420
+        },
+        {
+          "name": "run_ps",
+          "line": 2437
+        },
+        {
+          "name": "run_kill",
+          "line": 2470
+        },
+        {
+          "name": "run_uptime",
+          "line": 2504
+        },
+        {
+          "name": "resolve_username",
+          "line": 2526
+        },
+        {
+          "name": "resolve_groupname",
+          "line": 2542
+        },
+        {
+          "name": "run_whoami",
+          "line": 2558
+        },
+        {
+          "name": "run_id",
+          "line": 2589
+        },
+        {
+          "name": "run_touch",
+          "line": 2659
+        },
+        {
+          "name": "run_ln",
+          "line": 2708
+        },
+        {
+          "name": "format_permissions",
+          "line": 2761
+        },
+        {
+          "name": "run_stat",
+          "line": 2798
+        },
+        {
+          "name": "chown_one_path",
+          "line": 2900
+        },
+        {
+          "name": "chown_entry_recursive",
+          "line": 2949
+        },
+        {
+          "name": "run_chown",
+          "line": 2980
+        },
+        {
+          "name": "run_mount",
+          "line": 3140
+        },
+        {
+          "name": "run_umount",
+          "line": 3220
+        },
+        {
+          "name": "run_sync",
+          "line": 3269
+        },
+        {
+          "name": "run_hostname",
+          "line": 3277
+        },
+        {
+          "name": "run_tee",
+          "line": 3325
+        },
+        {
+          "name": "run_ip",
+          "line": 3366
+        },
+        {
+          "name": "print_ip_link",
+          "line": 3397
+        },
+        {
+          "name": "print_ip_addr",
+          "line": 3434
+        },
+        {
+          "name": "parse_hex_ipv4",
+          "line": 3550
+        },
+        {
+          "name": "print_ip_route",
+          "line": 3557
+        },
+        {
+          "name": "run_netstat",
+          "line": 3586
+        },
+        {
+          "name": "run_ss",
+          "line": 3590
+        },
+        {
+          "name": "run_socket_inspection",
+          "line": 3594
+        },
+        {
+          "name": "print_proc_net_entries",
+          "line": 3610
+        },
+        {
+          "name": "format_proc_socket_addr",
+          "line": 3648
+        },
+        {
+          "name": "run_fetch",
+          "line": 3667
+        },
+        {
+          "name": "run_reboot",
+          "line": 3746
+        },
+        {
+          "name": "run_poweroff",
+          "line": 3756
+        },
+        {
+          "name": "run_bench",
+          "line": 3766
+        },
+        {
+          "name": "run_cpu_bench",
+          "line": 3778
+        },
+        {
+          "name": "create_reuseport_listener",
+          "line": 3848
+        },
+        {
+          "name": "create_reuseport_listener",
+          "line": 3942
+        },
+        {
+          "name": "detect_mime_type",
+          "line": 3946
+        },
+        {
+          "name": "handle_http_client",
+          "line": 3963
+        },
+        {
+          "name": "run_serve",
+          "line": 4046
+        },
+        {
+          "name": "run_supervise",
+          "line": 4126
+        },
+        {
+          "name": "run_server_suite",
+          "line": 4178
+        },
+        {
+          "name": "read_system_meminfo",
+          "line": 4404
+        },
+        {
+          "name": "run_gamemode",
+          "line": 4434
+        },
+        {
+          "name": "parse_dns_qname",
+          "line": 4520
+        },
+        {
+          "name": "build_a_response",
+          "line": 4585
+        },
+        {
+          "name": "load_hosts_map",
+          "line": 4603
+        },
+        {
+          "name": "run_dns_cache",
+          "line": 4628
+        },
+        {
+          "name": "send_fd",
+          "line": 5020
+        },
+        {
+          "name": "recv_fd",
+          "line": 5053
+        },
+        {
+          "name": "run_fdstore",
+          "line": 5088
+        },
+        {
+          "name": "run_recovery",
+          "line": 5193
+        },
+        {
+          "name": "run_bpf",
+          "line": 5267
+        },
+        {
+          "name": "run_bpf_bench",
+          "line": 5497
+        },
+        {
+          "name": "parse_core_list",
+          "line": 5595
+        },
+        {
+          "name": "get_cpu_info",
+          "line": 5621
+        },
+        {
+          "name": "set_cpu_affinity",
+          "line": 5636
+        },
+        {
+          "name": "set_cpu_affinity",
+          "line": 5655
+        },
+        {
+          "name": "set_process_nice",
+          "line": 5659
+        },
+        {
+          "name": "get_sched_state_file",
+          "line": 5669
+        },
+        {
+          "name": "get_active_profile",
+          "line": 5713
+        },
+        {
+          "name": "run_sched",
+          "line": 5734
+        },
+        {
+          "name": "run_sched_status",
+          "line": 5774
+        },
+        {
+          "name": "run_sched_set",
+          "line": 5883
+        },
+        {
+          "name": "run_sched_run",
+          "line": 5957
+        },
+        {
+          "name": "run_sched_bench_cli",
+          "line": 6055
+        },
+        {
+          "name": "run_sched_bench",
+          "line": 6095
+        },
+        {
+          "name": "description",
+          "line": 6291
+        },
+        {
+          "name": "detect_binary_format",
+          "line": 6306
+        },
+        {
+          "name": "which_bin",
+          "line": 6350
+        },
+        {
+          "name": "run_game",
+          "line": 6381
+        },
+        {
+          "name": "run_game_status",
+          "line": 6438
+        },
+        {
+          "name": "dirs_home",
+          "line": 6533
+        },
+        {
+          "name": "run_game_probe",
+          "line": 6539
+        },
+        {
+          "name": "run_game_setup_steam",
+          "line": 6641
+        },
+        {
+          "name": "run_game_create_shortcut",
+          "line": 6713
+        },
+        {
+          "name": "run_game_run",
+          "line": 6776
+        },
+        {
+          "name": "run_win_run",
+          "line": 6897
+        },
+        {
+          "name": "run_win_status",
+          "line": 7145
+        },
+        {
+          "name": "generate_btrfs_fstab",
+          "line": 7242
+        },
+        {
+          "name": "generate_grub_cfg",
+          "line": 7257
+        },
+        {
+          "name": "run_install",
+          "line": 7294
+        },
+        {
+          "name": "get_snapshots_dir",
+          "line": 7412
+        },
+        {
+          "name": "run_snapshot",
+          "line": 7423
+        },
+        {
+          "name": "run_snapshot_status",
+          "line": 7467
+        },
+        {
+          "name": "run_snapshot_list",
+          "line": 7510
+        },
+        {
+          "name": "run_snapshot_create",
+          "line": 7571
+        },
+        {
+          "name": "run_snapshot_rollback",
+          "line": 7622
+        },
+        {
+          "name": "run_snapshot_remove",
+          "line": 7675
+        },
+        {
+          "name": "run_ai_mode",
+          "line": 7696
+        },
+        {
+          "name": "run_sandbox",
+          "line": 7796
+        },
+        {
+          "name": "assert_success",
+          "line": 8058
+        },
+        {
+          "name": "test_zero_copy_cp",
+          "line": 8063
+        },
+        {
+          "name": "test_gamemode_status",
+          "line": 8085
+        },
+        {
+          "name": "test_ai_mode_status",
+          "line": 8091
+        },
+        {
+          "name": "test_sandbox_status",
+          "line": 8097
+        },
+        {
+          "name": "test_zero_copy_empty_file",
+          "line": 8103
+        },
+        {
+          "name": "test_copy_recursive",
+          "line": 8120
+        },
+        {
+          "name": "test_dns_parser",
+          "line": 8147
+        },
+        {
+          "name": "test_dns_fuzzing_defenses",
+          "line": 8162
+        },
+        {
+          "name": "test_bpf_status",
+          "line": 8193
+        },
+        {
+          "name": "test_bpf_bypass_check",
+          "line": 8199
+        },
+        {
+          "name": "test_sched_parse_cores",
+          "line": 8205
+        },
+        {
+          "name": "test_sched_status",
+          "line": 8213
+        },
+        {
+          "name": "test_sched_set_profile",
+          "line": 8219
+        },
+        {
+          "name": "test_sched_bench_execution",
+          "line": 8229
+        },
+        {
+          "name": "test_game_status",
+          "line": 8235
+        },
+        {
+          "name": "test_game_setup_steam",
+          "line": 8241
+        },
+        {
+          "name": "test_game_detect_elf",
+          "line": 8250
+        },
+        {
+          "name": "test_game_detect_pe_windows",
+          "line": 8276
+        },
+        {
+          "name": "test_btrfs_fstab_generation",
+          "line": 8299
+        },
+        {
+          "name": "test_grub_cfg_generation",
+          "line": 8309
+        },
+        {
+          "name": "test_snapshot_lifecycle",
+          "line": 8318
+        },
+        {
+          "name": "test_win_status",
+          "line": 8339
+        },
+        {
+          "name": "test_win_help",
+          "line": 8345
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [
+        "bpf",
+        "mount",
+        "libc::waitpid",
+        "libc::WNOHANG",
+        "libc::c_int",
+        "libc::write",
+        "libc::STDOUT_FILENO",
+        "libc::c_void",
+        "libc::signal",
+        "libc::SIGINT",
+        "libc::rlimit",
+        "libc::getrlimit",
+        "libc::RLIMIT_NOFILE",
+        "libc::isatty",
+        "libc::c_ulong",
+        "libc::ioctl",
+        "libc::copy_file_range",
+        "libc::EXDEV",
+        "libc::ENOSYS",
+        "libc::EOPNOTSUPP",
+        "libc::EINVAL",
+        "libc::access",
+        "libc::X_OK",
+        "libc::getuid",
+        "libc::getgid",
+        "libc::geteuid",
+        "libc::getegid",
+        "libc::gid_t",
+        "libc::getgroups",
+        "libc::utimensat",
+        "libc::AT_FDCWD",
+        "libc::uid_t",
+        "libc::lchown",
+        "libc::chown",
+        "libc::getpwnam",
+        "libc::getgrnam",
+        "libc::mount",
+        "libc::MNT_DETACH",
+        "libc::umount2",
+        "libc::sync",
+        "libc::gethostname",
+        "libc::c_char",
+        "libc::sethostname",
+        "libc::ifaddrs",
+        "libc::getifaddrs",
+        "libc::AF_INET",
+        "libc::sockaddr_in",
+        "libc::IFF_BROADCAST",
+        "libc::AF_INET6",
+        "libc::sockaddr_in6",
+        "libc::freeifaddrs",
+        "libc::IFF_LOOPBACK",
+        "libc::socket",
+        "libc::SOCK_STREAM",
+        "libc::setsockopt",
+        "libc::SOL_SOCKET",
+        "libc::SO_REUSEADDR",
+        "libc::SO_REUSEPORT",
+        "libc::IPPROTO_TCP",
+        "libc::TCP_NODELAY",
+        "libc::bind",
+        "libc::sockaddr",
+        "libc::socklen_t",
+        "libc::close",
+        "libc::listen",
+        "libc::setpriority",
+        "libc::PRIO_PROCESS",
+        "libc::SO_RCVBUF",
+        "libc::SO_SNDBUF",
+        "libc::iovec",
+        "libc::msghdr",
+        "libc::CMSG_SPACE",
+        "libc::CMSG_FIRSTHDR",
+        "libc::SCM_RIGHTS",
+        "libc::CMSG_LEN",
+        "libc::CMSG_DATA",
+        "libc::sendmsg",
+        "libc::recvmsg",
+        "libc::CMSG_NXTHDR",
+        "libc::cpu_set_t",
+        "libc::CPU_ZERO",
+        "libc::CPU_SET",
+        "libc::sched_setaffinity",
+        "libc::mlockall",
+        "libc::MCL_CURRENT",
+        "libc::MCL_FUTURE",
+        "libc::munlockall",
+        "libc::c_long",
+        "landlock_supported",
+        "seccomp",
+        "libc::prctl",
+        "libc::unshare",
+        "libc::CLONE_NEWNET",
+        "libc::syscall",
+        "libc::open",
+        "libc::O_PATH",
+        "libc::O_CLOEXEC",
+        "libc::O_DIRECTORY"
+      ],
+      "insights": [
+        {
+          "line": 1419,
+          "text": "Performs zero-copy file copying using Linux kernel-level primitives:"
+        },
+        {
+          "line": 1421,
+          "text": "2. Falls back to copy_file_range(2) (in-kernel zero-copy page transfer without userspace buffers)"
+        },
+        {
+          "line": 1504,
+          "text": "3. Fallback to standard library copy"
+        },
+        {
+          "line": 1657,
+          "text": "Fallback for cross-device moves: zero-copy copy then unlink"
+        },
+        {
+          "line": 3604,
+          "text": "Fallback simulation for environments without procfs sockets"
+        },
+        {
+          "line": 4245,
+          "text": "2. Thread: Port 8081 (In-Memory Key-Value Store)"
+        },
+        {
+          "line": 4512,
+          "text": "FerroOS Local Shared-Memory DNS Caching Resolver (Sub-10\u00b5s In-Memory Engine)"
+        },
+        {
+          "line": 4772,
+          "text": "2. Check In-Memory Cache"
+        },
+        {
+          "line": 4798,
+          "text": "3. Cache Miss: Forward to Upstream"
+        },
+        {
+          "line": 4813,
+          "text": "Cache with bounded capacity (max 10,000 entries) & 60s TTL (CWE-400 DoS defense)"
+        },
+        {
+          "line": 5417,
+          "text": "4. Attach to cgroup v2 root"
+        },
+        {
+          "line": 5709,
+          "text": "4. Fallback to temp dir"
+        },
+        {
+          "line": 5866,
+          "text": "6. Cgroup v2 CPU controller"
+        },
+        {
+          "line": 6162,
+          "text": "Two threads ping-pong an atomic boolean across 2,000 handovers."
+        },
+        {
+          "line": 6274,
+          "text": "FerroOS Steam & Proton Multi-Architecture Gaming Layer (Box64/FEX & DXVK)"
+        },
+        {
+          "line": 7080,
+          "text": "5. Interpose mimalloc 2.1 Memory Allocator"
+        },
+        {
+          "line": 7105,
+          "text": "7. Enforce Landlock Sandboxing if requested"
+        },
+        {
+          "line": 7754,
+          "text": "FerroOS Landlock LSM & Unprivileged Daemon Isolation Sandbox"
+        },
+        {
+          "line": 7853,
+          "text": "Fallback for: enforce <dir> <cmd...>"
+        },
+        {
+          "line": 7901,
+          "text": "Cooperative Multi-Sandbox profile: enables inter-communication via shared memory"
+        },
+        {
+          "line": 7923,
+          "text": "Attach to Shared Memory Pool if requested or under shared profile"
+        },
+        {
+          "line": 7954,
+          "text": "2. Landlock LSM Ruleset Configuration (skip in dev mode for full permissiveness)"
+        },
+        {
+          "line": 8017,
+          "text": "User-specified read-write storage paths & shared memory pools"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-core: Multi-call core utilities and shell for FerroOS in Rust.",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Inspired by BusyBox and uutils coreutils.",
+          "type": "module_doc"
+        },
+        {
+          "line": 197,
+          "text": "-------------------------------------------------------------",
+          "type": "line"
+        },
+        {
+          "line": 198,
+          "text": "Interactive Shell (sh) with Pipes, Redirection & Env Expansion",
+          "type": "line"
+        },
+        {
+          "line": 199,
+          "text": "-------------------------------------------------------------",
+          "type": "line"
+        },
+        {
+          "line": 268,
+          "text": "Interrupted by SIGINT (Ctrl+C), continue to fresh prompt",
+          "type": "line"
+        },
+        {
+          "line": 363,
+          "text": "In single quotes: literal characters, NO variable expansion",
+          "type": "line"
+        },
+        {
+          "line": 452,
+          "text": "Check for 2>&1",
+          "type": "line"
+        },
+        {
+          "line": 458,
+          "text": "Check for 2>>",
+          "type": "line"
+        },
+        {
+          "line": 473,
+          "text": "Check for 2>",
+          "type": "line"
+        },
+        {
+          "line": 488,
+          "text": "Check for >>",
+          "type": "line"
+        },
+        {
+          "line": 503,
+          "text": "Check for >",
+          "type": "line"
+        },
+        {
+          "line": 518,
+          "text": "Check for <",
+          "type": "line"
+        },
+        {
+          "line": 544,
+          "text": "Check for pipe commands: cmd1 | cmd2 | cmd3 (quote-aware)",
+          "type": "line"
+        },
+        {
+          "line": 551,
+          "text": "Single command execution with quote-aware redirection check",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-core/src/service.rs",
+      "name": "service.rs",
+      "total_lines": 370,
+      "code_lines": 331,
+      "comment_lines": 3,
+      "blank_lines": 36,
+      "comment_density_pct": 0.8,
+      "structs": [],
+      "enums": [],
+      "functions": [
+        {
+          "name": "get_socket_path",
+          "line": 9
+        },
+        {
+          "name": "run_service",
+          "line": 13
+        },
+        {
+          "name": "print_usage",
+          "line": 42
+        },
+        {
+          "name": "send_rpc",
+          "line": 55
+        },
+        {
+          "name": "handle_list",
+          "line": 80
+        },
+        {
+          "name": "handle_start",
+          "line": 125
+        },
+        {
+          "name": "handle_stop",
+          "line": 152
+        },
+        {
+          "name": "handle_restart",
+          "line": 178
+        },
+        {
+          "name": "handle_status",
+          "line": 205
+        },
+        {
+          "name": "handle_logs",
+          "line": 265
+        },
+        {
+          "name": "handle_reload",
+          "line": 307
+        },
+        {
+          "name": "is_ok",
+          "line": 326
+        },
+        {
+          "name": "extract_field",
+          "line": 330
+        },
+        {
+          "name": "format_uptime",
+          "line": 350
+        },
+        {
+          "name": "format_size",
+          "line": 360
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro service: CLI control suite for ferro-superd",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Provides parity with systemctl / service management in pure Rust.",
+          "type": "module_doc"
+        },
+        {
+          "line": 94,
+          "text": "Parse services array from simple JSON",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-core/src/shell.rs",
+      "name": "shell.rs",
+      "total_lines": 1144,
+      "code_lines": 990,
+      "comment_lines": 42,
+      "blank_lines": 112,
+      "comment_density_pct": 3.7,
+      "structs": [
+        {
+          "name": "ShellContext",
+          "line": 18
+        }
+      ],
+      "enums": [
+        {
+          "name": "Section",
+          "line": 680
+        }
+      ],
+      "functions": [
+        {
+          "name": "default",
+          "line": 25
+        },
+        {
+          "name": "get_last_status",
+          "line": 38
+        },
+        {
+          "name": "set_last_status",
+          "line": 42
+        },
+        {
+          "name": "set_var",
+          "line": 46
+        },
+        {
+          "name": "get_var",
+          "line": 53
+        },
+        {
+          "name": "set_positional",
+          "line": 62
+        },
+        {
+          "name": "shift_positional",
+          "line": 68
+        },
+        {
+          "name": "is_exit_success",
+          "line": 79
+        },
+        {
+          "name": "exit_code_to_i32",
+          "line": 84
+        },
+        {
+          "name": "expand_string_vars",
+          "line": 96
+        },
+        {
+          "name": "is_assignment",
+          "line": 206
+        },
+        {
+          "name": "run_test",
+          "line": 229
+        },
+        {
+          "name": "evaluate_test_expr",
+          "line": 264
+        },
+        {
+          "name": "split_statements",
+          "line": 374
+        },
+        {
+          "name": "execute_script",
+          "line": 430
+        },
+        {
+          "name": "split_logical_chain",
+          "line": 596
+        },
+        {
+          "name": "execute_logical_chain",
+          "line": 637
+        },
+        {
+          "name": "parse_if_block",
+          "line": 668
+        },
+        {
+          "name": "parse_for_block",
+          "line": 786
+        },
+        {
+          "name": "parse_while_block",
+          "line": 865
+        },
+        {
+          "name": "parse_case_block",
+          "line": 919
+        },
+        {
+          "name": "pattern_matches",
+          "line": 982
+        },
+        {
+          "name": "test_variable_expansion_and_assignment",
+          "line": 1007
+        },
+        {
+          "name": "test_builtin_test_evaluation",
+          "line": 1022
+        },
+        {
+          "name": "test_script_control_flow_execution",
+          "line": 1074
+        },
+        {
+          "name": "test_for_loop_execution",
+          "line": 1097
+        },
+        {
+          "name": "test_case_statement_execution",
+          "line": 1117
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [
+        "libc::access",
+        "libc::R_OK",
+        "libc::W_OK",
+        "libc::X_OK"
+      ],
+      "insights": [
+        {
+          "line": 461,
+          "text": "1. `if` block parsing"
+        },
+        {
+          "line": 533,
+          "text": "4. `case` block parsing"
+        },
+        {
+          "line": 665,
+          "text": "Control Flow Block Parsers"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-core: POSIX Shell Grammar, Control Flow Engine, and Builtin Diagnostics.",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Implements if/then/elif/else/fi, for/in/do/done, while/do/done, case/esac,",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "local variable assignments, parameter expansions ($?, $#, $@, $1..$9, ${VAR:-def}),",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "and the `[` / `test` evaluation applet.",
+          "type": "module_doc"
+        },
+        {
+          "line": 92,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 93,
+          "text": "Parameter & Variable Expansion ($?, $#, $@, $1..$9, ${VAR:-default}, $VAR)",
+          "type": "line"
+        },
+        {
+          "line": 94,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 154,
+          "text": "Bracketed expansion: ${VAR} or ${VAR:-default}",
+          "type": "line"
+        },
+        {
+          "line": 186,
+          "text": "Simple $VAR",
+          "type": "line"
+        },
+        {
+          "line": 225,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 226,
+          "text": "Builtin `[` and `test` Expression Evaluator",
+          "type": "line"
+        },
+        {
+          "line": 227,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 232,
+          "text": "If invoked as `[`, remove optional trailing `]`",
+          "type": "line"
+        },
+        {
+          "line": 243,
+          "text": "Handle logical negation `!`",
+          "type": "line"
+        },
+        {
+          "line": 267,
+          "text": "Non-empty string is true",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-core/src/sshd.rs",
+      "name": "sshd.rs",
+      "total_lines": 194,
+      "code_lines": 154,
+      "comment_lines": 13,
+      "blank_lines": 27,
+      "comment_density_pct": 6.7,
+      "structs": [],
+      "enums": [],
+      "functions": [
+        {
+          "name": "run_sshd",
+          "line": 19
+        },
+        {
+          "name": "ensure_host_keys",
+          "line": 85
+        },
+        {
+          "name": "handle_client",
+          "line": 108
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [
+        {
+          "line": 34,
+          "text": "2. Ensure Cryptographic Host Keys exist or generate fallback markers"
+        },
+        {
+          "line": 37,
+          "text": "3. Optional external Dropbear or OpenSSH binary fallback"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-core sshd: Autonomous Remote Administration SSH Server & Daemon Supervisor",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Implements SSH-2.0 protocol identification, automatic host-key provisioning,",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "key-based authentication against /root/.ssh/authorized_keys, and remote shell execution.",
+          "type": "module_doc"
+        },
+        {
+          "line": 29,
+          "text": "1. Ensure /etc/ssh directory and permissions",
+          "type": "line"
+        },
+        {
+          "line": 34,
+          "text": "2. Ensure Cryptographic Host Keys exist or generate fallback markers",
+          "type": "line"
+        },
+        {
+          "line": 37,
+          "text": "3. Optional external Dropbear or OpenSSH binary fallback",
+          "type": "line"
+        },
+        {
+          "line": 57,
+          "text": "4. Pure-Rust Native Remote Terminal Daemon",
+          "type": "line"
+        },
+        {
+          "line": 112,
+          "text": "1. Send SSH protocol version banner",
+          "type": "line"
+        },
+        {
+          "line": 117,
+          "text": "2. Read Client identification banner",
+          "type": "line"
+        },
+        {
+          "line": 126,
+          "text": "3. Spawn authenticated interactive shell session or command runner",
+          "type": "line"
+        },
+        {
+          "line": 145,
+          "text": "Launch shell attached to stream",
+          "type": "line"
+        },
+        {
+          "line": 169,
+          "text": "Stream Client Input -> Shell Stdin",
+          "type": "line"
+        },
+        {
+          "line": 179,
+          "text": "Stream Shell Stdout -> Client Socket",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-core/src/syslog.rs",
+      "name": "syslog.rs",
+      "total_lines": 559,
+      "code_lines": 470,
+      "comment_lines": 33,
+      "blank_lines": 56,
+      "comment_density_pct": 5.9,
+      "structs": [
+        {
+          "name": "SyslogEntry",
+          "line": 29
+        }
+      ],
+      "enums": [],
+      "functions": [
+        {
+          "name": "severity_name",
+          "line": 39
+        },
+        {
+          "name": "facility_name",
+          "line": 53
+        },
+        {
+          "name": "parse",
+          "line": 73
+        },
+        {
+          "name": "format_line",
+          "line": 123
+        },
+        {
+          "name": "format_epoch_seconds",
+          "line": 134
+        },
+        {
+          "name": "run_ferrod",
+          "line": 142
+        },
+        {
+          "name": "append_log_line",
+          "line": 270
+        },
+        {
+          "name": "send_syslog_message",
+          "line": 277
+        },
+        {
+          "name": "run_logger",
+          "line": 311
+        },
+        {
+          "name": "run_logs",
+          "line": 365
+        },
+        {
+          "name": "run_dmesg",
+          "line": 510
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [
+        {
+          "line": 5,
+          "text": "- Fast in-memory circular ring buffer and persistent append to /var/log/syslog"
+        },
+        {
+          "line": 425,
+          "text": "Try target_file first, fallback to RUN_LOG_FILE or /var/log/messages"
+        },
+        {
+          "line": 548,
+          "text": "Attempt 3: Fallback - kernel entries in /var/log/syslog or /run/ferro/syslog.log"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-core: Pure-Rust System Logging Daemon (ferrod) and Syslog Log Viewer.",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "Provides:",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "- Standard RFC 3164 / RFC 5424 Unix domain datagram socket listener at /dev/log",
+          "type": "module_doc"
+        },
+        {
+          "line": 5,
+          "text": "- Fast in-memory circular ring buffer and persistent append to /var/log/syslog",
+          "type": "module_doc"
+        },
+        {
+          "line": 6,
+          "text": "- `logger` applet: standard POSIX command to submit log messages to /dev/log",
+          "type": "module_doc"
+        },
+        {
+          "line": 7,
+          "text": "- `logs` / `journalctl` applet: stream, tail, and filter system logs by facility/severity",
+          "type": "module_doc"
+        },
+        {
+          "line": 8,
+          "text": "- `dmesg` applet: query kernel ring buffer from /dev/kmsg or /proc/kmsg",
+          "type": "module_doc"
+        },
+        {
+          "line": 26,
+          "text": "const MAX_RING_LINES: usize = 5000;",
+          "type": "line"
+        },
+        {
+          "line": 72,
+          "text": "Parse raw syslog datagram (RFC 3164, RFC 5424, or raw text)",
+          "type": "item_doc"
+        },
+        {
+          "line": 85,
+          "text": "Check for <PRI>",
+          "type": "line"
+        },
+        {
+          "line": 97,
+          "text": "Try extracting tag: \"tag: message\" or \"tag[pid]: message\"",
+          "type": "line"
+        },
+        {
+          "line": 103,
+          "text": "Tags typically don't have spaces and are shorter than 32 chars",
+          "type": "line"
+        },
+        {
+          "line": 141,
+          "text": "Run the pure-Rust logging daemon (`ferrod` / `syslogd`)",
+          "type": "item_doc"
+        },
+        {
+          "line": 184,
+          "text": "Client mode (e.g. logger / test client)",
+          "type": "line"
+        },
+        {
+          "line": 196,
+          "text": "Prepare directories",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-core/src/zeroize.rs",
+      "name": "zeroize.rs",
+      "total_lines": 121,
+      "code_lines": 97,
+      "comment_lines": 9,
+      "blank_lines": 15,
+      "comment_density_pct": 7.4,
+      "structs": [
+        {
+          "name": "SecureZeroizingSecret",
+          "line": 13
+        },
+        {
+          "name": "TestBuf",
+          "line": 92
+        }
+      ],
+      "enums": [],
+      "functions": [
+        {
+          "name": "new",
+          "line": 18
+        },
+        {
+          "name": "as_slice",
+          "line": 22
+        },
+        {
+          "name": "as_mut_slice",
+          "line": 29
+        },
+        {
+          "name": "deref",
+          "line": 36
+        },
+        {
+          "name": "deref_mut",
+          "line": 42
+        },
+        {
+          "name": "drop",
+          "line": 48
+        },
+        {
+          "name": "fmt",
+          "line": 61
+        },
+        {
+          "name": "explicit_zeroize_slice",
+          "line": 67
+        },
+        {
+          "name": "test_zeroize_explicit",
+          "line": 82
+        },
+        {
+          "name": "test_zeroize_on_drop",
+          "line": 89
+        },
+        {
+          "name": "as_mut",
+          "line": 96
+        },
+        {
+          "name": "as_ref",
+          "line": 101
+        },
+        {
+          "name": "drop",
+          "line": 106
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [
+        {
+          "line": 2,
+          "text": "Transparent Zero-on-Free & Temporal Memory Isolation"
+        },
+        {
+          "line": 3,
+          "text": "Implements compiler-barrier memory wiping (CWE-226 mitigation) as specified in"
+        },
+        {
+          "line": 4,
+          "text": "docs/MEMORY_SECURITY_AND_STANDARDS.md Section 2.3."
+        },
+        {
+          "line": 10,
+          "text": "SecureZeroizingSecret: A memory container that automatically overwrites"
+        },
+        {
+          "line": 66,
+          "text": "Explicit memory wiping for raw slices."
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "crates/ferro-core/src/zeroize.rs",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Transparent Zero-on-Free & Temporal Memory Isolation",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "Implements compiler-barrier memory wiping (CWE-226 mitigation) as specified in",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "docs/MEMORY_SECURITY_AND_STANDARDS.md Section 2.3.",
+          "type": "module_doc"
+        },
+        {
+          "line": 10,
+          "text": "SecureZeroizingSecret: A memory container that automatically overwrites",
+          "type": "item_doc"
+        },
+        {
+          "line": 11,
+          "text": "its contents with 0x00 on drop using volatile writes and a sequential consistency",
+          "type": "item_doc"
+        },
+        {
+          "line": 12,
+          "text": "compiler barrier to prevent dead-store elimination (DSE).",
+          "type": "item_doc"
+        },
+        {
+          "line": 55,
+          "text": "Compiler barrier ensures the optimizer cannot optimize away the writes as dead stores.",
+          "type": "line"
+        },
+        {
+          "line": 66,
+          "text": "Explicit memory wiping for raw slices.",
+          "type": "item_doc"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-gui/src/font8x8.rs",
+      "name": "font8x8.rs",
+      "total_lines": 98,
+      "code_lines": 97,
+      "comment_lines": 1,
+      "blank_lines": 0,
+      "comment_density_pct": 1.0,
+      "structs": [],
+      "enums": [],
+      "functions": [],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "8x8 bitmap font for ASCII characters 32 (space) to 126 (~)",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-gui/src/main.rs",
+      "name": "main.rs",
+      "total_lines": 438,
+      "code_lines": 352,
+      "comment_lines": 25,
+      "blank_lines": 61,
+      "comment_density_pct": 5.7,
+      "structs": [
+        {
+          "name": "Framebuffer",
+          "line": 19
+        }
+      ],
+      "enums": [],
+      "functions": [
+        {
+          "name": "new",
+          "line": 26
+        },
+        {
+          "name": "set_pixel",
+          "line": 35
+        },
+        {
+          "name": "fill_rect",
+          "line": 41
+        },
+        {
+          "name": "fill_gradient_v",
+          "line": 53
+        },
+        {
+          "name": "draw_rect_outline",
+          "line": 90
+        },
+        {
+          "name": "draw_char",
+          "line": 108
+        },
+        {
+          "name": "draw_text",
+          "line": 124
+        },
+        {
+          "name": "draw_window",
+          "line": 136
+        },
+        {
+          "name": "draw_cursor",
+          "line": 162
+        },
+        {
+          "name": "save_ppm",
+          "line": 178
+        },
+        {
+          "name": "copy_to_device",
+          "line": 196
+        },
+        {
+          "name": "main",
+          "line": 207
+        },
+        {
+          "name": "read_meminfo_string",
+          "line": 413
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [
+        {
+          "line": 215,
+          "text": "1. Draw Desktop Wallpaper (Modern Deep Navy Gradient)"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-gui: Pure Rust Framebuffer Desktop & Window Manager for FerroOS.",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Renders directly to /dev/fb0 (Linux framebuffer) with zero external C/X11 bloat.",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "Supports double-buffered rendering, windows, status bar, and PPM snapshot export.",
+          "type": "module_doc"
+        },
+        {
+          "line": 16,
+          "text": "Basic 8x8 font bitmap for ASCII characters 32 (space) to 126 (~)",
+          "type": "line"
+        },
+        {
+          "line": 137,
+          "text": "Drop shadow",
+          "type": "line"
+        },
+        {
+          "line": 140,
+          "text": "Window Frame Background",
+          "type": "line"
+        },
+        {
+          "line": 144,
+          "text": "Titlebar",
+          "type": "line"
+        },
+        {
+          "line": 148,
+          "text": "Title text",
+          "type": "line"
+        },
+        {
+          "line": 151,
+          "text": "Window Control Buttons (Red, Yellow, Green)",
+          "type": "line"
+        },
+        {
+          "line": 157,
+          "text": "Inner Canvas / Client Area",
+          "type": "line"
+        },
+        {
+          "line": 215,
+          "text": "1. Draw Desktop Wallpaper (Modern Deep Navy Gradient)",
+          "type": "line"
+        },
+        {
+          "line": 218,
+          "text": "Subtle background grid or accent",
+          "type": "line"
+        },
+        {
+          "line": 225,
+          "text": "2. Draw Top Navigation / Taskbar",
+          "type": "line"
+        },
+        {
+          "line": 234,
+          "text": "Top Right Status",
+          "type": "line"
+        },
+        {
+          "line": 240,
+          "text": "3. Window 1: System Monitor",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-init/src/fdstore.rs",
+      "name": "fdstore.rs",
+      "total_lines": 356,
+      "code_lines": 311,
+      "comment_lines": 8,
+      "blank_lines": 37,
+      "comment_density_pct": 2.2,
+      "structs": [
+        {
+          "name": "FdStoreServer",
+          "line": 113
+        }
+      ],
+      "enums": [],
+      "functions": [
+        {
+          "name": "check_peer_authorization",
+          "line": 21
+        },
+        {
+          "name": "check_peer_authorization",
+          "line": 41
+        },
+        {
+          "name": "send_fd",
+          "line": 45
+        },
+        {
+          "name": "recv_fd",
+          "line": 78
+        },
+        {
+          "name": "new",
+          "line": 118
+        },
+        {
+          "name": "start",
+          "line": 124
+        },
+        {
+          "name": "handle_client",
+          "line": 155
+        },
+        {
+          "name": "test_fdstore_handover",
+          "line": 310
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [
+        "libc::c_int",
+        "libc::ucred",
+        "libc::socklen_t",
+        "libc::getsockopt",
+        "libc::SOL_SOCKET",
+        "libc::SO_PEERCRED",
+        "libc::c_void",
+        "libc::getuid",
+        "libc::iovec",
+        "libc::msghdr",
+        "libc::CMSG_SPACE",
+        "libc::CMSG_FIRSTHDR",
+        "libc::SCM_RIGHTS",
+        "libc::CMSG_LEN",
+        "libc::CMSG_DATA",
+        "libc::sendmsg",
+        "libc::recvmsg",
+        "libc::CMSG_NXTHDR",
+        "libc::close",
+        "libc::dup"
+      ],
+      "insights": [],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "FerroOS FD Store: Crash-Only & Zero-Downtime Socket Handover via SCM_RIGHTS",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Allows daemons and services to deposit listening sockets with PID 1.",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "If a service crashes or upgrades, PID 1 hands back the listening socket",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "so clients experience zero dropped connections and zero TCP resets.",
+          "type": "module_doc"
+        },
+        {
+          "line": 173,
+          "text": "Access Control Verification: Only root (UID 0) or owner UID allowed to interact with PID 1 FD Store",
+          "type": "line"
+        },
+        {
+          "line": 327,
+          "text": "Create a real listening TCP socket",
+          "type": "line"
+        },
+        {
+          "line": 331,
+          "text": "1. Store FD",
+          "type": "line"
+        },
+        {
+          "line": 341,
+          "text": "2. Retrieve FD",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-init/src/main.rs",
+      "name": "main.rs",
+      "total_lines": 1194,
+      "code_lines": 1017,
+      "comment_lines": 64,
+      "blank_lines": 113,
+      "comment_density_pct": 5.4,
+      "structs": [],
+      "enums": [
+        {
+          "name": "BootOption",
+          "line": 37
+        }
+      ],
+      "functions": [
+        {
+          "name": "run",
+          "line": 49
+        },
+        {
+          "name": "detect_crash_state",
+          "line": 190
+        },
+        {
+          "name": "record_boot_in_progress",
+          "line": 210
+        },
+        {
+          "name": "mark_clean_shutdown",
+          "line": 218
+        },
+        {
+          "name": "prompt_boot_menu_with_timeout",
+          "line": 225
+        },
+        {
+          "name": "prompt_recovery_menu",
+          "line": 273
+        },
+        {
+          "name": "poll_stdin_char",
+          "line": 318
+        },
+        {
+          "name": "run_system_diagnostic_and_repair",
+          "line": 339
+        },
+        {
+          "name": "run_system_restore",
+          "line": 420
+        },
+        {
+          "name": "run_hardware_diagnostics",
+          "line": 465
+        },
+        {
+          "name": "enter_emergency_shell",
+          "line": 521
+        },
+        {
+          "name": "enter_main_supervisor",
+          "line": 580
+        },
+        {
+          "name": "mount_fs",
+          "line": 619
+        },
+        {
+          "name": "mount_essential_filesystems",
+          "line": 647
+        },
+        {
+          "name": "set_hostname",
+          "line": 693
+        },
+        {
+          "name": "detect_persistent_root_device",
+          "line": 703
+        },
+        {
+          "name": "try_switch_root",
+          "line": 738
+        },
+        {
+          "name": "mount_persistent_root",
+          "line": 802
+        },
+        {
+          "name": "move_mount",
+          "line": 825
+        },
+        {
+          "name": "libc_umount",
+          "line": 839
+        },
+        {
+          "name": "elevate_system_limits",
+          "line": 846
+        },
+        {
+          "name": "apply_kernel_performance_and_reliability_tuning",
+          "line": 874
+        },
+        {
+          "name": "spawn_psi_memory_watcher",
+          "line": 936
+        },
+        {
+          "name": "bring_up_iface",
+          "line": 965
+        },
+        {
+          "name": "init_network",
+          "line": 978
+        },
+        {
+          "name": "run_init_scripts",
+          "line": 1037
+        },
+        {
+          "name": "register_pid1_signal_handlers",
+          "line": 1076
+        },
+        {
+          "name": "spawn_continuous_zombie_reaper",
+          "line": 1093
+        },
+        {
+          "name": "handle_graceful_shutdown",
+          "line": 1108
+        },
+        {
+          "name": "reap_zombies",
+          "line": 1120
+        },
+        {
+          "name": "execute_reboot",
+          "line": 1127
+        },
+        {
+          "name": "execute_poweroff",
+          "line": 1136
+        },
+        {
+          "name": "elevate_system_limits",
+          "line": 1146
+        },
+        {
+          "name": "main",
+          "line": 1161
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [
+        "libc::pollfd",
+        "libc::POLLIN",
+        "libc::poll",
+        "libc::c_int",
+        "libc::read",
+        "libc::c_void",
+        "libc::mount",
+        "mount",
+        "libc::MS_NOSUID",
+        "libc::MS_NODEV",
+        "libc::MS_NOEXEC",
+        "libc::sethostname",
+        "libc::chdir",
+        "libc::chroot",
+        "libc::c_char",
+        "libc::execv",
+        "libc::MS_RELATIME",
+        "libc::MS_MOVE",
+        "libc::umount2",
+        "libc::MNT_DETACH",
+        "libc::rlimit",
+        "libc::setrlimit",
+        "libc::RLIMIT_NOFILE",
+        "libc::getrlimit",
+        "libc::ifreq",
+        "libc::IFF_UP",
+        "libc::IFF_RUNNING",
+        "libc::c_short",
+        "libc::ioctl",
+        "libc::SIOCSIFFLAGS",
+        "libc::socket",
+        "libc::AF_INET",
+        "libc::SOCK_DGRAM",
+        "libc::close",
+        "libc::waitpid",
+        "libc::WNOHANG",
+        "libc::write",
+        "libc::STDOUT_FILENO",
+        "libc::sigaction",
+        "libc::SA_NOCLDSTOP",
+        "libc::SA_RESTART",
+        "libc::SIGCHLD",
+        "libc::SIGTERM",
+        "libc::SIGINT",
+        "libc::SIGPWR",
+        "libc::kill",
+        "libc::SIGKILL",
+        "libc::sync",
+        "libc::reboot"
+      ],
+      "insights": [
+        {
+          "line": 56,
+          "text": "1a. Persistent Block Storage Root Pivot (switch_root) Check"
+        },
+        {
+          "line": 87,
+          "text": "2c. Apply Modern Kernel Performance, Memory & Network Reliability Tunings"
+        },
+        {
+          "line": 90,
+          "text": "2d. Launch Linux PSI (Pressure Stall Information) Memory Watchdog"
+        },
+        {
+          "line": 494,
+          "text": "Memory bandwidth benchmark"
+        },
+        {
+          "line": 701,
+          "text": "Persistent Block Storage & switch_root Engine"
+        },
+        {
+          "line": 716,
+          "text": "2. Auto-detect if a block device contains FerroOS persistent root"
+        },
+        {
+          "line": 766,
+          "text": "Perform switch_root: chdir to new root, chroot, and re-exec init"
+        },
+        {
+          "line": 792,
+          "text": "Fallback to /bin/ferro-core"
+        },
+        {
+          "line": 882,
+          "text": "2. Storage & Memory Writeback Tunings (Eradicates SCENARIO-015 Dirty Page Writeback Freezes)"
+        },
+        {
+          "line": 910,
+          "text": "4. KSPP (Kernel Self-Protection Project) & CIS Benchmark Baseline (docs/MEMORY_SECURITY_AND_STANDARDS.md)"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-init: PID 1 Init System & Advanced Recovery Environment for FerroOS written in Rust.",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Responsible for early system mounts, crash & abnormal shutdown detection,",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "interactive boot recovery menu (WinRE style), service execution, and lifecycle management.",
+          "type": "module_doc"
+        },
+        {
+          "line": 53,
+          "text": "1. Mount virtual filesystems first so we have /proc, /sys, /dev, /tmp",
+          "type": "line"
+        },
+        {
+          "line": 56,
+          "text": "1a. Persistent Block Storage Root Pivot (switch_root) Check",
+          "type": "line"
+        },
+        {
+          "line": 57,
+          "text": "If a persistent root device is supplied in kernel cmdline (root=/dev/...) or detected,",
+          "type": "line"
+        },
+        {
+          "line": 58,
+          "text": "mount it onto /sysroot and pivot execution from volatile initramfs to persistent disk.",
+          "type": "line"
+        },
+        {
+          "line": 73,
+          "text": "1b. Register PID 1 Signal Handlers & Start Continuous Zombie Reaper",
+          "type": "line"
+        },
+        {
+          "line": 77,
+          "text": "2. Set Hostname & Environment",
+          "type": "line"
+        },
+        {
+          "line": 84,
+          "text": "2b. Elevate Process & Socket Limits (RLIMIT_NOFILE = 65,536)",
+          "type": "line"
+        },
+        {
+          "line": 87,
+          "text": "2c. Apply Modern Kernel Performance, Memory & Network Reliability Tunings",
+          "type": "line"
+        },
+        {
+          "line": 90,
+          "text": "2d. Launch Linux PSI (Pressure Stall Information) Memory Watchdog",
+          "type": "line"
+        },
+        {
+          "line": 93,
+          "text": "3. Create required runtime directories",
+          "type": "line"
+        },
+        {
+          "line": 102,
+          "text": "3b. Start FD Store Daemon (SCM_RIGHTS Zero-Downtime Socket Handover)",
+          "type": "line"
+        },
+        {
+          "line": 105,
+          "text": "3c. Start Pure-Rust System Logging Daemon (ferrod listening on /dev/log)",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-io/src/lib.rs",
+      "name": "lib.rs",
+      "total_lines": 1210,
+      "code_lines": 1056,
+      "comment_lines": 27,
+      "blank_lines": 127,
+      "comment_density_pct": 2.2,
+      "structs": [
+        {
+          "name": "IoUringSqe",
+          "line": 62
+        },
+        {
+          "name": "IoUringCqe",
+          "line": 79
+        },
+        {
+          "name": "IoSqringOffsets",
+          "line": 86
+        },
+        {
+          "name": "IoCqringOffsets",
+          "line": 99
+        },
+        {
+          "name": "IoUringParams",
+          "line": 112
+        },
+        {
+          "name": "IoUringSq",
+          "line": 126
+        },
+        {
+          "name": "IoUringCq",
+          "line": 145
+        },
+        {
+          "name": "IoUring",
+          "line": 161
+        },
+        {
+          "name": "RustThreadRing",
+          "line": 353
+        }
+      ],
+      "enums": [],
+      "functions": [
+        {
+          "name": "set_errno",
+          "line": 21
+        },
+        {
+          "name": "set_errno",
+          "line": 27
+        },
+        {
+          "name": "set_errno",
+          "line": 33
+        },
+        {
+          "name": "resolve_uring_symbols",
+          "line": 197
+        },
+        {
+          "name": "resolve_uring_symbols",
+          "line": 253
+        },
+        {
+          "name": "io_uring_queue_init_params",
+          "line": 255
+        },
+        {
+          "name": "io_uring_queue_init",
+          "line": 270
+        },
+        {
+          "name": "io_uring_queue_exit",
+          "line": 281
+        },
+        {
+          "name": "io_uring_get_sqe",
+          "line": 290
+        },
+        {
+          "name": "io_uring_submit_and_wait",
+          "line": 301
+        },
+        {
+          "name": "__io_uring_get_cqe",
+          "line": 312
+        },
+        {
+          "name": "io_uring_cq_advance",
+          "line": 330
+        },
+        {
+          "name": "io_uring_cqe_seen",
+          "line": 342
+        },
+        {
+          "name": "io_uring_peek_cqe",
+          "line": 349
+        },
+        {
+          "name": "drop",
+          "line": 360
+        },
+        {
+          "name": "get_thread_uring",
+          "line": 372
+        },
+        {
+          "name": "resolve_sym",
+          "line": 475
+        },
+        {
+          "name": "ensure_symbols_initialized",
+          "line": 480
+        },
+        {
+          "name": "is_bypassed_process",
+          "line": 532
+        },
+        {
+          "name": "is_bypassed_process",
+          "line": 598
+        },
+        {
+          "name": "is_secure_execution",
+          "line": 602
+        },
+        {
+          "name": "is_uring_eligible_fd",
+          "line": 627
+        },
+        {
+          "name": "optimize_tcp_socket",
+          "line": 655
+        },
+        {
+          "name": "test_fd_cache_bounds_and_lifecycle",
+          "line": 1183
+        },
+        {
+          "name": "test_min_uring_io_bytes",
+          "line": 1201
+        },
+        {
+          "name": "test_queue_entries_bounds",
+          "line": 1207
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [
+        "libc::__errno_location",
+        "libc::__error",
+        "libc::sigset_t",
+        "libc::RTLD_DEFAULT",
+        "libc::dlopen",
+        "libc::c_char",
+        "libc::RTLD_LAZY",
+        "libc::RTLD_LOCAL",
+        "libc::dlsym",
+        "libc::getpid",
+        "epoll_create1",
+        "epoll_ctl",
+        "epoll_wait",
+        "libc::syscall",
+        "libc::SYS_openat",
+        "libc::AT_FDCWD",
+        "libc::O_RDONLY",
+        "libc::O_CLOEXEC",
+        "libc::SYS_read",
+        "libc::c_void",
+        "libc::SYS_close",
+        "libc::getuid",
+        "libc::geteuid",
+        "libc::getgid",
+        "libc::getegid",
+        "libc::getauxval",
+        "libc::AT_SECURE",
+        "libc::stat",
+        "libc::fstat",
+        "libc::posix_fadvise",
+        "libc::POSIX_FADV_RANDOM",
+        "libc::setsockopt",
+        "libc::TCP_QUICKACK",
+        "libc::SO_KEEPALIVE",
+        "libc::sockaddr_in",
+        "libc::SOCK_STREAM"
+      ],
+      "insights": [
+        {
+          "line": 1,
+          "text": "ferro-io: High-Performance Pure-Rust POSIX I/O Interposition and io_uring Acceleration Library"
+        },
+        {
+          "line": 5,
+          "text": "- Lock-free atomic file descriptor classification cache (65,536 slots)."
+        },
+        {
+          "line": 47,
+          "text": "Cache bounds (128K FDs for extreme network & database concurrency)"
+        },
+        {
+          "line": 410,
+          "text": "Fallback 1: SINGLE_ISSUER"
+        },
+        {
+          "line": 425,
+          "text": "Fallback 2: Standard Ring"
+        },
+        {
+          "line": 1193,
+          "text": "Simulated close resets cache"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-io: High-Performance Pure-Rust POSIX I/O Interposition and io_uring Acceleration Library",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "Provides transparent acceleration for standard POSIX I/O:",
+          "type": "module_doc"
+        },
+        {
+          "line": 5,
+          "text": "- Lock-free atomic file descriptor classification cache (65,536 slots).",
+          "type": "module_doc"
+        },
+        {
+          "line": 6,
+          "text": "- Thread-local io_uring instances with kernel SQPOLL submission polling.",
+          "type": "module_doc"
+        },
+        {
+          "line": 7,
+          "text": "- Asynchronous pread, pwrite, fsync, and fdatasync acceleration.",
+          "type": "module_doc"
+        },
+        {
+          "line": 8,
+          "text": "- Zero-latency TCP loopback socket tuning (TCP_NODELAY, TCP_QUICKACK, 4MB buffers).",
+          "type": "module_doc"
+        },
+        {
+          "line": 9,
+          "text": "- AT_SECURE and SUID privilege boundary enforcement.",
+          "type": "module_doc"
+        },
+        {
+          "line": 37,
+          "text": "Constants for io_uring",
+          "type": "line"
+        },
+        {
+          "line": 47,
+          "text": "Cache bounds (128K FDs for extreme network & database concurrency)",
+          "type": "line"
+        },
+        {
+          "line": 49,
+          "text": "0 = Unknown, 1 = Bypass (socket/pipe/TTY), 2 = Regular File Eligible",
+          "type": "line"
+        },
+        {
+          "line": 60,
+          "text": "C-compatible io_uring structures",
+          "type": "line"
+        },
+        {
+          "line": 380,
+          "text": "PID changed (fork occurred) - do NOT destroy parent's ring!",
+          "type": "line"
+        },
+        {
+          "line": 381,
+          "text": "Simply release the thread-local instance so child creates its own ring.",
+          "type": "line"
+        },
+        {
+          "line": 392,
+          "text": "Initialize new io_uring",
+          "type": "line"
+        },
+        {
+          "line": 410,
+          "text": "Fallback 1: SINGLE_ISSUER",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-pkg/src/apt.rs",
+      "name": "apt.rs",
+      "total_lines": 209,
+      "code_lines": 168,
+      "comment_lines": 17,
+      "blank_lines": 24,
+      "comment_density_pct": 8.1,
+      "structs": [],
+      "enums": [],
+      "functions": [
+        {
+          "name": "is_apt_available",
+          "line": 18
+        },
+        {
+          "name": "ensure_apt_updated_if_needed",
+          "line": 23
+        },
+        {
+          "name": "apt_search",
+          "line": 49
+        },
+        {
+          "name": "apt_install",
+          "line": 69
+        },
+        {
+          "name": "apt_update",
+          "line": 110
+        },
+        {
+          "name": "find_pending_security_packages",
+          "line": 127
+        },
+        {
+          "name": "apt_upgrade",
+          "line": 155
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [
+        {
+          "line": 1,
+          "text": "Debian `apt` Fallback Wrapper & Repository Engine (PKG-002 & PKG-004)."
+        },
+        {
+          "line": 5,
+          "text": "- Searches Debian package database via `apt-cache search`."
+        },
+        {
+          "line": 7,
+          "text": "- Implements `rpk upgrade --security` targeting Debian security updates."
+        },
+        {
+          "line": 48,
+          "text": "Search Debian package repositories via `apt-cache search`."
+        },
+        {
+          "line": 126,
+          "text": "Identify pending security update packages by simulating an upgrade."
+        },
+        {
+          "line": 136,
+          "text": "e.g.: \"Inst perl-base [5.36.0-7+deb12u3] (5.36.0-7+deb12u4 Debian-Security:12/oldstable-security [arm64])\""
+        },
+        {
+          "line": 154,
+          "text": "If `security_only` is true (PKG-004), restricts strictly to Debian security advisories."
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "Debian `apt` Fallback Wrapper & Repository Engine (PKG-002 & PKG-004).",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "Provides seamless hybrid package management:",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "- If a requested package is not a native `.rpk` recipe, delegates to Debian `apt-get`.",
+          "type": "module_doc"
+        },
+        {
+          "line": 5,
+          "text": "- Searches Debian package database via `apt-cache search`.",
+          "type": "module_doc"
+        },
+        {
+          "line": 6,
+          "text": "- Manages updates (`rpk update`) and system-wide upgrades (`rpk upgrade`).",
+          "type": "module_doc"
+        },
+        {
+          "line": 7,
+          "text": "- Implements `rpk upgrade --security` targeting Debian security updates.",
+          "type": "module_doc"
+        },
+        {
+          "line": 17,
+          "text": "Check if Debian's `apt-get` package manager is present on the system.",
+          "type": "item_doc"
+        },
+        {
+          "line": 22,
+          "text": "Ensure apt package lists exist, running `apt-get update` automatically if empty.",
+          "type": "item_doc"
+        },
+        {
+          "line": 48,
+          "text": "Search Debian package repositories via `apt-cache search`.",
+          "type": "item_doc"
+        },
+        {
+          "line": 67,
+          "text": "Install one or more packages via Debian `apt-get install -y`.",
+          "type": "item_doc"
+        },
+        {
+          "line": 68,
+          "text": "Returns the list of newly installed packages.",
+          "type": "item_doc"
+        },
+        {
+          "line": 109,
+          "text": "Update local Debian package metadata via `apt-get update`.",
+          "type": "item_doc"
+        },
+        {
+          "line": 126,
+          "text": "Identify pending security update packages by simulating an upgrade.",
+          "type": "item_doc"
+        },
+        {
+          "line": 136,
+          "text": "e.g.: \"Inst perl-base [5.36.0-7+deb12u3] (5.36.0-7+deb12u4 Debian-Security:12/oldstable-security [arm64])\"",
+          "type": "line"
+        },
+        {
+          "line": 153,
+          "text": "Upgrade packages across the Debian substrate.",
+          "type": "item_doc"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-pkg/src/main.rs",
+      "name": "main.rs",
+      "total_lines": 2387,
+      "code_lines": 2067,
+      "comment_lines": 106,
+      "blank_lines": 214,
+      "comment_density_pct": 4.4,
+      "structs": [
+        {
+          "name": "PackageMetadata",
+          "line": 141
+        },
+        {
+          "name": "InstalledPackage",
+          "line": 154
+        },
+        {
+          "name": "PackageDatabase",
+          "line": 161
+        }
+      ],
+      "enums": [],
+      "functions": [
+        {
+          "name": "sha256_digest",
+          "line": 33
+        },
+        {
+          "name": "sha256_file",
+          "line": 125
+        },
+        {
+          "name": "default_arch",
+          "line": 136
+        },
+        {
+          "name": "get_db_path",
+          "line": 166
+        },
+        {
+          "name": "load",
+          "line": 174
+        },
+        {
+          "name": "save",
+          "line": 196
+        },
+        {
+          "name": "get_host_arch",
+          "line": 209
+        },
+        {
+          "name": "is_arch_compatible",
+          "line": 213
+        },
+        {
+          "name": "main",
+          "line": 237
+        },
+        {
+          "name": "print_usage",
+          "line": 367
+        },
+        {
+          "name": "cmd_list",
+          "line": 402
+        },
+        {
+          "name": "cmd_info",
+          "line": 432
+        },
+        {
+          "name": "cmd_hash",
+          "line": 484
+        },
+        {
+          "name": "cmd_verify",
+          "line": 497
+        },
+        {
+          "name": "cmd_check",
+          "line": 531
+        },
+        {
+          "name": "cmd_dispatch_install",
+          "line": 563
+        },
+        {
+          "name": "cmd_install_profile",
+          "line": 647
+        },
+        {
+          "name": "cmd_install_apt",
+          "line": 666
+        },
+        {
+          "name": "cmd_install_native",
+          "line": 722
+        },
+        {
+          "name": "cmd_search",
+          "line": 1143
+        },
+        {
+          "name": "cmd_update",
+          "line": 1215
+        },
+        {
+          "name": "cmd_upgrade",
+          "line": 1230
+        },
+        {
+          "name": "cmd_rollback",
+          "line": 1292
+        },
+        {
+          "name": "cmd_history",
+          "line": 1308
+        },
+        {
+          "name": "cmd_profile",
+          "line": 1351
+        },
+        {
+          "name": "cmd_check_elf",
+          "line": 1409
+        },
+        {
+          "name": "cmd_remove",
+          "line": 1449
+        },
+        {
+          "name": "cmd_build",
+          "line": 1477
+        },
+        {
+          "name": "cmd_game",
+          "line": 1546
+        },
+        {
+          "name": "which_tool",
+          "line": 1670
+        },
+        {
+          "name": "cmd_msi_info",
+          "line": 1686
+        },
+        {
+          "name": "cmd_msi_extract",
+          "line": 1727
+        },
+        {
+          "name": "cmd_pe_info",
+          "line": 1787
+        },
+        {
+          "name": "test_sha256_known_vectors",
+          "line": 1861
+        },
+        {
+          "name": "test_arch_compatibility",
+          "line": 1874
+        },
+        {
+          "name": "test_package_database_isolated_root",
+          "line": 1884
+        },
+        {
+          "name": "test_package_database_corrupt_recovery",
+          "line": 1923
+        },
+        {
+          "name": "test_rpk_game_status",
+          "line": 1964
+        },
+        {
+          "name": "test_rpk_game_list",
+          "line": 1970
+        },
+        {
+          "name": "test_msi_parser_synthetic_package",
+          "line": 1976
+        },
+        {
+          "name": "test_cabinet_extractor_uncompressed",
+          "line": 2073
+        },
+        {
+          "name": "test_cabinet_extractor_mszip",
+          "line": 2120
+        },
+        {
+          "name": "test_pe_inspector_synthetic_pe64",
+          "line": 2180
+        },
+        {
+          "name": "test_pe_inspector_synthetic_pe32",
+          "line": 2223
+        },
+        {
+          "name": "test_rpk_profile_listing_and_lookup",
+          "line": 2262
+        },
+        {
+          "name": "test_rpk_search_command",
+          "line": 2286
+        },
+        {
+          "name": "test_rpk_history_empty_and_populated",
+          "line": 2295
+        },
+        {
+          "name": "test_legacy_sysv_shims_generation",
+          "line": 2327
+        },
+        {
+          "name": "test_package_remove_with_symlinks",
+          "line": 2346
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [
+        {
+          "line": 2,
+          "text": "Fast, memory-safe package manager handling multi-architecture packages,"
+        },
+        {
+          "line": 133,
+          "text": "Multi-Architecture & Package Metadata Models"
+        },
+        {
+          "line": 467,
+          "text": "Fallback: check Debian substrate via apt-cache show"
+        },
+        {
+          "line": 639,
+          "text": "4. Fallback to Debian APT (PKG-002)"
+        },
+        {
+          "line": 643,
+          "text": "Multiple packages: route to APT fallback"
+        },
+        {
+          "line": 796,
+          "text": "3. Extract Entries with Transactional Tracking & Defensive Security Hardening"
+        },
+        {
+          "line": 841,
+          "text": "Architecture Compatibility & Multi-Arch Routing"
+        },
+        {
+          "line": 1028,
+          "text": "4. Transactional Atomic Rollback on Failure"
+        },
+        {
+          "line": 1189,
+          "text": "2. Search Debian substrate via apt-cache"
+        },
+        {
+          "line": 1508,
+          "text": "Update architecture if explicitly supplied"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-pkg (rpk): Rust Package Keeper for FerroOS.",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Fast, memory-safe package manager handling multi-architecture packages,",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "cryptographic SHA-256 checksums, dependency graphs, transactional rollbacks,",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "and custom sysroot prefixes.",
+          "type": "module_doc"
+        },
+        {
+          "line": 29,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 30,
+          "text": "Cryptographic SHA-256 Implementation (FIPS 180-4 Standard, Zero Dependencies)",
+          "type": "line"
+        },
+        {
+          "line": 31,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 132,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 133,
+          "text": "Multi-Architecture & Package Metadata Models",
+          "type": "line"
+        },
+        {
+          "line": 134,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 182,
+          "text": "Transactional fault-tolerance: recover from automatic backup",
+          "type": "line"
+        },
+        {
+          "line": 198,
+          "text": "Transactional fault-tolerance: preserve previous database snapshot as backup",
+          "type": "line"
+        },
+        {
+          "line": 222,
+          "text": "32-bit x86 on x86_64 host",
+          "type": "line"
+        },
+        {
+          "line": 226,
+          "text": "ARM 32-bit on AArch64 host",
+          "type": "line"
+        },
+        {
+          "line": 233,
+          "text": "==============================================================================",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-pkg/src/msi.rs",
+      "name": "msi.rs",
+      "total_lines": 647,
+      "code_lines": 533,
+      "comment_lines": 34,
+      "blank_lines": 80,
+      "comment_density_pct": 5.3,
+      "structs": [
+        {
+          "name": "MsiStream",
+          "line": 20
+        },
+        {
+          "name": "MsiSummary",
+          "line": 29
+        },
+        {
+          "name": "ExtractionReport",
+          "line": 37
+        },
+        {
+          "name": "MsiExtractor",
+          "line": 44
+        }
+      ],
+      "enums": [],
+      "functions": [
+        {
+          "name": "open",
+          "line": 50
+        },
+        {
+          "name": "from_bytes",
+          "line": 64
+        },
+        {
+          "name": "parse",
+          "line": 73
+        },
+        {
+          "name": "inspect",
+          "line": 222
+        },
+        {
+          "name": "extract_all",
+          "line": 261
+        },
+        {
+          "name": "generate_desktop_shortcut",
+          "line": 381
+        },
+        {
+          "name": "sanitize_filename",
+          "line": 421
+        },
+        {
+          "name": "scan_for_pe_signatures",
+          "line": 426
+        },
+        {
+          "name": "dirs_home",
+          "line": 455
+        },
+        {
+          "name": "extract_cabinet_stream",
+          "line": 461
+        },
+        {
+          "name": "generate_virtual_wine_prefix",
+          "line": 578
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [
+        {
+          "line": 324,
+          "text": "Fallback: scan for embedded PE binaries"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "Pure-Rust Microsoft Installer (.msi) & OLE Compound File (Structured Storage) Parser",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Extracts Windows installation packages directly into rootless prefixes on FerroOS",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "without requiring a full Windows virtual machine or native msiexec.exe.",
+          "type": "module_doc"
+        },
+        {
+          "line": 10,
+          "text": "Magic bytes for Microsoft Compound Document File (OLE CFBF)",
+          "type": "item_doc"
+        },
+        {
+          "line": 13,
+          "text": "Magic bytes for Microsoft Cabinet (.cab)",
+          "type": "item_doc"
+        },
+        {
+          "line": 16,
+          "text": "Magic bytes for DOS/Windows PE executable",
+          "type": "item_doc"
+        },
+        {
+          "line": 81,
+          "text": "Verify OLE CFBF Header",
+          "type": "line"
+        },
+        {
+          "line": 83,
+          "text": "Check if file is directly a Cabinet archive (.cab) or raw PE",
+          "type": "line"
+        },
+        {
+          "line": 117,
+          "text": "Parse first 109 DIFAT entries located in header",
+          "type": "line"
+        },
+        {
+          "line": 132,
+          "text": "Build FAT table",
+          "type": "line"
+        },
+        {
+          "line": 143,
+          "text": "Follow directory sector chain",
+          "type": "line"
+        },
+        {
+          "line": 161,
+          "text": "Each directory entry is 128 bytes",
+          "type": "line"
+        },
+        {
+          "line": 168,
+          "text": "UTF-16LE name decode",
+          "type": "line"
+        },
+        {
+          "line": 187,
+          "text": "Reconstruct stream data if type is Stream (2)",
+          "type": "line"
+        },
+        {
+          "line": 232,
+          "text": "Check if stream itself is an executable",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-pkg/src/pe.rs",
+      "name": "pe.rs",
+      "total_lines": 492,
+      "code_lines": 449,
+      "comment_lines": 9,
+      "blank_lines": 34,
+      "comment_density_pct": 1.8,
+      "structs": [
+        {
+          "name": "PeSection",
+          "line": 54
+        },
+        {
+          "name": "PeImport",
+          "line": 64
+        },
+        {
+          "name": "PeAnalysis",
+          "line": 70
+        },
+        {
+          "name": "PeInspector",
+          "line": 85
+        }
+      ],
+      "enums": [
+        {
+          "name": "PeArchitecture",
+          "line": 10
+        },
+        {
+          "name": "PeSubsystem",
+          "line": 29
+        }
+      ],
+      "functions": [
+        {
+          "name": "description",
+          "line": 18
+        },
+        {
+          "name": "description",
+          "line": 40
+        },
+        {
+          "name": "open",
+          "line": 90
+        },
+        {
+          "name": "from_bytes",
+          "line": 97
+        },
+        {
+          "name": "analyze",
+          "line": 101
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "Pure-Rust Windows Portable Executable (PE/COFF) Parser & Win32 API Stub Analyzer",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Inspects PE32/PE32+ binaries, parses sections and imports, and evaluates native",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "Win32 entrypoint coverage on FerroOS.",
+          "type": "module_doc"
+        },
+        {
+          "line": 123,
+          "text": "COFF Header (20 bytes following PE\\0\\0)",
+          "type": "line"
+        },
+        {
+          "line": 138,
+          "text": "Optional Header",
+          "type": "line"
+        },
+        {
+          "line": 247,
+          "text": "Section Headers (each 40 bytes)",
+          "type": "line"
+        },
+        {
+          "line": 300,
+          "text": "Helper to convert RVA to file offset",
+          "type": "line"
+        },
+        {
+          "line": 313,
+          "text": "Parse Import Table",
+          "type": "line"
+        },
+        {
+          "line": 408,
+          "text": "Evaluate Stub Coverage against FerroOS Native Shims",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-pkg/src/profile.rs",
+      "name": "profile.rs",
+      "total_lines": 367,
+      "code_lines": 309,
+      "comment_lines": 21,
+      "blank_lines": 37,
+      "comment_density_pct": 5.7,
+      "structs": [
+        {
+          "name": "CapabilityProfile",
+          "line": 22
+        },
+        {
+          "name": "ProfileInstallReport",
+          "line": 274
+        }
+      ],
+      "enums": [],
+      "functions": [
+        {
+          "name": "find_profile",
+          "line": 87
+        },
+        {
+          "name": "list_profiles",
+          "line": 92
+        },
+        {
+          "name": "install_legacy_sysv_shims",
+          "line": 231
+        },
+        {
+          "name": "install_capability_profile",
+          "line": 283
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "Capability Profiles & Legacy Compatibility Subsystem (Section 4).",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "Provides on-demand capability profiles:",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "- `@c-compat-libs`: 44+ C runtime shared libraries (libnsl2, libtirpc3, libcrypt1, etc.)",
+          "type": "module_doc"
+        },
+        {
+          "line": 5,
+          "text": "- `@c-toolchain`: GCC, G++, Make, CMake, libc6-dev, binutils",
+          "type": "module_doc"
+        },
+        {
+          "line": 6,
+          "text": "- `@sre-forensics`: Complete incident-response & forensics suite (strace, tcpdump, lsof, etc.)",
+          "type": "module_doc"
+        },
+        {
+          "line": 7,
+          "text": "- `@legacy-sysv-compat`: Wrapper shims for service, chkconfig, update-rc.d & net-tools",
+          "type": "module_doc"
+        },
+        {
+          "line": 8,
+          "text": "- `@enterprise-infra`: LVM2, cryptsetup, multipath SAN, Kerberos, SSSD",
+          "type": "module_doc"
+        },
+        {
+          "line": 96,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 97,
+          "text": "Legacy SysV Shims Installation (@legacy-sysv-compat)",
+          "type": "line"
+        },
+        {
+          "line": 98,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 230,
+          "text": "Install compatibility shims for legacy SysV and admin tools.",
+          "type": "item_doc"
+        },
+        {
+          "line": 270,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 271,
+          "text": "Capability Profile Installation Flow",
+          "type": "line"
+        },
+        {
+          "line": 272,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 282,
+          "text": "Install an optional Capability Profile.",
+          "type": "item_doc"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-pkg/src/safeguards.rs",
+      "name": "safeguards.rs",
+      "total_lines": 424,
+      "code_lines": 332,
+      "comment_lines": 43,
+      "blank_lines": 49,
+      "comment_density_pct": 10.1,
+      "structs": [
+        {
+          "name": "GlibcVersion",
+          "line": 21
+        }
+      ],
+      "enums": [],
+      "functions": [
+        {
+          "name": "parse_str",
+          "line": 31
+        },
+        {
+          "name": "fmt",
+          "line": 50
+        },
+        {
+          "name": "gnu_get_libc_version",
+          "line": 61
+        },
+        {
+          "name": "get_host_glibc_version",
+          "line": 66
+        },
+        {
+          "name": "scan_elf_glibc_requirements",
+          "line": 124
+        },
+        {
+          "name": "verify_elf_glibc_compat",
+          "line": 183
+        },
+        {
+          "name": "needs_elevation",
+          "line": 218
+        },
+        {
+          "name": "privileged_command",
+          "line": 230
+        },
+        {
+          "name": "privileged_write_file",
+          "line": 242
+        },
+        {
+          "name": "which_bin",
+          "line": 273
+        },
+        {
+          "name": "run_ldconfig",
+          "line": 286
+        },
+        {
+          "name": "check_binary_dynamic_links",
+          "line": 323
+        },
+        {
+          "name": "verify_shared_libraries",
+          "line": 349
+        },
+        {
+          "name": "test_glibc_version_parsing_and_ordering",
+          "line": 388
+        },
+        {
+          "name": "test_host_glibc_detection",
+          "line": 404
+        },
+        {
+          "name": "test_synthetic_elf_glibc_scanning",
+          "line": 411
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [
+        "libc::c_char",
+        "libc::geteuid"
+      ],
+      "insights": [
+        {
+          "line": 4,
+          "text": "launches failing with `version 'GLIBC_2.38' not found` on Debian 12 Bookworm (glibc 2.36)."
+        },
+        {
+          "line": 214,
+          "text": "CMP-004: Shared-Library Cache (ldconfig) & Dynamic Link Integrity Checks"
+        },
+        {
+          "line": 241,
+          "text": "Helper to write a file with sudo elevation if standard write fails due to permissions."
+        },
+        {
+          "line": 285,
+          "text": "CMP-004 Guard: Automatically rebuild the dynamic linker cache via `ldconfig`."
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "CMP-003 and CMP-004 Safeguards for FerroOS Package Engine.",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "CMP-003: Check binary ELF requirements (`glibc` version) to prevent",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "launches failing with `version 'GLIBC_2.38' not found` on Debian 12 Bookworm (glibc 2.36).",
+          "type": "module_doc"
+        },
+        {
+          "line": 6,
+          "text": "CMP-004: Always invoke `ldconfig` automatically after package or profile installations",
+          "type": "module_doc"
+        },
+        {
+          "line": 7,
+          "text": "and verify dynamic linker integrity (unresolved shared libraries check).",
+          "type": "module_doc"
+        },
+        {
+          "line": 16,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 17,
+          "text": "Glibc Version Representation & Parsing",
+          "type": "line"
+        },
+        {
+          "line": 18,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 42,
+          "text": "Take digits only in case of suffixes like \"2.36-9+deb12u14\"",
+          "type": "line"
+        },
+        {
+          "line": 55,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 56,
+          "text": "CMP-003: Host Glibc Detection & Foreign ELF Requirements Check",
+          "type": "line"
+        },
+        {
+          "line": 57,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 64,
+          "text": "Detect the host glibc version.",
+          "type": "item_doc"
+        },
+        {
+          "line": 65,
+          "text": "On Debian 12 (Bookworm), this is 2.36.",
+          "type": "item_doc"
+        },
+        {
+          "line": 81,
+          "text": "Attempt 1: Parse from ldd --version",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-pkg/src/transaction.rs",
+      "name": "transaction.rs",
+      "total_lines": 422,
+      "code_lines": 323,
+      "comment_lines": 44,
+      "blank_lines": 55,
+      "comment_density_pct": 10.4,
+      "structs": [
+        {
+          "name": "TransactionRecord",
+          "line": 22
+        },
+        {
+          "name": "RollbackReport",
+          "line": 39
+        }
+      ],
+      "enums": [],
+      "functions": [
+        {
+          "name": "get_transactions_dir",
+          "line": 50
+        },
+        {
+          "name": "generate_tx_id",
+          "line": 58
+        },
+        {
+          "name": "current_timestamp_iso",
+          "line": 66
+        },
+        {
+          "name": "is_btrfs_root",
+          "line": 79
+        },
+        {
+          "name": "create_btrfs_snapshot",
+          "line": 112
+        },
+        {
+          "name": "query_installed_apt_packages",
+          "line": 144
+        },
+        {
+          "name": "compute_package_diff",
+          "line": 165
+        },
+        {
+          "name": "save_transaction",
+          "line": 181
+        },
+        {
+          "name": "list_transactions",
+          "line": 200
+        },
+        {
+          "name": "get_latest_active_transaction",
+          "line": 223
+        },
+        {
+          "name": "execute_rollback",
+          "line": 234
+        },
+        {
+          "name": "test_package_diff_computation",
+          "line": 378
+        },
+        {
+          "name": "test_transaction_serialization_roundtrip",
+          "line": 391
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [
+        {
+          "line": 8,
+          "text": "4. Implements `rpk rollback` to instantly revert updates or packages on failure."
+        },
+        {
+          "line": 94,
+          "text": "3. Fallback: inspect /proc/mounts"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "Transactional Btrfs Snapshots & Lightweight File Manifest Tracking (PKG-003 & CMP-005).",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "Provides transactional rollback guarantees for FerroOS:",
+          "type": "module_doc"
+        },
+        {
+          "line": 4,
+          "text": "1. Probes for Btrfs subvolume support on the target root.",
+          "type": "module_doc"
+        },
+        {
+          "line": 5,
+          "text": "2. If Btrfs is available, triggers `@pre_update_<timestamp>` subvolume snapshot.",
+          "type": "module_doc"
+        },
+        {
+          "line": 6,
+          "text": "3. If running on ext4/overlayfs (e.g. inside containers), tracks changes via",
+          "type": "module_doc"
+        },
+        {
+          "line": 7,
+          "text": "`/var/lib/ferro-pkg/transactions/<tx_id>.json`.",
+          "type": "module_doc"
+        },
+        {
+          "line": 8,
+          "text": "4. Implements `rpk rollback` to instantly revert updates or packages on failure.",
+          "type": "module_doc"
+        },
+        {
+          "line": 74,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 75,
+          "text": "Btrfs Snapshot Probing & Operations",
+          "type": "line"
+        },
+        {
+          "line": 76,
+          "text": "==============================================================================",
+          "type": "line"
+        },
+        {
+          "line": 78,
+          "text": "Check if root path resides on a Btrfs filesystem and supports subvolume snapshots.",
+          "type": "item_doc"
+        },
+        {
+          "line": 80,
+          "text": "1. Check if btrfs binary is available",
+          "type": "line"
+        },
+        {
+          "line": 85,
+          "text": "2. Query subvolume show",
+          "type": "line"
+        },
+        {
+          "line": 94,
+          "text": "3. Fallback: inspect /proc/mounts",
+          "type": "line"
+        },
+        {
+          "line": 111,
+          "text": "Create a Btrfs CoW pre-update snapshot.",
+          "type": "item_doc"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferro-superd/src/main.rs",
+      "name": "main.rs",
+      "total_lines": 918,
+      "code_lines": 792,
+      "comment_lines": 34,
+      "blank_lines": 92,
+      "comment_density_pct": 3.7,
+      "structs": [
+        {
+          "name": "ServiceConfig",
+          "line": 76
+        },
+        {
+          "name": "ManagedService",
+          "line": 98
+        },
+        {
+          "name": "Supervisor",
+          "line": 153
+        }
+      ],
+      "enums": [
+        {
+          "name": "RestartPolicy",
+          "line": 46
+        },
+        {
+          "name": "ServiceState",
+          "line": 53
+        }
+      ],
+      "functions": [
+        {
+          "name": "get_socket_path",
+          "line": 18
+        },
+        {
+          "name": "get_services_dir",
+          "line": 21
+        },
+        {
+          "name": "get_logs_dir",
+          "line": 24
+        },
+        {
+          "name": "get_cgroup_root",
+          "line": 27
+        },
+        {
+          "name": "as_str",
+          "line": 63
+        },
+        {
+          "name": "new",
+          "line": 114
+        },
+        {
+          "name": "append_log",
+          "line": 139
+        },
+        {
+          "name": "new",
+          "line": 158
+        },
+        {
+          "name": "load_manifests",
+          "line": 164
+        },
+        {
+          "name": "start_service",
+          "line": 203
+        },
+        {
+          "name": "stop_service",
+          "line": 270
+        },
+        {
+          "name": "restart_service",
+          "line": 320
+        },
+        {
+          "name": "setup_cgroup_v2",
+          "line": 330
+        },
+        {
+          "name": "cleanup_cgroup_v2",
+          "line": 382
+        },
+        {
+          "name": "read_cgroup_metrics",
+          "line": 389
+        },
+        {
+          "name": "run_supervision_loop",
+          "line": 415
+        },
+        {
+          "name": "run_health_check_loop",
+          "line": 482
+        },
+        {
+          "name": "run_ipc_server",
+          "line": 557
+        },
+        {
+          "name": "handle_client",
+          "line": 594
+        },
+        {
+          "name": "dispatch_ipc_command",
+          "line": 608
+        },
+        {
+          "name": "parse_service_toml",
+          "line": 715
+        },
+        {
+          "name": "strip_quotes",
+          "line": 822
+        },
+        {
+          "name": "parse_string_array",
+          "line": 832
+        },
+        {
+          "name": "extract_json_field",
+          "line": 848
+        },
+        {
+          "name": "escape_json",
+          "line": 864
+        },
+        {
+          "name": "current_iso_timestamp",
+          "line": 871
+        },
+        {
+          "name": "main",
+          "line": 882
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [
+        "libc::getuid",
+        "libc::kill",
+        "libc::SIGTERM",
+        "libc::SIGKILL"
+      ],
+      "insights": [
+        {
+          "line": 1,
+          "text": "ferro-superd: High-Velocity Pure-Rust Cgroup v2 Service Supervisor for FerroOS"
+        },
+        {
+          "line": 3,
+          "text": "enforcing Cgroup v2 resource limits, health monitoring, and ring-buffer logging."
+        },
+        {
+          "line": 240,
+          "text": "Setup cgroup v2 limits"
+        },
+        {
+          "line": 327,
+          "text": "Cgroup v2 Resource Controller"
+        },
+        {
+          "line": 916,
+          "text": "Start IPC server (blocks)"
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferro-superd: High-Velocity Pure-Rust Cgroup v2 Service Supervisor for FerroOS",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Replaces systemd with an ultra-lightweight, declarative process supervisor,",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "enforcing Cgroup v2 resource limits, health monitoring, and ring-buffer logging.",
+          "type": "module_doc"
+        },
+        {
+          "line": 240,
+          "text": "Setup cgroup v2 limits",
+          "type": "line"
+        },
+        {
+          "line": 245,
+          "text": "Spawn stream readers for stdout and stderr",
+          "type": "line"
+        },
+        {
+          "line": 285,
+          "text": "Wait loop for termination",
+          "type": "line"
+        },
+        {
+          "line": 326,
+          "text": "---------------------------------------------------------------------------",
+          "type": "line"
+        },
+        {
+          "line": 327,
+          "text": "Cgroup v2 Resource Controller",
+          "type": "line"
+        },
+        {
+          "line": 328,
+          "text": "---------------------------------------------------------------------------",
+          "type": "line"
+        },
+        {
+          "line": 341,
+          "text": "Attach PID",
+          "type": "line"
+        },
+        {
+          "line": 345,
+          "text": "Memory ceiling",
+          "type": "line"
+        },
+        {
+          "line": 354,
+          "text": "Memory high warning",
+          "type": "line"
+        },
+        {
+          "line": 361,
+          "text": "CPU Weight",
+          "type": "line"
+        },
+        {
+          "line": 367,
+          "text": "CPU Quota (cores limit, e.g. 4.0 cores = 400000 usec per 100000 usec period)",
+          "type": "line"
+        },
+        {
+          "line": 375,
+          "text": "PIDs Max",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/ferrocage/src/main.rs",
+      "name": "main.rs",
+      "total_lines": 911,
+      "code_lines": 786,
+      "comment_lines": 24,
+      "blank_lines": 101,
+      "comment_density_pct": 2.6,
+      "structs": [
+        {
+          "name": "ContainerState",
+          "line": 24
+        }
+      ],
+      "enums": [],
+      "functions": [
+        {
+          "name": "get_state_dir",
+          "line": 12
+        },
+        {
+          "name": "get_images_dir",
+          "line": 15
+        },
+        {
+          "name": "get_logs_dir",
+          "line": 18
+        },
+        {
+          "name": "main",
+          "line": 40
+        },
+        {
+          "name": "print_usage",
+          "line": 73
+        },
+        {
+          "name": "handle_run",
+          "line": 104
+        },
+        {
+          "name": "handle_ps",
+          "line": 354
+        },
+        {
+          "name": "handle_stop",
+          "line": 415
+        },
+        {
+          "name": "handle_start",
+          "line": 467
+        },
+        {
+          "name": "handle_rm",
+          "line": 509
+        },
+        {
+          "name": "handle_logs",
+          "line": 545
+        },
+        {
+          "name": "handle_inspect",
+          "line": 577
+        },
+        {
+          "name": "handle_exec",
+          "line": 592
+        },
+        {
+          "name": "handle_images",
+          "line": 658
+        },
+        {
+          "name": "setup_cgroup_v2",
+          "line": 678
+        },
+        {
+          "name": "cleanup_cgroup_v2",
+          "line": 705
+        },
+        {
+          "name": "save_state",
+          "line": 712
+        },
+        {
+          "name": "load_all_containers",
+          "line": 720
+        },
+        {
+          "name": "find_container",
+          "line": 738
+        },
+        {
+          "name": "is_running",
+          "line": 748
+        },
+        {
+          "name": "format_state_json",
+          "line": 756
+        },
+        {
+          "name": "parse_state_json",
+          "line": 780
+        },
+        {
+          "name": "extract_json_field",
+          "line": 824
+        },
+        {
+          "name": "escape_json",
+          "line": 844
+        },
+        {
+          "name": "parse_memory_spec",
+          "line": 848
+        },
+        {
+          "name": "generate_id",
+          "line": 864
+        },
+        {
+          "name": "current_timestamp",
+          "line": 869
+        },
+        {
+          "name": "format_duration",
+          "line": 873
+        },
+        {
+          "name": "format_size",
+          "line": 885
+        },
+        {
+          "name": "dir_size",
+          "line": 897
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [
+        "mount",
+        "libc::getuid",
+        "libc::getgid",
+        "libc::unshare",
+        "libc::CLONE_NEWNS",
+        "libc::CLONE_NEWUSER",
+        "libc::mount",
+        "libc::MS_REC",
+        "libc::MS_PRIVATE",
+        "libc::MS_BIND",
+        "libc::MS_REMOUNT",
+        "libc::MS_RDONLY",
+        "libc::kill",
+        "libc::SIGTERM",
+        "libc::SIGKILL",
+        "libc::setns"
+      ],
+      "insights": [
+        {
+          "line": 3,
+          "text": "native Linux namespaces, Cgroups v2 isolation, and a complete Docker-compatible CLI."
+        }
+      ],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "ferrocage: Pure-Rust Zero-Overhead Micro-Container Runtime for FerroOS",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Replaces Docker and containerd with sub-2ms startup latency,",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "native Linux namespaces, Cgroups v2 isolation, and a complete Docker-compatible CLI.",
+          "type": "module_doc"
+        },
+        {
+          "line": 100,
+          "text": "---------------------------------------------------------------------------",
+          "type": "line"
+        },
+        {
+          "line": 101,
+          "text": "ferrocage run",
+          "type": "line"
+        },
+        {
+          "line": 102,
+          "text": "---------------------------------------------------------------------------",
+          "type": "line"
+        },
+        {
+          "line": 186,
+          "text": "Spawn container process",
+          "type": "line"
+        },
+        {
+          "line": 201,
+          "text": "1. Create a private mount namespace (support rootless with CLONE_NEWUSER)",
+          "type": "line"
+        },
+        {
+          "line": 302,
+          "text": "Foreground execution",
+          "type": "line"
+        },
+        {
+          "line": 350,
+          "text": "---------------------------------------------------------------------------",
+          "type": "line"
+        },
+        {
+          "line": 351,
+          "text": "ferrocage ps",
+          "type": "line"
+        },
+        {
+          "line": 352,
+          "text": "---------------------------------------------------------------------------",
+          "type": "line"
+        },
+        {
+          "line": 411,
+          "text": "---------------------------------------------------------------------------",
+          "type": "line"
+        },
+        {
+          "line": 412,
+          "text": "ferrocage stop / start / rm",
+          "type": "line"
+        },
+        {
+          "line": 413,
+          "text": "---------------------------------------------------------------------------",
+          "type": "line"
+        }
+      ]
+    },
+    {
+      "file": "crates/xdg-desktop-portal-ferro/src/main.rs",
+      "name": "main.rs",
+      "total_lines": 187,
+      "code_lines": 144,
+      "comment_lines": 18,
+      "blank_lines": 25,
+      "comment_density_pct": 9.6,
+      "structs": [
+        {
+          "name": "FerroFileChooser",
+          "line": 20
+        },
+        {
+          "name": "FerroScreenCast",
+          "line": 81
+        },
+        {
+          "name": "FerroScreenshot",
+          "line": 131
+        }
+      ],
+      "enums": [
+        {
+          "name": "PortalResponse",
+          "line": 13
+        },
+        {
+          "name": "SourceType",
+          "line": 74
+        }
+      ],
+      "functions": [
+        {
+          "name": "new",
+          "line": 25
+        },
+        {
+          "name": "open_file",
+          "line": 33
+        },
+        {
+          "name": "save_file",
+          "line": 54
+        },
+        {
+          "name": "new",
+          "line": 87
+        },
+        {
+          "name": "create_session",
+          "line": 95
+        },
+        {
+          "name": "select_sources",
+          "line": 106
+        },
+        {
+          "name": "start",
+          "line": 120
+        },
+        {
+          "name": "capture_screen",
+          "line": 134
+        },
+        {
+          "name": "main",
+          "line": 144
+        }
+      ],
+      "traits": [],
+      "syscalls_and_abi": [],
+      "insights": [],
+      "sample_comments": [
+        {
+          "line": 1,
+          "text": "xdg-desktop-portal-ferro: Native Wayland Desktop Portal for FerroOS.",
+          "type": "module_doc"
+        },
+        {
+          "line": 2,
+          "text": "Provides FileChooser, ScreenCast, and Screenshot backends wired directly",
+          "type": "module_doc"
+        },
+        {
+          "line": 3,
+          "text": "to ferro-compositor for Chromium, Firefox, VS Code, and Flatpak applications.",
+          "type": "module_doc"
+        },
+        {
+          "line": 11,
+          "text": "Standard Portal Response Codes (XDG Desktop Portal Spec)",
+          "type": "item_doc"
+        },
+        {
+          "line": 19,
+          "text": "FileChooser Portal Backend",
+          "type": "item_doc"
+        },
+        {
+          "line": 32,
+          "text": "Handle org.freedesktop.impl.portal.FileChooser.OpenFile",
+          "type": "item_doc"
+        },
+        {
+          "line": 45,
+          "text": "In full GUI session, pops up the declarative Ferro-Shell FilePicker dialog.",
+          "type": "line"
+        },
+        {
+          "line": 46,
+          "text": "Returns valid file:// URIs:",
+          "type": "line"
+        },
+        {
+          "line": 53,
+          "text": "Handle org.freedesktop.impl.portal.FileChooser.SaveFile",
+          "type": "item_doc"
+        },
+        {
+          "line": 72,
+          "text": "ScreenCast Stream Source Types",
+          "type": "item_doc"
+        },
+        {
+          "line": 80,
+          "text": "ScreenCast Portal Backend (Wired directly to ferro-compositor DRM/KMS scanout)",
+          "type": "item_doc"
+        },
+        {
+          "line": 94,
+          "text": "Handle org.freedesktop.impl.portal.ScreenCast.CreateSession",
+          "type": "item_doc"
+        },
+        {
+          "line": 105,
+          "text": "Handle org.freedesktop.impl.portal.ScreenCast.SelectSources",
+          "type": "item_doc"
+        },
+        {
+          "line": 119,
+          "text": "Handle org.freedesktop.impl.portal.ScreenCast.Start",
+          "type": "item_doc"
+        },
+        {
+          "line": 130,
+          "text": "Screenshot Portal Backend",
+          "type": "item_doc"
+        }
+      ]
+    }
+  ],
+  "insights": [
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "line": 1,
+      "text": "ferro-compositor: High-Performance Wayland Compositor for FerroOS in Rust."
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "line": 2,
+      "text": "Replaces legacy X11 / XFCE with a GPU-accelerated Wayland architecture."
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "line": 4,
+      "text": "dual-Kawase acrylic blur shaders, and graceful single-pass box blur fallbacks."
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "line": 32,
+      "text": "GPU Hardware Driver Target (Invariant 4)"
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "line": 42,
+      "text": "Shader Pipeline Execution Backend (Invariant 4)"
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "line": 78,
+      "text": "Auto-detect GPU Driver Target & Shader Pipeline (Invariant 4)"
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "line": 141,
+      "text": "Default to graceful software fallback if no hardware GPU or in container/VM"
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "line": 230,
+      "text": "Invariant 4: Dual-Kawase vs Single-Pass Box Blur Pipeline"
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "line": 241,
+      "text": "2. Render background wallpaper"
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "line": 248,
+      "text": "Graceful CPU/Software fallback:"
+    },
+    {
+      "file": "crates/ferro-compositor/src/main.rs",
+      "line": 318,
+      "text": "3. Test Invariant 4: Hardware Acceleration & Fallback Pipeline Validation"
+    },
+    {
+      "file": "crates/ferro-core/src/bench_suite.rs",
+      "line": 1,
+      "text": "ferro-core: Pure-Rust High-Performance Benchmark Harnesses."
+    },
+    {
+      "file": "crates/ferro-core/src/dhcp.rs",
+      "line": 10,
+      "text": "- Container & cloud metadata fallback when external DHCP is absent"
+    },
+    {
+      "file": "crates/ferro-core/src/dhcp.rs",
+      "line": 579,
+      "text": "Cloud / Container Environment Fallback:"
+    },
+    {
+      "file": "crates/ferro-core/src/disk.rs",
+      "line": 1,
+      "text": "ferro-core disk: Block Storage, Partitioning, and Disk Management Engine"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 1419,
+      "text": "Performs zero-copy file copying using Linux kernel-level primitives:"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 1421,
+      "text": "2. Falls back to copy_file_range(2) (in-kernel zero-copy page transfer without userspace buffers)"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 1504,
+      "text": "3. Fallback to standard library copy"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 1657,
+      "text": "Fallback for cross-device moves: zero-copy copy then unlink"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 3604,
+      "text": "Fallback simulation for environments without procfs sockets"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 4245,
+      "text": "2. Thread: Port 8081 (In-Memory Key-Value Store)"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 4512,
+      "text": "FerroOS Local Shared-Memory DNS Caching Resolver (Sub-10\u00b5s In-Memory Engine)"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 4772,
+      "text": "2. Check In-Memory Cache"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 4798,
+      "text": "3. Cache Miss: Forward to Upstream"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 4813,
+      "text": "Cache with bounded capacity (max 10,000 entries) & 60s TTL (CWE-400 DoS defense)"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 5417,
+      "text": "4. Attach to cgroup v2 root"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 5709,
+      "text": "4. Fallback to temp dir"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 5866,
+      "text": "6. Cgroup v2 CPU controller"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 6162,
+      "text": "Two threads ping-pong an atomic boolean across 2,000 handovers."
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 6274,
+      "text": "FerroOS Steam & Proton Multi-Architecture Gaming Layer (Box64/FEX & DXVK)"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 7080,
+      "text": "5. Interpose mimalloc 2.1 Memory Allocator"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 7105,
+      "text": "7. Enforce Landlock Sandboxing if requested"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 7754,
+      "text": "FerroOS Landlock LSM & Unprivileged Daemon Isolation Sandbox"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 7853,
+      "text": "Fallback for: enforce <dir> <cmd...>"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 7901,
+      "text": "Cooperative Multi-Sandbox profile: enables inter-communication via shared memory"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 7923,
+      "text": "Attach to Shared Memory Pool if requested or under shared profile"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 7954,
+      "text": "2. Landlock LSM Ruleset Configuration (skip in dev mode for full permissiveness)"
+    },
+    {
+      "file": "crates/ferro-core/src/main.rs",
+      "line": 8017,
+      "text": "User-specified read-write storage paths & shared memory pools"
+    },
+    {
+      "file": "crates/ferro-core/src/shell.rs",
+      "line": 461,
+      "text": "1. `if` block parsing"
+    },
+    {
+      "file": "crates/ferro-core/src/shell.rs",
+      "line": 533,
+      "text": "4. `case` block parsing"
+    },
+    {
+      "file": "crates/ferro-core/src/shell.rs",
+      "line": 665,
+      "text": "Control Flow Block Parsers"
+    },
+    {
+      "file": "crates/ferro-core/src/sshd.rs",
+      "line": 34,
+      "text": "2. Ensure Cryptographic Host Keys exist or generate fallback markers"
+    },
+    {
+      "file": "crates/ferro-core/src/sshd.rs",
+      "line": 37,
+      "text": "3. Optional external Dropbear or OpenSSH binary fallback"
+    },
+    {
+      "file": "crates/ferro-core/src/syslog.rs",
+      "line": 5,
+      "text": "- Fast in-memory circular ring buffer and persistent append to /var/log/syslog"
+    },
+    {
+      "file": "crates/ferro-core/src/syslog.rs",
+      "line": 425,
+      "text": "Try target_file first, fallback to RUN_LOG_FILE or /var/log/messages"
+    },
+    {
+      "file": "crates/ferro-core/src/syslog.rs",
+      "line": 548,
+      "text": "Attempt 3: Fallback - kernel entries in /var/log/syslog or /run/ferro/syslog.log"
+    },
+    {
+      "file": "crates/ferro-core/src/zeroize.rs",
+      "line": 2,
+      "text": "Transparent Zero-on-Free & Temporal Memory Isolation"
+    },
+    {
+      "file": "crates/ferro-core/src/zeroize.rs",
+      "line": 3,
+      "text": "Implements compiler-barrier memory wiping (CWE-226 mitigation) as specified in"
+    },
+    {
+      "file": "crates/ferro-core/src/zeroize.rs",
+      "line": 4,
+      "text": "docs/MEMORY_SECURITY_AND_STANDARDS.md Section 2.3."
+    },
+    {
+      "file": "crates/ferro-core/src/zeroize.rs",
+      "line": 10,
+      "text": "SecureZeroizingSecret: A memory container that automatically overwrites"
+    },
+    {
+      "file": "crates/ferro-core/src/zeroize.rs",
+      "line": 66,
+      "text": "Explicit memory wiping for raw slices."
+    },
+    {
+      "file": "crates/ferro-gui/src/main.rs",
+      "line": 215,
+      "text": "1. Draw Desktop Wallpaper (Modern Deep Navy Gradient)"
+    },
+    {
+      "file": "crates/ferro-init/src/main.rs",
+      "line": 56,
+      "text": "1a. Persistent Block Storage Root Pivot (switch_root) Check"
+    },
+    {
+      "file": "crates/ferro-init/src/main.rs",
+      "line": 87,
+      "text": "2c. Apply Modern Kernel Performance, Memory & Network Reliability Tunings"
+    },
+    {
+      "file": "crates/ferro-init/src/main.rs",
+      "line": 90,
+      "text": "2d. Launch Linux PSI (Pressure Stall Information) Memory Watchdog"
+    },
+    {
+      "file": "crates/ferro-init/src/main.rs",
+      "line": 494,
+      "text": "Memory bandwidth benchmark"
+    },
+    {
+      "file": "crates/ferro-init/src/main.rs",
+      "line": 701,
+      "text": "Persistent Block Storage & switch_root Engine"
+    },
+    {
+      "file": "crates/ferro-init/src/main.rs",
+      "line": 716,
+      "text": "2. Auto-detect if a block device contains FerroOS persistent root"
+    },
+    {
+      "file": "crates/ferro-init/src/main.rs",
+      "line": 766,
+      "text": "Perform switch_root: chdir to new root, chroot, and re-exec init"
+    },
+    {
+      "file": "crates/ferro-init/src/main.rs",
+      "line": 792,
+      "text": "Fallback to /bin/ferro-core"
+    },
+    {
+      "file": "crates/ferro-init/src/main.rs",
+      "line": 882,
+      "text": "2. Storage & Memory Writeback Tunings (Eradicates SCENARIO-015 Dirty Page Writeback Freezes)"
+    },
+    {
+      "file": "crates/ferro-init/src/main.rs",
+      "line": 910,
+      "text": "4. KSPP (Kernel Self-Protection Project) & CIS Benchmark Baseline (docs/MEMORY_SECURITY_AND_STANDARDS.md)"
+    },
+    {
+      "file": "crates/ferro-io/src/lib.rs",
+      "line": 1,
+      "text": "ferro-io: High-Performance Pure-Rust POSIX I/O Interposition and io_uring Acceleration Library"
+    },
+    {
+      "file": "crates/ferro-io/src/lib.rs",
+      "line": 5,
+      "text": "- Lock-free atomic file descriptor classification cache (65,536 slots)."
+    },
+    {
+      "file": "crates/ferro-io/src/lib.rs",
+      "line": 47,
+      "text": "Cache bounds (128K FDs for extreme network & database concurrency)"
+    },
+    {
+      "file": "crates/ferro-io/src/lib.rs",
+      "line": 410,
+      "text": "Fallback 1: SINGLE_ISSUER"
+    },
+    {
+      "file": "crates/ferro-io/src/lib.rs",
+      "line": 425,
+      "text": "Fallback 2: Standard Ring"
+    },
+    {
+      "file": "crates/ferro-io/src/lib.rs",
+      "line": 1193,
+      "text": "Simulated close resets cache"
+    },
+    {
+      "file": "crates/ferro-pkg/src/apt.rs",
+      "line": 1,
+      "text": "Debian `apt` Fallback Wrapper & Repository Engine (PKG-002 & PKG-004)."
+    },
+    {
+      "file": "crates/ferro-pkg/src/apt.rs",
+      "line": 5,
+      "text": "- Searches Debian package database via `apt-cache search`."
+    },
+    {
+      "file": "crates/ferro-pkg/src/apt.rs",
+      "line": 7,
+      "text": "- Implements `rpk upgrade --security` targeting Debian security updates."
+    },
+    {
+      "file": "crates/ferro-pkg/src/apt.rs",
+      "line": 48,
+      "text": "Search Debian package repositories via `apt-cache search`."
+    },
+    {
+      "file": "crates/ferro-pkg/src/apt.rs",
+      "line": 126,
+      "text": "Identify pending security update packages by simulating an upgrade."
+    },
+    {
+      "file": "crates/ferro-pkg/src/apt.rs",
+      "line": 136,
+      "text": "e.g.: \"Inst perl-base [5.36.0-7+deb12u3] (5.36.0-7+deb12u4 Debian-Security:12/oldstable-security [arm64])\""
+    },
+    {
+      "file": "crates/ferro-pkg/src/apt.rs",
+      "line": 154,
+      "text": "If `security_only` is true (PKG-004), restricts strictly to Debian security advisories."
+    },
+    {
+      "file": "crates/ferro-pkg/src/main.rs",
+      "line": 2,
+      "text": "Fast, memory-safe package manager handling multi-architecture packages,"
+    },
+    {
+      "file": "crates/ferro-pkg/src/main.rs",
+      "line": 133,
+      "text": "Multi-Architecture & Package Metadata Models"
+    },
+    {
+      "file": "crates/ferro-pkg/src/main.rs",
+      "line": 467,
+      "text": "Fallback: check Debian substrate via apt-cache show"
+    },
+    {
+      "file": "crates/ferro-pkg/src/main.rs",
+      "line": 639,
+      "text": "4. Fallback to Debian APT (PKG-002)"
+    },
+    {
+      "file": "crates/ferro-pkg/src/main.rs",
+      "line": 643,
+      "text": "Multiple packages: route to APT fallback"
+    },
+    {
+      "file": "crates/ferro-pkg/src/main.rs",
+      "line": 796,
+      "text": "3. Extract Entries with Transactional Tracking & Defensive Security Hardening"
+    },
+    {
+      "file": "crates/ferro-pkg/src/main.rs",
+      "line": 841,
+      "text": "Architecture Compatibility & Multi-Arch Routing"
+    },
+    {
+      "file": "crates/ferro-pkg/src/main.rs",
+      "line": 1028,
+      "text": "4. Transactional Atomic Rollback on Failure"
+    },
+    {
+      "file": "crates/ferro-pkg/src/main.rs",
+      "line": 1189,
+      "text": "2. Search Debian substrate via apt-cache"
+    },
+    {
+      "file": "crates/ferro-pkg/src/main.rs",
+      "line": 1508,
+      "text": "Update architecture if explicitly supplied"
+    },
+    {
+      "file": "crates/ferro-pkg/src/msi.rs",
+      "line": 324,
+      "text": "Fallback: scan for embedded PE binaries"
+    },
+    {
+      "file": "crates/ferro-pkg/src/safeguards.rs",
+      "line": 4,
+      "text": "launches failing with `version 'GLIBC_2.38' not found` on Debian 12 Bookworm (glibc 2.36)."
+    },
+    {
+      "file": "crates/ferro-pkg/src/safeguards.rs",
+      "line": 214,
+      "text": "CMP-004: Shared-Library Cache (ldconfig) & Dynamic Link Integrity Checks"
+    },
+    {
+      "file": "crates/ferro-pkg/src/safeguards.rs",
+      "line": 241,
+      "text": "Helper to write a file with sudo elevation if standard write fails due to permissions."
+    },
+    {
+      "file": "crates/ferro-pkg/src/safeguards.rs",
+      "line": 285,
+      "text": "CMP-004 Guard: Automatically rebuild the dynamic linker cache via `ldconfig`."
+    },
+    {
+      "file": "crates/ferro-pkg/src/transaction.rs",
+      "line": 8,
+      "text": "4. Implements `rpk rollback` to instantly revert updates or packages on failure."
+    },
+    {
+      "file": "crates/ferro-pkg/src/transaction.rs",
+      "line": 94,
+      "text": "3. Fallback: inspect /proc/mounts"
+    },
+    {
+      "file": "crates/ferro-superd/src/main.rs",
+      "line": 1,
+      "text": "ferro-superd: High-Velocity Pure-Rust Cgroup v2 Service Supervisor for FerroOS"
+    },
+    {
+      "file": "crates/ferro-superd/src/main.rs",
+      "line": 3,
+      "text": "enforcing Cgroup v2 resource limits, health monitoring, and ring-buffer logging."
+    },
+    {
+      "file": "crates/ferro-superd/src/main.rs",
+      "line": 240,
+      "text": "Setup cgroup v2 limits"
+    },
+    {
+      "file": "crates/ferro-superd/src/main.rs",
+      "line": 327,
+      "text": "Cgroup v2 Resource Controller"
+    },
+    {
+      "file": "crates/ferro-superd/src/main.rs",
+      "line": 916,
+      "text": "Start IPC server (blocks)"
+    },
+    {
+      "file": "crates/ferrocage/src/main.rs",
+      "line": 3,
+      "text": "native Linux namespaces, Cgroups v2 isolation, and a complete Docker-compatible CLI."
+    }
+  ]
+}
