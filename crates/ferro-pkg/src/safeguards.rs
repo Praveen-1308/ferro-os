@@ -239,6 +239,7 @@ pub fn privileged_command(cmd: &str) -> Command {
 }
 
 /// Helper to write a file with sudo elevation if standard write fails due to permissions.
+/// Enforces secure permission boundaries (0755 directories, 0644 files) to prevent local privilege escalation.
 pub fn privileged_write_file(target: &Path, content: &str) -> io::Result<()> {
     if let Some(parent) = target.parent() {
         if fs::create_dir_all(parent).is_err() && needs_elevation() {
@@ -246,24 +247,29 @@ pub fn privileged_write_file(target: &Path, content: &str) -> io::Result<()> {
                 .args(["-p", &parent.to_string_lossy()])
                 .status();
             let _ = privileged_command("chmod")
-                .args(["777", &parent.to_string_lossy()])
+                .args(["755", &parent.to_string_lossy()])
                 .status();
         }
     }
 
     if fs::write(target, content).is_err() && needs_elevation() {
         let temp_file = std::env::temp_dir().join(format!(
-            "ferro_tmp_{}_{}",
+            ".ferro_tmp_{}_{}",
             std::process::id(),
             SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos()
         ));
         fs::write(&temp_file, content)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = fs::set_permissions(&temp_file, fs::Permissions::from_mode(0o600));
+        }
         let _ = privileged_command("cp")
             .arg(&temp_file)
             .arg(target)
             .status();
         let _ = privileged_command("chmod")
-            .args(["666", &target.to_string_lossy()])
+            .args(["644", &target.to_string_lossy()])
             .status();
         let _ = fs::remove_file(&temp_file);
     }

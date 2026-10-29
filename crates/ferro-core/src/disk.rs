@@ -220,13 +220,13 @@ pub fn install_to_disk(target_disk: &str) -> ExitCode {
         let _ = fs::copy("/bin/rpk", format!("{}/bin/rpk", install_mount));
     }
 
-    // Write persistent /etc/fstab
+    // Write persistent /etc/fstab (enforcing CIS Linux Benchmark Level 1 nosuid,nodev,noexec on /tmp and /dev/shm)
     let fstab_content = format!(
         "# /etc/fstab: Static file system information for FerroOS\n\
         {}  /      ext4  noatime,errors=remount-ro  0  1\n\
-        tmpfs       /tmp   tmpfs mode=1777,nosuid,nodev     0  0\n\
-        tmpfs       /run   tmpfs mode=0755,nosuid,nodev     0  0\n\
-        tmpfs       /dev/shm tmpfs mode=1777,nosuid,nodev   0  0\n",
+        tmpfs       /tmp   tmpfs mode=1777,nosuid,nodev,noexec     0  0\n\
+        tmpfs       /run   tmpfs mode=0755,nosuid,nodev            0  0\n\
+        tmpfs       /dev/shm tmpfs mode=1777,nosuid,nodev,noexec  0  0\n",
         root_part
     );
     let _ = fs::write(format!("{}/etc/fstab", install_mount), fstab_content);

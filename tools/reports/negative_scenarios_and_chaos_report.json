@@ -2,25 +2,25 @@
   {
     "scenario": "Hostile Path Traversal & Secret Exfiltration",
     "ferroos_status": "BLOCKED",
-    "ferroos_latency_ms": 33.87,
+    "ferroos_latency_ms": 25.26,
     "ubuntu_status": "FAILED",
-    "ubuntu_latency_ms": 164.2,
+    "ubuntu_latency_ms": 160.27,
     "protection_mechanism": "Landlock LSM Kernel Syscall Interception"
   },
   {
     "scenario": "Host Root Filesystem Defacement & Write Tampering",
     "ferroos_status": "IMMUTABLE",
-    "ferroos_latency_ms": 17.08,
+    "ferroos_latency_ms": 17.32,
     "ubuntu_status": "TAMPERED",
-    "ubuntu_latency_ms": 166.6,
+    "ubuntu_latency_ms": 148.71,
     "protection_mechanism": "Landlock LSM Kernel Invariant + Read-Only Delegation"
   },
   {
     "scenario": "Privilege Escalation & Capability Hijacking",
     "ferroos_status": "SECURE_DROPPED",
-    "ferroos_latency_ms": 18.45,
+    "ferroos_latency_ms": 17.78,
     "ubuntu_status": "DROPPED",
-    "ubuntu_latency_ms": 164.46,
+    "ubuntu_latency_ms": 149.29,
     "protection_mechanism": "PR_SET_NO_NEW_PRIVS + Capability Masking"
   },
   {
@@ -47,7 +47,7 @@
     "scenario": "IPC Socket Flooding & Garbage Payload Attack",
     "connections_tested": 1000,
     "supervisor_status": "RESILIENT_ONLINE",
-    "post_attack_latency_ms": 0.57,
+    "post_attack_latency_ms": 0.98,
     "protection_mechanism": "Bounded Reader Buffering + Isolated Connection Workers"
   },
   {

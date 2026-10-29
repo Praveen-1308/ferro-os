@@ -268,8 +268,23 @@ pub fn run_ferrod(args: &[String]) -> ExitCode {
 }
 
 fn append_log_line(path_str: &str, line: &str) {
-    if let Ok(mut f) = OpenOptions::new().create(true).append(true).open(path_str) {
-        let _ = writeln!(f, "{}", line);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        if let Ok(mut f) = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .mode(0o640)
+            .open(path_str)
+        {
+            let _ = writeln!(f, "{}", line);
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        if let Ok(mut f) = OpenOptions::new().create(true).append(true).open(path_str) {
+            let _ = writeln!(f, "{}", line);
+        }
     }
 }
 

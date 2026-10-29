@@ -664,14 +664,14 @@ mod linux_init {
             "tmpfs",
             "/tmp",
             "tmpfs",
-            libc::MS_NOSUID | libc::MS_NODEV,
+            libc::MS_NOSUID | libc::MS_NODEV | libc::MS_NOEXEC,
             Some("mode=1777"),
         );
         mount_fs(
             "tmpfs",
             "/dev/shm",
             "tmpfs",
-            libc::MS_NOSUID | libc::MS_NODEV,
+            libc::MS_NOSUID | libc::MS_NODEV | libc::MS_NOEXEC,
             Some("mode=1777"),
         );
         mount_fs(
@@ -909,6 +909,7 @@ mod linux_init {
 
         // 4. KSPP (Kernel Self-Protection Project) & CIS Benchmark Baseline (docs/MEMORY_SECURITY_AND_STANDARDS.md)
         let kspp_tunings = [
+            ("/proc/sys/kernel/randomize_va_space", "2\n"), // ASLR Full Randomization (CIS 1.5.3)
             ("/proc/sys/kernel/kptr_restrict", "2\n"),
             ("/proc/sys/kernel/dmesg_restrict", "1\n"),
             ("/proc/sys/kernel/unprivileged_bpf_disabled", "1\n"),
@@ -925,6 +926,8 @@ mod linux_init {
             ("/proc/sys/net/ipv4/conf/default/rp_filter", "1\n"),
             ("/proc/sys/net/ipv4/conf/all/accept_source_route", "0\n"),
             ("/proc/sys/net/ipv4/conf/default/accept_source_route", "0\n"),
+            ("/proc/sys/net/ipv6/conf/all/accept_redirects", "0\n"),
+            ("/proc/sys/net/ipv6/conf/default/accept_redirects", "0\n"),
         ];
         for (path, val) in kspp_tunings {
             let _ = fs::write(path, val);

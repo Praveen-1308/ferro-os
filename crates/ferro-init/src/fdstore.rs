@@ -37,7 +37,19 @@ fn check_peer_authorization(sock_fd: libc::c_int) -> bool {
     false
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "macos")]
+fn check_peer_authorization(sock_fd: libc::c_int) -> bool {
+    unsafe {
+        let mut euid: libc::uid_t = 0;
+        let mut egid: libc::gid_t = 0;
+        if libc::getpeereid(sock_fd, &mut euid, &mut egid) == 0 {
+            return euid == 0 || euid == libc::getuid();
+        }
+    }
+    false
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
 fn check_peer_authorization(_sock_fd: libc::c_int) -> bool {
     true
 }
