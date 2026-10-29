@@ -36,7 +36,6 @@ FerroOS follows an ambitious **Top-Down Systems Strategy** operating across two 
 | **Boot Command** | `./demos/qemu-run.sh iso` | `./demos/qemu-run.sh kernel` |
 
 > [!NOTE]
-> **Why Top-Down?** 99% of bare-metal hobby operating systems start bottom-up (bootloader, paging) and abandon development before ever implementing a working shell, coreutils, or package manager.  
 > FerroOS built **Layer 5 (the hardest part: 220+ applets, supervisor, container runtime, shell, and package manager) first**. By pairing it today with a minimal Linux kernel (Track 1 — like Android, ChromeOS, and Alpine) while building the bare-metal kernel in parallel (Track 2) with an identical syscall ABI, the userspace transfers seamlessly without recompilation.
 
 ---
