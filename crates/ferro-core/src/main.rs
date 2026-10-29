@@ -23,6 +23,7 @@ pub mod sshd;
 pub mod syslog;
 pub mod service;
 pub mod zeroize;
+pub mod auth;
 
 #[cfg(target_os = "linux")]
 extern "C" {
@@ -163,6 +164,9 @@ fn main() -> ExitCode {
         "ss" => run_ss(&command_args),
         "service" | "ferro-service" => service::run_service(&command_args),
         "container" | "ferrocage" | "cage" => run_ferrocage(&command_args),
+        "sudo" => auth::run_sudo(&command_args),
+        "su" => auth::run_su(&command_args),
+        "ntp" | "timesync" | "ntpdate" => auth::run_ntp(&command_args),
         "help" | "--help" | "-h" => {
             print_usage();
             ExitCode::SUCCESS
@@ -683,7 +687,8 @@ pub const ALL_APPLETS: &[&str] = &[
     "hackbench", "bench-fsync", "fsync-bench", "dhcp", "ferro-net", "udhcpc",
     "ferrod", "syslogd", "logger", "logs", "log", "journalctl", "dmesg",
     "server-suite", "server", "disk", "cloud-init", "cloudinit", "sshd", "ssh-server",
-    "netstat", "ss", "service", "ferro-service", "container", "ferrocage", "cage"
+    "netstat", "ss", "service", "ferro-service", "container", "ferrocage", "cage",
+    "sudo", "su", "ntp", "timesync", "ntpdate"
 ];
 
 fn is_internal_applet(cmd: &str) -> bool {
@@ -1053,6 +1058,9 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "recovery" => run_recovery(),
         "service" | "ferro-service" => service::run_service(args),
         "container" | "ferrocage" | "cage" => run_ferrocage(args),
+        "sudo" => auth::run_sudo(args),
+        "su" => auth::run_su(args),
+        "ntp" | "timesync" | "ntpdate" => auth::run_ntp(args),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
             ExitCode::from(127)
@@ -2594,35 +2602,11 @@ fn run_uptime(_args: &[String]) -> ExitCode {
 }
 
 fn resolve_username(uid: u32) -> Option<String> {
-    if let Ok(content) = fs::read_to_string("/etc/passwd") {
-        for line in content.lines() {
-            let parts: Vec<&str> = line.split(':').collect();
-            if parts.len() >= 3 {
-                if let Ok(u) = parts[2].parse::<u32>() {
-                    if u == uid {
-                        return Some(parts[0].to_string());
-                    }
-                }
-            }
-        }
-    }
-    None
+    auth::lookup_user_by_uid(uid).map(|u| u.name)
 }
 
 fn resolve_groupname(gid: u32) -> Option<String> {
-    if let Ok(content) = fs::read_to_string("/etc/group") {
-        for line in content.lines() {
-            let parts: Vec<&str> = line.split(':').collect();
-            if parts.len() >= 3 {
-                if let Ok(g) = parts[2].parse::<u32>() {
-                    if g == gid {
-                        return Some(parts[0].to_string());
-                    }
-                }
-            }
-        }
-    }
-    None
+    auth::lookup_group_by_gid(gid).map(|g| g.name)
 }
 
 fn run_whoami(_args: &[String]) -> ExitCode {

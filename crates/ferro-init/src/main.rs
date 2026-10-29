@@ -713,6 +713,98 @@ mod linux_init {
         if !Path::new("/etc/hostname").exists() {
             let _ = fs::write("/etc/hostname", "ferro\n");
         }
+
+        // Standard POSIX / Linux identity files
+        if !Path::new("/etc/passwd").exists() {
+            let passwd = "\
+root:x:0:0:root:/root:/bin/sh
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+ferro:x:1000:1000:ferro:/home/ferro:/bin/sh
+";
+            let _ = fs::write("/etc/passwd", passwd);
+        }
+
+        if !Path::new("/etc/group").exists() {
+            let group = "\
+root:x:0:
+daemon:x:1:
+bin:x:2:
+sys:x:3:
+adm:x:4:ferro
+tty:x:5:
+disk:x:6:
+wheel:x:10:ferro
+sudo:x:27:ferro
+audio:x:29:
+video:x:44:
+plugdev:x:46:
+staff:x:50:
+users:x:100:
+nogroup:x:65534:
+ferro:x:1000:
+";
+            let _ = fs::write("/etc/group", group);
+        }
+
+        if !Path::new("/etc/shadow").exists() {
+            let shadow = "\
+root:*:19700:0:99999:7:::
+daemon:*:19700:0:99999:7:::
+bin:*:19700:0:99999:7:::
+sys:*:19700:0:99999:7:::
+nobody:*:19700:0:99999:7:::
+ferro:*:19700:0:99999:7:::
+";
+            let _ = fs::write("/etc/shadow", shadow);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let _ = fs::set_permissions("/etc/shadow", fs::Permissions::from_mode(0o600));
+            }
+        }
+
+        if !Path::new("/etc/sudoers").exists() {
+            let sudoers = "\
+# /etc/sudoers - FerroOS Privileged Access Specification
+Defaults env_reset
+Defaults mail_badpass
+Defaults secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"
+
+# User privilege specification
+root ALL=(ALL:ALL) ALL
+
+# Members of the admin/wheel group may gain root privileges
+%wheel ALL=(ALL:ALL) NOPASSWD: ALL
+
+# Allow members of group sudo to execute any command
+%sudo ALL=(ALL:ALL) NOPASSWD: ALL
+";
+            let _ = fs::write("/etc/sudoers", sudoers);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let _ = fs::set_permissions("/etc/sudoers", fs::Permissions::from_mode(0o440));
+            }
+        }
+
+        if !Path::new("/etc/shells").exists() {
+            let shells = "/bin/sh\n/bin/bash\n/bin/ferro-core\n";
+            let _ = fs::write("/etc/shells", shells);
+        }
+
+        // Standard user home directories
+        let _ = fs::create_dir_all("/root");
+        let _ = fs::create_dir_all("/home/ferro");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = fs::set_permissions("/root", fs::Permissions::from_mode(0o700));
+            let _ = fs::set_permissions("/home/ferro", fs::Permissions::from_mode(0o755));
+        }
     }
 
     fn set_hostname(name: &str) {
