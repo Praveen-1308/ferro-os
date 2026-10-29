@@ -10,8 +10,7 @@
 
 use std::collections::HashMap;
 use std::fs;
-use std::io::{self, BufRead, Read, Write};
-use std::net::TcpStream;
+use std::io::{self, BufRead, Write};
 use std::path::Path;
 use std::process::{Command, ExitCode};
 
@@ -365,68 +364,6 @@ impl<'a> ExprParser<'a> {
 // 2. Pure-Rust Micro-Script Engine & Universal Runner
 // ==============================================================================
 
-pub fn http_get_sync(url: &str) -> Result<String, String> {
-    if url.starts_with("http://") {
-        let without_proto = &url[7..];
-        let (host, path) = match without_proto.find('/') {
-            Some(pos) => (&without_proto[..pos], &without_proto[pos..]),
-            None => (without_proto, "/"),
-        };
-        let (host_name, port) = match host.find(':') {
-            Some(pos) => (&host[..pos], host[pos + 1..].parse::<u16>().unwrap_or(80)),
-            None => (host, 80),
-        };
-        let mut stream = TcpStream::connect((host_name, port))
-            .map_err(|e| format!("Connect failed to {}:{}: {}", host_name, port, e))?;
-        let request = format!(
-            "GET {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: FerroOS-PureRust/2.3\r\nConnection: close\r\n\r\n",
-            path, host_name
-        );
-        stream.write_all(request.as_bytes()).map_err(|e| e.to_string())?;
-        let mut response = Vec::new();
-        stream.read_to_end(&mut response).map_err(|e| e.to_string())?;
-        let header_sep = b"\r\n\r\n";
-        let body_start = response
-            .windows(4)
-            .position(|w| w == header_sep)
-            .map(|p| p + 4)
-            .unwrap_or(0);
-        return String::from_utf8(response[body_start..].to_vec()).map_err(|e| e.to_string());
-    }
-
-    if url.starts_with("https://") {
-        let output = Command::new("curl")
-            .args(["-s", "-L", url])
-            .output();
-        if let Ok(out) = output {
-            if out.status.success() {
-                return String::from_utf8(out.stdout).map_err(|e| e.to_string());
-            }
-        }
-        return Err(format!("https request failed: TLS requires curl on host: {}", url));
-    }
-
-    Err(format!("Unsupported protocol for URL: {}", url))
-}
-
-pub fn json_get(raw_json: &str, key: &str) -> Option<String> {
-    let clean = raw_json.replace("\\\"", "\"");
-    let needle1 = format!("\"{}\":", key);
-    let needle2 = format!("\"{}\" :", key);
-    let pos = clean.find(&needle1).map(|p| p + needle1.len())
-        .or_else(|| clean.find(&needle2).map(|p| p + needle2.len()))?;
-    let rest = clean[pos..].trim_start();
-    if rest.starts_with('"') {
-        let after_quote = &rest[1..];
-        let end_quote = after_quote.find('"')?;
-        Some(after_quote[..end_quote].to_string())
-    } else {
-        let end = rest.find(|c: char| c == ',' || c == '}' || c == ']' || c == '\n' || c == '\r')
-            .unwrap_or(rest.len());
-        Some(rest[..end].trim().to_string())
-    }
-}
-
 pub struct MicroScriptEngine {
     pub vars: HashMap<String, i64>,
     pub string_vars: HashMap<String, String>,
@@ -438,120 +375,6 @@ impl MicroScriptEngine {
             vars: HashMap::new(),
             string_vars: HashMap::new(),
         }
-    }
-
-    pub fn eval_string_expr(&self, raw: &str) -> Option<String> {
-        let trimmed = raw.trim();
-
-        // Check for concatenation (+) if not inside a single quote
-        if trimmed.contains('+') && !trimmed.starts_with("http://") && !trimmed.starts_with("https://") {
-            let mut parts = Vec::new();
-            let mut current = String::new();
-            let mut in_quote = false;
-            let mut in_paren: usize = 0;
-            for c in trimmed.chars() {
-                if c == '"' {
-                    in_quote = !in_quote;
-                    current.push(c);
-                } else if c == '(' && !in_quote {
-                    in_paren += 1;
-                    current.push(c);
-                } else if c == ')' && !in_quote {
-                    in_paren = in_paren.saturating_sub(1);
-                    current.push(c);
-                } else if c == '+' && !in_quote && in_paren == 0 {
-                    parts.push(current.trim().to_string());
-                    current.clear();
-                } else {
-                    current.push(c);
-                }
-            }
-            if !current.trim().is_empty() {
-                parts.push(current.trim().to_string());
-            }
-
-            if parts.len() > 1 {
-                // Must contain at least one string atom to be a string concatenation expression
-                let has_string_atom = parts.iter().any(|p| self.eval_string_atom(p).is_some());
-                if !has_string_atom {
-                    return None;
-                }
-
-                let mut combined = String::new();
-                for p in parts {
-                    if let Some(s) = self.eval_string_atom(&p) {
-                        combined.push_str(&s);
-                    } else if let Ok(val) = evaluate_expression(&p, &self.vars) {
-                        combined.push_str(&val.to_string());
-                    } else if let Some(&val) = self.vars.get(&p) {
-                        combined.push_str(&val.to_string());
-                    } else {
-                        combined.push_str(&p);
-                    }
-                }
-                return Some(combined);
-            }
-        }
-
-        self.eval_string_atom(trimmed)
-    }
-
-    fn eval_string_atom(&self, raw: &str) -> Option<String> {
-        let trimmed = raw.trim();
-
-        // 1. Literal quoted string: "..."
-        if trimmed.starts_with('"') && trimmed.ends_with('"') && trimmed.len() >= 2 {
-            let inner = &trimmed[1..trimmed.len() - 1];
-            let unescaped = inner.replace("\\n", "\n").replace("\\t", "\t").replace("\\\"", "\"");
-            return Some(unescaped);
-        }
-
-        // 2. http_get(...)
-        if trimmed.starts_with("http_get(") && trimmed.ends_with(')') {
-            let inner = trimmed.trim_start_matches("http_get(").trim_end_matches(')').trim();
-            let url = self.eval_string_expr(inner).unwrap_or_else(|| inner.trim_matches('"').to_string());
-            return http_get_sync(&url).ok();
-        }
-
-        // 3. json_get(json_source, "key")
-        if trimmed.starts_with("json_get(") && trimmed.ends_with(')') {
-            let inner = trimmed.trim_start_matches("json_get(").trim_end_matches(')').trim();
-            // Split by comma outside quotes
-            let mut split_pos = None;
-            let mut in_quote = false;
-            for (idx, c) in inner.char_indices() {
-                if c == '"' { in_quote = !in_quote; }
-                else if c == ',' && !in_quote { split_pos = Some(idx); }
-            }
-            if let Some(pos) = split_pos {
-                let json_src_raw = &inner[..pos];
-                let key_raw = &inner[pos + 1..];
-                let json_src = self.eval_string_expr(json_src_raw.trim()).unwrap_or_else(|| json_src_raw.trim().to_string());
-                let key = self.eval_string_expr(key_raw.trim()).unwrap_or_else(|| key_raw.trim().trim_matches('"').to_string());
-                return json_get(&json_src, &key);
-            }
-        }
-
-        // 4. read_file(path)
-        if trimmed.starts_with("read_file(") && trimmed.ends_with(')') {
-            let inner = trimmed.trim_start_matches("read_file(").trim_end_matches(')').trim();
-            let path = self.eval_string_expr(inner).unwrap_or_else(|| inner.trim_matches('"').to_string());
-            return fs::read_to_string(&path).ok();
-        }
-
-        // 5. sys_env("KEY")
-        if trimmed.starts_with("sys_env(") && trimmed.ends_with(')') {
-            let inner = trimmed.trim_start_matches("sys_env(").trim_end_matches(')').trim();
-            let key = self.eval_string_expr(inner).unwrap_or_else(|| inner.trim_matches('"').to_string());
-            return std::env::var(&key).ok();
-        }
-
-        // 6. Variable lookup
-        if let Some(s) = self.string_vars.get(trimmed) {
-            return Some(s.clone());
-        }
-
-        None
     }
 
     pub fn execute(&mut self, source: &str) -> Result<(), String> {
@@ -611,45 +434,6 @@ impl MicroScriptEngine {
                 continue;
             }
 
-            // Built-in: write_file("path", content)
-            if line.starts_with("write_file(") {
-                let args_str = line.trim_start_matches("write_file(").trim_end_matches(';').trim_end_matches(')');
-                if let Some((p_raw, c_raw)) = args_str.split_once(',') {
-                    let path = self.eval_string_expr(p_raw.trim()).unwrap_or_else(|| p_raw.trim().trim_matches('"').to_string());
-                    let content = self.eval_string_expr(c_raw.trim()).unwrap_or_else(|| c_raw.trim().to_string());
-                    let _ = fs::write(&path, content);
-                }
-                i += 1;
-                continue;
-            }
-
-            // Built-in: append_file("path", content)
-            if line.starts_with("append_file(") {
-                let args_str = line.trim_start_matches("append_file(").trim_end_matches(';').trim_end_matches(')');
-                if let Some((p_raw, c_raw)) = args_str.split_once(',') {
-                    let path = self.eval_string_expr(p_raw.trim()).unwrap_or_else(|| p_raw.trim().trim_matches('"').to_string());
-                    let content = self.eval_string_expr(c_raw.trim()).unwrap_or_else(|| c_raw.trim().to_string());
-                    use std::fs::OpenOptions;
-                    if let Ok(mut f) = OpenOptions::new().create(true).append(true).open(&path) {
-                        let _ = f.write_all(content.as_bytes());
-                    }
-                }
-                i += 1;
-                continue;
-            }
-
-            // Built-in: sys("command") or sys command
-            if line.starts_with("sys(") || line.starts_with("sys ") {
-                let cmd_arg = if line.starts_with("sys(") {
-                    line.trim_start_matches("sys(").trim_end_matches(';').trim_end_matches(')').trim().trim_matches('"')
-                } else {
-                    line["sys".len()..].trim().trim_end_matches(';').trim_matches('"')
-                };
-                let _ = Command::new("/bin/sh").arg("-c").arg(cmd_arg).status();
-                i += 1;
-                continue;
-            }
-
             // Variable assignment: `let x = <expr>;` or `x = <expr>;`
             if line.starts_with("let ") || (line.contains('=') && !line.contains("==")) {
                 let clean = line.trim_start_matches("let ").trim_end_matches(';');
@@ -657,12 +441,13 @@ impl MicroScriptEngine {
                     let var_name = lhs.trim().to_string();
                     let raw_rhs = rhs.trim();
 
-                    if raw_rhs.starts_with("len(") && raw_rhs.ends_with(')') {
-                        let inner = raw_rhs.trim_start_matches("len(").trim_end_matches(')').trim();
-                        let l = self.string_vars.get(inner).map(|s| s.len() as i64).unwrap_or(0);
-                        self.vars.insert(var_name, l);
-                    } else if let Some(str_val) = self.eval_string_expr(raw_rhs) {
+                    if raw_rhs.starts_with('"') && raw_rhs.ends_with('"') {
+                        let str_val = raw_rhs.trim_matches('"').to_string();
                         self.string_vars.insert(var_name, str_val);
+                    } else if raw_rhs.starts_with("read_file(") && raw_rhs.ends_with(')') {
+                        let path_arg = raw_rhs.trim_start_matches("read_file(").trim_end_matches(')').trim().trim_matches('"');
+                        let content = fs::read_to_string(path_arg).unwrap_or_default();
+                        self.string_vars.insert(var_name, content);
                     } else {
                         let evaluated = evaluate_expression(raw_rhs, &self.vars)?;
                         self.vars.insert(var_name, evaluated);
@@ -687,27 +472,53 @@ impl MicroScriptEngine {
                     rest_trimmed
                 }.trim_end_matches(';').trim();
 
-                if let Some(text) = self.eval_string_expr(inner) {
+                if inner.starts_with('"') && inner.ends_with('"') && inner.len() >= 2 {
+                    let text = &inner[1..inner.len() - 1];
                     if is_nl {
                         println!("{}", text);
                     } else {
                         print!("{}", text);
                         let _ = io::stdout().flush();
                     }
-                } else if let Ok(val) = evaluate_expression(inner, &self.vars) {
+                } else if let Some(s) = self.string_vars.get(inner) {
+                    if is_nl {
+                        println!("{}", s);
+                    } else {
+                        print!("{}", s);
+                        let _ = io::stdout().flush();
+                    }
+                } else {
+                    let val = evaluate_expression(inner, &self.vars)?;
                     if is_nl {
                         println!("{}", val);
                     } else {
                         print!("{}", val);
                         let _ = io::stdout().flush();
                     }
+                }
+                i += 1;
+                continue;
+            }
+
+            // Built-in: sys("command") or sys command
+            if line.starts_with("sys(") || line.starts_with("sys ") {
+                let cmd_arg = if line.starts_with("sys(") {
+                    line.trim_start_matches("sys(").trim_end_matches(';').trim_end_matches(')').trim().trim_matches('"')
                 } else {
-                    if is_nl {
-                        println!("{}", inner);
-                    } else {
-                        print!("{}", inner);
-                        let _ = io::stdout().flush();
-                    }
+                    line["sys".len()..].trim().trim_end_matches(';').trim_matches('"')
+                };
+                let _ = Command::new("/bin/sh").arg("-c").arg(cmd_arg).status();
+                i += 1;
+                continue;
+            }
+
+            // Built-in: write_file("path", "content")
+            if line.starts_with("write_file(") {
+                let args_str = line.trim_start_matches("write_file(").trim_end_matches(';').trim_end_matches(')');
+                if let Some((p, c)) = args_str.split_once(',') {
+                    let path = p.trim().trim_matches('"');
+                    let content = c.trim().trim_matches('"');
+                    let _ = fs::write(path, content);
                 }
                 i += 1;
                 continue;
@@ -795,9 +606,8 @@ pub fn run_repl() -> ExitCode {
                 println!("\x1b[1;32m=> {} (0x{:X}, 0b{:b})\x1b[0m", result, result, result);
             }
             Err(_) => {
-                if let Some(s) = engine.eval_string_expr(trimmed) {
-                    println!("\x1b[1;32m=> \"{}\"\x1b[0m", s);
-                } else if let Err(e) = engine.execute(trimmed) {
+                // Fallback to script line execution (e.g. `let x = ...` or `print(...)`)
+                if let Err(e) = engine.execute(trimmed) {
                     println!("\x1b[1;31mError: {}\x1b[0m", e);
                 }
             }
@@ -960,9 +770,6 @@ mod tests {
             if sum == 15 {
                 let success = 1;
             }
-            let full = "Status: " + msg;
-            let json_doc = "{\"origin\":\"127.0.0.1\",\"agent\":\"ferro\"}";
-            let ip = json_get(json_doc, "origin");
         "#;
         engine.execute(script).expect("valid script");
         assert_eq!(engine.vars.get("a"), Some(&10));
@@ -970,14 +777,5 @@ mod tests {
         assert_eq!(engine.vars.get("sum"), Some(&15));
         assert_eq!(engine.vars.get("success"), Some(&1));
         assert_eq!(engine.string_vars.get("msg"), Some(&"FERRO_TEST_OK".to_string()));
-        assert_eq!(engine.string_vars.get("full"), Some(&"Status: FERRO_TEST_OK".to_string()));
-        assert_eq!(engine.string_vars.get("ip"), Some(&"127.0.0.1".to_string()));
-    }
-
-    #[test]
-    fn test_json_get_parser() {
-        let sample = r#"{"name": "FerroOS", "version": "2.3.0", "active": true}"#;
-        assert_eq!(json_get(sample, "name"), Some("FerroOS".to_string()));
-        assert_eq!(json_get(sample, "version"), Some("2.3.0".to_string()));
     }
 }
