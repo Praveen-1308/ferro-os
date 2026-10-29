@@ -26,6 +26,7 @@ pub mod zeroize;
 pub mod auth;
 pub mod standard_utils;
 pub mod sys_utils;
+pub mod extra_utils;
 
 #[cfg(target_os = "linux")]
 extern "C" {
@@ -201,6 +202,24 @@ fn main() -> ExitCode {
         "sysctl" => sys_utils::run_sysctl(&command_args),
         "lsblk" => sys_utils::run_lsblk(&command_args),
         "blkid" => sys_utils::run_blkid(&command_args),
+        "nproc" => extra_utils::run_nproc(&command_args),
+        "groups" => extra_utils::run_groups(&command_args),
+        "pgrep" => extra_utils::run_pgrep(&command_args),
+        "pkill" => extra_utils::run_pkill(&command_args),
+        "killall" => extra_utils::run_killall(&command_args),
+        "tac" => extra_utils::run_tac(&command_args),
+        "rev" => extra_utils::run_rev(&command_args),
+        "nl" => extra_utils::run_nl(&command_args),
+        "paste" => extra_utils::run_paste(&command_args),
+        "fold" => extra_utils::run_fold(&command_args),
+        "watch" => extra_utils::run_watch(&command_args),
+        "xxd" => extra_utils::run_xxd(&command_args),
+        "hexdump" => extra_utils::run_hexdump(&command_args),
+        "nice" => extra_utils::run_nice(&command_args),
+        "renice" => extra_utils::run_renice(&command_args),
+        "md5sum" => extra_utils::run_md5sum(&command_args),
+        "sha1sum" => extra_utils::run_sha1sum(&command_args),
+        "shuf" => extra_utils::run_shuf(&command_args),
         "help" | "--help" | "-h" => {
             print_usage();
             ExitCode::SUCCESS
@@ -727,7 +746,10 @@ pub const ALL_APPLETS: &[&str] = &[
     "date", "du", "cut", "sort", "uniq", "tr", "yes", "seq", "sha256sum",
     "printenv", "wget", "ping",
     "base64", "xargs", "sed", "tar", "timeout", "nohup", "tty",
-    "diff", "cmp", "chroot", "sysctl", "lsblk", "blkid"
+    "diff", "cmp", "chroot", "sysctl", "lsblk", "blkid",
+    "nproc", "groups", "pgrep", "pkill", "killall",
+    "tac", "rev", "nl", "paste", "fold", "watch",
+    "xxd", "hexdump", "nice", "renice", "md5sum", "sha1sum", "shuf"
 ];
 
 fn is_internal_applet(cmd: &str) -> bool {
@@ -1148,6 +1170,24 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "sysctl" => sys_utils::run_sysctl(args),
         "lsblk" => sys_utils::run_lsblk(args),
         "blkid" => sys_utils::run_blkid(args),
+        "nproc" => extra_utils::run_nproc(args),
+        "groups" => extra_utils::run_groups(args),
+        "pgrep" => extra_utils::run_pgrep(args),
+        "pkill" => extra_utils::run_pkill(args),
+        "killall" => extra_utils::run_killall(args),
+        "tac" => extra_utils::run_tac(args),
+        "rev" => extra_utils::run_rev(args),
+        "nl" => extra_utils::run_nl(args),
+        "paste" => extra_utils::run_paste(args),
+        "fold" => extra_utils::run_fold(args),
+        "watch" => extra_utils::run_watch(args),
+        "xxd" => extra_utils::run_xxd(args),
+        "hexdump" => extra_utils::run_hexdump(args),
+        "nice" => extra_utils::run_nice(args),
+        "renice" => extra_utils::run_renice(args),
+        "md5sum" => extra_utils::run_md5sum(args),
+        "sha1sum" => extra_utils::run_sha1sum(args),
+        "shuf" => extra_utils::run_shuf(args),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
             ExitCode::from(127)

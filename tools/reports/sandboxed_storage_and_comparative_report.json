@@ -3,27 +3,27 @@
     "landlock_blocked_unauthorized": {
       "status": "PASS",
       "rc": 1,
-      "latency_ms": 15.527083072811365,
+      "latency_ms": 13.903167098760605,
       "blocked": true
     },
     "landlock_authorized_storage_write": {
       "status": "PASS",
       "rc": 0,
-      "latency_ms": 15.169166959822178,
+      "latency_ms": 12.187750078737736,
       "verified_content": "FERRO_PERSISTENT_DATA_12345"
     }
   },
   "ferrocage_volumes": {
     "volume_mount_persistence": {
       "status": "PASS",
-      "latency_ms": 13.518458930775523,
+      "latency_ms": 12.241791933774948,
       "host_path": "/tmp/ferrocage_test_persist/persisted_db.sqlite",
       "payload": "FERROCAGE_BLOCK_STORAGE_CONFIRMED"
     },
     "volume_readonly_enforcement": {
       "status": "PASS",
       "rc": 1,
-      "latency_ms": 13.723584124818444,
+      "latency_ms": 12.451790971681476,
       "write_blocked": true
     }
   },
@@ -37,11 +37,11 @@
   "ubuntu_comparative": {
     "ubuntu_mount_persistence": {
       "status": "PASS",
-      "latency_ms": 294.9602920562029
+      "latency_ms": 275.7624159567058
     },
     "ubuntu_mount_ro_enforcement": {
       "status": "PASS",
-      "latency_ms": 225.54008406586945
+      "latency_ms": 244.22929203137755
     }
   }
 }
