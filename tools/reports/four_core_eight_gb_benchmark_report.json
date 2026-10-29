@@ -1,0 +1,134 @@
+{
+  "benchmark_name": "4_core_8gb_workload_comparative_benchmark",
+  "timestamp": "2026-10-29T09:44:00Z",
+  "hardware": {
+    "cores_allocated": 4.0,
+    "memory_budget_mb": 8192,
+    "host_machine": "x86_64",
+    "kernel": "7.0.0-38-generic"
+  },
+  "ubuntu_container": {
+    "os": "Ubuntu 24.04",
+    "mode": "Containerized (Docker/runc/veth)",
+    "cpu_cores": 4.0,
+    "memory_budget_mb": 8192,
+    "startup_time_sec": 0.327,
+    "daemon_overhead_mb": 231.0,
+    "idle_service_rss_mb": 37.0,
+    "peak_service_rss_mb": 355.2,
+    "tier_results": [
+      {
+        "concurrency": 100,
+        "rps": 1464.4,
+        "total_requests": 13412,
+        "errors": 231,
+        "p50_ms": 6.49,
+        "p95_ms": 15.89,
+        "p99_ms": 1237.65,
+        "max_ms": 4926.06,
+        "error_rate_pct": 1.693
+      },
+      {
+        "concurrency": 300,
+        "rps": 442.4,
+        "total_requests": 4789,
+        "errors": 6659,
+        "p50_ms": 6.55,
+        "p95_ms": 15.9,
+        "p99_ms": 1271.68,
+        "max_ms": 2729.88,
+        "error_rate_pct": 58.167
+      },
+      {
+        "concurrency": 600,
+        "rps": 0.0,
+        "total_requests": 0,
+        "errors": 10095,
+        "p50_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0,
+        "max_ms": 0.0,
+        "error_rate_pct": 100.0
+      },
+      {
+        "concurrency": 1200,
+        "rps": 0.0,
+        "total_requests": 0,
+        "errors": 12479,
+        "p50_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0,
+        "max_ms": 0.0,
+        "error_rate_pct": 100.0
+      }
+    ],
+    "storage": {
+      "exists": true,
+      "size_mb": 5.48,
+      "total_likes": 51797,
+      "wal_size_mb": 4.82
+    }
+  },
+  "ferroos_native": {
+    "os": "FerroOS (Pure Rust)",
+    "mode": "Native (No Containers / ferro-superd / Landlock)",
+    "cpu_cores": 4.0,
+    "memory_budget_mb": 8192,
+    "startup_time_sec": 0.001,
+    "daemon_overhead_mb": 2.66,
+    "idle_service_rss_mb": 2.8,
+    "peak_service_rss_mb": 2.8,
+    "tier_results": [
+      {
+        "concurrency": 100,
+        "rps": 1858.4,
+        "total_requests": 16746,
+        "errors": 36,
+        "p50_ms": 6.13,
+        "p95_ms": 11.95,
+        "p99_ms": 1061.64,
+        "max_ms": 4397.28,
+        "error_rate_pct": 0.215
+      },
+      {
+        "concurrency": 300,
+        "rps": 1337.1,
+        "total_requests": 16278,
+        "errors": 250,
+        "p50_ms": 8.04,
+        "p95_ms": 1021.99,
+        "p99_ms": 2056.02,
+        "max_ms": 4830.41,
+        "error_rate_pct": 1.513
+      },
+      {
+        "concurrency": 600,
+        "rps": 1203.9,
+        "total_requests": 17172,
+        "errors": 517,
+        "p50_ms": 8.14,
+        "p95_ms": 1252.98,
+        "p99_ms": 3911.09,
+        "max_ms": 7832.21,
+        "error_rate_pct": 2.923
+      },
+      {
+        "concurrency": 1200,
+        "rps": 970.8,
+        "total_requests": 15530,
+        "errors": 1246,
+        "p50_ms": 12.95,
+        "p95_ms": 2305.44,
+        "p99_ms": 4502.33,
+        "max_ms": 7850.61,
+        "error_rate_pct": 7.427
+      }
+    ],
+    "storage": {
+      "exists": true,
+      "size_mb": 5.65,
+      "total_likes": 56291,
+      "wal_size_mb": 27.86
+    }
+  }
+}

@@ -24,7 +24,20 @@ fn get_services_dir() -> String {
 fn get_logs_dir() -> String {
     std::env::var("FERRO_LOGS_DIR").unwrap_or_else(|_| "/var/log/ferro".to_string())
 }
-const CGROUP_ROOT: &str = "/sys/fs/cgroup/ferro.slice";
+fn get_cgroup_root() -> PathBuf {
+    if let Ok(p) = std::env::var("FERRO_CGROUP_ROOT") {
+        return PathBuf::from(p);
+    }
+    let uid = unsafe { libc::getuid() };
+    if uid != 0 {
+        let user_slice = format!("/sys/fs/cgroup/user.slice/user-{}.slice/user@{}.service/app.slice/ferro.slice", uid, uid);
+        let user_app = format!("/sys/fs/cgroup/user.slice/user-{}.slice/user@{}.service/app.slice", uid, uid);
+        if Path::new(&user_app).exists() {
+            return PathBuf::from(user_slice);
+        }
+    }
+    PathBuf::from("/sys/fs/cgroup/ferro.slice")
+}
 const MAX_LOG_LINES: usize = 500;
 
 static RUNNING: AtomicBool = AtomicBool::new(true);
@@ -72,6 +85,7 @@ pub struct ServiceConfig {
     pub backoff_ms: u64,
     pub memory_max_mb: Option<u64>,
     pub memory_high_mb: Option<u64>,
+    pub cpu_cores: Option<f64>,
     pub cpu_weight: Option<u32>,
     pub pids_max: Option<u32>,
     pub health_interval_sec: Option<u64>,
@@ -166,12 +180,17 @@ impl Supervisor {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.extension().and_then(|s| s.to_str()) == Some("toml") {
-                if let Ok(config) = parse_service_toml(&path) {
-                    if !lock.contains_key(&config.name) {
-                        println!("[ferro-superd] Loaded manifest for service: {}", config.name);
-                        let name = config.name.clone();
-                        let svc = ManagedService::new(config);
-                        lock.insert(name, svc);
+                match parse_service_toml(&path) {
+                    Ok(config) => {
+                        if !lock.contains_key(&config.name) {
+                            println!("[ferro-superd] Loaded manifest for service: {}", config.name);
+                            let name = config.name.clone();
+                            let svc = ManagedService::new(config);
+                            lock.insert(name, svc);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("[ferro-superd] Warning: failed to parse manifest {}: {}", path.display(), e);
                     }
                 }
             }
@@ -306,7 +325,8 @@ impl Supervisor {
 // ---------------------------------------------------------------------------
 
 fn setup_cgroup_v2(config: &ServiceConfig, pid: u32) {
-    let cg_path = PathBuf::from(CGROUP_ROOT).join(&config.name);
+    let cg_root = get_cgroup_root();
+    let cg_path = cg_root.join(&config.name);
     if !Path::new("/sys/fs/cgroup").exists() {
         return;
     }
@@ -339,6 +359,14 @@ fn setup_cgroup_v2(config: &ServiceConfig, pid: u32) {
         let _ = fs::write(cpu_file, format!("{}\n", weight));
     }
 
+    // CPU Quota (cores limit, e.g. 4.0 cores = 400000 usec per 100000 usec period)
+    if let Some(cores) = config.cpu_cores {
+        let period_us: u64 = 100_000;
+        let quota_us: u64 = (cores * (period_us as f64)) as u64;
+        let cpu_max_file = cg_path.join("cpu.max");
+        let _ = fs::write(cpu_max_file, format!("{} {}\n", quota_us, period_us));
+    }
+
     // PIDs Max
     if let Some(max_pids) = config.pids_max {
         let pids_file = cg_path.join("pids.max");
@@ -347,14 +375,14 @@ fn setup_cgroup_v2(config: &ServiceConfig, pid: u32) {
 }
 
 fn cleanup_cgroup_v2(config: &ServiceConfig) {
-    let cg_path = PathBuf::from(CGROUP_ROOT).join(&config.name);
+    let cg_path = get_cgroup_root().join(&config.name);
     if cg_path.exists() {
         let _ = fs::remove_dir(&cg_path);
     }
 }
 
 fn read_cgroup_metrics(name: &str) -> (u64, u64) {
-    let cg_path = PathBuf::from(CGROUP_ROOT).join(name);
+    let cg_path = get_cgroup_root().join(name);
     let mut mem_bytes = 0;
     let mut cpu_usec = 0;
 
@@ -692,6 +720,7 @@ fn parse_service_toml(path: &Path) -> Result<ServiceConfig, String> {
     let mut backoff_ms = 1000;
     let mut memory_max_mb = None;
     let mut memory_high_mb = None;
+    let mut cpu_cores = None;
     let mut cpu_weight = None;
     let mut pids_max = None;
     let mut health_interval_sec = None;
@@ -699,25 +728,41 @@ fn parse_service_toml(path: &Path) -> Result<ServiceConfig, String> {
     let mut health_timeout_sec = 5;
     let mut restart_on_unhealthy = false;
 
-    for raw_line in content.lines() {
+    let lines: Vec<&str> = content.lines().collect();
+    let mut i = 0;
+    while i < lines.len() {
+        let raw_line = lines[i];
         let line = raw_line.trim();
+        i += 1;
         if line.is_empty() || line.starts_with('#') || line.starts_with('[') {
             continue;
         }
 
-        if let Some((k, v)) = line.split_once('=') {
+        if let Some((k, v_str)) = line.split_once('=') {
             let key = k.trim();
-            let val = v.trim();
+            let mut val = v_str.trim().to_string();
+
+            if val.starts_with('[') && !val.ends_with(']') {
+                while i < lines.len() {
+                    let next_line = lines[i].trim();
+                    i += 1;
+                    val.push(' ');
+                    val.push_str(next_line);
+                    if next_line.contains(']') {
+                        break;
+                    }
+                }
+            }
 
             match key {
-                "name" => name = strip_quotes(val),
-                "description" => description = strip_quotes(val),
-                "working_dir" => working_dir = strip_quotes(val),
-                "user" => user = Some(strip_quotes(val)),
-                "group" => group = Some(strip_quotes(val)),
-                "command" => command = parse_string_array(val),
+                "name" => name = strip_quotes(&val),
+                "description" => description = strip_quotes(&val),
+                "working_dir" => working_dir = strip_quotes(&val),
+                "user" => user = Some(strip_quotes(&val)),
+                "group" => group = Some(strip_quotes(&val)),
+                "command" => command = parse_string_array(&val),
                 "policy" => {
-                    let p = strip_quotes(val);
+                    let p = strip_quotes(&val);
                     restart_policy = match p.as_str() {
                         "always" => RestartPolicy::Always,
                         "on-failure" => RestartPolicy::OnFailure,
@@ -729,10 +774,11 @@ fn parse_service_toml(path: &Path) -> Result<ServiceConfig, String> {
                 "backoff_ms" => backoff_ms = val.parse::<u64>().unwrap_or(1000),
                 "memory_max_mb" => memory_max_mb = val.parse::<u64>().ok(),
                 "memory_high_mb" => memory_high_mb = val.parse::<u64>().ok(),
+                "cpu_cores" => cpu_cores = val.parse::<f64>().ok(),
                 "cpu_weight" => cpu_weight = val.parse::<u32>().ok(),
                 "pids_max" => pids_max = val.parse::<u32>().ok(),
                 "check_interval_sec" => health_interval_sec = val.parse::<u64>().ok(),
-                "check_command" => health_command = Some(parse_string_array(val)),
+                "check_command" => health_command = Some(parse_string_array(&val)),
                 "timeout_sec" => health_timeout_sec = val.parse::<u64>().unwrap_or(5),
                 "restart_on_unhealthy" => restart_on_unhealthy = val == "true",
                 _ => {}
@@ -756,6 +802,7 @@ fn parse_service_toml(path: &Path) -> Result<ServiceConfig, String> {
         backoff_ms,
         memory_max_mb,
         memory_high_mb,
+        cpu_cores,
         cpu_weight,
         pids_max,
         health_interval_sec,
