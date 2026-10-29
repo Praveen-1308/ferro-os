@@ -688,6 +688,10 @@ mod linux_init {
             libc::MS_NOSUID | libc::MS_NOEXEC,
             Some("gid=5,mode=620"),
         );
+
+        if check_immutable_cmdline() {
+            setup_immutable_overlay_storage("");
+        }
     }
 
     fn set_hostname(name: &str) {
@@ -800,6 +804,14 @@ mod linux_init {
     }
 
     fn mount_persistent_root(dev: &str, target: &str) -> bool {
+        let is_immutable = check_immutable_cmdline();
+        let mount_flags = if is_immutable {
+            println!("[ferro-init] Immutable rootfs mode requested via kernel cmdline (rootflags=ro / ferro.immutable=1).");
+            libc::MS_RDONLY | libc::MS_RELATIME
+        } else {
+            libc::MS_RELATIME
+        };
+
         for fstype in &["ext4", "btrfs", "xfs"] {
             let c_dev = match CString::new(dev) { Ok(c) => c, Err(_) => continue };
             let c_target = match CString::new(target) { Ok(c) => c, Err(_) => continue };
@@ -810,16 +822,51 @@ mod linux_init {
                     c_dev.as_ptr(),
                     c_target.as_ptr(),
                     c_fstype.as_ptr(),
-                    libc::MS_RELATIME,
+                    mount_flags,
                     std::ptr::null(),
                 );
                 if ret == 0 {
-                    println!("[ferro-init] Mounted persistent root {} ({}) on {}", dev, fstype, target);
+                    println!("[ferro-init] Mounted persistent root {} ({}) on {} [flags: 0x{:x}]", dev, fstype, target, mount_flags);
+                    if is_immutable {
+                        setup_immutable_overlay_storage(target);
+                    }
                     return true;
                 }
             }
         }
         false
+    }
+
+    fn check_immutable_cmdline() -> bool {
+        if let Ok(cmdline) = fs::read_to_string("/proc/cmdline") {
+            for token in cmdline.split_whitespace() {
+                if token == "ro"
+                    || token == "rootflags=ro"
+                    || token == "ferro.immutable=1"
+                    || token.starts_with("rootflags=ro,")
+                    || token.ends_with(",ro")
+                {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    fn setup_immutable_overlay_storage(sysroot: &str) {
+        println!("[ferro-init] Initializing writable overlayfs & tmpfs volatile layers on '{}'...", sysroot);
+        let var_target = if sysroot.is_empty() { "/var".to_string() } else { format!("{}/var", sysroot) };
+        let _ = fs::create_dir_all(&var_target);
+        mount_fs("tmpfs", &var_target, "tmpfs", libc::MS_NOSUID | libc::MS_NODEV, Some("mode=0755"));
+
+        let etc_target = if sysroot.is_empty() { "/etc".to_string() } else { format!("{}/etc", sysroot) };
+        let upper = "/tmp/.overlay_etc_upper";
+        let work = "/tmp/.overlay_etc_work";
+        let _ = fs::create_dir_all(upper);
+        let _ = fs::create_dir_all(work);
+        let overlay_opts = format!("lowerdir={},upperdir={},workdir={}", etc_target, upper, work);
+        mount_fs("overlay", &etc_target, "overlay", libc::MS_NOSUID | libc::MS_NODEV, Some(&overlay_opts));
+        println!("[ferro-init] ✅ Immutable Rootfs Active: / (read-only), /var (volatile tmpfs), /etc (overlayfs)");
     }
 
     fn move_mount(src: &str, dst: &str) {

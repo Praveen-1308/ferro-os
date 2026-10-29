@@ -37,6 +37,80 @@ pub struct ContainerState {
     pub network: String,
 }
 
+// ---------------------------------------------------------------------------
+// OCI Container Runtime Specification Structures (config.json)
+// ---------------------------------------------------------------------------
+
+#[derive(serde::Deserialize, Debug, Default)]
+pub struct OciConfig {
+    #[serde(rename = "ociVersion", default)]
+    pub oci_version: String,
+    #[serde(default)]
+    pub process: Option<OciProcess>,
+    #[serde(default)]
+    pub root: Option<OciRoot>,
+    #[serde(default)]
+    pub hostname: Option<String>,
+    #[serde(default)]
+    pub mounts: Option<Vec<OciMount>>,
+    #[serde(default)]
+    pub linux: Option<OciLinux>,
+}
+
+#[derive(serde::Deserialize, Debug, Default)]
+pub struct OciProcess {
+    #[serde(default)]
+    pub args: Vec<String>,
+    #[serde(default)]
+    pub env: Vec<String>,
+    #[serde(default)]
+    pub cwd: Option<String>,
+}
+
+#[derive(serde::Deserialize, Debug, Default)]
+pub struct OciRoot {
+    #[serde(default)]
+    pub path: String,
+    #[serde(default)]
+    pub readonly: Option<bool>,
+}
+
+#[derive(serde::Deserialize, Debug, Default)]
+pub struct OciMount {
+    #[serde(default)]
+    pub destination: String,
+    #[serde(default)]
+    pub source: Option<String>,
+    #[serde(default)]
+    pub options: Option<Vec<String>>,
+}
+
+#[derive(serde::Deserialize, Debug, Default)]
+pub struct OciLinux {
+    #[serde(default)]
+    pub resources: Option<OciResources>,
+}
+
+#[derive(serde::Deserialize, Debug, Default)]
+pub struct OciResources {
+    #[serde(default)]
+    pub memory: Option<OciMemory>,
+    #[serde(default)]
+    pub pids: Option<OciPids>,
+}
+
+#[derive(serde::Deserialize, Debug, Default)]
+pub struct OciMemory {
+    #[serde(default)]
+    pub limit: Option<u64>,
+}
+
+#[derive(serde::Deserialize, Debug, Default)]
+pub struct OciPids {
+    #[serde(default)]
+    pub limit: Option<u32>,
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.is_empty() {
@@ -88,6 +162,7 @@ fn print_usage() {
     println!();
     println!("Run Options:");
     println!("  -d, --detach                 Run container in background");
+    println!("  -b, --bundle <dir>           Path to standard OCI container bundle (config.json + rootfs)");
     println!("  -m, --memory <bytes|M|G>     Memory limit (e.g. 256M, 1G)");
     println!("  --cpus <float>               CPU quota limit (e.g. 1.5)");
     println!("  --pids-max <num>             Process limit (e.g. 50)");
@@ -117,6 +192,7 @@ fn handle_run(args: &[String]) -> ExitCode {
     let mut network = "host".to_string();
     let mut image = String::new();
     let mut cmd_parts = Vec::new();
+    let mut bundle_dir: Option<PathBuf> = None;
 
     let mut idx = 0;
     while idx < args.len() {
@@ -124,6 +200,9 @@ fn handle_run(args: &[String]) -> ExitCode {
         if arg == "-d" || arg == "--detach" {
             detach = true;
             idx += 1;
+        } else if (arg == "-b" || arg == "--bundle") && idx + 1 < args.len() {
+            bundle_dir = Some(PathBuf::from(&args[idx + 1]));
+            idx += 2;
         } else if (arg == "-m" || arg == "--memory") && idx + 1 < args.len() {
             memory_bytes = parse_memory_spec(&args[idx + 1]);
             idx += 2;
@@ -159,8 +238,86 @@ fn handle_run(args: &[String]) -> ExitCode {
         }
     }
 
+    let mut oci_envs = Vec::new();
+    let mut oci_cwd = None;
+
+    // Ingest OCI standard bundle if specified
+    if let Some(ref bundle) = bundle_dir {
+        let config_path = bundle.join("config.json");
+        if !config_path.exists() {
+            eprintln!("ferrocage: OCI bundle error: '{}' does not contain config.json", bundle.display());
+            return ExitCode::FAILURE;
+        }
+
+        match fs::read_to_string(&config_path) {
+            Ok(content) => match serde_json::from_str::<OciConfig>(&content) {
+                Ok(oci) => {
+                    println!("[ferrocage] Ingested OCI runtime bundle (OCI version: {})", oci.oci_version);
+                    if image.is_empty() {
+                        let root_sub = oci.root.as_ref().map(|r| r.path.as_str()).unwrap_or("rootfs");
+                        let root_path = if Path::new(root_sub).is_absolute() {
+                            PathBuf::from(root_sub)
+                        } else {
+                            bundle.join(root_sub)
+                        };
+                        image = root_path.to_string_lossy().to_string();
+                    }
+
+                    if cmd_parts.is_empty() {
+                        if let Some(ref proc) = oci.process {
+                            if !proc.args.is_empty() {
+                                cmd_parts = proc.args.clone();
+                            }
+                        }
+                    }
+
+                    if memory_bytes.is_none() {
+                        memory_bytes = oci.linux.as_ref()
+                            .and_then(|l| l.resources.as_ref())
+                            .and_then(|r| r.memory.as_ref())
+                            .and_then(|m| m.limit);
+                    }
+
+                    if pids_max.is_none() {
+                        pids_max = oci.linux.as_ref()
+                            .and_then(|l| l.resources.as_ref())
+                            .and_then(|r| r.pids.as_ref())
+                            .and_then(|p| p.limit);
+                    }
+
+                    if let Some(ref proc) = oci.process {
+                        for env_str in &proc.env {
+                            if let Some((k, v)) = env_str.split_once('=') {
+                                oci_envs.push((k.to_string(), v.to_string()));
+                            }
+                        }
+                        oci_cwd = proc.cwd.clone();
+                    }
+
+                    if let Some(mounts) = oci.mounts {
+                        for m in mounts {
+                            if let Some(src) = m.source {
+                                if !src.is_empty() {
+                                    volumes.push(format!("{}:{}", src, m.destination));
+                                }
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("ferrocage: failed parsing OCI config.json: {}", e);
+                    return ExitCode::FAILURE;
+                }
+            },
+            Err(e) => {
+                eprintln!("ferrocage: failed reading OCI config.json: {}", e);
+                return ExitCode::FAILURE;
+            }
+        }
+    }
+
     if image.is_empty() {
-        eprintln!("ferrocage run: image name required");
+        eprintln!("ferrocage run: image name or --bundle <dir> required");
         return ExitCode::FAILURE;
     }
 
@@ -187,6 +344,14 @@ fn handle_run(args: &[String]) -> ExitCode {
     let mut cmd = Command::new(&cmd_parts[0]);
     if cmd_parts.len() > 1 {
         cmd.args(&cmd_parts[1..]);
+    }
+    if !oci_envs.is_empty() {
+        cmd.envs(oci_envs);
+    }
+    if let Some(ref cwd) = oci_cwd {
+        if Path::new(cwd).exists() {
+            cmd.current_dir(cwd);
+        }
     }
 
     configure_container_isolation(&mut cmd, &name, &image, &volumes, &network);
@@ -1033,4 +1198,42 @@ fn dir_size(path: &Path) -> u64 {
         }
     }
     total
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_oci_config_deserialization() {
+        let sample_oci_json = r#"{
+            "ociVersion": "1.0.2",
+            "process": {
+                "terminal": false,
+                "user": { "uid": 0, "gid": 0 },
+                "args": ["/bin/app", "--worker", "4"],
+                "env": ["PORT=8080", "RUST_LOG=info"],
+                "cwd": "/app"
+            },
+            "root": {
+                "path": "rootfs",
+                "readonly": true
+            },
+            "linux": {
+                "resources": {
+                    "memory": { "limit": 268435456 },
+                    "pids": { "limit": 100 }
+                }
+            }
+        }"#;
+
+        let oci: OciConfig = serde_json::from_str(sample_oci_json).expect("valid OCI config");
+        assert_eq!(oci.oci_version, "1.0.2");
+        assert_eq!(oci.process.as_ref().unwrap().args, vec!["/bin/app", "--worker", "4"]);
+        assert_eq!(oci.process.as_ref().unwrap().env, vec!["PORT=8080", "RUST_LOG=info"]);
+        assert_eq!(oci.process.as_ref().unwrap().cwd.as_deref(), Some("/app"));
+        assert_eq!(oci.root.as_ref().unwrap().path, "rootfs");
+        assert_eq!(oci.linux.as_ref().unwrap().resources.as_ref().unwrap().memory.as_ref().unwrap().limit, Some(268435456));
+        assert_eq!(oci.linux.as_ref().unwrap().resources.as_ref().unwrap().pids.as_ref().unwrap().limit, Some(100));
+    }
 }

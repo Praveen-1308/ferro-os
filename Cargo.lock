@@ -94,6 +94,8 @@ name = "ferrocage"
 version = "2.3.0"
 dependencies = [
  "libc",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

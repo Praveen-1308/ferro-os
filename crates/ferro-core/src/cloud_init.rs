@@ -2,7 +2,7 @@
 //! Compatible with AWS EC2 IMDS, GCP Compute Engine, Azure VM Metadata, and OpenStack.
 //! Automatically provisions hostnames, injects SSH authorized_keys, and executes user-data bootstrapping scripts.
 
-use std::fs::{self, OpenOptions};
+use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::os::unix::fs::PermissionsExt;
@@ -103,16 +103,20 @@ pub fn run_cloud_init(args: &[String]) -> ExitCode {
     if let Some(user_data) = http_get(custom_host, custom_port, "/latest/user-data") {
         let script = user_data.trim();
         if !script.is_empty() {
-            println!("   • Discovered User-Data Script ({} bytes).", script.len());
-            let script_path = "/var/lib/ferro/user-data.sh";
-            if !dry_run {
-                if fs::write(script_path, script).is_ok() {
-                    let _ = fs::set_permissions(script_path, fs::Permissions::from_mode(0o755));
-                    println!("   • Executing User-Data script in background...");
-                    let _ = Command::new("/bin/sh")
-                        .arg(script_path)
-                        .spawn();
-                    println!("   ✅ User-Data bootstrap process launched.");
+            println!("   • Discovered User-Data payload ({} bytes).", script.len());
+            if script.starts_with("#cloud-config") {
+                process_cloud_config(script, dry_run);
+            } else {
+                let script_path = "/var/lib/ferro/user-data.sh";
+                if !dry_run {
+                    if fs::write(script_path, script).is_ok() {
+                        let _ = fs::set_permissions(script_path, fs::Permissions::from_mode(0o755));
+                        println!("   • Executing User-Data shell script in background...");
+                        let _ = Command::new("/bin/sh")
+                            .arg(script_path)
+                            .spawn();
+                        println!("   ✅ User-Data bootstrap process launched.");
+                    }
                 }
             }
         }
@@ -236,6 +240,161 @@ fn http_get(host: &str, port: u16, path: &str) -> Option<String> {
     }
 }
 
+/// Pure-Rust Declarative #cloud-config YAML Parser & Executor
+/// Handles write_files, runcmd, hostname, and ssh_authorized_keys directives
+pub fn process_cloud_config(doc: &str, dry_run: bool) {
+    println!("   ⚡ [cloud-init] Processing declarative #cloud-config YAML document...");
+    let lines: Vec<&str> = doc.lines().collect();
+    let mut i = 0;
+
+    while i < lines.len() {
+        let line = lines[i].trim();
+        if line.starts_with('#') || line.is_empty() {
+            i += 1;
+            continue;
+        }
+
+        if let Some(host_val) = line.strip_prefix("hostname:") {
+            let h = host_val.trim().trim_matches(|c| c == '"' || c == '\'');
+            println!("   • [cloud-config] Configured hostname: {}", h);
+            if !dry_run {
+                set_system_hostname(h);
+                append_to_hosts(h);
+            }
+            i += 1;
+            continue;
+        }
+
+        if line == "write_files:" || line.starts_with("write_files:") {
+            i += 1;
+            while i < lines.len() {
+                let wline = lines[i];
+                if !wline.starts_with("  ") && !wline.starts_with('\t') && !wline.trim().is_empty() {
+                    break;
+                }
+                let trimmed = wline.trim();
+                if trimmed.starts_with("- path:") || trimmed.starts_with("path:") {
+                    let mut file_path = trimmed
+                        .trim_start_matches("- path:")
+                        .trim_start_matches("path:")
+                        .trim()
+                        .trim_matches(|c| c == '"' || c == '\'')
+                        .to_string();
+                    let mut content = String::new();
+                    let mut permissions = "0644".to_string();
+                    let mut in_multiline_content = false;
+
+                    i += 1;
+                    while i < lines.len() {
+                        let sub = lines[i];
+                        let sub_trim = sub.trim();
+                        if sub_trim.starts_with("- path:")
+                            || (!sub.starts_with("  ") && !sub.starts_with('\t') && !sub_trim.is_empty())
+                        {
+                            break;
+                        }
+
+                        if sub_trim.starts_with("path:") {
+                            file_path = sub_trim
+                                .trim_start_matches("path:")
+                                .trim()
+                                .trim_matches(|c| c == '"' || c == '\'')
+                                .to_string();
+                        } else if sub_trim.starts_with("permissions:") {
+                            permissions = sub_trim
+                                .trim_start_matches("permissions:")
+                                .trim()
+                                .trim_matches(|c| c == '"' || c == '\'')
+                                .to_string();
+                            in_multiline_content = false;
+                        } else if sub_trim.starts_with("content:") {
+                            let rest = sub_trim.trim_start_matches("content:").trim();
+                            if rest == "|" || rest == ">" {
+                                in_multiline_content = true;
+                            } else {
+                                content = rest
+                                    .trim_matches(|c| c == '"' || c == '\'')
+                                    .replace("\\n", "\n");
+                                in_multiline_content = false;
+                            }
+                        } else if in_multiline_content {
+                            if !content.is_empty() {
+                                content.push('\n');
+                            }
+                            content.push_str(sub_trim);
+                        }
+                        i += 1;
+                    }
+
+                    if !file_path.is_empty() {
+                        println!("   • [cloud-config] Writing file '{}' (mode: {})", file_path, permissions);
+                        if !dry_run {
+                            if let Some(parent) = Path::new(&file_path).parent() {
+                                let _ = fs::create_dir_all(parent);
+                            }
+                            if let Ok(mut f) = File::create(&file_path) {
+                                let _ = f.write_all(content.as_bytes());
+                                if let Ok(mode) = u32::from_str_radix(&permissions, 8) {
+                                    #[cfg(unix)]
+                                    {
+                                        use std::os::unix::fs::PermissionsExt;
+                                        let _ = fs::set_permissions(&file_path, fs::Permissions::from_mode(mode));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    continue;
+                }
+                i += 1;
+            }
+            continue;
+        }
+
+        if line == "runcmd:" || line.starts_with("runcmd:") {
+            i += 1;
+            while i < lines.len() {
+                let rline = lines[i];
+                if !rline.starts_with("  ") && !rline.starts_with('\t') && !rline.trim().is_empty() {
+                    break;
+                }
+                let trimmed = rline.trim();
+                if let Some(cmd_entry) = trimmed.strip_prefix("- ") {
+                    let cmd_str = cmd_entry.trim().trim_matches(|c| c == '"' || c == '\'');
+                    println!("   • [cloud-config] Executing runcmd: {}", cmd_str);
+                    if !dry_run {
+                        let _ = Command::new("/bin/sh").arg("-c").arg(cmd_str).status();
+                    }
+                }
+                i += 1;
+            }
+            continue;
+        }
+
+        if line == "ssh_authorized_keys:" || line.starts_with("ssh_authorized_keys:") {
+            i += 1;
+            while i < lines.len() {
+                let kline = lines[i];
+                if !kline.starts_with("  ") && !kline.starts_with('\t') && !kline.trim().is_empty() {
+                    break;
+                }
+                let trimmed = kline.trim();
+                if let Some(key_entry) = trimmed.strip_prefix("- ") {
+                    let clean_key = key_entry.trim().trim_matches(|c| c == '"' || c == '\'');
+                    println!("   • [cloud-config] Ingesting SSH authorized key ({} bytes)", clean_key.len());
+                    if !dry_run {
+                        inject_authorized_key(clean_key);
+                    }
+                }
+                i += 1;
+            }
+            continue;
+        }
+
+        i += 1;
+    }
+}
+
 fn set_system_hostname(name: &str) {
     use std::ffi::CString;
     if let Ok(c_name) = CString::new(name) {
@@ -298,5 +457,35 @@ fn inject_authorized_key(key: &str) {
             let _ = file.write_all(key_line.as_bytes());
             let _ = fs::set_permissions(ferro_auth_path, fs::Permissions::from_mode(0o600));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cloud_config_yaml_parsing() {
+        let sample_yaml = r#"#cloud-config
+hostname: ferro-prod-node01
+write_files:
+  - path: /tmp/test_cloud_config_file.txt
+    content: "FERRO_CONFIG_PAYLOAD_OK"
+    permissions: "0644"
+runcmd:
+  - echo "provisioned" > /dev/null
+ssh_authorized_keys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG... devops@ferro-cloud
+"#;
+        // Dry-run execution
+        process_cloud_config(sample_yaml, true);
+
+        // Live execution to /tmp
+        process_cloud_config(sample_yaml, false);
+        let test_path = Path::new("/tmp/test_cloud_config_file.txt");
+        assert!(test_path.exists());
+        let content = fs::read_to_string(test_path).unwrap();
+        assert_eq!(content, "FERRO_CONFIG_PAYLOAD_OK");
+        let _ = fs::remove_file(test_path);
     }
 }

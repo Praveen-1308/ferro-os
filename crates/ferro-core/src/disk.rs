@@ -231,6 +231,40 @@ pub fn install_to_disk(target_disk: &str) -> ExitCode {
     );
     let _ = fs::write(format!("{}/etc/fstab", install_mount), fstab_content);
 
+    // Deploy CIS Benchmark & KSPP kernel hardening sysctl package
+    let sysctl_dir = format!("{}/etc/sysctl.d", install_mount);
+    let _ = fs::create_dir_all(&sysctl_dir);
+    let sysctl_content = "\
+# CIS Linux Benchmark & KSPP Kernel Hardening for FerroOS Cloud Nodes\n\
+kernel.randomize_va_space = 2\n\
+kernel.kptr_restrict = 2\n\
+kernel.dmesg_restrict = 1\n\
+kernel.unprivileged_bpf_disabled = 1\n\
+kernel.yama.ptrace_scope = 2\n\
+fs.protected_symlinks = 1\n\
+fs.protected_hardlinks = 1\n\
+fs.protected_fifos = 2\n\
+fs.protected_regular = 2\n\
+fs.suid_dumpable = 0\n\
+net.ipv4.tcp_syncookies = 1\n\
+net.ipv4.conf.all.rp_filter = 1\n\
+net.ipv4.conf.default.rp_filter = 1\n\
+net.ipv4.conf.all.accept_redirects = 0\n\
+net.ipv4.conf.default.accept_redirects = 0\n\
+net.ipv4.conf.all.accept_source_route = 0\n\
+net.ipv4.conf.default.accept_source_route = 0\n\
+net.ipv6.conf.all.accept_redirects = 0\n\
+net.ipv6.conf.default.accept_redirects = 0\n\
+net.core.somaxconn = 65535\n\
+net.ipv4.tcp_max_syn_backlog = 65535\n\
+net.ipv4.tcp_tw_reuse = 1\n\
+net.ipv4.ip_local_port_range = 1024 65535\n\
+net.ipv4.tcp_fin_timeout = 15\n\
+vm.swappiness = 10\n\
+vm.dirty_background_bytes = 67108864\n\
+vm.dirty_bytes = 268435456\n";
+    let _ = fs::write(format!("{}/99-ferro-cloud.conf", sysctl_dir), sysctl_content);
+
     // Write marker flag
     let _ = fs::write(format!("{}/etc/ferro_persistent_root", install_mount), "FERRO_PERSISTENT_ROOT=1\n");
 
