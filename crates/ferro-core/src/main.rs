@@ -27,6 +27,7 @@ pub mod auth;
 pub mod standard_utils;
 pub mod sys_utils;
 pub mod extra_utils;
+pub mod ext_utils;
 
 #[cfg(target_os = "linux")]
 extern "C" {
@@ -220,6 +221,21 @@ fn main() -> ExitCode {
         "md5sum" => extra_utils::run_md5sum(&command_args),
         "sha1sum" => extra_utils::run_sha1sum(&command_args),
         "shuf" => extra_utils::run_shuf(&command_args),
+        "file" => ext_utils::run_file(&command_args),
+        "strings" => ext_utils::run_strings(&command_args),
+        "split" => ext_utils::run_split(&command_args),
+        "comm" => ext_utils::run_comm(&command_args),
+        "truncate" => ext_utils::run_truncate(&command_args),
+        "tree" => ext_utils::run_tree(&command_args),
+        "cal" => ext_utils::run_cal(&command_args),
+        "lscpu" => ext_utils::run_lscpu(&command_args),
+        "lsmod" => ext_utils::run_lsmod(&command_args),
+        "lspci" => ext_utils::run_lspci(&command_args),
+        "ifconfig" => ext_utils::run_ifconfig(&command_args),
+        "link" => ext_utils::run_link(&command_args),
+        "unlink" => ext_utils::run_unlink(&command_args),
+        "factor" => ext_utils::run_factor(&command_args),
+        "logname" => ext_utils::run_logname(&command_args),
         "help" | "--help" | "-h" => {
             print_usage();
             ExitCode::SUCCESS
@@ -749,7 +765,9 @@ pub const ALL_APPLETS: &[&str] = &[
     "diff", "cmp", "chroot", "sysctl", "lsblk", "blkid",
     "nproc", "groups", "pgrep", "pkill", "killall",
     "tac", "rev", "nl", "paste", "fold", "watch",
-    "xxd", "hexdump", "nice", "renice", "md5sum", "sha1sum", "shuf"
+    "xxd", "hexdump", "nice", "renice", "md5sum", "sha1sum", "shuf",
+    "file", "strings", "split", "comm", "truncate", "tree", "cal",
+    "lscpu", "lsmod", "lspci", "ifconfig", "link", "unlink", "factor", "logname"
 ];
 
 fn is_internal_applet(cmd: &str) -> bool {
@@ -1188,6 +1206,21 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "md5sum" => extra_utils::run_md5sum(args),
         "sha1sum" => extra_utils::run_sha1sum(args),
         "shuf" => extra_utils::run_shuf(args),
+        "file" => ext_utils::run_file(args),
+        "strings" => ext_utils::run_strings(args),
+        "split" => ext_utils::run_split(args),
+        "comm" => ext_utils::run_comm(args),
+        "truncate" => ext_utils::run_truncate(args),
+        "tree" => ext_utils::run_tree(args),
+        "cal" => ext_utils::run_cal(args),
+        "lscpu" => ext_utils::run_lscpu(args),
+        "lsmod" => ext_utils::run_lsmod(args),
+        "lspci" => ext_utils::run_lspci(args),
+        "ifconfig" => ext_utils::run_ifconfig(args),
+        "link" => ext_utils::run_link(args),
+        "unlink" => ext_utils::run_unlink(args),
+        "factor" => ext_utils::run_factor(args),
+        "logname" => ext_utils::run_logname(args),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
             ExitCode::from(127)

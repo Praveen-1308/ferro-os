@@ -576,7 +576,7 @@ pub fn run_date(args: &[String]) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-fn break_down_timestamp(epoch_sec: u64) -> (u32, u32, u32, u32, u32, u32, u32) {
+pub(crate) fn break_down_timestamp(epoch_sec: u64) -> (u32, u32, u32, u32, u32, u32, u32) {
     let second = (epoch_sec % 60) as u32;
     let minute = ((epoch_sec / 60) % 60) as u32;
     let hour = ((epoch_sec / 3600) % 24) as u32;
