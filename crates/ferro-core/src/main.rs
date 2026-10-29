@@ -23,6 +23,8 @@ pub mod sshd;
 pub mod syslog;
 pub mod service;
 pub mod zeroize;
+pub mod editor;
+pub mod runner;
 
 #[cfg(target_os = "linux")]
 extern "C" {
@@ -163,6 +165,9 @@ fn main() -> ExitCode {
         "ss" => run_ss(&command_args),
         "service" | "ferro-service" => service::run_service(&command_args),
         "container" | "ferrocage" | "cage" => run_ferrocage(&command_args),
+        "edit" | "nano" | "vi" | "fed" => editor::run_editor(&command_args),
+        "eval" => runner::run_eval(&command_args),
+        "run" | "code" | "ferro-run" => runner::run_runner(&command_args),
         "help" => {
             print_usage();
             ExitCode::SUCCESS
@@ -191,6 +196,7 @@ fn print_usage() {
     println!(
         "  Performance & Net: bench (cpu/hackbench/fsync), hackbench, bench-fsync, serve, server-suite, gamemode, dns-cache, fdstore, bpf, sched, game, install, snapshot, recovery"
     );
+    println!("  Developer Tools:   edit (nano/vi/fed), eval (math & bitwise), run (runner/REPL), code");
     println!("  Diagnostics & WinRE: recovery (Advanced Boot & Crash Recovery Menu)");
 }
 
@@ -240,8 +246,8 @@ fn run_sh(args: &[String]) -> ExitCode {
         libc::signal(libc::SIGINT, shell_sigint_handler as *const () as usize);
     }
 
-    println!("Welcome to FerroOS Shell (Rust)");
-    println!("Type 'help' for builtins, or run any system command (e.g. python3).");
+    println!("Welcome to FerroOS Modern Shell (Rust)");
+    println!("Type 'help' for builtins (edit, nano, vi, run, eval, code), or run any system command.");
 
     let stdin = io::stdin();
     let mut stdout = io::stdout();
@@ -249,7 +255,7 @@ fn run_sh(args: &[String]) -> ExitCode {
     loop {
         reap_shell_zombies();
         let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
-        print!("ferro-os:{}$ ", cwd.display());
+        print!("\x1b[1;32mferro-os\x1b[0m:\x1b[1;34m{}\x1b[0m$ ", cwd.display());
         let _ = stdout.flush();
 
         let mut line = String::new();
@@ -648,7 +654,8 @@ pub const ALL_APPLETS: &[&str] = &[
     "hackbench", "bench-fsync", "fsync-bench", "dhcp", "ferro-net", "udhcpc",
     "ferrod", "syslogd", "logger", "logs", "log", "journalctl", "dmesg",
     "server-suite", "server", "disk", "cloud-init", "cloudinit", "sshd", "ssh-server",
-    "netstat", "ss", "service", "ferro-service", "container", "ferrocage", "cage"
+    "netstat", "ss", "service", "ferro-service", "container", "ferrocage", "cage",
+    "edit", "nano", "vi", "fed", "run", "eval", "code", "ferro-run"
 ];
 
 fn is_internal_applet(cmd: &str) -> bool {
@@ -983,6 +990,14 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "recovery" => run_recovery(),
         "service" | "ferro-service" => service::run_service(args),
         "container" | "ferrocage" | "cage" => run_ferrocage(args),
+        "disk" => disk::run_disk(args),
+        "cloud-init" | "cloudinit" => cloud_init::run_cloud_init(args),
+        "sshd" | "ssh-server" => sshd::run_sshd(args),
+        "netstat" => run_netstat(args),
+        "ss" => run_ss(args),
+        "edit" | "nano" | "vi" | "fed" => editor::run_editor(args),
+        "eval" => runner::run_eval(args),
+        "run" | "code" | "ferro-run" => runner::run_runner(args),
         _ => {
             eprintln!("sh: {}: command not found", cmd);
             ExitCode::FAILURE
