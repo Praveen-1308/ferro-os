@@ -14,18 +14,73 @@ const IMDS_HOST: &str = "169.254.169.254";
 const IMDS_PORT: u16 = 80;
 
 pub fn run_cloud_init(args: &[String]) -> ExitCode {
+    let mut dry_run = false;
+    let mut custom_host = IMDS_HOST.to_string();
+    let mut custom_port = IMDS_PORT;
+
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
+        if arg == "--dry-run" {
+            dry_run = true;
+            i += 1;
+        } else if arg == "--host" {
+            if i + 1 < args.len() {
+                custom_host = args[i + 1].clone();
+                i += 2;
+            } else {
+                eprintln!("cloud-init: option requires an argument -- 'host'");
+                return ExitCode::FAILURE;
+            }
+        } else if let Some(h) = arg.strip_prefix("--host=") {
+            custom_host = h.to_string();
+            i += 1;
+        } else if arg == "--port" {
+            if i + 1 < args.len() {
+                match args[i + 1].parse::<u16>() {
+                    Ok(p) if p > 0 => custom_port = p,
+                    _ => {
+                        eprintln!("cloud-init: invalid port: '{}'", args[i + 1]);
+                        return ExitCode::FAILURE;
+                    }
+                }
+                i += 2;
+            } else {
+                eprintln!("cloud-init: option requires an argument -- 'port'");
+                return ExitCode::FAILURE;
+            }
+        } else if let Some(p_str) = arg.strip_prefix("--port=") {
+            match p_str.parse::<u16>() {
+                Ok(p) if p > 0 => custom_port = p,
+                _ => {
+                    eprintln!("cloud-init: invalid port: '{}'", p_str);
+                    return ExitCode::FAILURE;
+                }
+            }
+            i += 1;
+        } else if arg == "--help" || arg == "-h" {
+            println!("Usage: cloud-init [OPTIONS]");
+            println!("Autonomous Cloud Provisioning & Metadata Ingestion Engine.");
+            println!("  --dry-run             simulate provisioning without modifying filesystem");
+            println!("  --host <HOST>         metadata service IP/hostname (default: 169.254.169.254)");
+            println!("  --port <PORT>         metadata service port (default: 80)");
+            return ExitCode::SUCCESS;
+        } else if arg.starts_with('-') {
+            eprintln!("cloud-init: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
+        } else {
+            i += 1;
+        }
+    }
+
     println!("================================================================================");
     println!("        FERRO-OS AUTONOMOUS CLOUD-INIT & METADATA INGESTION ENGINE              ");
     println!("================================================================================");
 
-    let dry_run = args.iter().any(|a| a == "--dry-run");
-    let custom_host = args.iter().position(|a| a == "--host").and_then(|i| args.get(i + 1)).map(|s| s.as_str()).unwrap_or(IMDS_HOST);
-    let custom_port = args.iter().position(|a| a == "--port").and_then(|i| args.get(i + 1)).and_then(|s| s.parse().ok()).unwrap_or(IMDS_PORT);
-
     println!("[cloud-init] Probing Cloud Metadata Service at {}:{}...", custom_host, custom_port);
 
     // 1. Check if IMDS is reachable
-    let is_reachable = probe_metadata_service(custom_host, custom_port);
+    let is_reachable = probe_metadata_service(&custom_host, custom_port);
     if !is_reachable {
         println!("[cloud-init] Cloud Metadata Service not detected at {}:{}.", custom_host, custom_port);
         println!("[cloud-init] Status: Running in on-premise / local virtualization mode. Skipping cloud provisioning.");
@@ -42,7 +97,7 @@ pub fn run_cloud_init(args: &[String]) -> ExitCode {
 
     // 2. Fetch & Set Hostname
     println!("[cloud-init] [1/3] Querying Instance Hostname...");
-    if let Some(hostname) = http_get(custom_host, custom_port, "/latest/meta-data/hostname") {
+    if let Some(hostname) = http_get(&custom_host, custom_port, "/latest/meta-data/hostname") {
         if let Some(clean_hostname) = sanitize_hostname(&hostname) {
             println!("   • Discovered Cloud Hostname: {}", clean_hostname);
             if !dry_run {
@@ -62,7 +117,7 @@ pub fn run_cloud_init(args: &[String]) -> ExitCode {
     let mut keys_found = Vec::new();
 
     // Try standard EC2 / OpenStack paths
-    if let Some(key) = http_get(custom_host, custom_port, "/latest/meta-data/public-keys/0/openssh-key") {
+    if let Some(key) = http_get(&custom_host, custom_port, "/latest/meta-data/public-keys/0/openssh-key") {
         let clean_key = key.trim();
         if clean_key.starts_with("ssh-") || clean_key.starts_with("ecdsa-") {
             keys_found.push(clean_key.to_string());
@@ -71,11 +126,11 @@ pub fn run_cloud_init(args: &[String]) -> ExitCode {
 
     // Try alternative index list
     if keys_found.is_empty() {
-        if let Some(key_list) = http_get(custom_host, custom_port, "/latest/meta-data/public-keys/") {
+        if let Some(key_list) = http_get(&custom_host, custom_port, "/latest/meta-data/public-keys/") {
             for line in key_list.lines() {
                 let key_idx = line.split('=').next().unwrap_or("0").trim();
                 let key_path = format!("/latest/meta-data/public-keys/{}/openssh-key", key_idx);
-                if let Some(k) = http_get(custom_host, custom_port, &key_path) {
+                if let Some(k) = http_get(&custom_host, custom_port, &key_path) {
                     if k.trim().starts_with("ssh-") {
                         keys_found.push(k.trim().to_string());
                     }

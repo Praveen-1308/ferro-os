@@ -1437,6 +1437,9 @@ pub fn run_lscpu(args: &[String]) -> ExitCode {
             println!("Usage: lscpu [options]");
             println!("Display information about the CPU architecture.");
             return ExitCode::SUCCESS;
+        } else {
+            eprintln!("lscpu: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -1445,12 +1448,19 @@ pub fn run_lscpu(args: &[String]) -> ExitCode {
         .map(|n| n.get())
         .unwrap_or(1);
 
-    println!("Architecture:                    {}", arch);
-    println!("CPU op-mode(s):                  32-bit, 64-bit");
-    println!("Address sizes:                   48 bits physical, 48 bits virtual");
-    println!("Byte Order:                      Little Endian");
-    println!("CPU(s):                          {}", num_cpus);
-    println!("On-line CPU(s) list:             0-{}", num_cpus.saturating_sub(1));
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
+    let mut write_line = |s: &str| -> io::Result<()> {
+        writeln!(out, "{}", s)
+    };
+
+    let _ = write_line(&format!("Architecture:                    {}", arch));
+    let _ = write_line("CPU op-mode(s):                  32-bit, 64-bit");
+    let _ = write_line("Address sizes:                   48 bits physical, 48 bits virtual");
+    let _ = write_line("Byte Order:                      Little Endian");
+    let _ = write_line(&format!("CPU(s):                          {}", num_cpus));
+    let _ = write_line(&format!("On-line CPU(s) list:             0-{}", num_cpus.saturating_sub(1)));
 
     // Try reading /proc/cpuinfo
     let mut vendor = "GenuineFerro".to_string();
@@ -1488,15 +1498,17 @@ pub fn run_lscpu(args: &[String]) -> ExitCode {
         }
     }
 
-    println!("Vendor ID:                       {}", vendor);
-    println!("Model name:                      {}", model);
-    println!("CPU MHz:                         {}", mhz);
-    println!("Virtualization:                  VT-x / KVM / Hypervisor");
-    println!("L1d cache:                       32 KiB");
-    println!("L1i cache:                       32 KiB");
-    println!("L2 cache:                        512 KiB");
-    println!("L3 cache:                        16 MiB");
-    println!("Flags:                           {}", flags);
+    let _ = write_line(&format!("Vendor ID:                       {}", vendor));
+    let _ = write_line(&format!("Model name:                      {}", model));
+    let _ = write_line(&format!("CPU MHz:                         {}", mhz));
+    let _ = write_line("Virtualization:                  VT-x / KVM / Hypervisor");
+    let _ = write_line("L1d cache:                       32 KiB");
+    let _ = write_line("L1i cache:                       32 KiB");
+    let _ = write_line("L2 cache:                        512 KiB");
+    let _ = write_line("L3 cache:                        16 MiB");
+    if write_line(&format!("Flags:                           {}", flags)).is_err() {
+        return ExitCode::SUCCESS;
+    }
 
     ExitCode::SUCCESS
 }
@@ -1511,10 +1523,22 @@ pub fn run_lsmod(args: &[String]) -> ExitCode {
             println!("Usage: lsmod");
             println!("Show the status of modules in the Linux Kernel.");
             return ExitCode::SUCCESS;
+        } else {
+            eprintln!("lsmod: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
-    println!("{:<24} {:<10} {}", "Module", "Size", "Used by");
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
+    let mut write_line = |s: &str| -> io::Result<()> {
+        writeln!(out, "{}", s)
+    };
+
+    if write_line(&format!("{:<24} {:<10} {}", "Module", "Size", "Used by")).is_err() {
+        return ExitCode::SUCCESS;
+    }
 
     if let Ok(content) = fs::read_to_string("/proc/modules") {
         for line in content.lines() {
@@ -1529,7 +1553,9 @@ pub fn run_lsmod(args: &[String]) -> ExitCode {
                 } else {
                     format!("{} {}", used, by)
                 };
-                println!("{:<24} {:<10} {}", name, size, used_str);
+                if write_line(&format!("{:<24} {:<10} {}", name, size, used_str)).is_err() {
+                    return ExitCode::SUCCESS;
+                }
             }
         }
     }
@@ -1547,11 +1573,20 @@ pub fn run_lspci(args: &[String]) -> ExitCode {
             println!("Usage: lspci [options]");
             println!("List all PCI devices.");
             return ExitCode::SUCCESS;
+        } else {
+            eprintln!("lspci: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
     let pci_dir = Path::new("/sys/bus/pci/devices");
     let mut found = false;
+
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+    let mut write_line = |s: &str| -> io::Result<()> {
+        writeln!(out, "{}", s)
+    };
 
     if let Ok(entries) = fs::read_dir(pci_dir) {
         for entry in entries.flatten() {
@@ -1571,19 +1606,21 @@ pub fn run_lspci(args: &[String]) -> ExitCode {
                 .to_string();
 
             let class_name = resolve_pci_class(&class_code);
-            println!("{}: {} [{} / {}]", slot, class_name, vendor, device);
+            if write_line(&format!("{}: {} [{} / {}]", slot, class_name, vendor, device)).is_err() {
+                return ExitCode::SUCCESS;
+            }
             found = true;
         }
     }
 
     if !found {
         // Fallback / standard virtualized QEMU PCI layout
-        println!("00:00.0 Host bridge: Intel Corporation 82G33/G31/P35/P31 Express DRAM Controller");
-        println!("00:01.0 VGA compatible controller: Red Hat, Inc. Virtio GPU (rev 01)");
-        println!("00:02.0 Ethernet controller: Red Hat, Inc. Virtio network device (rev 01)");
-        println!("00:03.0 SCSI storage controller: Red Hat, Inc. Virtio SCSI (rev 01)");
-        println!("00:1f.0 ISA bridge: Intel Corporation 82801IB (ICH9) LPC Interface Controller");
-        println!("00:1f.2 SATA controller: Intel Corporation 82801IR/IO/IH (ICH9R/DO/DH) 6 port SATA Controller [AHCI mode]");
+        let _ = write_line("00:00.0 Host bridge: Intel Corporation 82G33/G31/P35/P31 Express DRAM Controller");
+        let _ = write_line("00:01.0 VGA compatible controller: Red Hat, Inc. Virtio GPU (rev 01)");
+        let _ = write_line("00:02.0 Ethernet controller: Red Hat, Inc. Virtio network device (rev 01)");
+        let _ = write_line("00:03.0 SCSI storage controller: Red Hat, Inc. Virtio SCSI (rev 01)");
+        let _ = write_line("00:1f.0 ISA bridge: Intel Corporation 82801IB (ICH9) LPC Interface Controller");
+        let _ = write_line("00:1f.2 SATA controller: Intel Corporation 82801IR/IO/IH (ICH9R/DO/DH) 6 port SATA Controller [AHCI mode]");
     }
 
     ExitCode::SUCCESS
@@ -1612,14 +1649,27 @@ fn resolve_pci_class(class_code: &str) -> &'static str {
 pub fn run_ifconfig(args: &[String]) -> ExitCode {
     let mut target_iface: Option<&str> = None;
 
-    for arg in args {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
         if arg == "--help" || arg == "-h" {
             println!("Usage: ifconfig [-a] [-s] [interface]");
             println!("Display or configure network interfaces.");
             return ExitCode::SUCCESS;
+        } else if arg == "-a" || arg == "-s" {
+            // standard flags
         } else if !arg.starts_with('-') {
-            target_iface = Some(arg.as_str());
+            if target_iface.is_none() {
+                target_iface = Some(arg.as_str());
+            } else {
+                eprintln!("ifconfig: extra operand '{}'", arg);
+                return ExitCode::from(1);
+            }
+        } else {
+            eprintln!("ifconfig: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
+        i += 1;
     }
 
     let net_dir = Path::new("/sys/class/net");
@@ -1639,25 +1689,30 @@ pub fn run_ifconfig(args: &[String]) -> ExitCode {
 
     if interfaces.is_empty() {
         // Fallback for container or dev host
-        if target_iface.is_none() || target_iface == Some("lo") {
-            println!("lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536");
-            println!("        inet 127.0.0.1  netmask 255.0.0.0");
-            println!("        inet6 ::1  prefixlen 128  scopeid 0x10<host>");
-            println!("        loop  txqueuelen 1000  (Local Loopback)");
-            println!("        RX packets 1200  bytes 98304 (98.3 KB)");
-            println!("        TX packets 1200  bytes 98304 (98.3 KB)");
-            println!();
+        if target_iface.is_none() || target_iface == Some("lo") || target_iface == Some("eth0") {
+            if target_iface.is_none() || target_iface == Some("lo") {
+                println!("lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536");
+                println!("        inet 127.0.0.1  netmask 255.0.0.0");
+                println!("        inet6 ::1  prefixlen 128  scopeid 0x10<host>");
+                println!("        loop  txqueuelen 1000  (Local Loopback)");
+                println!("        RX packets 1200  bytes 98304 (98.3 KB)");
+                println!("        TX packets 1200  bytes 98304 (98.3 KB)");
+                println!();
+            }
+            if target_iface.is_none() || target_iface == Some("eth0") {
+                println!("eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500");
+                println!("        inet 10.0.2.15  netmask 255.255.255.0  broadcast 10.0.2.255");
+                println!("        inet6 fe80::5054:ff:fe12:3456  prefixlen 64  scopeid 0x20<link>");
+                println!("        ether 52:54:00:12:34:56  txqueuelen 1000  (Ethernet)");
+                println!("        RX packets 45012  bytes 34891024 (34.8 MB)");
+                println!("        TX packets 28911  bytes 2109485 (2.1 MB)");
+                println!();
+            }
+            return ExitCode::SUCCESS;
+        } else {
+            eprintln!("ifconfig: {}: error fetching interface information: Device not found", target_iface.unwrap());
+            return ExitCode::from(1);
         }
-        if target_iface.is_none() || target_iface == Some("eth0") {
-            println!("eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500");
-            println!("        inet 10.0.2.15  netmask 255.255.255.0  broadcast 10.0.2.255");
-            println!("        inet6 fe80::5054:ff:fe12:3456  prefixlen 64  scopeid 0x20<link>");
-            println!("        ether 52:54:00:12:34:56  txqueuelen 1000  (Ethernet)");
-            println!("        RX packets 45012  bytes 34891024 (34.8 MB)");
-            println!("        TX packets 28911  bytes 2109485 (2.1 MB)");
-            println!();
-        }
-        return ExitCode::SUCCESS;
     }
 
     interfaces.sort();
