@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xis5hm",
+  "title": "Small Company Getting Heavily Botted Daily.",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xis5hm/small_company_getting_heavily_botted_daily/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Small Company Getting Heavily Botted Daily. <!-- SC_OFF --><div class=\"md\"><p>Hi guys,</p> <p>I own a small 4 person company with an online store that has roughly 4000 products. We&#39;ve been around for over 20 years.</p> <p>Recently, I have been having a large influx of calls from brokers asking to buy the company, they call on behalf of our larger competitors. I refuse politely and tell them I have no intentions of selling. This has been going on for about a year.</p> <p>A month ago, I had another one of these calls.. I told the person on the phone that I get 2-5 calls like this every day and have for a year. I have no interest in selling, and I will never sell. It&#39;s a family owned company that has been passed down through the family and we will never sell.</p> <p>They said &quot;I wouldn&#39;t count on it&quot; and hung up.</p> <p>2 days later I woke up to our store being down and my webhost emailing me franticly saying that someone was doing something to her server causing it to crash.</p> <p>She reset everything, and it was fine again. Website was up.. An hour later I saw my online users spike from 10 to 55. Which was odd.. We only have 5-15 people online at once usually.",
+  "harvested_at": "2026-10-30T10:46:29.816072+00:00"
+}

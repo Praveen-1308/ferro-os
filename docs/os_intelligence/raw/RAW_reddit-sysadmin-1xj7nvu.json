@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xj7nvu",
+  "title": "Classic Outlook - Issues",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xj7nvu/classic_outlook_issues/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Classic Outlook - Issues <!-- SC_OFF --><div class=\"md\"><p>Hi all,</p> <p>Just wanted to post a bunch of issues we\u2019re having in Outlook Classic.</p> <p>I cannot seem to verify if anyone else is having the same issue but the room finder in Classic Outlook is broken for multiple users (we\u2019re talking 100s) and is behaving intermittently. The room finder panel seems to revert to the older interface with no rooms listed. Closing/re-opening Outlook seems to fix it for a bit but it will revert back to the empty view after a few mins. </p> <p>Have done the usual profile re-creation, disabling add/ins, safe mode etc etc but issue persists no matter what. Ms support has been as useless as ever.</p> <p>The same subset of users also have issues with the search. As in users/group recommendations don\u2019t appear as you type in the name.</p> <p>This did lead me to believe it could\u2019ve been edge webview related. Have repaired, uninstalled/reinstalled but still to no avail.</p> <p>Can I please check if anyone else have even remotely similar symptoms as these? Thank you</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/FrostingOk515\"> /u/FrostingOk515 </a> <br/> <spa",
+  "harvested_at": "2026-10-30T10:46:29.816147+00:00"
+}

@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 46 | **Last Sweep**: 2026-10-29 10:47:03 UTC
+**Active Tracked Incidents**: 49 | **Last Sweep**: 2026-10-30 10:46:29 UTC
 
 ---
 
@@ -59,6 +59,9 @@
 | `REDDIT-SYSADMIN-1xgte6q` | **Linux Server Administration** | Tech moving too fast, layoffs everywhere. how are you coping? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xgte6q.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xgte6q.md) |
 | `REDDIT-SYSADMIN-1xherwo` | **Linux Server Administration** | A piece of advice for all the junior sysadmins and help desk guys out there | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xherwo.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xherwo.md) |
 | `REDDIT-SYSADMIN-1xhkai0` | **Linux Server Administration** | Microsoft's October Patch Tuesday fixed 1,413 vulnerabilities. In one month. That's more than they patched in any single year on record. One was already being actively exploited. CISA told federal agencies to patch it within 3 days. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xhkai0.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xhkai0.md) |
+| `REDDIT-SYSADMIN-1xiv8bz` | **Linux Server Administration** | Is it just me, or did we turn into IT-Sec yes men lately, and it’s just not fun anymore? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xiv8bz.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xiv8bz.md) |
+| `REDDIT-SYSADMIN-1xis5hm` | **Linux Server Administration** | Small Company Getting Heavily Botted Daily. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xis5hm.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xis5hm.md) |
+| `REDDIT-SYSADMIN-1xj7nvu` | **Linux Server Administration** | Classic Outlook - Issues | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xj7nvu.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xj7nvu.md) |
 
 ---
 

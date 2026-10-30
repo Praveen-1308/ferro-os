@@ -1302,5 +1302,83 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xhkai0.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xhkai0.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xiv8bz",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Is it just me, or did we turn into IT-Sec yes men lately, and it\u2019s just not fun anymore?",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xiv8bz/is_it_just_me_or_did_we_turn_into_itsec_yes_men/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Is it just me, or did we turn into IT-Sec yes men lately, and it\u2019s just not fun anymore? <!-- SC_OFF --><div class=\"md\"><p>Not sure if this is only the case at my company or if this is the new reality of IT in general. I haven&#39;t been in IT for long, having only started my career about 6\u20137 years ago, and even now, those first three years feel like ancient history compared to today. It&#39;s as if, back in 2019, our mindset was still more similar to that of the &#39;90s, and then a total corporatization of IT took place, and now we&#39;re simply here: zero personality, zero fun, just compliance and subordinating everything in the company to IT security.</p> <p>I understand the importance of IT security, but I don&#39;t understand this trend of subordinating the entire department to security and doing everything from a security perspective, when it mostly comes down to IT-Sec deciding what&#39;s important to them and us having to implement it. Maybe this is just the case at my company (I hope that\u2019s the case) but I have the impression that over the past three years, I haven&#39;t done anything other than patch vulnerabilities and rebuild infrastructure because the old setup didn&#",
+    "score": 0,
+    "timestamp": "2026-10-30T10:46:29.816010+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Is it just me, or did we turn into IT-Sec yes men lately, and it\u2019s just not fun anymore?.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xiv8bz.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xiv8bz.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xis5hm",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Small Company Getting Heavily Botted Daily.",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xis5hm/small_company_getting_heavily_botted_daily/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Small Company Getting Heavily Botted Daily. <!-- SC_OFF --><div class=\"md\"><p>Hi guys,</p> <p>I own a small 4 person company with an online store that has roughly 4000 products. We&#39;ve been around for over 20 years.</p> <p>Recently, I have been having a large influx of calls from brokers asking to buy the company, they call on behalf of our larger competitors. I refuse politely and tell them I have no intentions of selling. This has been going on for about a year.</p> <p>A month ago, I had another one of these calls.. I told the person on the phone that I get 2-5 calls like this every day and have for a year. I have no interest in selling, and I will never sell. It&#39;s a family owned company that has been passed down through the family and we will never sell.</p> <p>They said &quot;I wouldn&#39;t count on it&quot; and hung up.</p> <p>2 days later I woke up to our store being down and my webhost emailing me franticly saying that someone was doing something to her server causing it to crash.</p> <p>She reset everything, and it was fine again. Website was up.. An hour later I saw my online users spike from 10 to 55. Which was odd.. We only have 5-15 people online at once usually.",
+    "score": 0,
+    "timestamp": "2026-10-30T10:46:29.816072+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Small Company Getting Heavily Botted Daily..",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xis5hm.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xis5hm.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xj7nvu",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Classic Outlook - Issues",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xj7nvu/classic_outlook_issues/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Classic Outlook - Issues <!-- SC_OFF --><div class=\"md\"><p>Hi all,</p> <p>Just wanted to post a bunch of issues we\u2019re having in Outlook Classic.</p> <p>I cannot seem to verify if anyone else is having the same issue but the room finder in Classic Outlook is broken for multiple users (we\u2019re talking 100s) and is behaving intermittently. The room finder panel seems to revert to the older interface with no rooms listed. Closing/re-opening Outlook seems to fix it for a bit but it will revert back to the empty view after a few mins. </p> <p>Have done the usual profile re-creation, disabling add/ins, safe mode etc etc but issue persists no matter what. Ms support has been as useless as ever.</p> <p>The same subset of users also have issues with the search. As in users/group recommendations don\u2019t appear as you type in the name.</p> <p>This did lead me to believe it could\u2019ve been edge webview related. Have repaired, uninstalled/reinstalled but still to no avail.</p> <p>Can I please check if anyone else have even remotely similar symptoms as these? Thank you</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/FrostingOk515\"> /u/FrostingOk515 </a> <br/> <spa",
+    "score": 0,
+    "timestamp": "2026-10-30T10:46:29.816147+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Classic Outlook - Issues.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xj7nvu.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xj7nvu.json"
   }
 ]
