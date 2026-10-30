@@ -1758,8 +1758,21 @@ pub fn run_ifconfig(args: &[String]) -> ExitCode {
 // ============================================================================
 
 pub fn run_link(args: &[String]) -> ExitCode {
+    if args.is_empty() {
+        eprintln!("link: missing operand");
+        return ExitCode::from(1);
+    }
+    if args[0] == "--help" || args[0] == "-h" {
+        println!("Usage: link FILE1 FILE2");
+        println!("Call the link function to create a link named FILE2 to an existing FILE1.");
+        return ExitCode::SUCCESS;
+    }
     if args.len() < 2 {
-        eprintln!("link: missing operand (syntax: link FILE1 FILE2)");
+        eprintln!("link: missing operand after '{}'", args[0]);
+        return ExitCode::from(1);
+    }
+    if args.len() > 2 {
+        eprintln!("link: extra operand '{}'", args[2]);
         return ExitCode::from(1);
     }
 
@@ -1777,21 +1790,23 @@ pub fn run_unlink(args: &[String]) -> ExitCode {
         eprintln!("unlink: missing operand");
         return ExitCode::from(1);
     }
-
-    let mut exit_code = ExitCode::SUCCESS;
-    for file in args {
-        if file == "--help" || file == "-h" {
-            println!("Usage: unlink FILE");
-            println!("Call the unlink function to remove the specified FILE.");
-            return ExitCode::SUCCESS;
-        }
-        if let Err(e) = fs::remove_file(file) {
-            eprintln!("unlink: cannot unlink '{file}': {e}");
-            exit_code = ExitCode::from(1);
-        }
+    if args[0] == "--help" || args[0] == "-h" {
+        println!("Usage: unlink FILE");
+        println!("Call the unlink function to remove the specified FILE.");
+        return ExitCode::SUCCESS;
+    }
+    if args.len() > 1 {
+        eprintln!("unlink: extra operand '{}'", args[1]);
+        return ExitCode::from(1);
     }
 
-    exit_code
+    let file = &args[0];
+    if let Err(e) = fs::remove_file(file) {
+        eprintln!("unlink: cannot unlink '{file}': {e}");
+        return ExitCode::from(1);
+    }
+
+    ExitCode::SUCCESS
 }
 
 // ============================================================================
@@ -1799,20 +1814,43 @@ pub fn run_unlink(args: &[String]) -> ExitCode {
 // ============================================================================
 
 pub fn run_factor(args: &[String]) -> ExitCode {
-    let numbers: Vec<String> = if args.is_empty() {
-        let stdin = io::stdin();
-        stdin.lock().lines().flatten().collect()
-    } else {
-        args.to_vec()
-    };
+    let mut numbers = Vec::new();
 
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
+        if arg == "--help" || arg == "-h" {
+            println!("Usage: factor [NUMBER]...");
+            println!("Print the prime factors of each specified integer NUMBER.");
+            return ExitCode::SUCCESS;
+        } else if arg == "--" {
+            i += 1;
+            while i < args.len() {
+                numbers.push(args[i].clone());
+                i += 1;
+            }
+            break;
+        } else {
+            numbers.push(arg.clone());
+            i += 1;
+        }
+    }
+
+    if numbers.is_empty() {
+        let stdin = io::stdin();
+        numbers = stdin.lock().lines().flatten().collect();
+    }
+
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
     let mut exit_code = ExitCode::SUCCESS;
+
     for token in numbers {
         for word in token.split_whitespace() {
-            if word == "--help" || word == "-h" {
-                println!("Usage: factor [NUMBER]...");
-                println!("Print the prime factors of each specified integer NUMBER.");
-                return ExitCode::SUCCESS;
+            if word == "0" {
+                eprintln!("factor: '0' is not a valid positive integer");
+                exit_code = ExitCode::from(1);
+                continue;
             }
 
             match word.parse::<u64>() {
@@ -1823,10 +1861,17 @@ pub fn run_factor(args: &[String]) -> ExitCode {
                         .map(|f| f.to_string())
                         .collect::<Vec<_>>()
                         .join(" ");
-                    if factors_str.is_empty() {
-                        println!("{}:", n);
+                    let res = if factors_str.is_empty() {
+                        writeln!(out, "{}:", n)
                     } else {
-                        println!("{}: {}", n, factors_str);
+                        writeln!(out, "{}: {}", n, factors_str)
+                    };
+                    if let Err(e) = res {
+                        if e.kind() == io::ErrorKind::BrokenPipe {
+                            return ExitCode::SUCCESS;
+                        }
+                        eprintln!("factor: write error: {e}");
+                        return ExitCode::from(1);
                     }
                 }
                 Err(_) => {
@@ -1852,12 +1897,15 @@ fn factorize(mut n: u64) -> Vec<u64> {
     }
 
     let mut d = 3u64;
-    while d.saturating_mul(d) <= n {
+    while d <= 4_294_967_295 && d.checked_mul(d).map_or(false, |sq| sq <= n) {
         while n % d == 0 {
             factors.push(d);
             n /= d;
         }
-        d += 2;
+        d = match d.checked_add(2) {
+            Some(next) => next,
+            None => break,
+        };
     }
 
     if n > 1 {
@@ -1877,6 +1925,9 @@ pub fn run_logname(args: &[String]) -> ExitCode {
             println!("Usage: logname");
             println!("Print the user's login name.");
             return ExitCode::SUCCESS;
+        } else {
+            eprintln!("logname: no arguments allowed");
+            return ExitCode::FAILURE;
         }
     }
 
@@ -1884,7 +1935,15 @@ pub fn run_logname(args: &[String]) -> ExitCode {
         .or_else(|_| env::var("USER"))
         .unwrap_or_else(|_| "ferro".to_string());
 
-    println!("{}", user);
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+    if let Err(e) = writeln!(out, "{}", user) {
+        if e.kind() == io::ErrorKind::BrokenPipe {
+            return ExitCode::SUCCESS;
+        }
+        eprintln!("logname: write error: {e}");
+        return ExitCode::FAILURE;
+    }
     ExitCode::SUCCESS
 }
 
@@ -1906,11 +1965,65 @@ mod tests {
     }
 
     #[test]
+    fn test_factor_edge_cases() {
+        // Zero, one, negative numbers
+        assert_eq!(run_factor(&["0".to_string()]), ExitCode::from(1));
+        assert_eq!(run_factor(&["-42".to_string()]), ExitCode::from(1));
+        assert_eq!(run_factor(&["notanumber".to_string()]), ExitCode::from(1));
+        assert_eq!(run_factor(&["1".to_string()]), ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn test_cal_validation() {
+        // Year 0, negative year, month > 12, month < 1
+        assert_eq!(run_cal(&["0".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_cal(&["-2026".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_cal(&["13".to_string(), "2026".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_cal(&["0".to_string(), "2026".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_cal(&["-1".to_string(), "2026".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_cal(&["10".to_string(), "2026".to_string()]), ExitCode::SUCCESS);
+    }
+
+    #[test]
     fn test_parse_byte_size() {
         assert_eq!(parse_byte_size("1024"), Some(1024));
         assert_eq!(parse_byte_size("10K"), Some(10240));
+        assert_eq!(parse_byte_size("10KB"), Some(10240));
         assert_eq!(parse_byte_size("1M"), Some(1048576));
+        assert_eq!(parse_byte_size("1MB"), Some(1048576));
         assert_eq!(parse_byte_size("2G"), Some(2147483648));
+        assert_eq!(parse_byte_size("2GB"), Some(2147483648));
+        assert_eq!(parse_byte_size("1b"), Some(512));
+        assert_eq!(parse_byte_size("invalid"), None);
+        assert_eq!(parse_byte_size(""), None);
+    }
+
+    #[test]
+    fn test_split_validation() {
+        // -b 0 and -l 0 must be rejected
+        assert_eq!(run_split(&["-b".to_string(), "0".to_string(), "dummy".to_string()]), ExitCode::from(1));
+        assert_eq!(run_split(&["-l".to_string(), "0".to_string(), "dummy".to_string()]), ExitCode::from(1));
+        assert_eq!(run_split(&["-b".to_string(), "invalid".to_string(), "dummy".to_string()]), ExitCode::from(1));
+        assert_eq!(run_split(&["--unknown-flag".to_string()]), ExitCode::from(1));
+    }
+
+    #[test]
+    fn test_truncate_validation() {
+        // Missing -s, missing file operand, invalid size
+        assert_eq!(run_truncate(&["file.txt".to_string()]), ExitCode::from(1));
+        assert_eq!(run_truncate(&["-s".to_string(), "10K".to_string()]), ExitCode::from(1));
+        assert_eq!(run_truncate(&["-s".to_string(), "--10".to_string(), "file.txt".to_string()]), ExitCode::from(1));
+        assert_eq!(run_truncate(&["--unknown-flag".to_string()]), ExitCode::from(1));
+    }
+
+    #[test]
+    fn test_link_unlink_validation() {
+        assert_eq!(run_link(&[]), ExitCode::from(1));
+        assert_eq!(run_link(&["single".to_string()]), ExitCode::from(1));
+        assert_eq!(run_link(&["a".to_string(), "b".to_string(), "c".to_string()]), ExitCode::from(1));
+
+        assert_eq!(run_unlink(&[]), ExitCode::from(1));
+        assert_eq!(run_unlink(&["a".to_string(), "b".to_string()]), ExitCode::from(1));
     }
 
     #[test]
@@ -1920,6 +2033,7 @@ mod tests {
         assert_eq!(format_suffix(26, 2, false), Some("ba".to_string()));
         assert_eq!(format_suffix(0, 2, true), Some("00".to_string()));
         assert_eq!(format_suffix(9, 2, true), Some("09".to_string()));
+        assert_eq!(format_suffix(100, 2, true), None);
     }
 
     #[test]

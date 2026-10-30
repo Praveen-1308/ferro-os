@@ -155,7 +155,7 @@ pub fn run_cloud_init(args: &[String]) -> ExitCode {
 
     // 4. Fetch & Execute User-Data Bootstrapping Script
     println!("[cloud-init] [3/3] Querying User-Data Bootstrapping Script...");
-    if let Some(user_data) = http_get(custom_host, custom_port, "/latest/user-data") {
+    if let Some(user_data) = http_get(&custom_host, custom_port, "/latest/user-data") {
         let script = user_data.trim();
         if !script.is_empty() {
             println!("   • Discovered User-Data payload ({} bytes).", script.len());

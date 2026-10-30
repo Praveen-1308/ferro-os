@@ -3887,6 +3887,11 @@ fn run_free(args: &[String]) -> ExitCode {
                 println!("  -h, --human         show human-readable output");
                 return ExitCode::SUCCESS;
             }
+            arg if arg.starts_with('-') => {
+                eprintln!("free: invalid option -- '{}'", arg.trim_start_matches('-'));
+                eprintln!("Try 'free --help' for more information.");
+                return ExitCode::FAILURE;
+            }
             _ => {}
         }
     }
@@ -3948,7 +3953,12 @@ fn run_df(args: &[String]) -> ExitCode {
                 println!("  -k                    like --block-size=1K");
                 return ExitCode::SUCCESS;
             }
-            _ if !arg.starts_with('-') => targets.push(arg.as_str()),
+            arg if !arg.starts_with('-') => targets.push(arg),
+            arg if arg.starts_with('-') => {
+                eprintln!("df: invalid option -- '{}'", arg.trim_start_matches('-'));
+                eprintln!("Try 'df --help' for more information.");
+                return ExitCode::FAILURE;
+            }
             _ => {}
         }
     }
@@ -4226,7 +4236,19 @@ pub(crate) fn run_kill(args: &[String]) -> ExitCode {
     exit_code
 }
 
-fn run_uptime(_args: &[String]) -> ExitCode {
+fn run_uptime(args: &[String]) -> ExitCode {
+    for arg in args {
+        if arg == "--help" || arg == "-h" {
+            println!("Usage: uptime [OPTION]...");
+            println!("Tell how long the system has been running.");
+            println!("  -h, --help     display this help and exit");
+            return ExitCode::SUCCESS;
+        } else if arg.starts_with('-') {
+            eprintln!("uptime: invalid option -- '{}'", arg.trim_start_matches('-'));
+            return ExitCode::FAILURE;
+        }
+    }
+
     let mut up_str = "up 0 min".to_string();
     if let Ok(content) = fs::read_to_string("/proc/uptime") {
         if let Some(first) = content.split_whitespace().next() {
@@ -10445,5 +10467,25 @@ mod tests {
         assert_eq!(run_kill(&["-l".to_string()]), ExitCode::SUCCESS);
         assert_eq!(run_kill(&["-INVALID".to_string(), "123".to_string()]), ExitCode::FAILURE);
         assert_eq!(run_kill(&["abc".to_string()]), ExitCode::FAILURE);
+    }
+
+    #[test]
+    fn test_cluster4_applet_cli_validations() {
+        assert_eq!(run_sleep(&[]), ExitCode::FAILURE);
+        assert_eq!(run_sleep(&["--invalid".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_sleep(&["-5".to_string()]), ExitCode::FAILURE);
+
+        assert_eq!(run_free(&["--invalid".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_df(&["--invalid".to_string()]), ExitCode::FAILURE);
+
+        assert_eq!(run_uptime(&["--help".to_string()]), ExitCode::SUCCESS);
+        assert_eq!(run_uptime(&["--invalid".to_string()]), ExitCode::FAILURE);
+
+        assert_eq!(run_sh(&["-c".to_string()]), ExitCode::from(2));
+        assert_eq!(run_sh(&["--invalid".to_string()]), ExitCode::from(2));
+
+        assert_eq!(dhcp::run_dhcp(&["--invalid".to_string()]), ExitCode::from(1));
+        assert_eq!(cloud_init::run_cloud_init(&["--invalid".to_string()]), ExitCode::FAILURE);
+        assert_eq!(sshd::run_sshd(&["--invalid".to_string()]), ExitCode::FAILURE);
     }
 }
