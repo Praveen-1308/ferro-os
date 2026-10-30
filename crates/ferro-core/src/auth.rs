@@ -202,6 +202,53 @@ pub fn lookup_group_by_gid(gid: u32) -> Option<GroupRecord> {
     get_groups().into_iter().find(|g| g.gid == gid)
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ShadowRecord {
+    pub name: String,
+    pub password_hash: String,
+    pub last_change: Option<i64>,
+}
+
+pub fn parse_shadow_content(content: &str) -> Vec<ShadowRecord> {
+    let mut records = Vec::new();
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let parts: Vec<&str> = line.split(':').collect();
+        if parts.len() >= 2 {
+            records.push(ShadowRecord {
+                name: parts[0].to_string(),
+                password_hash: parts[1].to_string(),
+                last_change: parts.get(2).and_then(|v| v.parse::<i64>().ok()),
+            });
+        }
+    }
+    records
+}
+
+pub fn get_shadow_records() -> Vec<ShadowRecord> {
+    if let Ok(content) = fs::read_to_string("/etc/shadow") {
+        parse_shadow_content(&content)
+    } else {
+        Vec::new()
+    }
+}
+
+pub fn lookup_shadow_by_name(name: &str) -> Option<ShadowRecord> {
+    get_shadow_records().into_iter().find(|s| s.name == name)
+}
+
+pub fn is_account_locked(name: &str) -> bool {
+    if let Some(shadow) = lookup_shadow_by_name(name) {
+        let hash = &shadow.password_hash;
+        hash == "!" || hash == "*" || hash.starts_with('!') || hash.starts_with('*')
+    } else {
+        false
+    }
+}
+
 pub fn is_user_in_group(username: &str, groupname: &str) -> bool {
     let users = get_users();
     let groups = get_groups();
@@ -377,6 +424,11 @@ pub fn run_sudo(args: &[String]) -> ExitCode {
         }
     };
 
+    if is_account_locked(&target_user.name) {
+        eprintln!("sudo: account for '{}' is locked or disabled", target_user.name);
+        return ExitCode::from(1);
+    }
+
     let target_gid = if let Some(ref grp) = target_groupname {
         if let Ok(numeric_gid) = grp.parse::<u32>() {
             numeric_gid
@@ -440,9 +492,11 @@ fn print_sudo_usage() {
 
 pub fn run_su(args: &[String]) -> ExitCode {
     let mut target_username = "root".to_string();
+    let mut target_set = false;
     let mut login_shell = false;
     let mut custom_shell: Option<String> = None;
     let mut command_to_run: Option<String> = None;
+    let mut extra_shell_args = Vec::new();
 
     let mut i = 0;
     while i < args.len() {
@@ -474,12 +528,17 @@ pub fn run_su(args: &[String]) -> ExitCode {
             println!("  -s, --shell <shell>       run <shell> if /etc/shells allows it");
             println!("  -h, --help                display this help and exit");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') {
-            target_username = arg.clone();
-            break;
-        } else {
+        } else if arg.starts_with('-') {
             eprintln!("su: unrecognized option '{}'", arg);
             return ExitCode::from(1);
+        } else {
+            if !target_set {
+                target_username = arg.clone();
+                target_set = true;
+            } else {
+                extra_shell_args.push(arg.clone());
+            }
+            i += 1;
         }
     }
 
@@ -501,6 +560,11 @@ pub fn run_su(args: &[String]) -> ExitCode {
         return ExitCode::from(1);
     }
 
+    if is_account_locked(&target_username) {
+        eprintln!("su: account for '{}' is locked or disabled", target_username);
+        return ExitCode::from(1);
+    }
+
     let target_user = match lookup_user_by_name(&target_username) {
         Some(u) => u,
         None => {
@@ -514,6 +578,9 @@ pub fn run_su(args: &[String]) -> ExitCode {
     if let Some(cmd) = command_to_run {
         exec_args.push("-c".to_string());
         exec_args.push(cmd);
+    } else if !extra_shell_args.is_empty() {
+        exec_args.push("-c".to_string());
+        exec_args.push(extra_shell_args.join(" "));
     }
 
     let binary_path = resolve_executable_path(&shell);
@@ -647,6 +714,10 @@ pub fn run_auth(args: &[String]) -> ExitCode {
     let subcmd = args.first().map(|s| s.as_str()).unwrap_or("status");
     match subcmd {
         "status" | "-c" | "--check" => {
+            if args.len() > 1 && subcmd == "status" {
+                eprintln!("auth status: unexpected argument '{}'", args[1]);
+                return ExitCode::from(1);
+            }
             #[cfg(unix)]
             let caller_uid = unsafe { libc::getuid() };
             #[cfg(not(unix))]
@@ -663,6 +734,10 @@ pub fn run_auth(args: &[String]) -> ExitCode {
             ExitCode::SUCCESS
         }
         "list" => {
+            if args.len() > 1 {
+                eprintln!("auth list: unexpected argument '{}'", args[1]);
+                return ExitCode::from(1);
+            }
             println!("=== FerroOS Registered Users ===");
             for u in get_users() {
                 println!("  {:<12} uid={:<5} gid={:<5} home={}", u.name, u.uid, u.gid, u.home);
@@ -678,10 +753,23 @@ pub fn run_auth(args: &[String]) -> ExitCode {
                 eprintln!("auth: missing username for verify");
                 return ExitCode::from(1);
             }
+            if args.len() > 2 {
+                eprintln!("auth verify: too many arguments");
+                return ExitCode::from(1);
+            }
             let target = &args[1];
             if let Some(user) = lookup_user_by_name(target) {
                 let is_sudo = is_user_authorized_sudo(target);
-                println!("User '{}' found: uid={} gid={} sudo={}", target, user.uid, user.gid, if is_sudo { "yes" } else { "no" });
+                let shadow_status = if is_account_locked(target) {
+                    "LOCKED / DISABLED"
+                } else if lookup_shadow_by_name(target).is_some() {
+                    "ACTIVE (shadow verified)"
+                } else if Path::new("/etc/shadow").exists() {
+                    "MISSING FROM SHADOW (inconsistent)"
+                } else {
+                    "OK (shadow inactive)"
+                };
+                println!("User '{}' found: uid={} gid={} sudo={} shadow={}", target, user.uid, user.gid, if is_sudo { "yes" } else { "no" }, shadow_status);
                 ExitCode::SUCCESS
             } else {
                 eprintln!("auth: user '{}' not found", target);
@@ -738,8 +826,12 @@ pub fn run_ntp(args: &[String]) -> ExitCode {
             }
         } else if arg == "-p" || arg == "--port" {
             if i + 1 < args.len() {
-                if let Ok(p) = args[i + 1].parse::<u16>() {
-                    port = p;
+                match args[i + 1].parse::<u16>() {
+                    Ok(p) => port = p,
+                    Err(_) => {
+                        eprintln!("ntp: invalid port: '{}'", args[i + 1]);
+                        return ExitCode::from(1);
+                    }
                 }
                 i += 2;
             } else {
@@ -749,8 +841,12 @@ pub fn run_ntp(args: &[String]) -> ExitCode {
         } else if !arg.starts_with('-') && server.is_none() {
             server = Some(arg.clone());
             i += 1;
+        } else if arg.starts_with('-') {
+            eprintln!("ntp: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         } else {
-            i += 1;
+            eprintln!("ntp: extra operand '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -941,5 +1037,36 @@ users:x:100:
         let ntp_frac: u32 = 0x80000000; // Half second
         let nanos = ((ntp_frac as u64 * 1_000_000_000) >> 32) as u32;
         assert_eq!(nanos, 500_000_000);
+    }
+
+    #[test]
+    fn test_parse_shadow_records() {
+        let sample = "\
+root:$6$encryptedhash:19000:0:99999:7:::
+# locked account
+daemon:*:19000:0:99999:7:::
+guest:!:19000:0:99999:7:::
+ferro:$6$anotherhash:19100:0:99999:7:::
+";
+        let shadow = parse_shadow_content(sample);
+        assert_eq!(shadow.len(), 4);
+        assert_eq!(shadow[0].name, "root");
+        assert_eq!(shadow[0].password_hash, "$6$encryptedhash");
+        assert_eq!(shadow[1].name, "daemon");
+        assert_eq!(shadow[1].password_hash, "*");
+        assert_eq!(shadow[2].name, "guest");
+        assert_eq!(shadow[2].password_hash, "!");
+        assert_eq!(shadow[3].name, "ferro");
+    }
+
+    #[test]
+    fn test_cli_argument_rejections() {
+        // Unknown flags must return non-zero exit code
+        assert_eq!(run_sudo(&["--invalid-option".to_string()]), ExitCode::from(1));
+        assert_eq!(run_su(&["--invalid-option".to_string()]), ExitCode::from(1));
+        assert_eq!(run_auth(&["unknown-cmd".to_string()]), ExitCode::from(1));
+        assert_eq!(run_auth(&["verify".to_string()]), ExitCode::from(1)); // missing user
+        assert_eq!(run_ntp(&["--invalid-flag".to_string()]), ExitCode::from(1));
+        assert_eq!(run_ntp(&["-p".to_string(), "notanumber".to_string()]), ExitCode::from(1));
     }
 }

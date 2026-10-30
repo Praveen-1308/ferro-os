@@ -39,36 +39,60 @@ pub fn run_awk(args: &[String]) -> ExitCode {
     let mut input_files: Vec<String> = Vec::new();
 
     let mut i = 0;
+    let mut parsing_options = true;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-F" && i + 1 < args.len() {
-            fs_separator = Some(args[i + 1].clone());
-            i += 2;
-        } else if let Some(sep) = arg.strip_prefix("-F") {
-            fs_separator = Some(sep.to_string());
+        if parsing_options && arg == "--" {
+            parsing_options = false;
             i += 1;
-        } else if arg == "-v" && i + 1 < args.len() {
-            parse_var_assign(&args[i + 1], &mut initial_vars, &mut initial_str_vars);
-            i += 2;
-        } else if let Some(assign) = arg.strip_prefix("-v") {
-            parse_var_assign(assign, &mut initial_vars, &mut initial_str_vars);
-            i += 1;
-        } else if arg == "-f" && i + 1 < args.len() {
-            match fs::read_to_string(&args[i + 1]) {
-                Ok(content) => program_text = Some(content),
-                Err(e) => {
-                    eprintln!("awk: cannot open file {}: {}", args[i + 1], e);
+            continue;
+        }
+        if parsing_options && arg.starts_with('-') && arg != "-" {
+            if arg == "-F" {
+                if i + 1 < args.len() {
+                    fs_separator = Some(args[i + 1].clone());
+                    i += 2;
+                } else {
+                    eprintln!("awk: option requires an argument -- 'F'");
                     return ExitCode::from(1);
                 }
+            } else if let Some(sep) = arg.strip_prefix("-F") {
+                fs_separator = Some(sep.to_string());
+                i += 1;
+            } else if arg == "-v" {
+                if i + 1 < args.len() {
+                    parse_var_assign(&args[i + 1], &mut initial_vars, &mut initial_str_vars);
+                    i += 2;
+                } else {
+                    eprintln!("awk: option requires an argument -- 'v'");
+                    return ExitCode::from(1);
+                }
+            } else if let Some(assign) = arg.strip_prefix("-v") {
+                parse_var_assign(assign, &mut initial_vars, &mut initial_str_vars);
+                i += 1;
+            } else if arg == "-f" {
+                if i + 1 < args.len() {
+                    match fs::read_to_string(&args[i + 1]) {
+                        Ok(content) => program_text = Some(content),
+                        Err(e) => {
+                            eprintln!("awk: cannot open file {}: {}", args[i + 1], e);
+                            return ExitCode::from(1);
+                        }
+                    }
+                    i += 2;
+                } else {
+                    eprintln!("awk: option requires an argument -- 'f'");
+                    return ExitCode::from(1);
+                }
+            } else {
+                eprintln!("awk: unrecognized option '{}'", arg);
+                return ExitCode::from(1);
             }
-            i += 2;
-        } else if program_text.is_none() && !arg.starts_with('-') {
+        } else if program_text.is_none() {
             program_text = Some(arg.clone());
             i += 1;
-        } else if !arg.starts_with('-') || arg == "-" {
-            input_files.push(arg.clone());
-            i += 1;
         } else {
+            input_files.push(arg.clone());
             i += 1;
         }
     }
@@ -185,12 +209,12 @@ pub fn parse_awk_program(src: &str) -> Result<AwkProgram, String> {
             break;
         }
 
-        if remaining.starts_with("BEGIN") {
+        if remaining.starts_with("BEGIN") && (remaining.len() == 5 || remaining[5..].starts_with(|c: char| c.is_whitespace() || c == '{')) {
             let after_begin = remaining["BEGIN".len()..].trim_start();
             let (block, next) = parse_block(after_begin)?;
             begin_blocks.push(block);
             remaining = next;
-        } else if remaining.starts_with("END") {
+        } else if remaining.starts_with("END") && (remaining.len() == 3 || remaining[3..].starts_with(|c: char| c.is_whitespace() || c == '{')) {
             let after_end = remaining["END".len()..].trim_start();
             let (block, next) = parse_block(after_end)?;
             end_blocks.push(block);
@@ -258,15 +282,20 @@ fn parse_block(src: &str) -> Result<(AwkBlock, &str), String> {
 
     let mut depth = 0;
     let mut close_idx = None;
+    let mut in_str = false;
 
     for (i, c) in trimmed.char_indices() {
-        if c == '{' {
-            depth += 1;
-        } else if c == '}' {
-            depth -= 1;
-            if depth == 0 {
-                close_idx = Some(i);
-                break;
+        if c == '"' {
+            in_str = !in_str;
+        } else if !in_str {
+            if c == '{' {
+                depth += 1;
+            } else if c == '}' {
+                depth -= 1;
+                if depth == 0 {
+                    close_idx = Some(i);
+                    break;
+                }
             }
         }
     }
@@ -494,6 +523,9 @@ impl<'a> AwkContext<'a> {
             }
             AwkExpr::Field(idx_expr) => {
                 let (idx_num, _) = self.eval_expr(idx_expr);
+                if idx_num < 0.0 || idx_num.is_nan() || idx_num > usize::MAX as f64 {
+                    return (0.0, String::new());
+                }
                 let idx = idx_num as usize;
                 if idx == 0 {
                     let n = self.current_line.parse::<f64>().unwrap_or(0.0);
@@ -634,28 +666,34 @@ fn execute_awk_program(
 
     for mut reader in input_sources {
         let mut line = String::new();
-        while let Ok(n) = reader.read_line(&mut line) {
-            if n == 0 {
-                break;
-            }
-            let trimmed_line = line.trim_end_matches(&['\r', '\n'][..]).to_string();
-            ctx.set_record(trimmed_line);
+        loop {
+            match reader.read_line(&mut line) {
+                Ok(0) => break,
+                Ok(_) => {
+                    let trimmed_line = line.trim_end_matches(&['\r', '\n'][..]).to_string();
+                    ctx.set_record(trimmed_line);
 
-            for rule in &program.rules {
-                let matches = rule.pattern.as_ref().map(|p| ctx.eval_pattern(p)).unwrap_or(true);
-                if matches {
-                    for stmt in &rule.block.statements {
-                        if let Err(e) = ctx.execute_statement(stmt, &mut out_handle) {
-                            if e.kind() == io::ErrorKind::BrokenPipe {
-                                return ExitCode::SUCCESS;
+                    for rule in &program.rules {
+                        let matches = rule.pattern.as_ref().map(|p| ctx.eval_pattern(p)).unwrap_or(true);
+                        if matches {
+                            for stmt in &rule.block.statements {
+                                if let Err(e) = ctx.execute_statement(stmt, &mut out_handle) {
+                                    if e.kind() == io::ErrorKind::BrokenPipe {
+                                        return ExitCode::SUCCESS;
+                                    }
+                                    eprintln!("awk: write error: {}", e);
+                                    return ExitCode::from(1);
+                                }
                             }
-                            eprintln!("awk: write error: {}", e);
-                            return ExitCode::from(1);
                         }
                     }
+                    line.clear();
+                }
+                Err(e) => {
+                    eprintln!("awk: read error: {}", e);
+                    return ExitCode::from(1);
                 }
             }
-            line.clear();
         }
     }
 
@@ -742,5 +780,43 @@ mod tests {
         }
 
         assert_eq!(String::from_utf8(end_buf).unwrap(), "60\n");
+    }
+
+    #[test]
+    fn test_awk_cli_rejections() {
+        // Unknown option
+        assert_eq!(run_awk(&["--invalid-opt".to_string(), "{print $0}".to_string()]), ExitCode::from(1));
+        // Missing argument for -F
+        assert_eq!(run_awk(&["-F".to_string()]), ExitCode::from(1));
+        // Missing argument for -v
+        assert_eq!(run_awk(&["-v".to_string()]), ExitCode::from(1));
+        // Missing argument for -f
+        assert_eq!(run_awk(&["-f".to_string()]), ExitCode::from(1));
+        // Nonexistent file for -f
+        assert_eq!(run_awk(&["-f".to_string(), "/nonexistent_awk_script_path".to_string()]), ExitCode::from(1));
+        // No program text specified
+        assert_eq!(run_awk(&[]), ExitCode::from(1));
+    }
+
+    #[test]
+    fn test_awk_brace_in_string_and_field_bounds() {
+        // Braces inside string literals should not terminate block prematurely
+        let prog = parse_awk_program(r#"{print "{"}"#).unwrap();
+        assert_eq!(prog.rules.len(), 1);
+
+        // Invalid or extreme field numbers shouldn't panic
+        let mut ctx = AwkContext::new(None, HashMap::new(), HashMap::new());
+        ctx.set_record("alpha beta".to_string());
+        let (val, str_val) = ctx.eval_expr(&AwkExpr::Field(Box::new(AwkExpr::Number(-1.0))));
+        assert_eq!(val, 0.0);
+        assert_eq!(str_val, "");
+
+        let (val_nan, str_val_nan) = ctx.eval_expr(&AwkExpr::Field(Box::new(AwkExpr::Number(f64::NAN))));
+        assert_eq!(val_nan, 0.0);
+        assert_eq!(str_val_nan, "");
+
+        let (val_huge, str_val_huge) = ctx.eval_expr(&AwkExpr::Field(Box::new(AwkExpr::Number(1e20))));
+        assert_eq!(val_huge, 0.0);
+        assert_eq!(str_val_huge, "");
     }
 }

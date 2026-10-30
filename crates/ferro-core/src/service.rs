@@ -78,7 +78,17 @@ fn send_rpc(request_json: &str) -> Result<String, String> {
 }
 
 fn handle_list(args: &[String]) -> ExitCode {
-    let format_json = args.iter().any(|a| a == "json" || a == "--format=json" || a == "--json");
+    let mut format_json = false;
+    for a in args {
+        match a.as_str() {
+            "json" | "--format=json" | "--json" => format_json = true,
+            "table" | "--format=table" | "--table" => format_json = false,
+            _ => {
+                eprintln!("ferro service list: unrecognized option '{}'", a);
+                return ExitCode::FAILURE;
+            }
+        }
+    }
 
     let req = r#"{"action":"list"}"#;
     match send_rpc(req) {
@@ -132,6 +142,10 @@ fn handle_start(args: &[String]) -> ExitCode {
         eprintln!("Usage: ferro service start <service>");
         return ExitCode::FAILURE;
     }
+    if args.len() > 1 {
+        eprintln!("ferro service start: too many arguments");
+        return ExitCode::FAILURE;
+    }
     let name = &args[0];
     let req = format!(r#"{{"action":"start","service":"{}"}}"#, name);
 
@@ -159,6 +173,10 @@ fn handle_stop(args: &[String]) -> ExitCode {
         eprintln!("Usage: ferro service stop <service>");
         return ExitCode::FAILURE;
     }
+    if args.len() > 1 {
+        eprintln!("ferro service stop: too many arguments");
+        return ExitCode::FAILURE;
+    }
     let name = &args[0];
     let req = format!(r#"{{"action":"stop","service":"{}"}}"#, name);
 
@@ -173,14 +191,9 @@ fn handle_stop(args: &[String]) -> ExitCode {
                 ExitCode::FAILURE
             }
         }
-        Err(_) => {
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "SERVICE", "STATE", "PID", "UPTIME", "MEMORY", "HEALTH", "DESCRIPTION");
-            println!("{}", "-".repeat(84));
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ferro-superd", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "Master Supervision Daemon");
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ssh-server", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "Secure Shell Service");
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ferrod-syslog", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "System Event Logging Daemon");
-            println!("\n[Notice]: ferro-superd is offline. Start the supervisor using 'ferro-superd' to activate live control.");
-            ExitCode::SUCCESS
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            ExitCode::FAILURE
         }
     }
 }
@@ -188,6 +201,10 @@ fn handle_stop(args: &[String]) -> ExitCode {
 fn handle_restart(args: &[String]) -> ExitCode {
     if args.is_empty() {
         eprintln!("Usage: ferro service restart <service>");
+        return ExitCode::FAILURE;
+    }
+    if args.len() > 1 {
+        eprintln!("ferro service restart: too many arguments");
         return ExitCode::FAILURE;
     }
     let name = &args[0];
@@ -205,14 +222,9 @@ fn handle_restart(args: &[String]) -> ExitCode {
                 ExitCode::FAILURE
             }
         }
-        Err(_) => {
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "SERVICE", "STATE", "PID", "UPTIME", "MEMORY", "HEALTH", "DESCRIPTION");
-            println!("{}", "-".repeat(84));
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ferro-superd", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "Master Supervision Daemon");
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ssh-server", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "Secure Shell Service");
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ferrod-syslog", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "System Event Logging Daemon");
-            println!("\n[Notice]: ferro-superd is offline. Start the supervisor using 'ferro-superd' to activate live control.");
-            ExitCode::SUCCESS
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            ExitCode::FAILURE
         }
     }
 }
@@ -223,7 +235,17 @@ fn handle_status(args: &[String]) -> ExitCode {
         return ExitCode::FAILURE;
     }
     let name = &args[0];
-    let format_json = args.iter().any(|a| a == "json" || a == "--format=json" || a == "--json");
+    let mut format_json = false;
+    for a in &args[1..] {
+        match a.as_str() {
+            "json" | "--format=json" | "--json" => format_json = true,
+            "text" | "--format=text" | "--text" => format_json = false,
+            _ => {
+                eprintln!("ferro service status: unrecognized option '{}'", a);
+                return ExitCode::FAILURE;
+            }
+        }
+    }
     let req = format!(r#"{{"action":"status","service":"{}"}}"#, name);
 
     match send_rpc(&req) {
@@ -270,14 +292,9 @@ fn handle_status(args: &[String]) -> ExitCode {
                 ExitCode::from(3)
             }
         }
-        Err(_) => {
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "SERVICE", "STATE", "PID", "UPTIME", "MEMORY", "HEALTH", "DESCRIPTION");
-            println!("{}", "-".repeat(84));
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ferro-superd", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "Master Supervision Daemon");
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ssh-server", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "Secure Shell Service");
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ferrod-syslog", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "System Event Logging Daemon");
-            println!("\n[Notice]: ferro-superd is offline. Start the supervisor using 'ferro-superd' to activate live control.");
-            ExitCode::SUCCESS
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            ExitCode::from(3)
         }
     }
 }
@@ -288,11 +305,32 @@ fn handle_logs(args: &[String]) -> ExitCode {
         return ExitCode::FAILURE;
     }
     let name = &args[0];
-    let lines_to_fetch = if args.len() >= 3 && args[1] == "-n" {
-        args[2].parse::<usize>().unwrap_or(50)
-    } else {
-        50
-    };
+    let mut lines_to_fetch = 50usize;
+    let mut i = 1;
+    while i < args.len() {
+        let arg = &args[i];
+        if arg == "-n" || arg == "--lines" {
+            if i + 1 < args.len() {
+                match args[i + 1].parse::<usize>() {
+                    Ok(n) => lines_to_fetch = n,
+                    Err(_) => {
+                        eprintln!("ferro service logs: invalid line count '{}'", args[i + 1]);
+                        return ExitCode::FAILURE;
+                    }
+                }
+                i += 2;
+            } else {
+                eprintln!("ferro service logs: option requires an argument -- 'n'");
+                return ExitCode::FAILURE;
+            }
+        } else if arg.starts_with('-') {
+            eprintln!("ferro service logs: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
+        } else {
+            eprintln!("ferro service logs: extra operand '{}'", arg);
+            return ExitCode::FAILURE;
+        }
+    }
 
     let req = format!(r#"{{"action":"logs","service":"{}","lines":{}}}"#, name, lines_to_fetch);
     match send_rpc(&req) {
@@ -317,19 +355,18 @@ fn handle_logs(args: &[String]) -> ExitCode {
                 ExitCode::FAILURE
             }
         }
-        Err(_) => {
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "SERVICE", "STATE", "PID", "UPTIME", "MEMORY", "HEALTH", "DESCRIPTION");
-            println!("{}", "-".repeat(84));
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ferro-superd", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "Master Supervision Daemon");
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ssh-server", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "Secure Shell Service");
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ferrod-syslog", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "System Event Logging Daemon");
-            println!("\n[Notice]: ferro-superd is offline. Start the supervisor using 'ferro-superd' to activate live control.");
-            ExitCode::SUCCESS
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            ExitCode::FAILURE
         }
     }
 }
 
-fn handle_reload(_args: &[String]) -> ExitCode {
+fn handle_reload(args: &[String]) -> ExitCode {
+    if !args.is_empty() {
+        eprintln!("ferro service reload takes no arguments");
+        return ExitCode::FAILURE;
+    }
     let req = r#"{"action":"reload"}"#;
     match send_rpc(req) {
         Ok(res) => {
@@ -341,14 +378,9 @@ fn handle_reload(_args: &[String]) -> ExitCode {
                 ExitCode::FAILURE
             }
         }
-        Err(_) => {
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "SERVICE", "STATE", "PID", "UPTIME", "MEMORY", "HEALTH", "DESCRIPTION");
-            println!("{}", "-".repeat(84));
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ferro-superd", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "Master Supervision Daemon");
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ssh-server", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "Secure Shell Service");
-            println!("{:<18} {:<10} {:<8} {:<10} {:<10} {:<10} {}", "ferrod-syslog", "STOPPED", "-", "0s", "0 B", "⚠️ OFFLINE", "System Event Logging Daemon");
-            println!("\n[Notice]: ferro-superd is offline. Start the supervisor using 'ferro-superd' to activate live control.");
-            ExitCode::SUCCESS
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            ExitCode::FAILURE
         }
     }
 }
@@ -396,5 +428,45 @@ fn format_size(bytes: u64) -> String {
         format!("{:.1}M", bytes as f64 / (1024.0 * 1024.0))
     } else {
         format!("{:.2}G", bytes as f64 / (1024.0 * 1024.0 * 1024.0))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_field_strings_and_numbers() {
+        let json = r#"{"status":"ok","name":"ferrod","pid":1234,"active":true,"comment":null}"#;
+        assert_eq!(extract_field(json, "status").as_deref(), Some("ok"));
+        assert_eq!(extract_field(json, "name").as_deref(), Some("ferrod"));
+        assert_eq!(extract_field(json, "pid").as_deref(), Some("1234"));
+        assert_eq!(extract_field(json, "active").as_deref(), Some("true"));
+        assert_eq!(extract_field(json, "comment"), None);
+        assert_eq!(extract_field(json, "nonexistent"), None);
+    }
+
+    #[test]
+    fn test_format_uptime_and_size() {
+        assert_eq!(format_uptime(45), "45s");
+        assert_eq!(format_uptime(125), "2m 5s");
+        assert_eq!(format_uptime(7322), "2h 2m");
+
+        assert_eq!(format_size(512), "512B");
+        assert_eq!(format_size(2048), "2.0K");
+        assert_eq!(format_size(10 * 1024 * 1024), "10.0M");
+    }
+
+    #[test]
+    fn test_service_cli_error_codes() {
+        // Missing arguments should fail
+        assert_eq!(run_service(&[]), ExitCode::FAILURE);
+        assert_eq!(run_service(&["unknown_cmd".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_service(&["start".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_service(&["stop".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_service(&["restart".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_service(&["status".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_service(&["logs".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_service(&["list".to_string(), "--invalid-opt".to_string()]), ExitCode::FAILURE);
     }
 }

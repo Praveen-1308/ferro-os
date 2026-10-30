@@ -326,7 +326,7 @@ fn handle_run(args: &[String]) -> ExitCode {
     }
 
     let container_id = generate_id();
-    let name = custom_name.unwrap_or_else(|| format!("ferro-{}", &container_id[..6]));
+    let name = custom_name.unwrap_or_else(|| format!("ferro-{}", truncate_str(&container_id, 6)));
 
     let state_dir = get_state_dir();
     let logs_dir = get_logs_dir();
@@ -358,9 +358,13 @@ fn handle_run(args: &[String]) -> ExitCode {
 
     if detach {
         if let Ok(f) = log_file {
-            let f_err = f.try_clone().unwrap();
-            cmd.stdout(Stdio::from(f));
-            cmd.stderr(Stdio::from(f_err));
+            if let Ok(f_err) = f.try_clone() {
+                cmd.stdout(Stdio::from(f));
+                cmd.stderr(Stdio::from(f_err));
+            } else {
+                cmd.stdout(Stdio::from(f));
+                cmd.stderr(Stdio::null());
+            }
         } else {
             cmd.stdout(Stdio::null());
             cmd.stderr(Stdio::null());
@@ -427,8 +431,13 @@ fn handle_run(args: &[String]) -> ExitCode {
         };
         save_state(&state);
 
-        let status = child.wait().unwrap();
-        let code = status.code().unwrap_or(1);
+        let code = match child.wait() {
+            Ok(status) => status.code().unwrap_or(1),
+            Err(e) => {
+                eprintln!("ferrocage: failed to wait for child container: {}", e);
+                1
+            }
+        };
 
         state.pid = None;
         state.status = format!("exited ({})", code);

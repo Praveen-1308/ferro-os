@@ -395,7 +395,18 @@ fn get_shell_prompt() -> String {
 }
 
 fn run_sh(args: &[String]) -> ExitCode {
-    if args.len() >= 2 && args[0] == "-c" {
+    if !args.is_empty() && (args[0] == "--help" || args[0] == "-h") {
+        println!("Usage: sh [OPTION] [SCRIPT-FILE] [ARG]...");
+        println!("       sh -c COMMAND [ARG]...");
+        println!("FerroOS POSIX Shell & Command Interpreter.");
+        return ExitCode::SUCCESS;
+    }
+
+    if !args.is_empty() && args[0] == "-c" {
+        if args.len() < 2 {
+            eprintln!("sh: -c: option requires an argument");
+            return ExitCode::from(2);
+        }
         let cmd_str = &args[1];
         if args.len() > 2 {
             shell::set_positional(args[2..].to_vec());
@@ -414,6 +425,11 @@ fn run_sh(args: &[String]) -> ExitCode {
             eprintln!("sh: cannot open file: {}", script_path);
             return ExitCode::FAILURE;
         }
+    }
+
+    if !args.is_empty() && args[0].starts_with('-') && args[0] != "-" {
+        eprintln!("sh: invalid option -- '{}'", args[0].trim_start_matches('-'));
+        return ExitCode::from(2);
     }
 
     #[cfg(unix)]
@@ -550,6 +566,10 @@ fn parse_tokens(line: &str) -> Vec<String> {
                 } else if next == '{' {
                     if let Some(pos) = chars[end..].iter().position(|&ch| ch == '}') {
                         end += pos + 1;
+                    } else {
+                        while end < chars.len() && !chars[end].is_whitespace() && chars[end] != '"' && chars[end] != '\'' {
+                            end += 1;
+                        }
                     }
                 } else if next.is_ascii_alphabetic() || next == '_' {
                     while end < chars.len() && (chars[end].is_ascii_alphanumeric() || chars[end] == '_') {
@@ -730,6 +750,15 @@ fn execute_pipeline(line: &str) -> ExitCode {
 }
 
 fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
+    // Check for syntax error in pipeline: empty pipe commands
+    for part in &pipe_parts {
+        let (clean_part, _) = extract_redirections_quote_aware(part);
+        if clean_part.trim().is_empty() {
+            eprintln!("sh: syntax error near unexpected token '|'");
+            return ExitCode::from(2);
+        }
+    }
+
     let mut children: Vec<Child> = Vec::new();
     let mut prev_stdout = None;
 
@@ -737,7 +766,12 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
         let (clean_part, redir) = extract_redirections_quote_aware(part);
         let tokens = parse_tokens(&clean_part);
         if tokens.is_empty() {
-            continue;
+            eprintln!("sh: syntax error near unexpected token '|'");
+            for mut c in children {
+                let _ = c.kill();
+                let _ = c.wait();
+            }
+            return ExitCode::from(2);
         }
 
         let cmd = &tokens[0];
@@ -749,6 +783,10 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
                 Ok(f) => Stdio::from(f),
                 Err(e) => {
                     eprintln!("sh: cannot open '{}' for reading: {}", stdin_f, e);
+                    for mut c in children {
+                        let _ = c.kill();
+                        let _ = c.wait();
+                    }
                     return ExitCode::FAILURE;
                 }
             }
@@ -763,6 +801,10 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
                 Ok(f) => Stdio::from(f),
                 Err(e) => {
                     eprintln!("sh: cannot open '{}' for writing: {}", filepath, e);
+                    for mut c in children {
+                        let _ = c.kill();
+                        let _ = c.wait();
+                    }
                     return ExitCode::FAILURE;
                 }
             }
@@ -797,20 +839,28 @@ fn execute_piped_commands(pipe_parts: Vec<&str>) -> ExitCode {
             }
             Err(e) => {
                 eprintln!("sh: failed to spawn '{}': {}", cmd, e);
+                for mut c in children {
+                    let _ = c.kill();
+                    let _ = c.wait();
+                }
                 return ExitCode::FAILURE;
             }
         }
     }
 
-    let mut last_status = ExitCode::SUCCESS;
-    for mut child in children {
+    let mut final_status = ExitCode::SUCCESS;
+    let num_children = children.len();
+    for (idx, mut child) in children.into_iter().enumerate() {
         if let Ok(status) = child.wait() {
-            if !status.success() {
-                last_status = ExitCode::FAILURE;
+            if idx == num_children - 1 {
+                if !status.success() {
+                    let code = status.code().unwrap_or(1);
+                    final_status = ExitCode::from(code as u8);
+                }
             }
         }
     }
-    last_status
+    final_status
 }
 
 pub const ALL_APPLETS: &[&str] = &[
@@ -1171,9 +1221,9 @@ fn dispatch_internal_applet(cmd: &str, args: &[String]) -> ExitCode {
         "ls" => run_ls(args),
         "cat" => run_cat(args),
         "echo" => run_echo(args),
-        "pwd" => run_pwd(&[]),
+        "pwd" => run_pwd(args),
         "uname" => run_uname(args),
-        "clear" => run_clear(&[]),
+        "clear" => run_clear(args),
         "mkdir" => run_mkdir(args),
         "rm" => run_rm(args),
         "cp" => run_cp(args),
@@ -1646,9 +1696,40 @@ fn run_echo(args: &[String]) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-fn run_pwd(_args: &[String]) -> ExitCode {
+fn run_pwd(args: &[String]) -> ExitCode {
+    let mut physical = false;
+    for arg in args {
+        match arg.as_str() {
+            "-P" | "--physical" => physical = true,
+            "-L" | "--logical" => physical = false,
+            "-h" | "--help" => {
+                println!("Usage: pwd [-L | -P]");
+                println!("Print the name of the current working directory.");
+                println!("  -L, --logical   use PWD from environment, even if it contains symlinks");
+                println!("  -P, --physical  avoid all symlinks");
+                return ExitCode::SUCCESS;
+            }
+            _ => {}
+        }
+    }
+
+    if !physical {
+        if let Ok(pwd) = env::var("PWD") {
+            if !pwd.is_empty() && Path::new(&pwd).is_dir() {
+                println!("{}", pwd);
+                return ExitCode::SUCCESS;
+            }
+        }
+    }
+
     match env::current_dir() {
         Ok(path) => {
+            if physical {
+                if let Ok(canon) = fs::canonicalize(&path) {
+                    println!("{}", canon.display());
+                    return ExitCode::SUCCESS;
+                }
+            }
             println!("{}", path.display());
             ExitCode::SUCCESS
         }
@@ -1660,12 +1741,88 @@ fn run_pwd(_args: &[String]) -> ExitCode {
 }
 
 fn run_uname(args: &[String]) -> ExitCode {
-    let all = args.contains(&"-a".to_string());
-    if all {
-        println!("Linux ferro-os 6.1.0-ferro #1 SMP PREEMPT Rust x86_64 GNU/Linux");
+    let mut print_sysname = false;
+    let mut print_nodename = false;
+    let mut print_release = false;
+    let mut print_version = false;
+    let mut print_machine = false;
+    let mut print_os = false;
+
+    if args.is_empty() {
+        print_sysname = true;
     } else {
-        println!("Linux");
+        for arg in args {
+            if arg == "-a" || arg == "--all" {
+                print_sysname = true;
+                print_nodename = true;
+                print_release = true;
+                print_version = true;
+                print_machine = true;
+                print_os = true;
+            } else if arg == "-s" || arg == "--kernel-name" {
+                print_sysname = true;
+            } else if arg == "-n" || arg == "--nodename" {
+                print_nodename = true;
+            } else if arg == "-r" || arg == "--kernel-release" {
+                print_release = true;
+            } else if arg == "-v" || arg == "--kernel-version" {
+                print_version = true;
+            } else if arg == "-m" || arg == "--machine" || arg == "-p" || arg == "-i" {
+                print_machine = true;
+            } else if arg == "-o" || arg == "--operating-system" {
+                print_os = true;
+            } else if arg.starts_with('-') && !arg.starts_with("--") {
+                for ch in arg[1..].chars() {
+                    match ch {
+                        'a' => {
+                            print_sysname = true;
+                            print_nodename = true;
+                            print_release = true;
+                            print_version = true;
+                            print_machine = true;
+                            print_os = true;
+                        }
+                        's' => print_sysname = true,
+                        'n' => print_nodename = true,
+                        'r' => print_release = true,
+                        'v' => print_version = true,
+                        'm' | 'p' | 'i' => print_machine = true,
+                        'o' => print_os = true,
+                        _ => {
+                            eprintln!("uname: invalid option -- '{}'", ch);
+                            eprintln!("Try 'uname --help' for more information.");
+                            return ExitCode::FAILURE;
+                        }
+                    }
+                }
+            } else if arg == "--help" || arg == "-h" {
+                println!("Usage: uname [OPTION]...");
+                println!("Print certain system information. With no OPTION, same as -s.");
+                println!("  -a, --all                print all information");
+                println!("  -s, --kernel-name        print the kernel name");
+                println!("  -n, --nodename           print the network node hostname");
+                println!("  -r, --kernel-release     print the kernel release");
+                println!("  -v, --kernel-version     print the kernel version");
+                println!("  -m, --machine            print the machine hardware name");
+                println!("  -o, --operating-system   print the operating system");
+                return ExitCode::SUCCESS;
+            }
+        }
     }
+
+    if !print_sysname && !print_nodename && !print_release && !print_version && !print_machine && !print_os {
+        print_sysname = true;
+    }
+
+    let mut parts: Vec<&str> = Vec::new();
+    if print_sysname { parts.push("Linux"); }
+    if print_nodename { parts.push("ferro-os"); }
+    if print_release { parts.push("6.1.0-ferro"); }
+    if print_version { parts.push("#1 SMP PREEMPT Rust"); }
+    if print_machine { parts.push("x86_64"); }
+    if print_os { parts.push("GNU/Linux"); }
+
+    println!("{}", parts.join(" "));
     ExitCode::SUCCESS
 }
 
@@ -1678,31 +1835,84 @@ fn run_clear(_args: &[String]) -> ExitCode {
 fn run_mkdir(args: &[String]) -> ExitCode {
     if args.is_empty() {
         eprintln!("mkdir: missing operand");
+        eprintln!("Try 'mkdir --help' for more information.");
         return ExitCode::FAILURE;
     }
 
     let mut parents = false;
+    let mut verbose = false;
     let mut mode: Option<u32> = None;
     let mut targets: Vec<PathBuf> = Vec::new();
+    let mut parsing_flags = true;
 
     let mut iter = args.iter().peekable();
     while let Some(arg) = iter.next() {
-        if arg == "-p" || arg == "--parents" {
-            parents = true;
-        } else if arg.starts_with('-') && arg.len() > 1 && !arg.starts_with("--") && arg.contains('p') {
-            parents = true;
-        } else if (arg == "-m" || arg == "--mode") && iter.peek().is_some() {
-            let mode_str = iter.next().unwrap();
-            mode = u32::from_str_radix(mode_str, 8).ok();
-        } else if arg.starts_with("-m") && arg.len() > 2 {
-            mode = u32::from_str_radix(&arg[2..], 8).ok();
-        } else if !arg.starts_with('-') {
+        if parsing_flags && arg == "--" {
+            parsing_flags = false;
+            continue;
+        }
+        if parsing_flags && arg == "--help" {
+            println!("Usage: mkdir [OPTION]... DIRECTORY...");
+            println!("Create the DIRECTORY(ies), if they do not already exist.");
+            println!("  -m, --mode=MODE   set file mode (as in chmod), not a=rwx - umask");
+            println!("  -p, --parents     no error if existing, make parent directories as needed");
+            println!("  -v, --verbose     print a message for each created directory");
+            return ExitCode::SUCCESS;
+        }
+        if parsing_flags && arg.starts_with('-') && arg.len() > 1 {
+            if arg == "-p" || arg == "--parents" {
+                parents = true;
+            } else if arg == "-v" || arg == "--verbose" {
+                verbose = true;
+            } else if arg == "-pv" || arg == "-vp" {
+                parents = true;
+                verbose = true;
+            } else if arg == "-m" || arg == "--mode" {
+                match iter.next() {
+                    Some(m_str) => match u32::from_str_radix(m_str, 8) {
+                        Ok(parsed) => mode = Some(parsed),
+                        Err(_) => {
+                            eprintln!("mkdir: invalid mode '{}'", m_str);
+                            return ExitCode::FAILURE;
+                        }
+                    },
+                    None => {
+                        eprintln!("mkdir: option requires an argument -- 'm'");
+                        eprintln!("Try 'mkdir --help' for more information.");
+                        return ExitCode::FAILURE;
+                    }
+                }
+            } else if arg.starts_with("--mode=") {
+                let m_str = &arg[7..];
+                match u32::from_str_radix(m_str, 8) {
+                    Ok(parsed) => mode = Some(parsed),
+                    Err(_) => {
+                        eprintln!("mkdir: invalid mode '{}'", m_str);
+                        return ExitCode::FAILURE;
+                    }
+                }
+            } else if arg.starts_with("-m") && arg.len() > 2 {
+                let m_str = &arg[2..];
+                match u32::from_str_radix(m_str, 8) {
+                    Ok(parsed) => mode = Some(parsed),
+                    Err(_) => {
+                        eprintln!("mkdir: invalid mode '{}'", m_str);
+                        return ExitCode::FAILURE;
+                    }
+                }
+            } else {
+                eprintln!("mkdir: invalid option -- '{}'", arg.trim_start_matches('-'));
+                eprintln!("Try 'mkdir --help' for more information.");
+                return ExitCode::FAILURE;
+            }
+        } else {
             targets.push(PathBuf::from(arg));
         }
     }
 
     if targets.is_empty() {
         eprintln!("mkdir: missing operand");
+        eprintln!("Try 'mkdir --help' for more information.");
         return ExitCode::FAILURE;
     }
 
@@ -1725,6 +1935,9 @@ fn run_mkdir(args: &[String]) -> ExitCode {
                     use std::os::unix::fs::PermissionsExt;
                     let _ = fs::set_permissions(target, fs::Permissions::from_mode(m));
                 }
+                if verbose {
+                    println!("mkdir: created directory '{}'", target.display());
+                }
             }
             Err(e) => {
                 eprintln!("mkdir: cannot create directory '{}': {}", target.display(), e);
@@ -1743,28 +1956,42 @@ fn run_mkdir(args: &[String]) -> ExitCode {
 pub(crate) fn run_rmdir(args: &[String]) -> ExitCode {
     if args.is_empty() {
         eprintln!("rmdir: missing operand");
+        eprintln!("Try 'rmdir --help' for more information.");
         return ExitCode::FAILURE;
     }
 
     let mut parents = false;
     let mut targets = Vec::new();
+    let mut parsing_flags = true;
 
     for arg in args {
-        if arg == "-p" || arg == "--parents" {
-            parents = true;
-        } else if arg == "--help" || arg == "-h" {
+        if parsing_flags && arg == "--" {
+            parsing_flags = false;
+            continue;
+        }
+        if parsing_flags && (arg == "--help" || arg == "-h") {
             println!("Usage: rmdir [OPTION]... DIRECTORY...");
             println!("Remove the DIRECTORY(ies), if they are empty.");
             println!("  -p, --parents   remove DIRECTORY and its ancestors; e.g., 'rmdir -p a/b/c' is");
             println!("                  similar to 'rmdir a/b/c a/b a'");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') {
+        }
+        if parsing_flags && arg.starts_with('-') && arg != "-" {
+            if arg == "-p" || arg == "--parents" {
+                parents = true;
+            } else {
+                eprintln!("rmdir: invalid option -- '{}'", arg.trim_start_matches('-'));
+                eprintln!("Try 'rmdir --help' for more information.");
+                return ExitCode::FAILURE;
+            }
+        } else {
             targets.push(PathBuf::from(arg));
         }
     }
 
     if targets.is_empty() {
         eprintln!("rmdir: missing operand");
+        eprintln!("Try 'rmdir --help' for more information.");
         return ExitCode::FAILURE;
     }
 
@@ -1932,29 +2159,79 @@ pub(crate) fn run_printf(args: &[String]) -> ExitCode {
 fn run_rm(args: &[String]) -> ExitCode {
     if args.is_empty() {
         eprintln!("rm: missing operand");
+        eprintln!("Try 'rm --help' for more information.");
         return ExitCode::FAILURE;
     }
     let mut force = false;
     let mut recursive = false;
+    let mut dir_only = false;
+    let mut verbose = false;
     let mut targets = Vec::new();
+    let mut parsing_flags = true;
 
     for arg in args {
-        if arg.starts_with('-') && arg.len() > 1 && !arg.starts_with("--") {
-            for c in arg[1..].chars() {
-                if c == 'f' { force = true; }
-                if c == 'r' || c == 'R' { recursive = true; }
+        if parsing_flags && arg == "--" {
+            parsing_flags = false;
+            continue;
+        }
+        if parsing_flags && (arg == "--help" || arg == "-h") {
+            println!("Usage: rm [OPTION]... [FILE]...");
+            println!("Remove (unlink) the FILE(s).");
+            println!("  -f, --force           ignore nonexistent files and arguments, never prompt");
+            println!("  -r, -R, --recursive   remove directories and their contents recursively");
+            println!("  -d, --dir             remove empty directories");
+            println!("  -v, --verbose         explain what is being done");
+            return ExitCode::SUCCESS;
+        }
+        if parsing_flags && arg.starts_with('-') && arg.len() > 1 {
+            if arg == "-f" || arg == "--force" {
+                force = true;
+            } else if arg == "-r" || arg == "-R" || arg == "--recursive" {
+                recursive = true;
+            } else if arg == "-d" || arg == "--dir" {
+                dir_only = true;
+            } else if arg == "-v" || arg == "--verbose" {
+                verbose = true;
+            } else if !arg.starts_with("--") {
+                for c in arg[1..].chars() {
+                    match c {
+                        'f' => force = true,
+                        'r' | 'R' => recursive = true,
+                        'd' => dir_only = true,
+                        'v' => verbose = true,
+                        _ => {
+                            eprintln!("rm: invalid option -- '{}'", c);
+                            eprintln!("Try 'rm --help' for more information.");
+                            return ExitCode::FAILURE;
+                        }
+                    }
+                }
+            } else {
+                eprintln!("rm: unrecognized option '{}'", arg);
+                eprintln!("Try 'rm --help' for more information.");
+                return ExitCode::FAILURE;
             }
-        } else if arg == "-f" || arg == "--force" {
-            force = true;
-        } else if arg == "-r" || arg == "-R" || arg == "--recursive" {
-            recursive = true;
-        } else if !arg.starts_with('-') {
+        } else {
             targets.push(arg.as_str());
         }
     }
 
+    if targets.is_empty() {
+        if !force {
+            eprintln!("rm: missing operand");
+            eprintln!("Try 'rm --help' for more information.");
+            return ExitCode::FAILURE;
+        }
+        return ExitCode::SUCCESS;
+    }
+
     let mut exit = ExitCode::SUCCESS;
     for target in targets {
+        if target == "." || target == ".." || target.ends_with("/.") || target.ends_with("/..") {
+            eprintln!("rm: refusing to remove '.' or '..' directory: skipping '{}'", target);
+            exit = ExitCode::FAILURE;
+            continue;
+        }
         let p = Path::new(target);
         if !p.exists() && !p.is_symlink() {
             if !force {
@@ -1970,6 +2247,17 @@ fn run_rm(args: &[String]) -> ExitCode {
                         eprintln!("rm: cannot remove directory '{}': {}", target, e);
                         exit = ExitCode::FAILURE;
                     }
+                } else if verbose {
+                    println!("removed directory '{}'", target);
+                }
+            } else if dir_only {
+                if let Err(e) = fs::remove_dir(p) {
+                    if !force {
+                        eprintln!("rm: cannot remove directory '{}': {}", target, e);
+                        exit = ExitCode::FAILURE;
+                    }
+                } else if verbose {
+                    println!("removed directory '{}'", target);
                 }
             } else {
                 eprintln!("rm: cannot remove '{}': Is a directory", target);
@@ -1981,6 +2269,8 @@ fn run_rm(args: &[String]) -> ExitCode {
                     eprintln!("rm: cannot remove '{}': {}", target, e);
                     exit = ExitCode::FAILURE;
                 }
+            } else if verbose {
+                println!("removed '{}'", target);
             }
         }
     }
@@ -2096,23 +2386,65 @@ fn copy_recursive(src: &Path, dst: &Path) -> io::Result<()> {
 }
 
 fn run_cp(args: &[String]) -> ExitCode {
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("Usage: cp [OPTION]... SOURCE... DIRECTORY");
+        println!("  or:  cp [OPTION]... SOURCE DEST");
+        println!("Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY.");
+        println!("  -a, --archive        same as -dpR");
+        println!("  -f, --force          if an existing destination cannot be opened, remove and retry");
+        println!("  -r, -R, --recursive  copy directories recursively");
+        println!("  -v, --verbose        explain what is being done");
+        return ExitCode::SUCCESS;
+    }
+
     let mut recursive = false;
+    let mut verbose = false;
     let mut positional = Vec::new();
+    let mut parsing_flags = true;
 
     for arg in args {
-        if arg == "-r" || arg == "-R" || arg == "--recursive" || arg == "-a" {
-            recursive = true;
-        } else if arg.starts_with('-') && !arg.starts_with("--") {
-            if arg.contains('r') || arg.contains('R') || arg.contains('a') {
+        if parsing_flags && arg == "--" {
+            parsing_flags = false;
+            continue;
+        }
+        if parsing_flags && arg.starts_with('-') && arg.len() > 1 {
+            if arg == "-r" || arg == "-R" || arg == "--recursive" || arg == "-a" || arg == "--archive" {
                 recursive = true;
+            } else if arg == "-v" || arg == "--verbose" {
+                verbose = true;
+            } else if arg == "-f" || arg == "--force" {
+                // Force copy flag
+            } else if !arg.starts_with("--") {
+                for c in arg[1..].chars() {
+                    match c {
+                        'r' | 'R' | 'a' => recursive = true,
+                        'v' => verbose = true,
+                        'f' => {},
+                        _ => {
+                            eprintln!("cp: invalid option -- '{}'", c);
+                            eprintln!("Try 'cp --help' for more information.");
+                            return ExitCode::FAILURE;
+                        }
+                    }
+                }
+            } else {
+                eprintln!("cp: unrecognized option '{}'", arg);
+                eprintln!("Try 'cp --help' for more information.");
+                return ExitCode::FAILURE;
             }
         } else {
-            positional.push(arg);
+            positional.push(arg.as_str());
         }
     }
 
-    if positional.len() < 2 {
-        eprintln!("cp: missing source or destination operand");
+    if positional.is_empty() {
+        eprintln!("cp: missing file operand");
+        eprintln!("Try 'cp --help' for more information.");
+        return ExitCode::FAILURE;
+    }
+    if positional.len() == 1 {
+        eprintln!("cp: missing destination file operand after '{}'", positional[0]);
+        eprintln!("Try 'cp --help' for more information.");
         return ExitCode::FAILURE;
     }
 
@@ -2127,7 +2459,7 @@ fn run_cp(args: &[String]) -> ExitCode {
     let mut failed = false;
     for src_str in sources {
         let src_path = Path::new(src_str);
-        if !src_path.exists() {
+        if !src_path.exists() && !src_path.is_symlink() {
             eprintln!(
                 "cp: cannot stat '{}': No such file or directory",
                 src_path.display()
@@ -2146,6 +2478,14 @@ fn run_cp(args: &[String]) -> ExitCode {
             dst_raw.to_path_buf()
         };
 
+        if let (Ok(s_canon), Ok(d_canon)) = (src_path.canonicalize(), effective_dst.canonicalize()) {
+            if s_canon == d_canon {
+                eprintln!("cp: '{}' and '{}' are the same file", src_str, effective_dst.display());
+                failed = true;
+                continue;
+            }
+        }
+
         if src_path.is_dir() {
             if !recursive {
                 eprintln!(
@@ -2163,6 +2503,8 @@ fn run_cp(args: &[String]) -> ExitCode {
                     e
                 );
                 failed = true;
+            } else if verbose {
+                println!("'{}' -> '{}'", src_str, effective_dst.display());
             }
         } else {
             if let Err(e) = copy_file_zero_copy(src_path, &effective_dst) {
@@ -2173,6 +2515,8 @@ fn run_cp(args: &[String]) -> ExitCode {
                     e
                 );
                 failed = true;
+            } else if verbose {
+                println!("'{}' -> '{}'", src_str, effective_dst.display());
             }
         }
     }
@@ -2185,15 +2529,47 @@ fn run_cp(args: &[String]) -> ExitCode {
 }
 
 fn run_mv(args: &[String]) -> ExitCode {
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("Usage: mv [OPTION]... SOURCE... DIRECTORY");
+        println!("  or:  mv [OPTION]... SOURCE DEST");
+        println!("Rename SOURCE to DEST, or move SOURCE(s) to DIRECTORY.");
+        println!("  -f, --force    do not prompt before overwriting");
+        println!("  -v, --verbose  explain what is being done");
+        return ExitCode::SUCCESS;
+    }
+
+    let mut verbose = false;
     let mut positional = Vec::new();
+    let mut parsing_flags = true;
+
     for arg in args {
-        if !arg.starts_with('-') || arg == "-" {
-            positional.push(arg);
+        if parsing_flags && arg == "--" {
+            parsing_flags = false;
+            continue;
+        }
+        if parsing_flags && arg.starts_with('-') && arg != "-" {
+            match arg.as_str() {
+                "-f" | "--force" => {},
+                "-v" | "--verbose" => verbose = true,
+                other => {
+                    eprintln!("mv: unrecognized option '{}'", other);
+                    eprintln!("Try 'mv --help' for more information.");
+                    return ExitCode::FAILURE;
+                }
+            }
+        } else {
+            positional.push(arg.as_str());
         }
     }
 
-    if positional.len() < 2 {
-        eprintln!("mv: missing source or destination operand");
+    if positional.is_empty() {
+        eprintln!("mv: missing file operand");
+        eprintln!("Try 'mv --help' for more information.");
+        return ExitCode::FAILURE;
+    }
+    if positional.len() == 1 {
+        eprintln!("mv: missing destination file operand after '{}'", positional[0]);
+        eprintln!("Try 'mv --help' for more information.");
         return ExitCode::FAILURE;
     }
 
@@ -2208,7 +2584,7 @@ fn run_mv(args: &[String]) -> ExitCode {
     let mut failed = false;
     for src_str in sources {
         let src_path = Path::new(src_str);
-        if !src_path.exists() {
+        if !src_path.exists() && !src_path.is_symlink() {
             eprintln!(
                 "mv: cannot stat '{}': No such file or directory",
                 src_path.display()
@@ -2227,6 +2603,14 @@ fn run_mv(args: &[String]) -> ExitCode {
             dst_raw.to_path_buf()
         };
 
+        if let (Ok(s_canon), Ok(d_canon)) = (src_path.canonicalize(), effective_dst.canonicalize()) {
+            if s_canon == d_canon {
+                eprintln!("mv: '{}' and '{}' are the same file", src_str, effective_dst.display());
+                failed = true;
+                continue;
+            }
+        }
+
         if fs::rename(src_path, &effective_dst).is_err() {
             // Fallback for cross-device moves: zero-copy copy then unlink
             let res = if src_path.is_dir() {
@@ -2243,7 +2627,11 @@ fn run_mv(args: &[String]) -> ExitCode {
                     e
                 );
                 failed = true;
+            } else if verbose {
+                println!("renamed '{}' -> '{}'", src_str, effective_dst.display());
             }
+        } else if verbose {
+            println!("renamed '{}' -> '{}'", src_str, effective_dst.display());
         }
     }
 
@@ -2397,9 +2785,18 @@ fn run_chmod(args: &[String]) -> ExitCode {
 }
 
 fn run_grep(args: &[String]) -> ExitCode {
-    if args.is_empty() {
-        eprintln!("grep: missing pattern");
-        return ExitCode::FAILURE;
+    if args.is_empty() || args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("Usage: grep [OPTION]... PATTERNS [FILE]...");
+        println!("Search for PATTERNS in each FILE.");
+        println!("Example: grep -i 'hello world' menu.h main.c");
+        println!("  -i, --ignore-case         ignore case distinctions");
+        println!("  -v, --invert-match        select non-matching lines");
+        println!("  -c, --count               print only a count of selected lines per FILE");
+        println!("  -n, --line-number         print line number with output lines");
+        println!("  -l, --files-with-matches  print only names of FILEs containing matches");
+        println!("  -r, -R, --recursive       like --directories=recurse");
+        println!("  -q, --quiet, --silent     suppress all normal output");
+        return if args.is_empty() { ExitCode::FAILURE } else { ExitCode::SUCCESS };
     }
 
     let mut case_insensitive = false;
@@ -2407,6 +2804,8 @@ fn run_grep(args: &[String]) -> ExitCode {
     let mut count_only = false;
     let mut line_numbers = false;
     let mut quiet = false;
+    let mut list_files = false;
+    let mut recursive = false;
     let mut pattern: Option<String> = None;
     let mut files: Vec<String> = Vec::new();
 
@@ -2420,6 +2819,8 @@ fn run_grep(args: &[String]) -> ExitCode {
                     'c' => count_only = true,
                     'n' => line_numbers = true,
                     'q' => quiet = true,
+                    'l' => list_files = true,
+                    'r' | 'R' => recursive = true,
                     'E' | 'F' => {}
                     _ => {}
                 }
@@ -2431,6 +2832,8 @@ fn run_grep(args: &[String]) -> ExitCode {
                 "--count" => count_only = true,
                 "--line-number" => line_numbers = true,
                 "--quiet" | "--silent" => quiet = true,
+                "--files-with-matches" => list_files = true,
+                "--recursive" => recursive = true,
                 _ => {}
             }
         } else if pattern.is_none() {
@@ -2450,8 +2853,10 @@ fn run_grep(args: &[String]) -> ExitCode {
 
     let subpatterns: Vec<&str> = pat_str.split('|').collect();
     let mut total_matches: usize = 0;
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
 
-    let search_in_stream = |reader: Box<dyn BufRead>, label: Option<&str>| -> usize {
+    let mut search_in_stream = |reader: Box<dyn BufRead>, label: Option<&str>| -> usize {
         let mut stream_count = 0;
         let mut line_no = 0;
         for line in reader.lines().map_while(Result::ok) {
@@ -2490,36 +2895,84 @@ fn run_grep(args: &[String]) -> ExitCode {
                 if quiet {
                     return stream_count;
                 }
+                if list_files {
+                    if let Some(lbl) = label {
+                        let _ = writeln!(out, "{}", lbl);
+                    }
+                    return stream_count;
+                }
                 if !count_only {
                     if let Some(lbl) = label {
-                        print!("{}:", lbl);
+                        let _ = write!(out, "{}:", lbl);
                     }
                     if line_numbers {
-                        print!("{}:", line_no);
+                        let _ = write!(out, "{}:", line_no);
                     }
-                    println!("{}", line);
+                    if writeln!(out, "{}", line).is_err() {
+                        return stream_count; // Broken pipe handling
+                    }
                 }
             }
         }
-        if count_only && !quiet {
+        if count_only && !quiet && !list_files {
             if let Some(lbl) = label {
-                println!("{}:{}", lbl, stream_count);
+                let _ = writeln!(out, "{}:{}", lbl, stream_count);
             } else {
-                println!("{}", stream_count);
+                let _ = writeln!(out, "{}", stream_count);
             }
         }
         stream_count
     };
 
     let mut file_error = false;
+
+    fn collect_files_recursive(dir: &Path, file_list: &mut Vec<String>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let p = entry.path();
+                if p.is_dir() && !p.is_symlink() {
+                    collect_files_recursive(&p, file_list);
+                } else if p.is_file() {
+                    file_list.push(p.to_string_lossy().to_string());
+                }
+            }
+        }
+    }
+
     if files.is_empty() {
-        let stdin = io::stdin();
-        total_matches += search_in_stream(Box::new(stdin.lock()), None);
+        if recursive {
+            let mut rec_files = Vec::new();
+            collect_files_recursive(Path::new("."), &mut rec_files);
+            for file in &rec_files {
+                if let Ok(f) = File::open(file) {
+                    total_matches += search_in_stream(Box::new(BufReader::new(f)), Some(file));
+                }
+            }
+        } else {
+            let stdin = io::stdin();
+            total_matches += search_in_stream(Box::new(stdin.lock()), None);
+        }
     } else {
+        let mut expanded_files = Vec::new();
         for file in &files {
+            let p = Path::new(file);
+            if p.is_dir() {
+                if recursive {
+                    collect_files_recursive(p, &mut expanded_files);
+                } else {
+                    eprintln!("grep: {}: Is a directory", file);
+                    file_error = true;
+                }
+            } else {
+                expanded_files.push(file.clone());
+            }
+        }
+
+        let show_label = expanded_files.len() > 1 || recursive;
+        for file in &expanded_files {
             match File::open(file) {
                 Ok(f) => {
-                    let label = if files.len() > 1 {
+                    let label = if show_label {
                         Some(file.as_str())
                     } else {
                         None
@@ -2534,6 +2987,8 @@ fn run_grep(args: &[String]) -> ExitCode {
         }
     }
 
+    let _ = out.flush();
+
     if file_error {
         ExitCode::FAILURE
     } else if total_matches > 0 {
@@ -2544,115 +2999,321 @@ fn run_grep(args: &[String]) -> ExitCode {
 }
 
 fn run_find(args: &[String]) -> ExitCode {
-    let root = if !args.is_empty() && !args[0].starts_with('-') {
-        &args[0]
-    } else {
-        "."
-    };
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("Usage: find [path...] [expression]");
+        println!("Search for files in a directory hierarchy.");
+        println!("  -name PATTERN   file name matches PATTERN");
+        println!("  -type [f|d|l]   file is of type: regular file (f), directory (d), symlink (l)");
+        println!("  -maxdepth N     descend at most N directory levels");
+        println!("  -empty          file is empty or directory contains no entries");
+        return ExitCode::SUCCESS;
+    }
 
-    let name_filter = if let Some(pos) = args.iter().position(|a| a == "-name") {
-        args.get(pos + 1).cloned()
-    } else {
-        None
-    };
+    let mut roots = Vec::new();
+    let mut name_filter: Option<String> = None;
+    let mut type_filter: Option<char> = None;
+    let mut max_depth: Option<usize> = None;
+    let mut empty_only = false;
 
-    fn visit_dir(dir: &Path, filter: &Option<String>) {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
+        if arg == "-name" && i + 1 < args.len() {
+            name_filter = Some(args[i + 1].clone());
+            i += 2;
+        } else if arg == "-type" && i + 1 < args.len() {
+            type_filter = args[i + 1].chars().next();
+            i += 2;
+        } else if arg == "-maxdepth" && i + 1 < args.len() {
+            max_depth = args[i + 1].parse().ok();
+            i += 2;
+        } else if arg == "-empty" {
+            empty_only = true;
+            i += 1;
+        } else if !arg.starts_with('-') {
+            roots.push(arg.as_str());
+            i += 1;
+        } else {
+            i += 1;
+        }
+    }
+
+    if roots.is_empty() {
+        roots.push(".");
+    }
+
+    let mut all_ok = true;
+
+    fn match_name(file_name: &str, pattern: &str) -> bool {
+        if pattern == "*" {
+            return true;
+        }
+        if pattern.starts_with('*') && pattern.ends_with('*') && pattern.len() >= 2 {
+            file_name.contains(&pattern[1..pattern.len() - 1])
+        } else if pattern.starts_with('*') {
+            file_name.ends_with(&pattern[1..])
+        } else if pattern.ends_with('*') {
+            file_name.starts_with(&pattern[..pattern.len() - 1])
+        } else {
+            file_name == pattern
+        }
+    }
+
+    fn visit_dir(
+        dir: &Path,
+        current_depth: usize,
+        max_d: Option<usize>,
+        n_filter: &Option<String>,
+        t_filter: Option<char>,
+        empty: bool,
+    ) {
+        if let Some(md) = max_d {
+            if current_depth > md {
+                return;
+            }
+        }
         if let Ok(entries) = fs::read_dir(dir) {
-            for entry in entries.flatten() {
+            let mut sorted: Vec<_> = entries.flatten().collect();
+            sorted.sort_by_key(|e| e.file_name());
+
+            for entry in sorted {
                 let path = entry.path();
                 let file_name = entry.file_name().to_string_lossy().to_string();
-                let matches = match filter {
-                    Some(f) => &file_name == f,
-                    None => true,
-                };
+
+                let mut matches = true;
+                if let Some(ref pat) = n_filter {
+                    if !match_name(&file_name, pat) {
+                        matches = false;
+                    }
+                }
+                if matches && t_filter.is_some() {
+                    let tf = t_filter.unwrap();
+                    let is_match = match tf {
+                        'f' => path.is_file(),
+                        'd' => path.is_dir(),
+                        'l' => path.is_symlink(),
+                        _ => true,
+                    };
+                    if !is_match {
+                        matches = false;
+                    }
+                }
+                if matches && empty {
+                    if path.is_file() {
+                        let len = fs::metadata(&path).map(|m| m.len()).unwrap_or(1);
+                        if len != 0 {
+                            matches = false;
+                        }
+                    } else if path.is_dir() {
+                        let is_empty_dir = fs::read_dir(&path).map(|mut it| it.next().is_none()).unwrap_or(false);
+                        if !is_empty_dir {
+                            matches = false;
+                        }
+                    }
+                }
+
                 if matches {
                     println!("{}", path.display());
                 }
-                if path.is_dir() {
-                    visit_dir(&path, filter);
+
+                if path.is_dir() && !path.is_symlink() {
+                    visit_dir(&path, current_depth + 1, max_d, n_filter, t_filter, empty);
                 }
             }
         }
     }
 
-    visit_dir(Path::new(root), &name_filter);
-    ExitCode::SUCCESS
+    for root_str in roots {
+        let root = Path::new(root_str);
+        if !root.exists() && !root.is_symlink() {
+            eprintln!("find: '{}': No such file or directory", root_str);
+            all_ok = false;
+            continue;
+        }
+
+        // Check if root itself matches
+        let mut root_matches = true;
+        if let Some(ref pat) = name_filter {
+            let name = root.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| root_str.to_string());
+            if !match_name(&name, pat) {
+                root_matches = false;
+            }
+        }
+        if root_matches && type_filter.is_some() {
+            let tf = type_filter.unwrap();
+            let is_match = match tf {
+                'f' => root.is_file(),
+                'd' => root.is_dir(),
+                'l' => root.is_symlink(),
+                _ => true,
+            };
+            if !is_match {
+                root_matches = false;
+            }
+        }
+        if root_matches {
+            println!("{}", root.display());
+        }
+
+        if root.is_dir() {
+            visit_dir(root, 1, max_depth, &name_filter, type_filter, empty_only);
+        }
+    }
+
+    if all_ok {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }
 
 fn run_head(args: &[String]) -> ExitCode {
-    let mut count = 10;
+    let mut count_lines: Option<usize> = Some(10);
+    let mut count_bytes: Option<usize> = None;
     let mut files = Vec::new();
 
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-n" && i + 1 < args.len() {
-            i += 1;
-            match args[i].parse::<usize>() {
-                Ok(c) => count = c,
-                Err(_) => {
-                    eprintln!("head: invalid number of lines: '{}'", args[i]);
-                    return ExitCode::from(1);
+        if arg == "-n" {
+            if i + 1 < args.len() {
+                i += 1;
+                match args[i].parse::<usize>() {
+                    Ok(c) => {
+                        count_lines = Some(c);
+                        count_bytes = None;
+                    }
+                    Err(_) => {
+                        eprintln!("head: invalid number of lines: '{}'", args[i]);
+                        return ExitCode::from(1);
+                    }
                 }
+            } else {
+                eprintln!("head: option requires an argument -- 'n'");
+                return ExitCode::from(1);
             }
         } else if arg.starts_with("-n") && arg.len() > 2 {
             match arg[2..].parse::<usize>() {
-                Ok(c) => count = c,
+                Ok(c) => {
+                    count_lines = Some(c);
+                    count_bytes = None;
+                }
                 Err(_) => {
                     eprintln!("head: invalid number of lines: '{}'", &arg[2..]);
                     return ExitCode::from(1);
                 }
             }
+        } else if arg == "-c" {
+            if i + 1 < args.len() {
+                i += 1;
+                match args[i].parse::<usize>() {
+                    Ok(c) => {
+                        count_bytes = Some(c);
+                        count_lines = None;
+                    }
+                    Err(_) => {
+                        eprintln!("head: invalid number of bytes: '{}'", args[i]);
+                        return ExitCode::from(1);
+                    }
+                }
+            } else {
+                eprintln!("head: option requires an argument -- 'c'");
+                return ExitCode::from(1);
+            }
+        } else if arg.starts_with("-c") && arg.len() > 2 {
+            match arg[2..].parse::<usize>() {
+                Ok(c) => {
+                    count_bytes = Some(c);
+                    count_lines = None;
+                }
+                Err(_) => {
+                    eprintln!("head: invalid number of bytes: '{}'", &arg[2..]);
+                    return ExitCode::from(1);
+                }
+            }
         } else if arg.starts_with('-') && arg.len() > 1 && arg[1..].chars().all(|c| c.is_ascii_digit()) {
-            count = arg[1..].parse().unwrap_or(10);
-        } else if !arg.starts_with('-') {
+            count_lines = Some(arg[1..].parse().unwrap_or(10));
+            count_bytes = None;
+        } else if arg == "-h" || arg == "--help" {
+            println!("Usage: head [OPTION]... [FILE]...");
+            println!("Print the first 10 lines of each FILE to standard output.");
+            println!("  -c, --bytes=[-]NUM       print the first NUM bytes of each file");
+            println!("  -n, --lines=[-]NUM       print the first NUM lines instead of the first 10");
+            return ExitCode::SUCCESS;
+        } else if !arg.starts_with('-') || arg == "-" {
             files.push(arg.clone());
         }
         i += 1;
     }
 
     let mut exit_code = ExitCode::SUCCESS;
-    if files.is_empty() {
-        let stdin = io::stdin();
-        for (idx, line) in stdin.lock().lines().enumerate() {
-            if idx >= count {
-                break;
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
+    let output_stream = |reader: &mut dyn Read, out: &mut io::StdoutLock| -> io::Result<()> {
+        if let Some(bytes_limit) = count_bytes {
+            let mut buf = [0u8; 8192];
+            let mut read_total = 0;
+            while read_total < bytes_limit {
+                let to_read = (bytes_limit - read_total).min(buf.len());
+                let n = reader.read(&mut buf[..to_read])?;
+                if n == 0 {
+                    break;
+                }
+                out.write_all(&buf[..n])?;
+                read_total += n;
             }
-            if let Ok(l) = line {
-                println!("{}", l);
+        } else {
+            let limit = count_lines.unwrap_or(10);
+            let buf_reader = BufReader::new(reader);
+            for (idx, line) in buf_reader.lines().enumerate() {
+                if idx >= limit {
+                    break;
+                }
+                let l = line?;
+                writeln!(out, "{}", l)?;
+            }
+        }
+        out.flush()?;
+        Ok(())
+    };
+
+    if files.is_empty() {
+        let mut stdin = io::stdin().lock();
+        if let Err(e) = output_stream(&mut stdin, &mut out) {
+            if e.kind() != io::ErrorKind::BrokenPipe {
+                eprintln!("head: error reading standard input: {}", e);
+                return ExitCode::FAILURE;
             }
         }
     } else {
         let multiple = files.len() > 1;
         for (f_idx, file) in files.iter().enumerate() {
+            if multiple {
+                if f_idx > 0 {
+                    let _ = writeln!(out);
+                }
+                let _ = writeln!(out, "==> {} <==", file);
+            }
             if file == "-" {
-                let stdin = io::stdin();
-                for (idx, line) in stdin.lock().lines().enumerate() {
-                    if idx >= count {
-                        break;
+                let mut stdin = io::stdin().lock();
+                if let Err(e) = output_stream(&mut stdin, &mut out) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
                     }
-                    if let Ok(l) = line {
-                        println!("{}", l);
-                    }
+                    eprintln!("head: error reading standard input: {}", e);
+                    exit_code = ExitCode::FAILURE;
                 }
                 continue;
             }
-            if multiple {
-                if f_idx > 0 {
-                    println!();
-                }
-                println!("==> {} <==", file);
-            }
             match File::open(file) {
-                Ok(f) => {
-                    let reader = BufReader::new(f);
-                    for (idx, line) in reader.lines().enumerate() {
-                        if idx >= count {
-                            break;
+                Ok(mut f) => {
+                    if let Err(e) = output_stream(&mut f, &mut out) {
+                        if e.kind() == io::ErrorKind::BrokenPipe {
+                            return ExitCode::SUCCESS;
                         }
-                        if let Ok(l) = line {
-                            println!("{}", l);
-                        }
+                        eprintln!("head: error reading '{}': {}", file, e);
+                        exit_code = ExitCode::FAILURE;
                     }
                 }
                 Err(e) => {
@@ -2666,7 +3327,8 @@ fn run_head(args: &[String]) -> ExitCode {
 }
 
 fn run_tail(args: &[String]) -> ExitCode {
-    let mut count = 10;
+    let mut count_lines: Option<usize> = Some(10);
+    let mut count_bytes: Option<usize> = None;
     let mut follow = false;
     let mut files = Vec::new();
 
@@ -2675,25 +3337,72 @@ fn run_tail(args: &[String]) -> ExitCode {
         let arg = &args[i];
         if arg == "-f" || arg == "--follow" {
             follow = true;
-        } else if arg == "-n" && i + 1 < args.len() {
-            i += 1;
-            match args[i].parse::<usize>() {
-                Ok(c) => count = c,
-                Err(_) => {
-                    eprintln!("tail: invalid number of lines: '{}'", args[i]);
-                    return ExitCode::from(1);
+        } else if arg == "-n" {
+            if i + 1 < args.len() {
+                i += 1;
+                match args[i].parse::<usize>() {
+                    Ok(c) => {
+                        count_lines = Some(c);
+                        count_bytes = None;
+                    }
+                    Err(_) => {
+                        eprintln!("tail: invalid number of lines: '{}'", args[i]);
+                        return ExitCode::from(1);
+                    }
                 }
+            } else {
+                eprintln!("tail: option requires an argument -- 'n'");
+                return ExitCode::from(1);
             }
         } else if arg.starts_with("-n") && arg.len() > 2 {
             match arg[2..].parse::<usize>() {
-                Ok(c) => count = c,
+                Ok(c) => {
+                    count_lines = Some(c);
+                    count_bytes = None;
+                }
                 Err(_) => {
                     eprintln!("tail: invalid number of lines: '{}'", &arg[2..]);
                     return ExitCode::from(1);
                 }
             }
+        } else if arg == "-c" {
+            if i + 1 < args.len() {
+                i += 1;
+                match args[i].parse::<usize>() {
+                    Ok(c) => {
+                        count_bytes = Some(c);
+                        count_lines = None;
+                    }
+                    Err(_) => {
+                        eprintln!("tail: invalid number of bytes: '{}'", args[i]);
+                        return ExitCode::from(1);
+                    }
+                }
+            } else {
+                eprintln!("tail: option requires an argument -- 'c'");
+                return ExitCode::from(1);
+            }
+        } else if arg.starts_with("-c") && arg.len() > 2 {
+            match arg[2..].parse::<usize>() {
+                Ok(c) => {
+                    count_bytes = Some(c);
+                    count_lines = None;
+                }
+                Err(_) => {
+                    eprintln!("tail: invalid number of bytes: '{}'", &arg[2..]);
+                    return ExitCode::from(1);
+                }
+            }
         } else if arg.starts_with('-') && arg.len() > 1 && arg[1..].chars().all(|c| c.is_ascii_digit()) {
-            count = arg[1..].parse().unwrap_or(10);
+            count_lines = Some(arg[1..].parse().unwrap_or(10));
+            count_bytes = None;
+        } else if arg == "-h" || arg == "--help" {
+            println!("Usage: tail [OPTION]... [FILE]...");
+            println!("Print the last 10 lines of each FILE to standard output.");
+            println!("  -c, --bytes=NUM          output the last NUM bytes");
+            println!("  -n, --lines=NUM          output the last NUM lines, instead of the last 10");
+            println!("  -f, --follow             output appended data as the file grows");
+            return ExitCode::SUCCESS;
         } else if !arg.starts_with('-') || arg == "-" {
             files.push(arg.clone());
         }
@@ -2701,58 +3410,76 @@ fn run_tail(args: &[String]) -> ExitCode {
     }
 
     let mut exit_code = ExitCode::SUCCESS;
-    if files.is_empty() {
-        let stdin = io::stdin();
-        let lines: Vec<String> = stdin.lock().lines().map_while(Result::ok).collect();
-        let start = if lines.len() > count {
-            lines.len() - count
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
+    let output_tail_stream = |reader: &mut dyn Read, out: &mut io::StdoutLock| -> io::Result<()> {
+        if let Some(bytes_limit) = count_bytes {
+            let mut all_bytes = Vec::new();
+            reader.read_to_end(&mut all_bytes)?;
+            let start = if all_bytes.len() > bytes_limit {
+                all_bytes.len() - bytes_limit
+            } else {
+                0
+            };
+            out.write_all(&all_bytes[start..])?;
         } else {
-            0
-        };
-        for line in &lines[start..] {
-            println!("{}", line);
+            let limit = count_lines.unwrap_or(10);
+            let buf_reader = BufReader::new(reader);
+            let lines: Vec<String> = buf_reader.lines().map_while(Result::ok).collect();
+            let start = if lines.len() > limit {
+                lines.len() - limit
+            } else {
+                0
+            };
+            for line in &lines[start..] {
+                writeln!(out, "{}", line)?;
+            }
+        }
+        out.flush()?;
+        Ok(())
+    };
+
+    if files.is_empty() {
+        let mut stdin = io::stdin().lock();
+        if let Err(e) = output_tail_stream(&mut stdin, &mut out) {
+            if e.kind() != io::ErrorKind::BrokenPipe {
+                eprintln!("tail: error reading standard input: {}", e);
+                return ExitCode::FAILURE;
+            }
         }
     } else {
         let multiple = files.len() > 1;
         for (f_idx, path) in files.iter().enumerate() {
+            if multiple {
+                if f_idx > 0 { let _ = writeln!(out); }
+                let _ = writeln!(out, "==> {} <==", path);
+            }
             if path == "-" {
-                if multiple {
-                    if f_idx > 0 { println!(); }
-                    println!("==> standard input <==");
-                }
-                let stdin = io::stdin();
-                let lines: Vec<String> = stdin.lock().lines().map_while(Result::ok).collect();
-                let start = if lines.len() > count {
-                    lines.len() - count
-                } else {
-                    0
-                };
-                for line in &lines[start..] {
-                    println!("{}", line);
+                let mut stdin = io::stdin().lock();
+                if let Err(e) = output_tail_stream(&mut stdin, &mut out) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
+                    }
+                    eprintln!("tail: error reading standard input: {}", e);
+                    exit_code = ExitCode::FAILURE;
                 }
                 continue;
             }
             if path == "/dev/null" && follow {
-                // Keep-alive loop for cloud containers / scripts
                 loop {
                     thread::sleep(Duration::from_secs(3600));
                 }
             }
-            if multiple {
-                if f_idx > 0 { println!(); }
-                println!("==> {} <==", path);
-            }
             match File::open(path) {
                 Ok(mut f) => {
-                    let reader = BufReader::new(&f);
-                    let lines: Vec<String> = reader.lines().map_while(Result::ok).collect();
-                    let start = if lines.len() > count {
-                        lines.len() - count
-                    } else {
-                        0
-                    };
-                    for line in &lines[start..] {
-                        println!("{}", line);
+                    if let Err(e) = output_tail_stream(&mut f, &mut out) {
+                        if e.kind() == io::ErrorKind::BrokenPipe {
+                            return ExitCode::SUCCESS;
+                        }
+                        eprintln!("tail: error reading '{}': {}", path, e);
+                        exit_code = ExitCode::FAILURE;
+                        continue;
                     }
                     if follow {
                         use std::io::Seek;
@@ -2763,11 +3490,12 @@ fn run_tail(args: &[String]) -> ExitCode {
                                 let new_len = meta.len();
                                 if new_len > pos {
                                     let mut buf = Vec::new();
-                                    if let Ok(_) = f.seek(io::SeekFrom::Start(pos)) {
+                                    if f.seek(io::SeekFrom::Start(pos)).is_ok() {
                                         if let Ok(n) = f.read_to_end(&mut buf) {
                                             if n > 0 {
-                                                print!("{}", String::from_utf8_lossy(&buf));
-                                                let _ = io::stdout().flush();
+                                                if out.write_all(&buf).is_err() || out.flush().is_err() {
+                                                    break;
+                                                }
                                                 pos += n as u64;
                                             }
                                         }
@@ -2788,27 +3516,54 @@ fn run_tail(args: &[String]) -> ExitCode {
 }
 
 fn run_wc(args: &[String]) -> ExitCode {
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("Usage: wc [OPTION]... [FILE]...");
+        println!("Print newline, word, and byte counts for each FILE, and a total line if");
+        println!("more than one FILE is specified. A word is a non-zero-length sequence of");
+        println!("characters delimited by white space.");
+        println!("  -c, --bytes            print the byte counts");
+        println!("  -m, --chars            print the character counts");
+        println!("  -l, --lines            print the newline counts");
+        println!("  -w, --words            print the word counts");
+        return ExitCode::SUCCESS;
+    }
+
     let mut count_lines = false;
     let mut count_words = false;
     let mut count_bytes = false;
     let mut files: Vec<String> = Vec::new();
+    let mut parsing_flags = true;
 
     for arg in args {
-        if arg.starts_with('-') && arg.len() > 1 && !arg.starts_with("--") {
-            for ch in arg[1..].chars() {
-                match ch {
-                    'l' => count_lines = true,
-                    'w' => count_words = true,
-                    'c' | 'm' => count_bytes = true,
-                    _ => {}
+        if parsing_flags && arg == "--" {
+            parsing_flags = false;
+            continue;
+        }
+        if parsing_flags && arg.starts_with('-') && arg.len() > 1 {
+            if arg.starts_with("--") {
+                match arg.as_str() {
+                    "--lines" => count_lines = true,
+                    "--words" => count_words = true,
+                    "--bytes" | "--chars" => count_bytes = true,
+                    other => {
+                        eprintln!("wc: unrecognized option '{}'", other);
+                        eprintln!("Try 'wc --help' for more information.");
+                        return ExitCode::FAILURE;
+                    }
                 }
-            }
-        } else if arg.starts_with("--") {
-            match arg.as_str() {
-                "--lines" => count_lines = true,
-                "--words" => count_words = true,
-                "--bytes" => count_bytes = true,
-                _ => {}
+            } else {
+                for ch in arg[1..].chars() {
+                    match ch {
+                        'l' => count_lines = true,
+                        'w' => count_words = true,
+                        'c' | 'm' => count_bytes = true,
+                        other => {
+                            eprintln!("wc: invalid option -- '{}'", other);
+                            eprintln!("Try 'wc --help' for more information.");
+                            return ExitCode::FAILURE;
+                        }
+                    }
+                }
             }
         } else {
             files.push(arg.clone());
@@ -2826,12 +3581,13 @@ fn run_wc(args: &[String]) -> ExitCode {
     let mut tot_bytes: u64 = 0;
     let mut exit_code = ExitCode::SUCCESS;
 
-    let count_stream = |reader: &mut dyn Read| -> (u64, u64, u64) {
+    let count_stream = |reader: &mut dyn Read| -> (u64, u64, u64, Option<io::Error>) {
         let mut l: u64 = 0;
         let mut w: u64 = 0;
         let mut b: u64 = 0;
         let mut in_word = false;
         let mut buf = [0u8; 8192];
+        let mut err: Option<io::Error> = None;
         loop {
             match reader.read(&mut buf) {
                 Ok(0) => break,
@@ -2849,28 +3605,43 @@ fn run_wc(args: &[String]) -> ExitCode {
                         }
                     }
                 }
-                Err(_) => break,
+                Err(e) => {
+                    err = Some(e);
+                    break;
+                }
             }
         }
-        (l, w, b)
+        (l, w, b, err)
     };
 
     if files.is_empty() {
         let mut stdin = io::stdin().lock();
-        let (l, w, b) = count_stream(&mut stdin);
+        let (l, w, b, err) = count_stream(&mut stdin);
+        if let Some(e) = err {
+            eprintln!("wc: <stdin>: {}", e);
+            exit_code = ExitCode::FAILURE;
+        }
         print_wc_row(count_lines, count_words, count_bytes, l, w, b, None);
     } else {
         for file in &files {
             if file == "-" {
                 let mut stdin = io::stdin().lock();
-                let (l, w, b) = count_stream(&mut stdin);
+                let (l, w, b, err) = count_stream(&mut stdin);
+                if let Some(e) = err {
+                    eprintln!("wc: <stdin>: {}", e);
+                    exit_code = ExitCode::FAILURE;
+                }
                 tot_lines += l; tot_words += w; tot_bytes += b;
                 print_wc_row(count_lines, count_words, count_bytes, l, w, b, Some("-"));
                 continue;
             }
             match File::open(file) {
                 Ok(mut f) => {
-                    let (l, w, b) = count_stream(&mut f);
+                    let (l, w, b, err) = count_stream(&mut f);
+                    if let Some(e) = err {
+                        eprintln!("wc: {}: {}", file, e);
+                        exit_code = ExitCode::FAILURE;
+                    }
                     tot_lines += l; tot_words += w; tot_bytes += b;
                     print_wc_row(count_lines, count_words, count_bytes, l, w, b, Some(file));
                 }
@@ -2902,35 +3673,74 @@ pub(crate) fn run_which(args: &[String]) -> ExitCode {
     if args.is_empty() {
         return ExitCode::FAILURE;
     }
-    let target = &args[0];
-    let path_var = env::var("PATH").unwrap_or_else(|_| "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin".to_string());
+    let mut show_all = false;
+    let mut targets = Vec::new();
 
-    for dir in path_var.split(':') {
-        let candidate = Path::new(dir).join(target);
-        if candidate.is_file() {
-            #[cfg(unix)]
-            {
-                use std::ffi::CString;
-                if let Ok(c) = CString::new(candidate.to_string_lossy().as_bytes()) {
-                    if unsafe { libc::access(c.as_ptr(), libc::X_OK) } == 0 {
-                        println!("{}", candidate.display());
-                        return ExitCode::SUCCESS;
+    for arg in args {
+        if arg == "-a" || arg == "--all" {
+            show_all = true;
+        } else if arg == "-h" || arg == "--help" {
+            println!("Usage: which [-a] filename...");
+            println!("Locate a command in PATH.");
+            println!("  -a   print all matching pathnames of each argument");
+            return ExitCode::SUCCESS;
+        } else if !arg.starts_with('-') {
+            targets.push(arg.as_str());
+        }
+    }
+
+    if targets.is_empty() {
+        return ExitCode::FAILURE;
+    }
+
+    let path_var = env::var("PATH").unwrap_or_else(|_| "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin".to_string());
+    let mut all_found = true;
+
+    for target in targets {
+        let mut found_for_target = false;
+        for dir in path_var.split(':') {
+            let candidate = Path::new(dir).join(target);
+            if candidate.is_file() {
+                #[cfg(unix)]
+                {
+                    use std::ffi::CString;
+                    if let Ok(c) = CString::new(candidate.to_string_lossy().as_bytes()) {
+                        if unsafe { libc::access(c.as_ptr(), libc::X_OK) } == 0 {
+                            println!("{}", candidate.display());
+                            found_for_target = true;
+                            if !show_all {
+                                break;
+                            }
+                        }
+                    }
+                }
+                #[cfg(not(unix))]
+                {
+                    println!("{}", candidate.display());
+                    found_for_target = true;
+                    if !show_all {
+                        break;
                     }
                 }
             }
-            #[cfg(not(unix))]
-            {
-                println!("{}", candidate.display());
-                return ExitCode::SUCCESS;
-            }
+        }
+
+        if !found_for_target && is_internal_applet(target) {
+            println!("/bin/{}", target);
+            found_for_target = true;
+        }
+
+        if !found_for_target {
+            eprintln!("which: no {} in ({})", target, path_var);
+            all_found = false;
         }
     }
-    if is_internal_applet(target) {
-        println!("/bin/{}", target);
-        return ExitCode::SUCCESS;
+
+    if all_found {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
     }
-    eprintln!("which: no {} in ({})", target, path_var);
-    ExitCode::FAILURE
 }
 
 fn run_env(args: &[String]) -> ExitCode {
@@ -3015,89 +3825,224 @@ fn run_env(args: &[String]) -> ExitCode {
 fn run_sleep(args: &[String]) -> ExitCode {
     if args.is_empty() {
         eprintln!("sleep: missing operand");
+        eprintln!("Try 'sleep --help' for more information.");
         return ExitCode::FAILURE;
     }
     if args.iter().any(|a| a == "-h" || a == "--help") {
         println!("Usage: sleep NUMBER[smhd]...");
-        println!("Pause for NUMBER seconds.");
+        println!("Pause for NUMBER seconds. SUFFIX may be 's' for seconds (default),");
+        println!("'m' for minutes, 'h' for hours or 'd' for days.");
         return ExitCode::SUCCESS;
     }
-    let arg = &args[0];
-    let (num_str, mult) = if let Some(val) = arg.strip_suffix('s') {
-        (val, 1.0f64)
-    } else if let Some(val) = arg.strip_suffix('m') {
-        (val, 60.0f64)
-    } else if let Some(val) = arg.strip_suffix('h') {
-        (val, 3600.0f64)
-    } else if let Some(val) = arg.strip_suffix('d') {
-        (val, 86400.0f64)
-    } else {
-        (arg.as_str(), 1.0f64)
-    };
 
-    let base_val: f64 = match num_str.parse() {
-        Ok(v) if v >= 0.0 => v,
-        _ => {
-            eprintln!("sleep: invalid time interval '{}'", arg);
-            return ExitCode::FAILURE;
-        }
-    };
-    thread::sleep(Duration::from_secs_f64(base_val * mult));
+    let mut total_duration = Duration::ZERO;
+
+    for arg in args {
+        let (num_str, mult) = if let Some(val) = arg.strip_suffix('s') {
+            (val, 1.0f64)
+        } else if let Some(val) = arg.strip_suffix('m') {
+            (val, 60.0f64)
+        } else if let Some(val) = arg.strip_suffix('h') {
+            (val, 3600.0f64)
+        } else if let Some(val) = arg.strip_suffix('d') {
+            (val, 86400.0f64)
+        } else {
+            (arg.as_str(), 1.0f64)
+        };
+
+        let base_val: f64 = match num_str.parse() {
+            Ok(v) if v >= 0.0 => v,
+            _ => {
+                eprintln!("sleep: invalid time interval '{}'", arg);
+                eprintln!("Try 'sleep --help' for more information.");
+                return ExitCode::FAILURE;
+            }
+        };
+        total_duration += Duration::from_secs_f64(base_val * mult);
+    }
+
+    thread::sleep(total_duration);
     ExitCode::SUCCESS
 }
 
-fn run_free(_args: &[String]) -> ExitCode {
-    if let Ok(content) = fs::read_to_string("/proc/meminfo") {
-        let mut total_kb: u64 = 0;
-        let mut free_kb: u64 = 0;
-        let mut avail_kb: u64 = 0;
+fn run_free(args: &[String]) -> ExitCode {
+    let mut unit: f64 = 1024.0 * 1024.0; // default MiB
+    let mut unit_suffix = "M";
+    let mut human = false;
 
+    for arg in args {
+        match arg.as_str() {
+            "-b" | "--bytes" => { unit = 1.0; unit_suffix = "B"; human = false; }
+            "-k" | "--kibi" => { unit = 1024.0; unit_suffix = "K"; human = false; }
+            "-m" | "--mebi" => { unit = 1024.0 * 1024.0; unit_suffix = "M"; human = false; }
+            "-g" | "--gibi" => { unit = 1024.0 * 1024.0 * 1024.0; unit_suffix = "G"; human = false; }
+            "-h" | "--human" => { human = true; }
+            "--help" => {
+                println!("Usage: free [OPTION]...");
+                println!("Display amount of free and used memory in the system.");
+                println!("  -b, --bytes         show output in bytes");
+                println!("  -k, --kibi          show output in kibibytes (default)");
+                println!("  -m, --mebi          show output in mebibytes");
+                println!("  -g, --gibi          show output in gibibytes");
+                println!("  -h, --human         show human-readable output");
+                return ExitCode::SUCCESS;
+            }
+            _ => {}
+        }
+    }
+
+    let mut total_kb: u64 = 524288;
+    let mut free_kb: u64 = 499712;
+    let mut avail_kb: u64 = 499712;
+
+    if let Ok(content) = fs::read_to_string("/proc/meminfo") {
         for line in content.lines() {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() >= 2 {
                 match parts[0] {
-                    "MemTotal:" => total_kb = parts[1].parse().unwrap_or(0),
-                    "MemFree:" => free_kb = parts[1].parse().unwrap_or(0),
-                    "MemAvailable:" => avail_kb = parts[1].parse().unwrap_or(0),
+                    "MemTotal:" => total_kb = parts[1].parse().unwrap_or(total_kb),
+                    "MemFree:" => free_kb = parts[1].parse().unwrap_or(free_kb),
+                    "MemAvailable:" => avail_kb = parts[1].parse().unwrap_or(avail_kb),
                     _ => {}
                 }
             }
         }
-        let used_kb = total_kb.saturating_sub(avail_kb);
-        println!("               total        used        free   available");
-        println!(
-            "Mem:      {:10}M {:10}M {:10}M  {:10}M",
-            total_kb / 1024,
-            used_kb / 1024,
-            free_kb / 1024,
-            avail_kb / 1024
-        );
-        ExitCode::SUCCESS
-    } else {
-        println!("               total        used        free   available");
-        println!("Mem:            512M         24M        488M        488M (simulated)");
-        ExitCode::SUCCESS
     }
+
+    let total_bytes = total_kb * 1024;
+    let free_bytes = free_kb * 1024;
+    let avail_bytes = avail_kb * 1024;
+    let used_bytes = total_bytes.saturating_sub(avail_bytes);
+
+    let format_val = |b: u64| -> String {
+        if human {
+            format_human_size(b)
+        } else {
+            format!("{:>9}{}", (b as f64 / unit).round() as u64, unit_suffix)
+        }
+    };
+
+    println!("               total        used        free   available");
+    println!(
+        "Mem:     {}   {}   {}   {}",
+        format_val(total_bytes),
+        format_val(used_bytes),
+        format_val(free_bytes),
+        format_val(avail_bytes)
+    );
+    ExitCode::SUCCESS
 }
 
-fn run_df(_args: &[String]) -> ExitCode {
-    println!("Filesystem     1K-blocks      Used Available Use% Mounted on");
+fn run_df(args: &[String]) -> ExitCode {
+    let mut human = false;
+    let mut targets = Vec::new();
+
+    for arg in args {
+        match arg.as_str() {
+            "-h" | "--human-readable" => human = true,
+            "-k" => human = false,
+            "--help" => {
+                println!("Usage: df [OPTION]... [FILE]...");
+                println!("Show information about the file system on which each FILE resides.");
+                println!("  -h, --human-readable  print sizes in powers of 1024 (e.g., 1023M)");
+                println!("  -k                    like --block-size=1K");
+                return ExitCode::SUCCESS;
+            }
+            _ if !arg.starts_with('-') => targets.push(arg.as_str()),
+            _ => {}
+        }
+    }
+
+    let header_size = if human { "     Size" } else { "1K-blocks" };
+    println!("Filesystem     {}      Used Available Use% Mounted on", header_size);
+
+    struct MountInfo {
+        dev: String,
+        mount: String,
+    }
+
+    let mut mounts: Vec<MountInfo> = Vec::new();
     if let Ok(content) = fs::read_to_string("/proc/mounts") {
         for line in content.lines() {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() >= 2 {
-                let dev = parts[0];
-                let mount = parts[1];
-                println!("{:<14}   1048576     32768   1015808   3% {}", dev, mount);
+                mounts.push(MountInfo {
+                    dev: parts[0].to_string(),
+                    mount: parts[1].to_string(),
+                });
             }
         }
-    } else {
-        println!("rootfs           1048576     32768   1015808   3% /");
     }
+    if mounts.is_empty() {
+        mounts.push(MountInfo { dev: "rootfs".to_string(), mount: "/".to_string() });
+    }
+
+    for m in mounts {
+        if !targets.is_empty() && !targets.iter().any(|&t| t == m.mount || t == m.dev || t == ".") {
+            continue;
+        }
+
+        let mut total_1k: u64 = 1048576;
+        let mut avail_1k: u64 = 1015808;
+
+        #[cfg(unix)]
+        unsafe {
+            use std::ffi::CString;
+            if let Ok(c_mount) = CString::new(m.mount.as_str()) {
+                let mut vfs: libc::statvfs = std::mem::zeroed();
+                if libc::statvfs(c_mount.as_ptr(), &mut vfs) == 0 {
+                    let bsize = if vfs.f_frsize > 0 { vfs.f_frsize as u64 } else { vfs.f_bsize as u64 };
+                    total_1k = (vfs.f_blocks as u64 * bsize) / 1024;
+                    avail_1k = (vfs.f_bavail as u64 * bsize) / 1024;
+                }
+            }
+        }
+
+        let used_1k = total_1k.saturating_sub(avail_1k);
+        let pct = if total_1k > 0 {
+            (used_1k as f64 / total_1k as f64 * 100.0).round() as u64
+        } else {
+            0
+        };
+
+        let (size_col, used_col, avail_col) = if human {
+            (
+                format!("{:>9}", format_human_size(total_1k * 1024)),
+                format!("{:>9}", format_human_size(used_1k * 1024)),
+                format!("{:>9}", format_human_size(avail_1k * 1024)),
+            )
+        } else {
+            (
+                format!("{:>9}", total_1k),
+                format!("{:>9}", used_1k),
+                format!("{:>9}", avail_1k),
+            )
+        };
+
+        println!("{:<14} {} {} {} {:>3}% {}", m.dev, size_col, used_col, avail_col, pct, m.mount);
+    }
+
     ExitCode::SUCCESS
 }
 
-fn run_ps(_args: &[String]) -> ExitCode {
+fn run_ps(args: &[String]) -> ExitCode {
+    for arg in args {
+        match arg.as_str() {
+            "-h" | "--help" => {
+                println!("Usage: ps [options]");
+                println!("Report a snapshot of the current processes.");
+                println!("  -h, --help  display this help and exit");
+                return ExitCode::SUCCESS;
+            }
+            "-a" | "-e" | "-f" | "-ef" | "-aux" | "aux" | "-A" | "ax" | "axo" => {}
+            opt if opt.starts_with('-') => {
+                eprintln!("ps: unrecognized option '{}'", opt);
+                return ExitCode::FAILURE;
+            }
+            _ => {}
+        }
+    }
+
     let stdout = io::stdout();
     let mut out = stdout.lock();
     if writeln!(out, "  PID TTY          TIME CMD").is_err() {
@@ -3156,75 +4101,129 @@ pub(crate) fn run_kill(args: &[String]) -> ExitCode {
     }
 
     let mut signal = 15; // SIGTERM
-    let mut pid_opt = None;
+    let mut pids = Vec::new();
     let mut verify = false;
 
-    for arg in args {
-        if arg == "-v" || arg == "--verify" {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
+        if arg == "-h" || arg == "--help" {
+            println!("Usage: kill [-s signal | -signal] pid...");
+            println!("       kill -l [signal]");
+            println!("Send a signal to processes.");
+            println!("Options:");
+            println!("  -s <sig>     specify signal to send");
+            println!("  -l           list signal names");
+            println!("  -v, --verify verify process termination");
+            println!("  -h, --help   display this help and exit");
+            return ExitCode::SUCCESS;
+        } else if arg == "-l" || arg == "--list" {
+            println!(" 1) SIGHUP       2) SIGINT       3) SIGQUIT      4) SIGILL");
+            println!(" 5) SIGTRAP      6) SIGABRT      7) SIGBUS       8) SIGFPE");
+            println!(" 9) SIGKILL     10) SIGUSR1     11) SIGSEGV     12) SIGUSR2");
+            println!("13) SIGPIPE     14) SIGALRM     15) SIGTERM     17) SIGCHLD");
+            println!("18) SIGCONT     19) SIGSTOP     20) SIGTSTP     21) SIGTTIN");
+            return ExitCode::SUCCESS;
+        } else if arg == "-v" || arg == "--verify" {
             verify = true;
-        } else if arg.starts_with('-') && arg.len() > 1 && pid_opt.is_none() {
-            if let Ok(sig) = arg[1..].parse::<i32>() {
-                signal = sig;
+            i += 1;
+        } else if arg == "-s" {
+            if i + 1 < args.len() {
+                match proc_ledger::parse_signal(&args[i + 1]) {
+                    Ok(sig) => signal = sig,
+                    Err(err) => {
+                        eprintln!("kill: {}", err);
+                        return ExitCode::FAILURE;
+                    }
+                }
+                i += 2;
+            } else {
+                eprintln!("kill: option requires an argument -- 's'");
+                return ExitCode::FAILURE;
             }
-        } else if let Ok(p) = arg.parse::<i32>() {
-            pid_opt = Some(p);
+        } else if arg.starts_with('-') && arg.len() > 1 && pids.is_empty() {
+            match proc_ledger::parse_signal(arg) {
+                Ok(sig) => signal = sig,
+                Err(err) => {
+                    eprintln!("kill: {}", err);
+                    return ExitCode::FAILURE;
+                }
+            }
+            i += 1;
+        } else {
+            match arg.parse::<i32>() {
+                Ok(p) => {
+                    pids.push(p);
+                    i += 1;
+                }
+                Err(_) => {
+                    eprintln!("kill: invalid pid '{}'", arg);
+                    return ExitCode::FAILURE;
+                }
+            }
         }
     }
 
-    let pid = match pid_opt {
-        Some(p) => p,
-        None => {
-            eprintln!("kill: valid numeric PID required");
-            return ExitCode::FAILURE;
-        }
-    };
-
-    if pid <= 0 {
-        eprintln!("kill: refusing to signal PID {} (broadcast / process group protection)", pid);
+    if pids.is_empty() {
+        eprintln!("kill: missing pid");
         return ExitCode::FAILURE;
     }
-    if pid == 1 {
-        eprintln!("kill: operation not permitted: PID 1 (init) is protected");
-        return ExitCode::FAILURE;
-    }
 
-    let target_comm = proc_ledger::get_process_by_pid(pid).map(|p| p.comm);
+    let mut exit_code = ExitCode::SUCCESS;
 
-    #[cfg(unix)]
-    unsafe {
-        if libc::kill(pid, signal) != 0 {
-            let err = io::Error::last_os_error();
-            eprintln!("kill: ({}): {}", pid, err);
-            return ExitCode::FAILURE;
+    for pid in pids {
+        if pid <= 0 {
+            eprintln!("kill: refusing to signal PID {} (broadcast / process group protection)", pid);
+            exit_code = ExitCode::FAILURE;
+            continue;
         }
-    }
-    #[cfg(not(unix))]
-    {
-        println!("Simulated: sending signal {} to pid {}", signal, pid);
-    }
+        if pid == 1 {
+            eprintln!("kill: operation not permitted: PID 1 (init) is protected");
+            exit_code = ExitCode::FAILURE;
+            continue;
+        }
 
-    if verify {
-        let verification = proc_ledger::verify_process_termination(pid, target_comm.as_deref(), 250);
-        match verification {
-            proc_ledger::PostKillVerification::SafelyTerminated => {
-                println!("kill: [VERIFIED] PID {} terminated cleanly. Resources returned safely.", pid);
-            }
-            proc_ledger::PostKillVerification::BecameZombie { ppid, comm } => {
-                eprintln!("kill: [WARNING] PID {} ({}) is now a GHOST/ZOMBIE. Parent PPID {} has not reaped it.", pid, comm, ppid);
-            }
-            proc_ledger::PostKillVerification::StuckInDState { wchan, comm } => {
-                eprintln!("kill: [ALERT] PID {} ({}) FAILED to terminate: stuck in D-state (wchan: {}).", pid, comm, wchan);
-            }
-            proc_ledger::PostKillVerification::RespawnedBySupervisor { new_pid, comm } => {
-                eprintln!("kill: [NOTICE] PID {} ({}) terminated, but supervisor respawned NEW PID {}.", pid, comm, new_pid);
-            }
-            proc_ledger::PostKillVerification::StillRunning { state, comm } => {
-                eprintln!("kill: [NOTICE] PID {} ({}) still running in state {:?}.", pid, comm, state);
+        let target_comm = proc_ledger::get_process_by_pid(pid).map(|p| p.comm);
+
+        #[cfg(unix)]
+        unsafe {
+            if libc::kill(pid, signal) != 0 {
+                let err = io::Error::last_os_error();
+                eprintln!("kill: ({}): {}", pid, err);
+                exit_code = ExitCode::FAILURE;
+                continue;
             }
         }
+        #[cfg(not(unix))]
+        {
+            println!("Simulated: sending signal {} to pid {}", signal, pid);
+        }
+
+        if verify {
+            let verification = proc_ledger::verify_process_termination(pid, target_comm.as_deref(), 250);
+            match verification {
+                proc_ledger::PostKillVerification::SafelyTerminated => {
+                    println!("kill: [VERIFIED] PID {} terminated cleanly. Resources returned safely.", pid);
+                }
+                proc_ledger::PostKillVerification::BecameZombie { ppid, comm } => {
+                    eprintln!("kill: [WARNING] PID {} ({}) is now a GHOST/ZOMBIE. Parent PPID {} has not reaped it.", pid, comm, ppid);
+                }
+                proc_ledger::PostKillVerification::StuckInDState { wchan, comm } => {
+                    eprintln!("kill: [ALERT] PID {} ({}) FAILED to terminate: stuck in D-state (wchan: {}).", pid, comm, wchan);
+                    exit_code = ExitCode::FAILURE;
+                }
+                proc_ledger::PostKillVerification::RespawnedBySupervisor { new_pid, comm } => {
+                    eprintln!("kill: [NOTICE] PID {} ({}) terminated, but supervisor respawned NEW PID {}.", pid, comm, new_pid);
+                }
+                proc_ledger::PostKillVerification::StillRunning { state, comm } => {
+                    eprintln!("kill: [NOTICE] PID {} ({}) still running in state {:?}.", pid, comm, state);
+                    exit_code = ExitCode::FAILURE;
+                }
+            }
+        }
     }
 
-    ExitCode::SUCCESS
+    exit_code
 }
 
 fn run_uptime(_args: &[String]) -> ExitCode {
@@ -3318,71 +4317,152 @@ fn run_whoami(_args: &[String]) -> ExitCode {
     }
 }
 
-fn run_id(_args: &[String]) -> ExitCode {
+fn run_id(args: &[String]) -> ExitCode {
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("Usage: id [OPTION]... [USER]");
+        println!("Print user and group information for the current user, or for USER.");
+        println!("  -a              ignore, for compatibility with other versions");
+        println!("  -g, --group     print only the effective group ID");
+        println!("  -G, --groups    print all group IDs");
+        println!("  -n, --name      print a name instead of a number, for -ugG");
+        println!("  -r, --real      print the real ID instead of the effective ID, with -ugG");
+        println!("  -u, --user      print only the effective user ID");
+        return ExitCode::SUCCESS;
+    }
+
+    let mut opt_u = false;
+    let mut opt_g = false;
+    let mut opt_gg = false;
+    let mut opt_n = false;
+    #[allow(unused_variables, unused_mut, unused_assignments)]
+    let mut opt_r = false;
+    let mut target_user: Option<&str> = None;
+
+    for arg in args {
+        if arg.starts_with('-') && arg != "-" {
+            if arg == "-u" || arg == "--user" { opt_u = true; }
+            else if arg == "-g" || arg == "--group" { opt_g = true; }
+            else if arg == "-G" || arg == "--groups" { opt_gg = true; }
+            else if arg == "-n" || arg == "--name" { opt_n = true; }
+            else if arg == "-r" || arg == "--real" { opt_r = true; }
+            else if arg == "-a" { /* ignore */ }
+            else if !arg.starts_with("--") {
+                for ch in arg[1..].chars() {
+                    match ch {
+                        'u' => opt_u = true,
+                        'g' => opt_g = true,
+                        'G' => opt_gg = true,
+                        'n' => opt_n = true,
+                        'r' => opt_r = true,
+                        'a' => {},
+                        _ => {
+                            eprintln!("id: invalid option -- '{}'", ch);
+                            return ExitCode::FAILURE;
+                        }
+                    }
+                }
+            }
+        } else if target_user.is_none() {
+            target_user = Some(arg.as_str());
+        }
+    }
+    let _ = opt_r;
+
     #[cfg(target_os = "linux")]
     {
-        let uid = unsafe { libc::getuid() };
-        let gid = unsafe { libc::getgid() };
-        let euid = unsafe { libc::geteuid() };
-        let egid = unsafe { libc::getegid() };
+        let mut uid = unsafe { if opt_r { libc::getuid() } else { libc::geteuid() } };
+        let mut gid = unsafe { if opt_r { libc::getgid() } else { libc::getegid() } };
+
+        if let Some(user_str) = target_user {
+            if let Ok(c_u) = CString::new(user_str) {
+                let pwd = unsafe { libc::getpwnam(c_u.as_ptr()) };
+                if !pwd.is_null() {
+                    uid = unsafe { (*pwd).pw_uid };
+                    gid = unsafe { (*pwd).pw_gid };
+                } else if let Ok(parsed_u) = user_str.parse::<u32>() {
+                    uid = parsed_u;
+                } else {
+                    eprintln!("id: '{}': no such user", user_str);
+                    return ExitCode::FAILURE;
+                }
+            }
+        }
 
         let uname = resolve_username(uid).unwrap_or_else(|| {
-            if uid == 0 {
-                "root".to_string()
-            } else {
-                "ferro".to_string()
-            }
+            if uid == 0 { "root".to_string() } else { uid.to_string() }
         });
         let gname = resolve_groupname(gid).unwrap_or_else(|| {
-            if gid == 0 {
-                "root".to_string()
-            } else {
-                "ferro".to_string()
-            }
+            if gid == 0 { "root".to_string() } else { gid.to_string() }
         });
+
+        if opt_u {
+            if opt_n { println!("{}", uname); } else { println!("{}", uid); }
+            return ExitCode::SUCCESS;
+        }
+        if opt_g {
+            if opt_n { println!("{}", gname); } else { println!("{}", gid); }
+            return ExitCode::SUCCESS;
+        }
 
         let mut groups = [0 as libc::gid_t; 32];
         let ngroups = unsafe { libc::getgroups(32, groups.as_mut_ptr()) };
 
+        let mut group_ids = Vec::new();
+        let mut group_names = Vec::new();
         let mut group_strs = Vec::new();
         if ngroups > 0 {
             for &g in &groups[..ngroups as usize] {
                 let gn = resolve_groupname(g as u32).unwrap_or_else(|| g.to_string());
+                group_ids.push(g.to_string());
+                group_names.push(gn.clone());
                 group_strs.push(format!("{}({})", g, gn));
             }
         } else {
+            group_ids.push(gid.to_string());
+            group_names.push(gname.clone());
             group_strs.push(format!("{}({})", gid, gname));
         }
 
-        if uid == euid && gid == egid {
-            println!(
-                "uid={}({}) gid={}({}) groups={}",
-                uid,
-                uname,
-                gid,
-                gname,
-                group_strs.join(",")
-            );
-        } else {
+        if opt_gg {
+            if opt_n { println!("{}", group_names.join(" ")); }
+            else { println!("{}", group_ids.join(" ")); }
+            return ExitCode::SUCCESS;
+        }
+
+        let euid = unsafe { libc::geteuid() };
+        let egid = unsafe { libc::getegid() };
+        let real_uid = unsafe { libc::getuid() };
+        let real_gid = unsafe { libc::getgid() };
+
+        if target_user.is_none() && (real_uid != euid || real_gid != egid) {
             let euname = resolve_username(euid).unwrap_or_else(|| euid.to_string());
             let egname = resolve_groupname(egid).unwrap_or_else(|| egid.to_string());
             println!(
                 "uid={}({}) gid={}({}) euid={}({}) egid={}({}) groups={}",
-                uid,
-                uname,
-                gid,
-                gname,
-                euid,
-                euname,
-                egid,
-                egname,
-                group_strs.join(",")
+                real_uid, uname, real_gid, gname, euid, euname, egid, egname, group_strs.join(",")
+            );
+        } else {
+            println!(
+                "uid={}({}) gid={}({}) groups={}",
+                uid, uname, gid, gname, group_strs.join(",")
             );
         }
         ExitCode::SUCCESS
     }
     #[cfg(not(target_os = "linux"))]
     {
+        if opt_u {
+            if opt_n { println!("ferro"); } else { println!("1000"); }
+            return ExitCode::SUCCESS;
+        }
+        if opt_g {
+            if opt_n { println!("ferro"); } else { println!("1000"); }
+            return ExitCode::SUCCESS;
+        }
+        if opt_gg {
+            if opt_n { println!("ferro"); } else { println!("1000"); }
+            return ExitCode::SUCCESS;
+        }
         println!("uid=1000(ferro) gid=1000(ferro) groups=1000(ferro)");
         ExitCode::SUCCESS
     }
@@ -3393,13 +4473,43 @@ fn run_touch(args: &[String]) -> ExitCode {
         eprintln!("touch: missing file operand");
         return ExitCode::FAILURE;
     }
+
+    let mut no_create = false;
+    let mut files = Vec::new();
+
+    for arg in args {
+        if arg == "-c" || arg == "--no-create" {
+            no_create = true;
+        } else if arg == "-h" || arg == "--help" {
+            println!("Usage: touch [OPTION]... FILE...");
+            println!("Update the access and modification times of each FILE to the current time.");
+            println!("  -a                     change only the access time");
+            println!("  -c, --no-create        do not create any files");
+            println!("  -m                     change only the modification time");
+            return ExitCode::SUCCESS;
+        } else if arg.starts_with('-') && !arg.starts_with("--") && arg.len() > 1 {
+            for ch in arg[1..].chars() {
+                if ch == 'c' {
+                    no_create = true;
+                }
+            }
+        } else if !arg.starts_with('-') {
+            files.push(arg.as_str());
+        }
+    }
+
+    if files.is_empty() {
+        eprintln!("touch: missing file operand");
+        return ExitCode::FAILURE;
+    }
+
     let mut success = true;
-    for file_path in args {
+    for file_path in files {
         let path = Path::new(file_path);
         if path.exists() {
-            #[cfg(target_os = "linux")]
+            #[cfg(unix)]
             unsafe {
-                let c_path = match CString::new(file_path.as_str()) {
+                let c_path = match CString::new(file_path) {
                     Ok(c) => c,
                     Err(_) => {
                         success = false;
@@ -3415,11 +4525,10 @@ fn run_touch(args: &[String]) -> ExitCode {
                     success = false;
                 }
             }
-        } else {
+        } else if !no_create {
             match OpenOptions::new()
                 .create(true)
                 .write(true)
-                .truncate(true)
                 .open(path)
             {
                 Ok(_) => {}
@@ -3442,40 +4551,75 @@ fn run_ln(args: &[String]) -> ExitCode {
         eprintln!("ln: missing file operand");
         return ExitCode::FAILURE;
     }
-    let is_symbolic = args.iter().any(|a| a == "-s" || a == "--symbolic");
-    let targets: Vec<&String> = args.iter().filter(|a| !a.starts_with('-')).collect();
+    let mut is_symbolic = false;
+    let mut force = false;
+    let mut targets = Vec::new();
+
+    for arg in args {
+        if arg == "-s" || arg == "--symbolic" {
+            is_symbolic = true;
+        } else if arg == "-f" || arg == "--force" {
+            force = true;
+        } else if arg == "-sf" || arg == "-fs" {
+            is_symbolic = true;
+            force = true;
+        } else if arg == "-h" || arg == "--help" {
+            println!("Usage: ln [OPTION]... TARGET LINK_NAME");
+            println!("Create links to TARGET with the name LINK_NAME.");
+            println!("  -s, --symbolic         make symbolic links instead of hard links");
+            println!("  -f, --force            remove existing destination files");
+            return ExitCode::SUCCESS;
+        } else if !arg.starts_with('-') {
+            targets.push(arg.as_str());
+        }
+    }
 
     if targets.len() < 2 {
         eprintln!(
             "ln: missing destination file operand after '{}'",
-            targets.first().unwrap_or(&&"".to_string())
+            targets.first().unwrap_or(&"")
         );
         return ExitCode::FAILURE;
     }
 
     let src = targets[0];
-    let dst = targets[1];
+    let dst_raw = Path::new(targets[1]);
+
+    let effective_dst = if dst_raw.is_dir() {
+        let src_path = Path::new(src);
+        if let Some(file_name) = src_path.file_name() {
+            dst_raw.join(file_name)
+        } else {
+            dst_raw.to_path_buf()
+        }
+    } else {
+        dst_raw.to_path_buf()
+    };
+
+    if force && (effective_dst.exists() || effective_dst.is_symlink()) {
+        let _ = fs::remove_file(&effective_dst);
+    }
 
     #[cfg(unix)]
     {
         if is_symbolic {
-            match std::os::unix::fs::symlink(src, dst) {
+            match std::os::unix::fs::symlink(src, &effective_dst) {
                 Ok(_) => ExitCode::SUCCESS,
                 Err(e) => {
                     eprintln!(
                         "ln: failed to create symbolic link '{}' -> '{}': {}",
-                        dst, src, e
+                        effective_dst.display(), src, e
                     );
                     ExitCode::FAILURE
                 }
             }
         } else {
-            match fs::hard_link(src, dst) {
+            match fs::hard_link(src, &effective_dst) {
                 Ok(_) => ExitCode::SUCCESS,
                 Err(e) => {
                     eprintln!(
                         "ln: failed to create hard link '{}' => '{}': {}",
-                        dst, src, e
+                        effective_dst.display(), src, e
                     );
                     ExitCode::FAILURE
                 }
@@ -3484,7 +4628,7 @@ fn run_ln(args: &[String]) -> ExitCode {
     }
     #[cfg(not(unix))]
     {
-        let _ = (src, dst, is_symbolic);
+        let _ = (src, effective_dst, is_symbolic);
         eprintln!("ln: symlinks not supported on this platform");
         ExitCode::FAILURE
     }
@@ -4007,29 +5151,44 @@ fn run_sync(_args: &[String]) -> ExitCode {
 }
 
 fn run_hostname(args: &[String]) -> ExitCode {
-    if args.is_empty() {
-        #[cfg(target_os = "linux")]
-        {
-            let mut buf = [0u8; 256];
-            let ret =
-                unsafe { libc::gethostname(buf.as_mut_ptr() as *mut libc::c_char, buf.len()) };
-            if ret == 0 {
-                let name = String::from_utf8_lossy(&buf).trim_matches('\0').to_string();
-                println!("{}", name);
-                return ExitCode::SUCCESS;
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("Usage: hostname [OPTION] [NAME]");
+        println!("Show or set the system's host name.");
+        println!("  -s, --short     short host name");
+        println!("  -f, --fqdn      long host name (FQDN)");
+        println!("  -d, --domain    DNS domain name");
+        return ExitCode::SUCCESS;
+    }
+
+    let mut opt_short = false;
+    let mut opt_domain = false;
+    let mut opt_fqdn = false;
+    let mut new_hostname: Option<&str> = None;
+
+    for arg in args {
+        if arg.starts_with('-') {
+            match arg.as_str() {
+                "-s" | "--short" => opt_short = true,
+                "-d" | "--domain" => opt_domain = true,
+                "-f" | "--fqdn" => opt_fqdn = true,
+                other => {
+                    eprintln!("hostname: invalid option '{}'", other);
+                    eprintln!("Try 'hostname --help' for more information.");
+                    return ExitCode::FAILURE;
+                }
             }
+        } else if new_hostname.is_none() {
+            new_hostname = Some(arg.as_str());
+        } else {
+            eprintln!("hostname: extra operand '{}'", arg);
+            return ExitCode::FAILURE;
         }
-        if let Ok(name) = fs::read_to_string("/proc/sys/kernel/hostname") {
-            print!("{}", name);
-            return ExitCode::SUCCESS;
-        }
-        println!("ferro-os");
-        ExitCode::SUCCESS
-    } else {
-        let new_name = &args[0];
+    }
+
+    if let Some(new_name) = new_hostname {
         #[cfg(target_os = "linux")]
         {
-            let c_name = match CString::new(new_name.as_str()) {
+            let c_name = match CString::new(new_name) {
                 Ok(c) => c,
                 Err(_) => return ExitCode::FAILURE,
             };
@@ -4051,12 +5210,79 @@ fn run_hostname(args: &[String]) -> ExitCode {
             eprintln!("hostname: cannot set hostname on this platform");
             ExitCode::FAILURE
         }
+    } else {
+        let full_name = {
+            #[cfg(target_os = "linux")]
+            {
+                let mut buf = [0u8; 256];
+                let ret = unsafe { libc::gethostname(buf.as_mut_ptr() as *mut libc::c_char, buf.len()) };
+                if ret == 0 {
+                    String::from_utf8_lossy(&buf).trim_matches('\0').to_string()
+                } else if let Ok(name) = fs::read_to_string("/proc/sys/kernel/hostname") {
+                    name.trim().to_string()
+                } else {
+                    "ferro-os".to_string()
+                }
+            }
+            #[cfg(not(target_os = "linux"))]
+            {
+                if let Ok(name) = fs::read_to_string("/proc/sys/kernel/hostname") {
+                    name.trim().to_string()
+                } else {
+                    "ferro-os".to_string()
+                }
+            }
+        };
+
+        if opt_short {
+            let short = full_name.split('.').next().unwrap_or(&full_name);
+            println!("{}", short);
+        } else if opt_domain {
+            if let Some(idx) = full_name.find('.') {
+                println!("{}", &full_name[idx + 1..]);
+            } else {
+                println!("(none)");
+            }
+        } else {
+            let _ = opt_fqdn;
+            println!("{}", full_name);
+        }
+        ExitCode::SUCCESS
     }
 }
 
 fn run_tee(args: &[String]) -> ExitCode {
-    let append = args.iter().any(|a| a == "-a" || a == "--append");
-    let file_paths: Vec<&String> = args.iter().filter(|a| !a.starts_with('-')).collect();
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("Usage: tee [OPTION]... [FILE]...");
+        println!("Copy standard input to each FILE, and also to standard output.");
+        println!("  -a, --append   append to the given FILEs, do not overwrite");
+        println!("  -i, --ignore-interrupts   ignore interrupt signals");
+        return ExitCode::SUCCESS;
+    }
+
+    let mut append = false;
+    let mut files_failed = false;
+    let mut file_paths = Vec::new();
+    let mut parsing_flags = true;
+
+    for arg in args {
+        if parsing_flags && arg == "--" {
+            parsing_flags = false;
+            continue;
+        }
+        if parsing_flags && arg.starts_with('-') && arg != "-" {
+            match arg.as_str() {
+                "-a" | "--append" => append = true,
+                "-i" | "--ignore-interrupts" => { /* ignore SIGINT if applicable */ }
+                other => {
+                    eprintln!("tee: unrecognized option '{}'", other);
+                    return ExitCode::FAILURE;
+                }
+            }
+        } else {
+            file_paths.push(arg);
+        }
+    }
 
     let mut files = Vec::new();
     for fp in file_paths {
@@ -4068,7 +5294,10 @@ fn run_tee(args: &[String]) -> ExitCode {
             .open(fp)
         {
             Ok(f) => files.push(f),
-            Err(e) => eprintln!("tee: cannot open '{}': {}", fp, e),
+            Err(e) => {
+                eprintln!("tee: cannot open '{}': {}", fp, e);
+                files_failed = true;
+            }
         }
     }
 
@@ -4082,17 +5311,36 @@ fn run_tee(args: &[String]) -> ExitCode {
         match stdin_lock.read(&mut buf) {
             Ok(0) => break,
             Ok(n) => {
-                let _ = stdout_lock.write_all(&buf[..n]);
+                if let Err(e) = stdout_lock.write_all(&buf[..n]) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        break;
+                    }
+                    eprintln!("tee: standard output: {}", e);
+                    files_failed = true;
+                    break;
+                }
                 let _ = stdout_lock.flush();
                 for f in &mut files {
-                    let _ = f.write_all(&buf[..n]);
+                    if let Err(e) = f.write_all(&buf[..n]) {
+                        eprintln!("tee: write error: {}", e);
+                        files_failed = true;
+                    }
                     let _ = f.flush();
                 }
             }
-            Err(_) => break,
+            Err(e) => {
+                eprintln!("tee: read error: {}", e);
+                files_failed = true;
+                break;
+            }
         }
     }
-    ExitCode::SUCCESS
+
+    if files_failed {
+        ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
+    }
 }
 
 fn run_ip(args: &[String]) -> ExitCode {
@@ -4404,6 +5652,10 @@ fn run_fetch(args: &[String]) -> ExitCode {
         println!("Options:");
         println!("  -h, --help     display this help and exit");
         println!("  -V, --version  output version information and exit");
+        println!("  -s, --silent   silent mode, don't show connection progress");
+        println!("  -o <file>      write output to <file> instead of stdout");
+        println!("  -O             write output to a local file named like the remote file");
+        println!("  -I, --head     show document info only");
         return if args.is_empty() { ExitCode::FAILURE } else { ExitCode::SUCCESS };
     }
 
@@ -4412,8 +5664,52 @@ fn run_fetch(args: &[String]) -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
-    let url = &args[0];
-    let dest_path = args.get(1);
+    let mut silent = false;
+    let mut head_only = false;
+    let mut output_file: Option<String> = None;
+    let mut remote_name = false;
+    let mut positional = Vec::new();
+
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
+        if arg == "-s" || arg == "--silent" {
+            silent = true;
+            i += 1;
+        } else if arg == "-I" || arg == "--head" {
+            head_only = true;
+            i += 1;
+        } else if arg == "-O" || arg == "--remote-name" {
+            remote_name = true;
+            i += 1;
+        } else if (arg == "-o" || arg == "--output") && i + 1 < args.len() {
+            output_file = Some(args[i + 1].clone());
+            i += 2;
+        } else if !arg.starts_with('-') {
+            positional.push(arg.as_str());
+            i += 1;
+        } else {
+            i += 1;
+        }
+    }
+
+    if positional.is_empty() {
+        eprintln!("curl: no URL specified!");
+        return ExitCode::FAILURE;
+    }
+
+    let url = positional[0];
+    let dest_path = if output_file.is_some() {
+        output_file
+    } else if positional.len() > 1 {
+        Some(positional[1].to_string())
+    } else if remote_name {
+        let name = url.split('/').last().unwrap_or("index.html");
+        let safe_name = if name.is_empty() { "index.html" } else { name };
+        Some(safe_name.to_string())
+    } else {
+        None
+    };
 
     if !url.starts_with("http://") {
         eprintln!(
@@ -4434,12 +5730,15 @@ fn run_fetch(args: &[String]) -> ExitCode {
         None => (host, 80),
     };
 
-    println!("[fetch] Connecting to {}:{}...", host_name, port);
+    if !silent {
+        println!("[fetch] Connecting to {}:{}...", host_name, port);
+    }
     match TcpStream::connect((host_name, port)) {
         Ok(mut stream) => {
+            let method = if head_only { "HEAD" } else { "GET" };
             let request = format!(
-                "GET {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: FerroOS-Fetch/0.1\r\nConnection: close\r\n\r\n",
-                path, host_name
+                "{} {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: FerroOS-Fetch/0.1\r\nConnection: close\r\n\r\n",
+                method, path, host_name
             );
             if stream.write_all(request.as_bytes()).is_err() {
                 eprintln!("fetch: error sending HTTP request");
@@ -4460,10 +5759,16 @@ fn run_fetch(args: &[String]) -> ExitCode {
                 .map(|p| p + 4)
                 .unwrap_or(0);
 
+            if head_only {
+                let headers = &response[..body_start];
+                let _ = io::stdout().write_all(headers);
+                return ExitCode::SUCCESS;
+            }
+
             let body = &response[body_start..];
 
             if let Some(dest) = dest_path {
-                if let Err(e) = fs::write(dest, body) {
+                if let Err(e) = fs::write(&dest, body) {
                     eprintln!("fetch: cannot write to '{}': {}", dest, e);
                     return ExitCode::FAILURE;
                 }
@@ -9128,5 +10433,17 @@ mod tests {
     fn test_win_help() {
         let code = run_win_run(&["help".to_string()]);
         assert_success(code);
+    }
+
+    #[test]
+    fn test_ps_and_kill_cli_options() {
+        assert_eq!(run_ps(&["--help".to_string()]), ExitCode::SUCCESS);
+        assert_eq!(run_ps(&["--invalid-flag".to_string()]), ExitCode::FAILURE);
+
+        assert_eq!(run_kill(&[]), ExitCode::FAILURE);
+        assert_eq!(run_kill(&["-h".to_string()]), ExitCode::SUCCESS);
+        assert_eq!(run_kill(&["-l".to_string()]), ExitCode::SUCCESS);
+        assert_eq!(run_kill(&["-INVALID".to_string(), "123".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_kill(&["abc".to_string()]), ExitCode::FAILURE);
     }
 }

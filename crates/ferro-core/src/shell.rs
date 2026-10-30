@@ -151,7 +151,7 @@ pub fn expand_string_vars(input: &str) -> String {
                 i += 2;
                 continue;
             } else if next == '{' {
-                // Bracketed expansion: ${VAR} or ${VAR:-default}
+                // Bracketed expansion: ${VAR}, ${#VAR}, ${VAR:-default}
                 let mut close_idx = None;
                 for j in (i + 2)..chars.len() {
                     if chars[j] == '}' {
@@ -161,7 +161,25 @@ pub fn expand_string_vars(input: &str) -> String {
                 }
                 if let Some(end) = close_idx {
                     let inner: String = chars[(i + 2)..end].iter().collect();
-                    if let Some(sep) = inner.find(":-") {
+                    if inner == "#" {
+                        let len = CONTEXT.with(|ctx| ctx.borrow().positional_params.len());
+                        out.push_str(&len.to_string());
+                    } else if let Some(stripped) = inner.strip_prefix('#') {
+                        if stripped.chars().all(|c| c.is_ascii_digit()) && !stripped.is_empty() {
+                            let idx = stripped.parse::<usize>().unwrap_or(0);
+                            let len = if idx == 0 {
+                                "ferro-core".chars().count()
+                            } else {
+                                CONTEXT.with(|ctx| {
+                                    ctx.borrow().positional_params.get(idx - 1).map(|s| s.chars().count()).unwrap_or(0)
+                                })
+                            };
+                            out.push_str(&len.to_string());
+                        } else {
+                            let len = get_var(stripped).map(|v| v.chars().count()).unwrap_or(0);
+                            out.push_str(&len.to_string());
+                        }
+                    } else if let Some(sep) = inner.find(":-") {
                         let var_name = &inner[..sep];
                         let default_val = &inner[sep + 2..];
                         let val = get_var(var_name);
@@ -180,6 +198,12 @@ pub fn expand_string_vars(input: &str) -> String {
                         }
                     }
                     i = end + 1;
+                    continue;
+                } else {
+                    // Unclosed ${var: preserve safely without panicking or mangling
+                    out.push('$');
+                    out.push('{');
+                    i += 2;
                     continue;
                 }
             } else if next.is_ascii_alphabetic() || next == '_' {
@@ -207,7 +231,7 @@ pub fn is_assignment(token: &str) -> Option<(String, String)> {
     if let Some(eq_pos) = token.find('=') {
         if eq_pos > 0 {
             let key = &token[..eq_pos];
-            let first_char = key.chars().next().unwrap();
+            let first_char = key.chars().next().unwrap_or('\0');
             if (first_char.is_ascii_alphabetic() || first_char == '_')
                 && key.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
             {
@@ -251,8 +275,8 @@ fn run_test_internal(is_bracket: bool, args: &[String]) -> ExitCode {
 
     // Handle logical negation `!`
     let mut invert = false;
-    if tokens[0] == "!" {
-        invert = true;
+    while tokens.first().map(|s| s.as_str()) == Some("!") && tokens.len() > 1 {
+        invert = !invert;
         tokens.remove(0);
     }
 
@@ -327,7 +351,13 @@ fn evaluate_test_expr_checked(tokens: &[String]) -> Result<bool, String> {
                 "-eq" | "-ne" | "-lt" | "-gt" | "-le" | "-ge" => {
                     Err(format!("missing argument after '{}'", op))
                 }
-                _ => Ok(false),
+                _ => {
+                    if op.starts_with('-') {
+                        Err(format!("unknown condition: {}", op))
+                    } else {
+                        Ok(false)
+                    }
+                }
             }
         }
         3 => {
@@ -368,16 +398,22 @@ fn evaluate_test_expr_checked(tokens: &[String]) -> Result<bool, String> {
                     let r = right.parse::<i64>().map_err(|_| format!("{}: integer expression expected", right))?;
                     Ok(l >= r)
                 }
-                _ => Ok(false),
+                _ => Err(format!("unknown condition: {}", op)),
             }
         }
         _ => {
-            if tokens[0] == "-f" {
-                Ok(Path::new(&tokens[1]).is_file())
-            } else if tokens[0] == "-d" {
-                Ok(Path::new(&tokens[1]).is_dir())
-            } else if tokens[0] == "-e" {
-                Ok(Path::new(&tokens[1]).exists())
+            if let Some(pos) = tokens.iter().position(|t| t == "-o") {
+                let left_res = evaluate_test_expr_checked(&tokens[..pos])?;
+                let right_res = evaluate_test_expr_checked(&tokens[pos + 1..])?;
+                return Ok(left_res || right_res);
+            }
+            if let Some(pos) = tokens.iter().position(|t| t == "-a") {
+                let left_res = evaluate_test_expr_checked(&tokens[..pos])?;
+                let right_res = evaluate_test_expr_checked(&tokens[pos + 1..])?;
+                return Ok(left_res && right_res);
+            }
+            if tokens.len() >= 2 && (tokens[0] == "-f" || tokens[0] == "-d" || tokens[0] == "-e" || tokens[0] == "-z" || tokens[0] == "-n") {
+                evaluate_test_expr_checked(&tokens[..2])
             } else {
                 Ok(!tokens.join(" ").trim().is_empty())
             }
@@ -801,6 +837,35 @@ fn parse_if_block(
     (cond, then_body.join("; "), elifs, else_opt, idx)
 }
 
+pub fn split_quote_aware(input: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    let mut quote_char = ' ';
+
+    for c in input.chars() {
+        if (c == '"' || c == '\'') && !in_quotes {
+            in_quotes = true;
+            quote_char = c;
+            current.push(c);
+        } else if in_quotes && c == quote_char {
+            in_quotes = false;
+            current.push(c);
+        } else if !in_quotes && c.is_whitespace() {
+            if !current.is_empty() {
+                tokens.push(current);
+                current = String::new();
+            }
+        } else {
+            current.push(c);
+        }
+    }
+    if !current.is_empty() {
+        tokens.push(current);
+    }
+    tokens
+}
+
 fn parse_for_block(stmts: &[String], start: usize) -> (String, Vec<String>, String, usize) {
     let first = &stmts[start];
     let rest = first.trim_start_matches("for ").trim();
@@ -809,11 +874,11 @@ fn parse_for_block(stmts: &[String], start: usize) -> (String, Vec<String>, Stri
         let name = rest[..in_pos].trim().to_string();
         let items_part = rest[in_pos + 4..].trim();
         let items: Vec<String> = if let Some(do_pos) = items_part.find("; do") {
-            items_part[..do_pos].split_whitespace().map(String::from).collect()
+            split_quote_aware(&items_part[..do_pos])
         } else if let Some(do_pos) = items_part.find(" do") {
-            items_part[..do_pos].split_whitespace().map(String::from).collect()
+            split_quote_aware(&items_part[..do_pos])
         } else {
-            items_part.split_whitespace().map(String::from).collect()
+            split_quote_aware(items_part)
         };
         (name, items)
     } else {
@@ -868,12 +933,28 @@ fn parse_for_block(stmts: &[String], start: usize) -> (String, Vec<String>, Stri
         idx += 1;
     }
 
-    // Expand items (e.g. "$@")
+    // Expand items (handling quoted arguments with spaces)
     let mut expanded_items = Vec::new();
     for it in raw_items {
-        let expanded = expand_string_vars(&it);
-        for word in expanded.split_whitespace() {
-            expanded_items.push(word.to_string());
+        let is_double_quoted = it.starts_with('"') && it.ends_with('"') && it.len() >= 2;
+        let is_single_quoted = it.starts_with('\'') && it.ends_with('\'') && it.len() >= 2;
+        if is_single_quoted {
+            expanded_items.push(it[1..it.len() - 1].to_string());
+        } else if is_double_quoted {
+            let inner = &it[1..it.len() - 1];
+            expanded_items.push(expand_string_vars(inner));
+        } else {
+            let expanded = expand_string_vars(&it);
+            for word in split_quote_aware(&expanded) {
+                let clean = if (word.starts_with('"') && word.ends_with('"') && word.len() >= 2)
+                    || (word.starts_with('\'') && word.ends_with('\'') && word.len() >= 2)
+                {
+                    word[1..word.len() - 1].to_string()
+                } else {
+                    word
+                };
+                expanded_items.push(clean);
+            }
         }
     }
 
@@ -1158,5 +1239,40 @@ mod tests {
 
         assert!(is_exit_success(&code));
         assert_eq!(get_var("ENV_TYPE").unwrap(), "production");
+    }
+
+    #[test]
+    fn test_parameter_length_and_unclosed_expansion() {
+        set_var("WORD", "hello");
+        assert_eq!(expand_string_vars("${#WORD}"), "5");
+        assert_eq!(expand_string_vars("${#NONEXISTENT}"), "0");
+        set_positional(vec!["arg1".into(), "second_arg".into()]);
+        assert_eq!(expand_string_vars("${#}"), "2");
+        assert_eq!(expand_string_vars("${#1}"), "4");
+        assert_eq!(expand_string_vars("${#2}"), "10");
+
+        // Unclosed ${var should be preserved without panicking
+        assert_eq!(expand_string_vars("${UNCLOSED"), "${UNCLOSED");
+        assert_eq!(expand_string_vars("prefix ${var suffix"), "prefix ${var suffix");
+    }
+
+    #[test]
+    fn test_for_loop_quoted_arguments_with_spaces() {
+        let script = r#"
+        for item in "first item" 'second item' third; do
+            LAST_CAPTURED=$item
+        done
+        "#;
+
+        let code = execute_script(script, |stmt| {
+            if stmt.starts_with("LAST_CAPTURED=") {
+                let v = stmt.trim_start_matches("LAST_CAPTURED=");
+                set_var("LAST_CAPTURED", v);
+            }
+            ExitCode::SUCCESS
+        });
+
+        assert!(is_exit_success(&code));
+        assert_eq!(get_var("LAST_CAPTURED").unwrap(), "third");
     }
 }

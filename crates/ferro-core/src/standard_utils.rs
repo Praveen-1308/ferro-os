@@ -179,7 +179,13 @@ pub fn run_dirname(args: &[String]) -> ExitCode {
     for arg in args {
         if arg == "-z" || arg == "--zero" {
             zero_term = true;
-        } else if !arg.starts_with('-') || arg == "-" {
+        } else if arg == "--help" || arg == "-h" {
+            println!("Usage: dirname [OPTION] NAME...");
+            return ExitCode::SUCCESS;
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("dirname: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             names.push(arg.as_str());
         }
     }
@@ -230,7 +236,10 @@ pub fn run_readlink(args: &[String]) -> ExitCode {
             println!("  -n                      do not output trailing newline");
             println!("  -q, -s, --quiet         suppress most error messages");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("readlink: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             targets.push(arg.as_str());
         }
     }
@@ -305,7 +314,10 @@ pub fn run_realpath(args: &[String]) -> ExitCode {
             println!("  -q, --quiet     suppress warnings for missing paths");
             println!("  -z, --zero      end each output line with NUL, not newline");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("realpath: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             targets.push(arg.as_str());
         }
     }
@@ -391,6 +403,9 @@ pub fn run_mktemp(args: &[String]) -> ExitCode {
             if i + 1 < args.len() && !args[i + 1].starts_with('-') {
                 tmpdir_prefix = Some(args[i + 1].clone());
                 i += 2;
+            } else if arg == "-p" {
+                eprintln!("mktemp: option requires an argument -- 'p'");
+                return ExitCode::from(1);
             } else {
                 tmpdir_prefix = Some(env::var("TMPDIR").unwrap_or_else(|_| "/tmp".to_string()));
                 i += 1;
@@ -410,7 +425,8 @@ pub fn run_mktemp(args: &[String]) -> ExitCode {
             template = Some(arg.clone());
             i += 1;
         } else {
-            i += 1;
+            eprintln!("mktemp: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -424,7 +440,7 @@ pub fn run_mktemp(args: &[String]) -> ExitCode {
     let (parent_dir, filename_pattern) = if tmpl_path.is_absolute() {
         (
             tmpl_path.parent().unwrap_or(Path::new("/tmp")).to_path_buf(),
-            tmpl_path.file_name().unwrap().to_string_lossy().to_string(),
+            tmpl_path.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| "tmp.XXXXXXXXXX".to_string()),
         )
     } else {
         (PathBuf::from(&base_dir), raw_tmpl)
@@ -513,7 +529,11 @@ pub fn run_date(args: &[String]) -> ExitCode {
             println!("  %%s   seconds since 1970-01-01 00:00:00 UTC");
             println!("  %%Y   year, %%m month, %%d day, %%H hour, %%M minute, %%S second");
             println!("  %%F   full date (%%Y-%%m-%%d), %%T time (%%H:%%M:%%S)");
+            println!("  %%a   abbreviated weekday name, %%b abbreviated month name");
             return ExitCode::SUCCESS;
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("date: invalid option -- '{}'", arg.trim_start_matches('-'));
+            return ExitCode::from(1);
         }
     }
 
@@ -528,6 +548,11 @@ pub fn run_date(args: &[String]) -> ExitCode {
 
     let tz_name = if utc { "UTC" } else { "UTC" }; // FerroOS default is UTC in server mode
 
+    let day_names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    let month_names = [
+        "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+
     if let Some(fmt) = custom_format {
         let mut out = String::new();
         let mut chars = fmt.chars().peekable();
@@ -539,11 +564,14 @@ pub fn run_date(args: &[String]) -> ExitCode {
                         'Y' => out.push_str(&format!("{:04}", year)),
                         'm' => out.push_str(&format!("{:02}", month)),
                         'd' => out.push_str(&format!("{:02}", day)),
+                        'e' => out.push_str(&format!("{:2}", day)),
                         'H' => out.push_str(&format!("{:02}", hour)),
                         'M' => out.push_str(&format!("{:02}", minute)),
                         'S' => out.push_str(&format!("{:02}", second)),
                         'F' => out.push_str(&format!("{:04}-{:02}-{:02}", year, month, day)),
                         'T' => out.push_str(&format!("{:02}:{:02}:{:02}", hour, minute, second)),
+                        'a' => out.push_str(day_names[day_of_week as usize % 7]),
+                        'b' => out.push_str(month_names[month as usize % 13]),
                         'Z' => out.push_str(tz_name),
                         '%' => out.push('%'),
                         other => {
@@ -560,10 +588,6 @@ pub fn run_date(args: &[String]) -> ExitCode {
         }
         println!("{}", out);
     } else {
-        let day_names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-        let month_names = [
-            "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-        ];
         let day_str = day_names[day_of_week as usize % 7];
         let month_str = month_names[month as usize % 13];
 
@@ -652,7 +676,10 @@ pub fn run_du(args: &[String]) -> ExitCode {
                     'h' => human_readable = true,
                     'a' => all_files = true,
                     'k' => human_readable = false,
-                    _ => {}
+                    _ => {
+                        eprintln!("du: invalid option -- '{}'", c);
+                        return ExitCode::from(1);
+                    }
                 }
             }
         } else if arg == "--summarize" {
@@ -661,14 +688,17 @@ pub fn run_du(args: &[String]) -> ExitCode {
             human_readable = true;
         } else if arg == "--all" {
             all_files = true;
-        } else if arg == "--help" {
+        } else if arg == "--help" || arg == "-h" {
             println!("Usage: du [OPTION]... [FILE]...");
             println!("Estimate file space usage.");
             println!("  -a, --all             write counts for all files, not just directories");
             println!("  -h, --human-readable  print sizes in human readable format (e.g., 1K 234M 2G)");
             println!("  -s, --summarize       display only a total for each argument");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') {
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("du: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             targets.push(arg.as_str());
         }
     }
@@ -768,36 +798,81 @@ pub fn run_cut(args: &[String]) -> ExitCode {
         let arg = &args[i];
         if arg == "-d" {
             if i + 1 < args.len() {
-                delimiter = args[i + 1].chars().next().unwrap_or('\t');
+                let d_str = &args[i + 1];
+                if d_str.is_empty() {
+                    eprintln!("cut: empty delimiter");
+                    return ExitCode::from(1);
+                }
+                let mut d_chars = d_str.chars();
+                let first = d_chars.next().unwrap();
+                if d_chars.next().is_some() {
+                    eprintln!("cut: the delimiter must be a single character");
+                    return ExitCode::from(1);
+                }
+                delimiter = first;
                 i += 2;
             } else {
                 eprintln!("cut: option requires an argument -- 'd'");
                 return ExitCode::from(1);
             }
         } else if let Some(d) = arg.strip_prefix("-d") {
-            delimiter = d.chars().next().unwrap_or('\t');
+            if d.is_empty() {
+                eprintln!("cut: empty delimiter");
+                return ExitCode::from(1);
+            }
+            let mut d_chars = d.chars();
+            let first = d_chars.next().unwrap();
+            if d_chars.next().is_some() {
+                eprintln!("cut: the delimiter must be a single character");
+                return ExitCode::from(1);
+            }
+            delimiter = first;
             i += 1;
         } else if arg == "-f" {
             if i + 1 < args.len() {
-                fields = parse_ranges(&args[i + 1]);
+                match parse_ranges_checked(&args[i + 1], false) {
+                    Ok(f) => fields = Some(f),
+                    Err(e) => {
+                        eprintln!("{}", e);
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
                 eprintln!("cut: option requires an argument -- 'f'");
                 return ExitCode::from(1);
             }
         } else if let Some(f) = arg.strip_prefix("-f") {
-            fields = parse_ranges(f);
+            match parse_ranges_checked(f, false) {
+                Ok(res) => fields = Some(res),
+                Err(e) => {
+                    eprintln!("{}", e);
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
         } else if arg == "-c" {
             if i + 1 < args.len() {
-                chars = parse_ranges(&args[i + 1]);
+                match parse_ranges_checked(&args[i + 1], true) {
+                    Ok(c) => chars = Some(c),
+                    Err(e) => {
+                        eprintln!("{}", e);
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
                 eprintln!("cut: option requires an argument -- 'c'");
                 return ExitCode::from(1);
             }
         } else if let Some(c) = arg.strip_prefix("-c") {
-            chars = parse_ranges(c);
+            match parse_ranges_checked(c, true) {
+                Ok(res) => chars = Some(res),
+                Err(e) => {
+                    eprintln!("{}", e);
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
         } else if arg == "-s" || arg == "--only-delimited" {
             only_delimited = true;
@@ -810,10 +885,11 @@ pub fn run_cut(args: &[String]) -> ExitCode {
             println!("  -c LIST    select only these characters");
             println!("  -s         do not print lines not containing delimiters");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
-            files.push(arg.clone());
-            i += 1;
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("cut: invalid option -- '{}'", arg.trim_start_matches('-'));
+            return ExitCode::from(1);
         } else {
+            files.push(arg.clone());
             i += 1;
         }
     }
@@ -828,6 +904,9 @@ pub fn run_cut(args: &[String]) -> ExitCode {
     }
 
     let mut exit_code = ExitCode::SUCCESS;
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
     for file in files {
         let reader: Box<dyn BufRead> = if file == "-" {
             Box::new(BufReader::new(io::stdin()))
@@ -851,7 +930,11 @@ pub fn run_cut(args: &[String]) -> ExitCode {
             if let Some(ref sel_fields) = fields {
                 if !line.contains(delimiter) {
                     if !only_delimited {
-                        println!("{}", line);
+                        if let Err(e) = writeln!(out, "{}", line) {
+                            if e.kind() == io::ErrorKind::BrokenPipe {
+                                return ExitCode::SUCCESS;
+                            }
+                        }
                     }
                     continue;
                 }
@@ -862,7 +945,11 @@ pub fn run_cut(args: &[String]) -> ExitCode {
                         out_parts.push(parts[idx - 1]);
                     }
                 }
-                println!("{}", out_parts.join(&delimiter.to_string()));
+                if let Err(e) = writeln!(out, "{}", out_parts.join(&delimiter.to_string())) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
+                    }
+                }
             } else if let Some(ref sel_chars) = chars {
                 let char_vec: Vec<char> = line.chars().collect();
                 let mut out_chars = String::new();
@@ -871,35 +958,80 @@ pub fn run_cut(args: &[String]) -> ExitCode {
                         out_chars.push(char_vec[idx - 1]);
                     }
                 }
-                println!("{}", out_chars);
+                if let Err(e) = writeln!(out, "{}", out_chars) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
+                    }
+                }
             }
         }
     }
 
+    let _ = out.flush();
     exit_code
 }
 
-fn parse_ranges(spec: &str) -> Option<Vec<usize>> {
+pub fn parse_ranges_checked(spec: &str, is_char: bool) -> Result<Vec<usize>, String> {
+    let spec = spec.trim();
+    if spec.is_empty() {
+        return Err(if is_char {
+            "cut: byte/character positions are numbered from 1".to_string()
+        } else {
+            "cut: fields are numbered from 1".to_string()
+        });
+    }
     let mut indices = Vec::new();
     for part in spec.split(',') {
         let part = part.trim();
+        if part.is_empty() {
+            return Err("cut: invalid field value ''".to_string());
+        }
         if let Some((start_s, end_s)) = part.split_once('-') {
-            let start = start_s.parse::<usize>().unwrap_or(1);
-            let end = end_s.parse::<usize>().unwrap_or(1024);
+            let start = if start_s.is_empty() {
+                1
+            } else {
+                start_s.parse::<usize>().map_err(|_| format!("cut: invalid field value '{}'", start_s))?
+            };
+            let end = if end_s.is_empty() {
+                1024
+            } else {
+                end_s.parse::<usize>().map_err(|_| format!("cut: invalid field value '{}'", end_s))?
+            };
+            if start == 0 || end == 0 {
+                return Err(if is_char {
+                    "cut: byte/character positions are numbered from 1".to_string()
+                } else {
+                    "cut: fields are numbered from 1".to_string()
+                });
+            }
+            if start > end {
+                return Err("cut: invalid decreasing range".to_string());
+            }
             for i in start..=end {
                 indices.push(i);
             }
-        } else if let Ok(val) = part.parse::<usize>() {
+        } else {
+            let val = part.parse::<usize>().map_err(|_| format!("cut: invalid field value '{}'", part))?;
+            if val == 0 {
+                return Err(if is_char {
+                    "cut: byte/character positions are numbered from 1".to_string()
+                } else {
+                    "cut: fields are numbered from 1".to_string()
+                });
+            }
             indices.push(val);
         }
     }
     if indices.is_empty() {
-        None
-    } else {
-        indices.sort_unstable();
-        indices.dedup();
-        Some(indices)
+        return Err("cut: invalid field value".to_string());
     }
+    indices.sort_unstable();
+    indices.dedup();
+    Ok(indices)
+}
+
+pub fn parse_ranges(spec: &str) -> Option<Vec<usize>> {
+    parse_ranges_checked(spec, false).ok()
 }
 
 // ============================================================================
@@ -926,7 +1058,10 @@ pub fn run_sort(args: &[String]) -> ExitCode {
             println!("  -r, --reverse           reverse the result of comparisons");
             println!("  -u, --unique            output only the first of an equal run");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("sort: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             files.push(arg.clone());
         }
     }
@@ -982,9 +1117,18 @@ pub fn run_sort(args: &[String]) -> ExitCode {
         lines.dedup();
     }
 
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
     for l in lines {
-        println!("{}", l);
+        if let Err(e) = writeln!(out, "{}", l) {
+            if e.kind() == io::ErrorKind::BrokenPipe {
+                return ExitCode::SUCCESS;
+            }
+            eprintln!("sort: write error: {}", e);
+            return ExitCode::from(1);
+        }
     }
+    let _ = out.flush();
 
     ExitCode::SUCCESS
 }
@@ -1013,7 +1157,10 @@ pub fn run_uniq(args: &[String]) -> ExitCode {
             println!("  -u, --unique          only print unique lines");
             println!("  -i, --ignore-case     ignore differences in case when comparing");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("uniq: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             files.push(arg.clone());
         }
     }
@@ -1034,8 +1181,10 @@ pub fn run_uniq(args: &[String]) -> ExitCode {
 
     let mut current_line: Option<String> = None;
     let mut current_count = 0usize;
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
 
-    let output_group = |line: &str, cnt: usize| {
+    let output_group = |line: &str, cnt: usize, out_h: &mut io::StdoutLock| -> bool {
         let should_print = if repeated_only {
             cnt > 1
         } else if unique_only {
@@ -1045,12 +1194,18 @@ pub fn run_uniq(args: &[String]) -> ExitCode {
         };
 
         if should_print {
-            if count {
-                println!("{:7} {}", cnt, line);
+            let res = if count {
+                writeln!(out_h, "{:7} {}", cnt, line)
             } else {
-                println!("{}", line);
+                writeln!(out_h, "{}", line)
+            };
+            if let Err(e) = res {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return false;
+                }
             }
         }
+        true
     };
 
     for l_res in reader.lines() {
@@ -1070,7 +1225,9 @@ pub fn run_uniq(args: &[String]) -> ExitCode {
                 current_count += 1;
             } else {
                 if let Some(prev) = current_line.take() {
-                    output_group(&prev, current_count);
+                    if !output_group(&prev, current_count, &mut out) {
+                        return ExitCode::SUCCESS;
+                    }
                 }
                 current_line = Some(line);
                 current_count = 1;
@@ -1079,8 +1236,9 @@ pub fn run_uniq(args: &[String]) -> ExitCode {
     }
 
     if let Some(prev) = current_line {
-        output_group(&prev, current_count);
+        let _ = output_group(&prev, current_count, &mut out);
     }
+    let _ = out.flush();
 
     ExitCode::SUCCESS
 }
@@ -1105,7 +1263,10 @@ pub fn run_tr(args: &[String]) -> ExitCode {
             println!("  -d, --delete          delete characters in SET1, do not translate");
             println!("  -s, --squeeze-repeats replace sequence of characters with a single character");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') {
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("tr: invalid option -- '{}'", arg.trim_start_matches('-'));
+            return ExitCode::from(1);
+        } else {
             sets.push(arg.as_str());
         }
     }
@@ -1115,9 +1276,31 @@ pub fn run_tr(args: &[String]) -> ExitCode {
         return ExitCode::from(1);
     }
 
-    let set1 = expand_tr_set(sets[0]);
+    if sets[0].is_empty() {
+        eprintln!("tr: string1 must remain non-empty");
+        return ExitCode::from(1);
+    }
+
+    if !delete && !squeeze && sets.len() < 2 {
+        eprintln!("tr: missing operand after '{}'", sets[0]);
+        return ExitCode::from(1);
+    }
+
+    let set1 = match expand_tr_set(sets[0]) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("{}", e);
+            return ExitCode::from(1);
+        }
+    };
     let set2 = if sets.len() > 1 {
-        expand_tr_set(sets[1])
+        match expand_tr_set(sets[1]) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("{}", e);
+                return ExitCode::from(1);
+            }
+        }
     } else {
         Vec::new()
     };
@@ -1184,11 +1367,15 @@ pub fn run_tr(args: &[String]) -> ExitCode {
         }
     }
 
-    let _ = out_handle.flush();
+    if let Err(e) = out_handle.flush() {
+        if e.kind() == io::ErrorKind::BrokenPipe {
+            return ExitCode::SUCCESS;
+        }
+    }
     ExitCode::SUCCESS
 }
 
-fn expand_tr_set(s: &str) -> Vec<u8> {
+fn expand_tr_set(s: &str) -> Result<Vec<u8>, String> {
     let mut res = Vec::new();
     let bytes = s.as_bytes();
     let mut i = 0;
@@ -1215,12 +1402,19 @@ fn expand_tr_set(s: &str) -> Vec<u8> {
                 b't' => res.push(b'\t'),
                 b'r' => res.push(b'\r'),
                 b'0' => res.push(0),
+                b'\\' => res.push(b'\\'),
                 other => res.push(other),
             }
             i += 2;
         } else if i + 2 < bytes.len() && bytes[i + 1] == b'-' {
             let start = bytes[i];
             let end = bytes[i + 2];
+            if start > end {
+                return Err(format!(
+                    "tr: range-endpoints of '{}-{}' are in reverse collating sequence order",
+                    start as char, end as char
+                ));
+            }
             for b in start..=end {
                 res.push(b);
             }
@@ -1230,7 +1424,7 @@ fn expand_tr_set(s: &str) -> Vec<u8> {
             i += 1;
         }
     }
-    res
+    Ok(res)
 }
 
 // ============================================================================
@@ -1273,11 +1467,15 @@ pub fn run_seq(args: &[String]) -> ExitCode {
 
     let mut separator = "\n".to_string();
     let mut numbers = Vec::new();
+    let mut end_of_opts = false;
 
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-s" || arg == "--separator" {
+        if !end_of_opts && arg == "--" {
+            end_of_opts = true;
+            i += 1;
+        } else if !end_of_opts && (arg == "-s" || arg == "--separator") {
             if i + 1 < args.len() {
                 separator = args[i + 1].clone();
                 i += 2;
@@ -1285,24 +1483,47 @@ pub fn run_seq(args: &[String]) -> ExitCode {
                 eprintln!("seq: option requires an argument -- 's'");
                 return ExitCode::from(1);
             }
-        } else if let Some(sep) = arg.strip_prefix("-s") {
-            separator = sep.to_string();
+        } else if !end_of_opts && arg.starts_with("-s") && arg.len() > 2 {
+            separator = arg[2..].to_string();
             i += 1;
-        } else if arg == "--help" || arg == "-h" {
+        } else if !end_of_opts && arg.starts_with("--separator=") {
+            separator = arg["--separator=".len()..].to_string();
+            i += 1;
+        } else if !end_of_opts && (arg == "--help" || arg == "-h") {
             println!("Usage: seq [OPTION]... LAST");
             println!("  or:  seq [OPTION]... FIRST LAST");
             println!("  or:  seq [OPTION]... FIRST INCREMENT LAST");
             println!("Print numbers from FIRST to LAST, in steps of INCREMENT.");
             println!("  -s, --separator=STRING  use STRING to separate numbers (default: \\n)");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg.parse::<i64>().is_ok() {
-            if let Ok(n) = arg.parse::<i64>() {
-                numbers.push(n);
+        } else if !end_of_opts && arg.starts_with('-') && !arg.starts_with("--") && arg.len() > 1 && arg[1..].chars().all(|c| c.is_ascii_digit()) {
+            match arg.parse::<i64>() {
+                Ok(n) => numbers.push(n),
+                Err(_) => {
+                    eprintln!("seq: invalid floating point argument: '{}'", arg);
+                    return ExitCode::from(1);
+                }
             }
             i += 1;
+        } else if !end_of_opts && arg.starts_with('-') {
+            eprintln!("seq: invalid option -- '{}'", arg.trim_start_matches('-'));
+            return ExitCode::from(1);
         } else {
+            match arg.parse::<i64>() {
+                Ok(n) => numbers.push(n),
+                Err(_) => {
+                    eprintln!("seq: invalid floating point argument: '{}'", arg);
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
         }
+    }
+
+    if numbers.is_empty() {
+        eprintln!("seq: missing operand");
+        eprintln!("Try 'seq --help' for more information.");
+        return ExitCode::from(1);
     }
 
     let (first, step, last) = match numbers.len() {
@@ -1345,12 +1566,14 @@ pub fn run_seq(args: &[String]) -> ExitCode {
         first_item = false;
         current += step;
     }
-    if let Err(e) = writeln!(handle) {
-        if e.kind() == io::ErrorKind::BrokenPipe {
-            return ExitCode::SUCCESS;
+    if !first_item {
+        if let Err(e) = writeln!(handle) {
+            if e.kind() == io::ErrorKind::BrokenPipe {
+                return ExitCode::SUCCESS;
+            }
+            eprintln!("seq: write error: {}", e);
+            return ExitCode::from(1);
         }
-        eprintln!("seq: write error: {}", e);
-        return ExitCode::from(1);
     }
 
     ExitCode::SUCCESS
@@ -1372,7 +1595,10 @@ pub fn run_sha256sum(args: &[String]) -> ExitCode {
             println!("Print or check SHA256 (256-bit) checksums.");
             println!("  -c, --check    read checksums from the FILEs and check them");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("sha256sum: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             files.push(arg.clone());
         }
     }
@@ -1386,6 +1612,8 @@ pub fn run_sha256sum(args: &[String]) -> ExitCode {
     }
 
     let mut exit_code = ExitCode::SUCCESS;
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
 
     for file in files {
         if file == "-" {
@@ -1393,14 +1621,22 @@ pub fn run_sha256sum(args: &[String]) -> ExitCode {
             let mut buf = Vec::new();
             if stdin.read_to_end(&mut buf).is_ok() {
                 let digest = sha256_bytes(&buf);
-                println!("{}  -", digest);
+                if let Err(e) = writeln!(out, "{}  -", digest) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
+                    }
+                }
             }
         } else {
             let p = Path::new(&file);
             match fs::read(p) {
                 Ok(bytes) => {
                     let digest = sha256_bytes(&bytes);
-                    println!("{}  {}", digest, file);
+                    if let Err(e) = writeln!(out, "{}  {}", digest, file) {
+                        if e.kind() == io::ErrorKind::BrokenPipe {
+                            return ExitCode::SUCCESS;
+                        }
+                    }
                 }
                 Err(e) => {
                     eprintln!("sha256sum: {}: {}", file, e);
@@ -1410,6 +1646,7 @@ pub fn run_sha256sum(args: &[String]) -> ExitCode {
         }
     }
 
+    let _ = out.flush();
     exit_code
 }
 
@@ -1427,6 +1664,8 @@ fn verify_checksum_file(file: &str) -> ExitCode {
     };
 
     let mut failures = 0;
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
 
     for line_res in reader.lines() {
         if let Ok(line) = line_res {
@@ -1442,14 +1681,26 @@ fn verify_checksum_file(file: &str) -> ExitCode {
                     Ok(bytes) => {
                         let actual = sha256_bytes(&bytes);
                         if actual.eq_ignore_ascii_case(expected_hash) {
-                            println!("{}: OK", target_path);
+                            if let Err(e) = writeln!(out, "{}: OK", target_path) {
+                                if e.kind() == io::ErrorKind::BrokenPipe {
+                                    return ExitCode::SUCCESS;
+                                }
+                            }
                         } else {
-                            println!("{}: FAILED", target_path);
+                            if let Err(e) = writeln!(out, "{}: FAILED", target_path) {
+                                if e.kind() == io::ErrorKind::BrokenPipe {
+                                    return ExitCode::SUCCESS;
+                                }
+                            }
                             failures += 1;
                         }
                     }
                     Err(_) => {
-                        println!("{}: FAILED open or read", target_path);
+                        if let Err(e) = writeln!(out, "{}: FAILED open or read", target_path) {
+                            if e.kind() == io::ErrorKind::BrokenPipe {
+                                return ExitCode::SUCCESS;
+                            }
+                        }
                         failures += 1;
                     }
                 }
@@ -1457,6 +1708,7 @@ fn verify_checksum_file(file: &str) -> ExitCode {
         }
     }
 
+    let _ = out.flush();
     if failures > 0 {
         eprintln!("sha256sum: WARNING: {} computed checksum did NOT match", failures);
         ExitCode::from(1)

@@ -39,21 +39,33 @@ pub fn run_ed(args: &[String]) -> ExitCode {
     let mut file_path: Option<String> = None;
 
     let mut i = 0;
+    let mut parsing_options = true;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-p" && i + 1 < args.len() {
-            prompt = Some(args[i + 1].clone());
-            i += 2;
-        } else if let Some(p) = arg.strip_prefix("-p") {
-            prompt = Some(p.to_string());
+        if parsing_options && arg == "--" {
+            parsing_options = false;
             i += 1;
-        } else if arg == "-s" {
+            continue;
+        }
+        if parsing_options && (arg == "-s" || arg == "-") {
             quiet = true;
             i += 1;
-        } else if !arg.starts_with('-') {
-            file_path = Some(arg.clone());
+        } else if parsing_options && arg == "-p" {
+            if i + 1 < args.len() {
+                prompt = Some(args[i + 1].clone());
+                i += 2;
+            } else {
+                eprintln!("ed: option requires an argument -- 'p'");
+                return ExitCode::from(1);
+            }
+        } else if parsing_options && arg.starts_with("-p") {
+            prompt = Some(arg[2..].to_string());
             i += 1;
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("ed: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         } else {
+            file_path = Some(arg.clone());
             i += 1;
         }
     }
@@ -95,12 +107,30 @@ pub fn run_vi(args: &[String]) -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
-    let file_path = args.iter().find(|a| !a.starts_with('-')).cloned();
+    let mut file_path: Option<String> = None;
+    let mut parsing_options = true;
+    for arg in args {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            continue;
+        }
+        if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("vi: unknown option -- '{}'", arg);
+            return ExitCode::from(1);
+        }
+        if file_path.is_none() {
+            file_path = Some(arg.clone());
+        }
+    }
+
     let mut editor = TextBuffer::new(file_path.clone());
 
     if let Some(ref path) = file_path {
         if Path::new(path).exists() {
-            let _ = editor.load_file(path);
+            if let Err(e) = editor.load_file(path) {
+                eprintln!("vi: cannot open {}: {}", path, e);
+                return ExitCode::from(1);
+            }
         }
     }
 
@@ -211,7 +241,23 @@ impl TextBuffer {
 // ed Line Editor Engine
 // ============================================================================
 
+fn ed_println(msg: &str) -> io::Result<()> {
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+    writeln!(handle, "{}", msg)
+}
+
 fn run_ed_loop(editor: &mut TextBuffer, prompt: Option<&str>) -> ExitCode {
+    macro_rules! ed_out {
+        ($($arg:tt)*) => {
+            if let Err(e) = ed_println(&format!($($arg)*)) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+            }
+        };
+    }
+
     let stdin = io::stdin();
     let mut reader = stdin.lock();
     let mut input = String::new();
@@ -238,16 +284,16 @@ fn run_ed_loop(editor: &mut TextBuffer, prompt: Option<&str>) -> ExitCode {
             // Enter advances to next line
             if editor.current_line < editor.lines.len() {
                 editor.current_line += 1;
-                println!("{}", editor.lines[editor.current_line - 1]);
+                ed_out!("{}", editor.lines[editor.current_line - 1]);
             } else if !editor.lines.is_empty() {
-                println!("?");
+                ed_out!("?");
             }
             continue;
         }
 
         if cmd == "q" {
             if editor.modified && !warn_unsaved {
-                println!("?");
+                ed_out!("?");
                 warn_unsaved = true;
                 continue;
             }
@@ -262,16 +308,16 @@ fn run_ed_loop(editor: &mut TextBuffer, prompt: Option<&str>) -> ExitCode {
 
         if cmd == "p" {
             if editor.current_line > 0 && editor.current_line <= editor.lines.len() {
-                println!("{}", editor.lines[editor.current_line - 1]);
+                ed_out!("{}", editor.lines[editor.current_line - 1]);
             } else {
-                println!("?");
+                ed_out!("?");
             }
             continue;
         }
 
         if cmd == ",p" || cmd == "1,$p" || cmd == "%p" {
             for line in &editor.lines {
-                println!("{}", line);
+                ed_out!("{}", line);
             }
             if !editor.lines.is_empty() {
                 editor.current_line = editor.lines.len();
@@ -281,7 +327,7 @@ fn run_ed_loop(editor: &mut TextBuffer, prompt: Option<&str>) -> ExitCode {
 
         if cmd == "n" || cmd == ",n" {
             for (idx, line) in editor.lines.iter().enumerate() {
-                println!("{}\t{}", idx + 1, line);
+                ed_out!("{}\t{}", idx + 1, line);
             }
             continue;
         }
@@ -359,7 +405,7 @@ fn run_ed_loop(editor: &mut TextBuffer, prompt: Option<&str>) -> ExitCode {
                 editor.modified = true;
                 editor.current_line = target.min(editor.lines.len());
             } else {
-                println!("?");
+                ed_out!("?");
             }
             continue;
         }
@@ -368,8 +414,8 @@ fn run_ed_loop(editor: &mut TextBuffer, prompt: Option<&str>) -> ExitCode {
             let dest = cmd.strip_prefix('w').unwrap().trim();
             let save_dest = if dest.is_empty() { None } else { Some(dest) };
             match editor.save_file(save_dest) {
-                Ok(bytes) => println!("{}", bytes),
-                Err(_) => println!("?"),
+                Ok(bytes) => ed_out!("{}", bytes),
+                Err(_) => ed_out!("?"),
             }
             continue;
         }
@@ -377,9 +423,9 @@ fn run_ed_loop(editor: &mut TextBuffer, prompt: Option<&str>) -> ExitCode {
         if let Ok(line_num) = cmd.parse::<usize>() {
             if line_num > 0 && line_num <= editor.lines.len() {
                 editor.current_line = line_num;
-                println!("{}", editor.lines[editor.current_line - 1]);
+                ed_out!("{}", editor.lines[editor.current_line - 1]);
             } else {
-                println!("?");
+                ed_out!("?");
             }
             continue;
         }
@@ -387,14 +433,14 @@ fn run_ed_loop(editor: &mut TextBuffer, prompt: Option<&str>) -> ExitCode {
         if cmd == "$" {
             if !editor.lines.is_empty() {
                 editor.current_line = editor.lines.len();
-                println!("{}", editor.lines[editor.current_line - 1]);
+                ed_out!("{}", editor.lines[editor.current_line - 1]);
             } else {
-                println!("?");
+                ed_out!("?");
             }
             continue;
         }
 
-        println!("?");
+        ed_out!("?");
     }
 
     ExitCode::SUCCESS
@@ -409,6 +455,32 @@ enum ViMode {
     Normal,
     Insert,
     Command,
+}
+
+fn line_char_count(s: &str) -> usize {
+    s.chars().count()
+}
+
+fn char_to_byte_index(s: &str, char_idx: usize) -> usize {
+    s.char_indices().nth(char_idx).map(|(b, _)| b).unwrap_or(s.len())
+}
+
+fn remove_char_at(s: &mut String, char_idx: usize) {
+    if let Some((byte_pos, c)) = s.char_indices().nth(char_idx) {
+        s.drain(byte_pos..byte_pos + c.len_utf8());
+    }
+}
+
+fn insert_char_at(s: &mut String, char_idx: usize, c: char) {
+    let byte_pos = char_to_byte_index(s, char_idx);
+    s.insert(byte_pos, c);
+}
+
+fn split_line_at(s: &mut String, char_idx: usize) -> String {
+    let byte_pos = char_to_byte_index(s, char_idx);
+    let rem = s[byte_pos..].to_string();
+    s.truncate(byte_pos);
+    rem
 }
 
 fn run_vi_terminal(editor: &mut TextBuffer) -> ExitCode {
@@ -445,7 +517,7 @@ fn run_vi_terminal(editor: &mut TextBuffer) -> ExitCode {
                 Key::Char('a') => {
                     editor.push_undo();
                     if editor.current_line > 0 {
-                        let cur_len = editor.lines[editor.current_line - 1].len();
+                        let cur_len = line_char_count(&editor.lines[editor.current_line - 1]);
                         if editor.cursor_col < cur_len {
                             editor.cursor_col += 1;
                         }
@@ -480,7 +552,7 @@ fn run_vi_terminal(editor: &mut TextBuffer) -> ExitCode {
                 }
                 Key::Char('l') | Key::Right => {
                     if editor.current_line > 0 {
-                        let line_len = editor.lines[editor.current_line - 1].len();
+                        let line_len = line_char_count(&editor.lines[editor.current_line - 1]);
                         if editor.cursor_col + 1 < line_len {
                             editor.cursor_col += 1;
                         }
@@ -501,9 +573,10 @@ fn run_vi_terminal(editor: &mut TextBuffer) -> ExitCode {
                 Key::Char('x') => {
                     if editor.current_line > 0 {
                         let cur_idx = editor.current_line - 1;
-                        if !editor.lines[cur_idx].is_empty() && editor.cursor_col < editor.lines[cur_idx].len() {
+                        let len = line_char_count(&editor.lines[cur_idx]);
+                        if len > 0 && editor.cursor_col < len {
                             editor.push_undo();
-                            editor.lines[cur_idx].remove(editor.cursor_col);
+                            remove_char_at(&mut editor.lines[cur_idx], editor.cursor_col);
                             editor.modified = true;
                             clamp_cursor(editor);
                         }
@@ -539,7 +612,7 @@ fn run_vi_terminal(editor: &mut TextBuffer) -> ExitCode {
                 }
                 Key::Char('$') => {
                     if editor.current_line > 0 {
-                        let len = editor.lines[editor.current_line - 1].len();
+                        let len = line_char_count(&editor.lines[editor.current_line - 1]);
                         editor.cursor_col = if len > 0 { len - 1 } else { 0 };
                     }
                 }
@@ -559,13 +632,7 @@ fn run_vi_terminal(editor: &mut TextBuffer) -> ExitCode {
                 Key::Enter => {
                     if editor.current_line > 0 {
                         let cur_idx = editor.current_line - 1;
-                        let remainder = if editor.cursor_col < editor.lines[cur_idx].len() {
-                            let rem = editor.lines[cur_idx][editor.cursor_col..].to_string();
-                            editor.lines[cur_idx].truncate(editor.cursor_col);
-                            rem
-                        } else {
-                            String::new()
-                        };
+                        let remainder = split_line_at(&mut editor.lines[cur_idx], editor.cursor_col);
                         editor.lines.insert(editor.current_line, remainder);
                         editor.current_line += 1;
                         editor.cursor_col = 0;
@@ -576,13 +643,13 @@ fn run_vi_terminal(editor: &mut TextBuffer) -> ExitCode {
                     if editor.current_line > 0 {
                         let cur_idx = editor.current_line - 1;
                         if editor.cursor_col > 0 {
-                            editor.lines[cur_idx].remove(editor.cursor_col - 1);
+                            remove_char_at(&mut editor.lines[cur_idx], editor.cursor_col - 1);
                             editor.cursor_col -= 1;
                             editor.modified = true;
                         } else if cur_idx > 0 {
                             let current = editor.lines.remove(cur_idx);
                             editor.current_line -= 1;
-                            let prev_len = editor.lines[editor.current_line - 1].len();
+                            let prev_len = line_char_count(&editor.lines[editor.current_line - 1]);
                             editor.cursor_col = prev_len;
                             editor.lines[editor.current_line - 1].push_str(&current);
                             editor.modified = true;
@@ -592,9 +659,9 @@ fn run_vi_terminal(editor: &mut TextBuffer) -> ExitCode {
                 Key::Char(c) => {
                     if editor.current_line > 0 {
                         let cur_idx = editor.current_line - 1;
-                        if editor.cursor_col <= editor.lines[cur_idx].len() {
-                            let col = editor.cursor_col;
-                            editor.lines[cur_idx].insert(col, c);
+                        let len = line_char_count(&editor.lines[cur_idx]);
+                        if editor.cursor_col <= len {
+                            insert_char_at(&mut editor.lines[cur_idx], editor.cursor_col, c);
                             editor.cursor_col += 1;
                             editor.modified = true;
                         }
@@ -674,10 +741,10 @@ fn run_vi_terminal(editor: &mut TextBuffer) -> ExitCode {
 
 fn clamp_cursor(editor: &mut TextBuffer) {
     if editor.current_line > 0 {
-        let len = editor.lines[editor.current_line - 1].len();
-        if editor.cursor_col >= len && len > 0 {
-            editor.cursor_col = len - 1;
-        } else if len == 0 {
+        let count = line_char_count(&editor.lines[editor.current_line - 1]);
+        if editor.cursor_col >= count && count > 0 {
+            editor.cursor_col = count - 1;
+        } else if count == 0 {
             editor.cursor_col = 0;
         }
     }
@@ -777,7 +844,26 @@ fn read_raw_key() -> Key {
                 Key::Esc
             }
         }
-        b => Key::Char(b as char),
+        b if b.is_ascii() => Key::Char(b as char),
+        b => {
+            let needed = if b & 0xE0 == 0xC0 {
+                1
+            } else if b & 0xF0 == 0xE0 {
+                2
+            } else if b & 0xF8 == 0xF0 {
+                3
+            } else {
+                0
+            };
+            if needed > 0 && stdin.read_exact(&mut buf[1..1 + needed]).is_ok() {
+                if let Ok(s) = std::str::from_utf8(&buf[..1 + needed]) {
+                    if let Some(c) = s.chars().next() {
+                        return Key::Char(c);
+                    }
+                }
+            }
+            Key::Unknown
+        }
     }
 }
 

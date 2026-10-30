@@ -36,7 +36,14 @@ pub fn run_file(args: &[String]) -> ExitCode {
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-b" || arg == "--brief" {
+        if arg == "--" {
+            i += 1;
+            while i < args.len() {
+                files.push(args[i].clone());
+                i += 1;
+            }
+            break;
+        } else if arg == "-b" || arg == "--brief" {
             brief = true;
             i += 1;
         } else if arg == "-i" || arg == "--mime" || arg == "--mime-type" {
@@ -52,7 +59,8 @@ pub fn run_file(args: &[String]) -> ExitCode {
             files.push(arg.clone());
             i += 1;
         } else {
-            i += 1;
+            eprintln!("file: invalid option -- '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -283,16 +291,28 @@ pub fn run_strings(args: &[String]) -> ExitCode {
         let arg = &args[i];
         if arg == "-n" {
             if i + 1 < args.len() {
-                min_len = args[i + 1].parse::<usize>().unwrap_or(4);
+                match args[i + 1].parse::<usize>() {
+                    Ok(n) => min_len = n,
+                    Err(_) => {
+                        eprintln!("strings: invalid minimum string length '{}'", args[i + 1]);
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
                 eprintln!("strings: option requires an argument -- 'n'");
                 return ExitCode::from(1);
             }
         } else if let Some(n) = arg.strip_prefix("-n") {
-            min_len = n.parse::<usize>().unwrap_or(4);
+            match n.parse::<usize>() {
+                Ok(len) => min_len = len,
+                Err(_) => {
+                    eprintln!("strings: invalid minimum string length '{}'", n);
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
-        } else if arg.starts_with('-') && arg[1..].parse::<usize>().is_ok() {
+        } else if arg.starts_with('-') && arg[1..].chars().all(|c| c.is_ascii_digit()) && arg.len() > 1 {
             min_len = arg[1..].parse::<usize>().unwrap_or(4);
             i += 1;
         } else if arg == "-t" {
@@ -311,11 +331,19 @@ pub fn run_strings(args: &[String]) -> ExitCode {
             println!("  -n <number>, -<number>  specify minimum string length (default 4)");
             println!("  -t {{o,d,x}}            print the location of the string in octal, decimal or hex");
             return ExitCode::SUCCESS;
+        } else if arg == "--" {
+            i += 1;
+            while i < args.len() {
+                files.push(args[i].clone());
+                i += 1;
+            }
+            break;
         } else if !arg.starts_with('-') || arg == "-" {
             files.push(arg.clone());
             i += 1;
         } else {
-            i += 1;
+            eprintln!("strings: invalid option -- '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -325,6 +353,7 @@ pub fn run_strings(args: &[String]) -> ExitCode {
 
     let stdout = io::stdout();
     let mut out = stdout.lock();
+    let mut exit_code = ExitCode::SUCCESS;
 
     for file in files {
         let bytes: Vec<u8> = if file == "-" {
@@ -336,6 +365,7 @@ pub fn run_strings(args: &[String]) -> ExitCode {
                 Ok(b) => b,
                 Err(e) => {
                     eprintln!("strings: '{file}': {e}");
+                    exit_code = ExitCode::from(1);
                     continue;
                 }
             }
@@ -366,7 +396,7 @@ pub fn run_strings(args: &[String]) -> ExitCode {
         }
     }
 
-    ExitCode::SUCCESS
+    exit_code
 }
 
 fn print_string_with_offset<W: Write>(w: &mut W, s: &[u8], offset: usize, fmt: Option<char>) -> io::Result<()> {

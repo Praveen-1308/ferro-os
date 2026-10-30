@@ -63,7 +63,7 @@ pub fn scan_process_ledger() -> Vec<ProcessRecord> {
                 let name = entry.file_name().to_string_lossy().to_string();
                 if let Ok(pid) = name.parse::<i32>() {
                     let p = entry.path();
-                    let comm = fs::read_to_string(p.join("comm"))
+                    let mut comm = fs::read_to_string(p.join("comm"))
                         .unwrap_or_default()
                         .trim()
                         .to_string();
@@ -74,6 +74,25 @@ pub fn scan_process_ledger() -> Vec<ProcessRecord> {
                         .map(|s| String::from_utf8_lossy(s))
                         .collect::<Vec<_>>()
                         .join(" ");
+
+                    if comm.is_empty() {
+                        if let Ok(stat_text) = fs::read_to_string(p.join("stat")) {
+                            if let (Some(p1), Some(p2)) = (stat_text.find('('), stat_text.rfind(')')) {
+                                if p1 < p2 {
+                                    comm = stat_text[p1 + 1..p2].to_string();
+                                }
+                            }
+                        }
+                    }
+
+                    if comm.is_empty() && cmdline.is_empty() && !p.exists() {
+                        // Process terminated during directory scan, skip phantom entry
+                        continue;
+                    }
+
+                    if comm.is_empty() {
+                        comm = format!("[{}]", pid);
+                    }
 
                     let mut ppid = 1;
                     let mut state_char = 'S';
@@ -257,6 +276,71 @@ pub fn verify_process_termination(pid: i32, original_comm: Option<&str>, timeout
     }
 }
 
+/// Safely truncate a UTF-8 string to a maximum character count without splitting multi-byte characters.
+pub fn safe_truncate(s: &str, max_chars: usize) -> String {
+    let char_count = s.chars().count();
+    if char_count > max_chars {
+        let prefix: String = s.chars().take(max_chars.saturating_sub(3)).collect();
+        format!("{}...", prefix)
+    } else {
+        s.to_string()
+    }
+}
+
+/// Parse a signal name (e.g. "KILL", "SIGTERM", "HUP") or number (e.g. "9", "-15") into an integer.
+pub fn parse_signal(s: &str) -> Result<i32, String> {
+    let mut sig = s.trim();
+    if let Some(stripped) = sig.strip_prefix('-') {
+        sig = stripped;
+    }
+    // Check if numeric
+    if let Ok(num) = sig.parse::<i32>() {
+        if (0..=64).contains(&num) {
+            return Ok(num);
+        } else {
+            return Err(format!("invalid signal number: {}", num));
+        }
+    }
+    // Strip optional "SIG" prefix
+    let upper = sig.to_ascii_uppercase();
+    let name = upper.strip_prefix("SIG").unwrap_or(&upper);
+
+    match name {
+        "HUP" => Ok(1),
+        "INT" => Ok(2),
+        "QUIT" => Ok(3),
+        "ILL" => Ok(4),
+        "TRAP" => Ok(5),
+        "ABRT" | "IOT" => Ok(6),
+        "BUS" => Ok(7),
+        "FPE" => Ok(8),
+        "KILL" => Ok(9),
+        "USR1" => Ok(10),
+        "SEGV" => Ok(11),
+        "USR2" => Ok(12),
+        "PIPE" => Ok(13),
+        "ALRM" => Ok(14),
+        "TERM" => Ok(15),
+        "STKFLT" => Ok(16),
+        "CHLD" => Ok(17),
+        "CONT" => Ok(18),
+        "STOP" => Ok(19),
+        "TSTP" => Ok(20),
+        "TTIN" => Ok(21),
+        "TTOU" => Ok(22),
+        "URG" => Ok(23),
+        "XCPU" => Ok(24),
+        "XFSZ" => Ok(25),
+        "VTALRM" => Ok(26),
+        "PROF" => Ok(27),
+        "WINCH" => Ok(28),
+        "IO" | "POLL" => Ok(29),
+        "PWR" => Ok(30),
+        "SYS" => Ok(31),
+        _ => Err(format!("unknown signal: '{}'", s)),
+    }
+}
+
 // ============================================================================
 // Applet 1: `proc-ledger` (Active vs Idle vs Ghost Lifecycle Tables)
 // ============================================================================
@@ -294,7 +378,10 @@ pub fn run_proc_ledger(args: &[String]) -> ExitCode {
                 println!("  -h, --help  Show this help message");
                 return ExitCode::SUCCESS;
             }
-            _ => {}
+            _ => {
+                eprintln!("proc-ledger: unrecognized option '{}'", arg);
+                return ExitCode::FAILURE;
+            }
         }
     }
 
@@ -311,65 +398,73 @@ pub fn run_proc_ledger(args: &[String]) -> ExitCode {
     let stdout = io::stdout();
     let mut out = stdout.lock();
 
-    let _ = writeln!(out, "====================================================================================================");
-    let _ = writeln!(out, "                         FERRO-OS PROCESS LIFECYCLE LEDGER                                         ");
-    let _ = writeln!(out, "  Total: {} | Active: {} | Idle/Parked: {} | Ghosts: {}", total, active_procs.len(), idle_procs.len(), ghost_procs.len());
-    let _ = writeln!(out, "====================================================================================================");
+    macro_rules! write_out {
+        ($($arg:tt)*) => {
+            if writeln!(out, $($arg)*).is_err() {
+                return ExitCode::SUCCESS;
+            }
+        };
+    }
+
+    write_out!("====================================================================================================");
+    write_out!("                         FERRO-OS PROCESS LIFECYCLE LEDGER                                         ");
+    write_out!("  Total: {} | Active: {} | Idle/Parked: {} | Ghosts: {}", total, active_procs.len(), idle_procs.len(), ghost_procs.len());
+    write_out!("====================================================================================================");
 
     // 1. Ghost Alerts
     if show_ghosts && !ghost_procs.is_empty() {
-        let _ = writeln!(out, "\n⚠️  GHOST & STUCK PROCESS ALERTS (Action Recommended):");
-        let _ = writeln!(out, "----------------------------------------------------------------------------------------------------");
-        let _ = writeln!(out, "{:<7} {:<6} {:<18} {:<16} {:<40}", "PID", "PPID", "COMMAND", "GHOST TYPE", "DIAGNOSTIC ADVICE");
-        let _ = writeln!(out, "----------------------------------------------------------------------------------------------------");
+        write_out!("\n⚠️  GHOST & STUCK PROCESS ALERTS (Action Recommended):");
+        write_out!("----------------------------------------------------------------------------------------------------");
+        write_out!("{:<7} {:<6} {:<18} {:<16} {:<40}", "PID", "PPID", "COMMAND", "GHOST TYPE", "DIAGNOSTIC ADVICE");
+        write_out!("----------------------------------------------------------------------------------------------------");
         for p in &ghost_procs {
             let advice = match p.category {
                 ProcessCategory::Zombie => format!("Unreaped: parent PID {} must call waitpid()", p.ppid),
                 ProcessCategory::StuckDState => format!("Stuck on kernel wait: {}", p.wchan.as_deref().unwrap_or("disk/I/O")),
                 _ => "Unknown anomaly".to_string(),
             };
-            let _ = writeln!(out, "{:<7} {:<6} {:<18} {:<16} {:<40}", p.pid, p.ppid, p.comm, p.category.label(), advice);
+            write_out!("{:<7} {:<6} {:<18} {:<16} {:<40}", p.pid, p.ppid, p.comm, p.category.label(), advice);
         }
     }
 
     // 2. Active Processes Table
     if show_active {
-        let _ = writeln!(out, "\n🚀 ACTIVE WORKLOADS (Executing & Consuming CPU Cycles):");
-        let _ = writeln!(out, "----------------------------------------------------------------------------------------------------");
-        let _ = writeln!(out, "{:<7} {:<6} {:<10} {:<18} {:<10} {:<40}", "PID", "PPID", "USER", "COMMAND", "STATE", "COMMAND LINE");
-        let _ = writeln!(out, "----------------------------------------------------------------------------------------------------");
+        write_out!("\n🚀 ACTIVE WORKLOADS (Executing & Consuming CPU Cycles):");
+        write_out!("----------------------------------------------------------------------------------------------------");
+        write_out!("{:<7} {:<6} {:<10} {:<18} {:<10} {:<40}", "PID", "PPID", "USER", "COMMAND", "STATE", "COMMAND LINE");
+        write_out!("----------------------------------------------------------------------------------------------------");
         if active_procs.is_empty() {
-            let _ = writeln!(out, "  (No processes currently in active R-state)");
+            write_out!("  (No processes currently in active R-state)");
         } else {
             for p in &active_procs {
                 let cmd_summary = if p.cmdline.is_empty() { &p.comm } else { &p.cmdline };
-                let truncated = if cmd_summary.len() > 40 { format!("{}...", &cmd_summary[..37]) } else { cmd_summary.to_string() };
-                let _ = writeln!(out, "{:<7} {:<6} {:<10} {:<18} {:<10} {:<40}", p.pid, p.ppid, p.user, p.comm, "Running", truncated);
+                let truncated = safe_truncate(cmd_summary, 40);
+                write_out!("{:<7} {:<6} {:<10} {:<18} {:<10} {:<40}", p.pid, p.ppid, p.user, p.comm, "Running", truncated);
             }
         }
     }
 
     // 3. Idle / Safely Parked Processes Table
     if show_idle {
-        let _ = writeln!(out, "\n💤 IDLE & SAFELY PARKED DAEMONS (Event-Waiting / 0% CPU Consumption):");
-        let _ = writeln!(out, "----------------------------------------------------------------------------------------------------");
-        let _ = writeln!(out, "{:<7} {:<6} {:<10} {:<18} {:<14} {:<40}", "PID", "PPID", "USER", "COMMAND", "STATE", "SAFETY STATUS");
-        let _ = writeln!(out, "----------------------------------------------------------------------------------------------------");
+        write_out!("\n💤 IDLE & SAFELY PARKED DAEMONS (Event-Waiting / 0% CPU Consumption):");
+        write_out!("----------------------------------------------------------------------------------------------------");
+        write_out!("{:<7} {:<6} {:<10} {:<18} {:<14} {:<40}", "PID", "PPID", "USER", "COMMAND", "STATE", "SAFETY STATUS");
+        write_out!("----------------------------------------------------------------------------------------------------");
         if idle_procs.is_empty() {
-            let _ = writeln!(out, "  (No idle processes recorded)");
+            write_out!("  (No idle processes recorded)");
         } else {
             for p in &idle_procs {
                 let status_note = match p.wchan.as_deref() {
                     Some(w) => format!("Parked safely ({})", w),
                     None => "Parked safely (sleeping on event queue)".to_string(),
                 };
-                let _ = writeln!(out, "{:<7} {:<6} {:<10} {:<18} {:<14} {:<40}", p.pid, p.ppid, p.user, p.comm, "Dormant/Idle", status_note);
+                write_out!("{:<7} {:<6} {:<10} {:<18} {:<14} {:<40}", p.pid, p.ppid, p.user, p.comm, "Dormant/Idle", status_note);
             }
         }
     }
 
-    let _ = writeln!(out, "====================================================================================================");
-    let _ = writeln!(out, "✅ [LIFECYCLE VERIFIED]: {} idle processes are safely parked with zero leaked CPU cycles.", idle_procs.len());
+    write_out!("====================================================================================================");
+    write_out!("✅ [LIFECYCLE VERIFIED]: {} idle processes are safely parked with zero leaked CPU cycles.", idle_procs.len());
 
     ExitCode::SUCCESS
 }
@@ -389,12 +484,35 @@ pub fn run_proc_kill(args: &[String]) -> ExitCode {
     let mut pid_opt = None;
 
     for arg in args {
-        if arg.starts_with('-') && arg.len() > 1 {
-            if let Ok(sig) = arg[1..].parse::<i32>() {
-                signal = sig;
+        if arg == "-h" || arg == "--help" {
+            println!("Usage: proc-kill [-signal] <PID>");
+            println!("Kill a process by PID with post-termination verification.");
+            println!("Options:");
+            println!("  -SIGNAL     Signal to send (number or name, e.g. -9, -KILL, -TERM)");
+            println!("  -h, --help  Show this help message");
+            return ExitCode::SUCCESS;
+        } else if arg.starts_with('-') && arg.len() > 1 && pid_opt.is_none() {
+            match parse_signal(arg) {
+                Ok(sig) => signal = sig,
+                Err(err) => {
+                    eprintln!("proc-kill: {}", err);
+                    return ExitCode::FAILURE;
+                }
             }
-        } else if let Ok(p) = arg.parse::<i32>() {
-            pid_opt = Some(p);
+        } else {
+            match arg.parse::<i32>() {
+                Ok(p) => {
+                    if pid_opt.is_some() {
+                        eprintln!("proc-kill: extra argument '{}'", arg);
+                        return ExitCode::FAILURE;
+                    }
+                    pid_opt = Some(p);
+                }
+                Err(_) => {
+                    eprintln!("proc-kill: invalid PID '{}'", arg);
+                    return ExitCode::FAILURE;
+                }
+            }
         }
     }
 
@@ -477,7 +595,22 @@ pub fn run_proc_kill(args: &[String]) -> ExitCode {
 // Applet 3: `pstree` (Visual Process Lineage Tree)
 // ============================================================================
 
-pub fn run_pstree(_args: &[String]) -> ExitCode {
+pub fn run_pstree(args: &[String]) -> ExitCode {
+    for arg in args {
+        match arg.as_str() {
+            "-h" | "--help" => {
+                println!("Usage: pstree [options]");
+                println!("Display a tree of processes.");
+                println!("  -h, --help  Display this help and exit");
+                return ExitCode::SUCCESS;
+            }
+            _ => {
+                eprintln!("pstree: unrecognized option '{}'", arg);
+                return ExitCode::FAILURE;
+            }
+        }
+    }
+
     let procs = scan_process_ledger();
     if procs.is_empty() {
         println!("pstree: no processes found");
@@ -504,10 +637,15 @@ pub fn run_pstree(_args: &[String]) -> ExitCode {
         .cloned()
         .collect();
 
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
     let mut visited = HashSet::new();
     for root in &roots {
         if !visited.contains(&root.pid) {
-            render_tree_node(root, &children_map, "", true, &mut visited);
+            if render_tree_node(&mut out, root, &children_map, "", true, &mut visited).is_err() {
+                return ExitCode::SUCCESS;
+            }
         }
     }
 
@@ -515,12 +653,13 @@ pub fn run_pstree(_args: &[String]) -> ExitCode {
 }
 
 fn render_tree_node(
+    out: &mut dyn Write,
     node: &ProcessRecord,
     children_map: &HashMap<i32, Vec<ProcessRecord>>,
     prefix: &str,
     is_last: bool,
     visited: &mut HashSet<i32>,
-) {
+) -> io::Result<()> {
     visited.insert(node.pid);
 
     let branch = if prefix.is_empty() {
@@ -537,7 +676,7 @@ fn render_tree_node(
         _ => "",
     };
 
-    println!("{}{}{}({}){}", prefix, branch, node.comm, node.pid, status_tag);
+    writeln!(out, "{}{}{}({}){}", prefix, branch, node.comm, node.pid, status_tag)?;
 
     if let Some(children) = children_map.get(&node.pid) {
         let child_count = children.len();
@@ -551,17 +690,44 @@ fn render_tree_node(
                 "│  "
             };
             let next_prefix = format!("{}{}", prefix, extension);
-            render_tree_node(child, children_map, &next_prefix, next_last, visited);
+            render_tree_node(out, child, children_map, &next_prefix, next_last, visited)?;
         }
     }
+    Ok(())
 }
 
 // ============================================================================
 // Applet 4: `ghost-hunter` (Proactively Detects Dead/Stuck Resources)
 // ============================================================================
 
-pub fn run_ghost_hunter(_args: &[String]) -> ExitCode {
-    println!("🔍 FerroOS Ghost Hunter: Scanning system for zombies, D-state processes, and leaked descriptors...\n");
+pub fn run_ghost_hunter(args: &[String]) -> ExitCode {
+    for arg in args {
+        match arg.as_str() {
+            "-h" | "--help" => {
+                println!("Usage: ghost-hunter [options]");
+                println!("Scan system for zombies, D-state processes, and leaked descriptors.");
+                println!("  -h, --help  Display this help and exit");
+                return ExitCode::SUCCESS;
+            }
+            _ => {
+                eprintln!("ghost-hunter: unrecognized option '{}'", arg);
+                return ExitCode::FAILURE;
+            }
+        }
+    }
+
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
+    macro_rules! write_gh {
+        ($($arg:tt)*) => {
+            if writeln!(out, $($arg)*).is_err() {
+                return ExitCode::SUCCESS;
+            }
+        };
+    }
+
+    write_gh!("🔍 FerroOS Ghost Hunter: Scanning system for zombies, D-state processes, and leaked descriptors...\n");
 
     let procs = scan_process_ledger();
     let mut ghosts_found = 0;
@@ -570,18 +736,18 @@ pub fn run_ghost_hunter(_args: &[String]) -> ExitCode {
     for p in &procs {
         if p.category == ProcessCategory::Zombie {
             ghosts_found += 1;
-            println!("👻 [ZOMBIE PROCESS DETECTED]:");
-            println!("   PID:         {}", p.pid);
-            println!("   Command:     {}", p.comm);
-            println!("   Parent:      PPID {} (Unreaped - parent must call waitpid())", p.ppid);
-            println!("   Remedy:      Ferro-Init will automatically adopt and reap when parent exits.\n");
+            write_gh!("👻 [ZOMBIE PROCESS DETECTED]:");
+            write_gh!("   PID:         {}", p.pid);
+            write_gh!("   Command:     {}", p.comm);
+            write_gh!("   Parent:      PPID {} (Unreaped - parent must call waitpid())", p.ppid);
+            write_gh!("   Remedy:      Ferro-Init will automatically adopt and reap when parent exits.\n");
         } else if p.category == ProcessCategory::StuckDState {
             ghosts_found += 1;
-            println!("🛑 [UNINTERRUPTIBLE D-STATE PROCESS DETECTED]:");
-            println!("   PID:         {}", p.pid);
-            println!("   Command:     {}", p.comm);
-            println!("   Wait Channel: {}", p.wchan.as_deref().unwrap_or("unknown kernel lock"));
-            println!("   Remedy:      Check physical disk I/O, unresponsive NFS mount, or GPU driver.\n");
+            write_gh!("🛑 [UNINTERRUPTIBLE D-STATE PROCESS DETECTED]:");
+            write_gh!("   PID:         {}", p.pid);
+            write_gh!("   Command:     {}", p.comm);
+            write_gh!("   Wait Channel: {}", p.wchan.as_deref().unwrap_or("unknown kernel lock"));
+            write_gh!("   Remedy:      Check physical disk I/O, unresponsive NFS mount, or GPU driver.\n");
         }
     }
 
@@ -601,10 +767,10 @@ pub fn run_ghost_hunter(_args: &[String]) -> ExitCode {
                                 let path_str = target.to_string_lossy();
                                 if path_str.ends_with("(deleted)") {
                                     deleted_descriptors += 1;
-                                    println!("📄 [UNLINKED OPEN FILE HOLDING DISK BLOCKS]:");
-                                    println!("   PID:         {}", pid);
-                                    println!("   FD Link:     {}", path_str);
-                                    println!("   Remedy:      Truncate via 'truncate -s 0 /proc/{}/fd/{}' to free disk.\n", pid, fd.file_name().to_string_lossy());
+                                    write_gh!("📄 [UNLINKED OPEN FILE HOLDING DISK BLOCKS]:");
+                                    write_gh!("   PID:         {}", pid);
+                                    write_gh!("   FD Link:     {}", path_str);
+                                    write_gh!("   Remedy:      Truncate via 'truncate -s 0 /proc/{}/fd/{}' to free disk.\n", pid, fd.file_name().to_string_lossy());
                                 }
                             }
                         }
@@ -615,10 +781,10 @@ pub fn run_ghost_hunter(_args: &[String]) -> ExitCode {
     }
 
     if ghosts_found == 0 && deleted_descriptors == 0 {
-        println!("✅ ZERO GHOSTS DETECTED: No zombies, stuck D-state processes, or orphaned file descriptors.");
-        println!("   System process table and filesystem descriptors are 100% clean.");
+        write_gh!("✅ ZERO GHOSTS DETECTED: No zombies, stuck D-state processes, or orphaned file descriptors.");
+        write_gh!("   System process table and filesystem descriptors are 100% clean.");
     } else {
-        println!("⚠️  Summary: {} ghost processes and {} deleted open file descriptors found.", ghosts_found, deleted_descriptors);
+        write_gh!("⚠️  Summary: {} ghost processes and {} deleted open file descriptors found.", ghosts_found, deleted_descriptors);
     }
 
     ExitCode::SUCCESS
@@ -693,5 +859,46 @@ mod tests {
         assert_eq!(children_map.get(&0).unwrap()[0].pid, 1);
         assert_eq!(children_map.get(&1).unwrap()[0].pid, 420);
         assert_eq!(children_map.get(&420).unwrap()[0].pid, 1420);
+    }
+
+    #[test]
+    fn test_parse_signal_valid_and_invalid() {
+        assert_eq!(parse_signal("9"), Ok(9));
+        assert_eq!(parse_signal("-9"), Ok(9));
+        assert_eq!(parse_signal("15"), Ok(15));
+        assert_eq!(parse_signal("-15"), Ok(15));
+        assert_eq!(parse_signal("KILL"), Ok(9));
+        assert_eq!(parse_signal("-KILL"), Ok(9));
+        assert_eq!(parse_signal("sigkill"), Ok(9));
+        assert_eq!(parse_signal("-SIGTERM"), Ok(15));
+        assert_eq!(parse_signal("HUP"), Ok(1));
+        assert_eq!(parse_signal("-INT"), Ok(2));
+        assert_eq!(parse_signal("0"), Ok(0));
+
+        assert!(parse_signal("INVALID").is_err());
+        assert!(parse_signal("-INVALID").is_err());
+        assert!(parse_signal("999").is_err());
+        assert!(parse_signal("-999").is_err());
+    }
+
+    #[test]
+    fn test_safe_truncate_multibyte() {
+        // Multi-byte Unicode characters: 🦀 is 4 bytes, 日本語 is 3 bytes each
+        let text = "🦀🦀🦀🦀🦀🦀🦀🦀🦀🦀🦀🦀🦀🦀🦀🦀";
+        let truncated = safe_truncate(text, 10);
+        assert_eq!(truncated, "🦀🦀🦀🦀🦀🦀🦀...");
+
+        let short_text = "hello";
+        assert_eq!(safe_truncate(short_text, 10), "hello");
+    }
+
+    #[test]
+    fn test_proc_ledger_cli_errors() {
+        assert_eq!(run_proc_ledger(&["--invalid-flag".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_proc_kill(&[]), ExitCode::FAILURE);
+        assert_eq!(run_proc_kill(&["-INVALID".to_string(), "123".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_proc_kill(&["abc".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_pstree(&["--invalid-flag".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_ghost_hunter(&["--invalid-flag".to_string()]), ExitCode::FAILURE);
     }
 }

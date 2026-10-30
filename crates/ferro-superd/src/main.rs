@@ -9,7 +9,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::{Child, Command, ExitCode, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -92,6 +92,7 @@ pub struct ServiceConfig {
     pub health_command: Option<Vec<String>>,
     pub health_timeout_sec: u64,
     pub restart_on_unhealthy: bool,
+    pub socket: Option<String>,
 }
 
 #[derive(Debug)]
@@ -176,7 +177,7 @@ impl Supervisor {
             Err(_) => return,
         };
 
-        let mut lock = self.services.lock().unwrap();
+        let mut lock = self.services.lock().unwrap_or_else(|p| p.into_inner());
         for entry in entries.flatten() {
             let path = entry.path();
             if path.extension().and_then(|s| s.to_str()) == Some("toml") {
@@ -201,7 +202,7 @@ impl Supervisor {
     }
 
     pub fn start_service(&self, name: &str) -> Result<u32, String> {
-        let mut lock = self.services.lock().unwrap();
+        let mut lock = self.services.lock().unwrap_or_else(|p| p.into_inner());
         let svc = lock.get_mut(name).ok_or_else(|| format!("Service '{}' not found", name))?;
 
         if svc.state == ServiceState::Running {
@@ -307,7 +308,7 @@ impl Supervisor {
     }
 
     pub fn stop_service(&self, name: &str, timeout_sec: u64) -> Result<(), String> {
-        let mut lock = self.services.lock().unwrap();
+        let mut lock = self.services.lock().unwrap_or_else(|p| p.into_inner());
         let svc = lock.get_mut(name).ok_or_else(|| format!("Service '{}' not found", name))?;
 
         if svc.state == ServiceState::Stopped {
@@ -381,13 +382,15 @@ fn setup_cgroup_v2(config: &ServiceConfig, pid: u32) {
     let procs_file = cg_path.join("cgroup.procs");
     let _ = fs::write(procs_file, format!("{}\n", pid));
 
+    // Disable swap spilling for the service cgroup (FerroOS zero-swap-thrashing policy)
+    let swap_file = cg_path.join("memory.swap.max");
+    let _ = fs::write(swap_file, "0\n");
+
     // Memory ceiling
     if let Some(mb) = config.memory_max_mb {
         let bytes = mb * 1024 * 1024;
         let mem_file = cg_path.join("memory.max");
         let _ = fs::write(mem_file, format!("{}\n", bytes));
-        let swap_file = cg_path.join("memory.swap.max");
-        let _ = fs::write(swap_file, "0\n");
     }
 
     // Memory high warning
@@ -406,7 +409,7 @@ fn setup_cgroup_v2(config: &ServiceConfig, pid: u32) {
     // CPU Quota (cores limit, e.g. 4.0 cores = 400000 usec per 100000 usec period)
     if let Some(cores) = config.cpu_cores {
         let period_us: u64 = 100_000;
-        let quota_us: u64 = (cores * (period_us as f64)) as u64;
+        let quota_us: u64 = ((cores * (period_us as f64)) as u64).max(1_000);
         let cpu_max_file = cg_path.join("cpu.max");
         let _ = fs::write(cpu_max_file, format!("{} {}\n", quota_us, period_us));
     }
@@ -458,7 +461,7 @@ fn run_supervision_loop(supervisor: Arc<Supervisor>) {
         let mut restarts_to_trigger: Vec<String> = Vec::new();
 
         {
-            let mut lock = supervisor.services.lock().unwrap();
+            let mut lock = supervisor.services.lock().unwrap_or_else(|p| p.into_inner());
             for (name, svc) in lock.iter_mut() {
                 if svc.state == ServiceState::Running {
                     if let Some(ref mut child) = svc.child {
@@ -508,7 +511,7 @@ fn run_supervision_loop(supervisor: Arc<Supervisor>) {
             let sup = Arc::clone(&supervisor);
             thread::spawn(move || {
                 let backoff = {
-                    let lock = sup.services.lock().unwrap();
+                    let lock = sup.services.lock().unwrap_or_else(|p| p.into_inner());
                     lock.get(&svc_name).map(|s| s.config.backoff_ms).unwrap_or(1000)
                 };
                 thread::sleep(Duration::from_millis(backoff));
@@ -523,7 +526,7 @@ fn run_health_check_loop(supervisor: Arc<Supervisor>) {
         thread::sleep(Duration::from_secs(1));
 
         let checks_to_run: Vec<(String, Vec<String>, u64, bool)> = {
-            let lock = supervisor.services.lock().unwrap();
+            let lock = supervisor.services.lock().unwrap_or_else(|p| p.into_inner());
             let mut list = Vec::new();
             for (name, svc) in lock.iter() {
                 if svc.state == ServiceState::Running {
@@ -561,7 +564,7 @@ fn run_health_check_loop(supervisor: Arc<Supervisor>) {
                 Err(_) => false,
             };
 
-            let mut lock = supervisor.services.lock().unwrap();
+            let mut lock = supervisor.services.lock().unwrap_or_else(|p| p.into_inner());
             if let Some(svc) = lock.get_mut(&name) {
                 svc.last_health_check = Some(Instant::now());
                 if success {
@@ -593,7 +596,7 @@ fn run_health_check_loop(supervisor: Arc<Supervisor>) {
 // IPC Server (UNIX Domain Socket)
 // ---------------------------------------------------------------------------
 
-fn run_ipc_server(supervisor: Arc<Supervisor>) {
+fn run_ipc_server(supervisor: Arc<Supervisor>) -> std::io::Result<()> {
     let sock = get_socket_path();
     let sock_path = Path::new(&sock);
     if let Some(parent) = sock_path.parent() {
@@ -611,7 +614,7 @@ fn run_ipc_server(supervisor: Arc<Supervisor>) {
         }
         Err(e) => {
             eprintln!("[ferro-superd] Failed to bind IPC socket {}: {}", sock, e);
-            return;
+            return Err(e);
         }
     };
 
@@ -628,9 +631,12 @@ fn run_ipc_server(supervisor: Arc<Supervisor>) {
             });
         }
     }
+    Ok(())
 }
 
 fn handle_client(stream: &mut UnixStream, supervisor: &Supervisor) {
+    let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
+    let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
     let peer_creds = get_peer_credentials(stream);
     let Ok(clone) = stream.try_clone() else { return; };
     use std::io::Read;
@@ -646,6 +652,55 @@ fn handle_client(stream: &mut UnixStream, supervisor: &Supervisor) {
     }
 }
 
+fn start_socket_activation_listeners(supervisor: Arc<Supervisor>) {
+    let sockets: Vec<(String, String)> = {
+        let lock = supervisor.services.lock().unwrap_or_else(|p| p.into_inner());
+        lock.iter()
+            .filter_map(|(name, svc)| {
+                svc.config.socket.as_ref().map(|sock| (name.clone(), sock.clone()))
+            })
+            .collect()
+    };
+
+    for (svc_name, sock_path_str) in sockets {
+        let sup = Arc::clone(&supervisor);
+        thread::spawn(move || {
+            let sock_path = Path::new(&sock_path_str);
+            if let Some(parent) = sock_path.parent() {
+                let _ = fs::create_dir_all(parent);
+            }
+            if sock_path.exists() {
+                let _ = fs::remove_file(sock_path);
+            }
+
+            match UnixListener::bind(sock_path) {
+                Ok(listener) => {
+                    let _ = fs::set_permissions(sock_path, fs::Permissions::from_mode(0o660));
+                    println!("[ferro-superd] Socket activation listening on {} for service {}", sock_path_str, svc_name);
+                    for stream in listener.incoming() {
+                        if !RUNNING.load(Ordering::Relaxed) {
+                            break;
+                        }
+                        if let Ok(_stream) = stream {
+                            let should_start = {
+                                let lock = sup.services.lock().unwrap_or_else(|p| p.into_inner());
+                                lock.get(&svc_name).map(|s| s.state != ServiceState::Running).unwrap_or(false)
+                            };
+                            if should_start {
+                                println!("[ferro-superd] Socket activation triggered for {}", svc_name);
+                                let _ = sup.start_service(&svc_name);
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("[ferro-superd] Failed to bind activation socket {}: {}", sock_path_str, e);
+                }
+            }
+        });
+    }
+}
+
 fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor, caller_uid: Option<u32>) -> String {
     // Parse action from simple JSON
     let action = extract_json_field(cmd_json, "action").unwrap_or_default();
@@ -653,7 +708,7 @@ fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor, caller_uid: Opt
 
     match action.as_str() {
         "list" => {
-            let lock = supervisor.services.lock().unwrap();
+            let lock = supervisor.services.lock().unwrap_or_else(|p| p.into_inner());
             let mut list = Vec::new();
             for (name, svc) in lock.iter() {
                 let (mem_bytes, cpu_usec) = read_cgroup_metrics(name);
@@ -675,7 +730,7 @@ fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor, caller_uid: Opt
         "start" => {
             if let Some(name) = service {
                 let authorized = {
-                    let lock = supervisor.services.lock().unwrap();
+                    let lock = supervisor.services.lock().unwrap_or_else(|p| p.into_inner());
                     let svc_user = lock.get(&name).and_then(|s| s.config.user.as_deref());
                     is_authorized_for_service(caller_uid, svc_user)
                 };
@@ -693,7 +748,7 @@ fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor, caller_uid: Opt
         "stop" => {
             if let Some(name) = service {
                 let authorized = {
-                    let lock = supervisor.services.lock().unwrap();
+                    let lock = supervisor.services.lock().unwrap_or_else(|p| p.into_inner());
                     let svc_user = lock.get(&name).and_then(|s| s.config.user.as_deref());
                     is_authorized_for_service(caller_uid, svc_user)
                 };
@@ -711,7 +766,7 @@ fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor, caller_uid: Opt
         "restart" => {
             if let Some(name) = service {
                 let authorized = {
-                    let lock = supervisor.services.lock().unwrap();
+                    let lock = supervisor.services.lock().unwrap_or_else(|p| p.into_inner());
                     let svc_user = lock.get(&name).and_then(|s| s.config.user.as_deref());
                     is_authorized_for_service(caller_uid, svc_user)
                 };
@@ -728,7 +783,7 @@ fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor, caller_uid: Opt
         }
         "status" => {
             if let Some(name) = service {
-                let lock = supervisor.services.lock().unwrap();
+                let lock = supervisor.services.lock().unwrap_or_else(|p| p.into_inner());
                 if let Some(svc) = lock.get(&name) {
                     let (mem_bytes, cpu_usec) = read_cgroup_metrics(&name);
                     format!(
@@ -754,7 +809,7 @@ fn dispatch_ipc_command(cmd_json: &str, supervisor: &Supervisor, caller_uid: Opt
         }
         "logs" => {
             if let Some(name) = service {
-                let lock = supervisor.services.lock().unwrap();
+                let lock = supervisor.services.lock().unwrap_or_else(|p| p.into_inner());
                 if let Some(svc) = lock.get(&name) {
                     let lines: Vec<String> = svc.log_buffer.iter().map(|l| format!(r#""{}""#, escape_json(l))).collect();
                     format!(r#"{{"status":"ok","service":"{}","logs":[{}]}}"#, name, lines.join(","))
@@ -913,6 +968,7 @@ fn parse_service_toml(path: &Path) -> Result<ServiceConfig, String> {
     let mut health_command = None;
     let mut health_timeout_sec = 5;
     let mut restart_on_unhealthy = false;
+    let mut socket = None;
 
     let lines: Vec<&str> = content.lines().collect();
     let mut i = 0;
@@ -946,26 +1002,51 @@ fn parse_service_toml(path: &Path) -> Result<ServiceConfig, String> {
                 "working_dir" => working_dir = strip_quotes(&val),
                 "user" => user = Some(strip_quotes(&val)),
                 "group" => group = Some(strip_quotes(&val)),
-                "command" => command = parse_string_array(&val),
-                "policy" => {
+                "socket" | "listen_stream" => socket = Some(strip_quotes(&val)),
+                "command" => {
+                    let s = strip_quotes(&val);
+                    if val.trim().starts_with('[') {
+                        command = parse_string_array(&val);
+                    } else if !s.is_empty() {
+                        command = s.split_whitespace().map(|x| x.to_string()).collect();
+                    }
+                }
+                "policy" | "restart" | "restart_policy" => {
                     let p = strip_quotes(&val);
-                    restart_policy = match p.as_str() {
+                    restart_policy = match p.to_lowercase().as_str() {
                         "always" => RestartPolicy::Always,
-                        "on-failure" => RestartPolicy::OnFailure,
+                        "on-failure" | "on_failure" => RestartPolicy::OnFailure,
                         "never" => RestartPolicy::Never,
                         _ => RestartPolicy::Always,
                     };
                 }
                 "max_retries" => max_retries = val.parse::<u32>().unwrap_or(5),
-                "backoff_ms" => backoff_ms = val.parse::<u64>().unwrap_or(1000),
+                "backoff_ms" | "restart_delay_ms" => backoff_ms = val.parse::<u64>().unwrap_or(1000),
                 "memory_max_mb" => memory_max_mb = val.parse::<u64>().ok(),
                 "memory_high_mb" => memory_high_mb = val.parse::<u64>().ok(),
+                "cpu_quota" => {
+                    let s = strip_quotes(&val);
+                    if let Some(percent) = s.strip_suffix('%') {
+                        if let Ok(pct) = percent.trim().parse::<f64>() {
+                            cpu_cores = Some(pct / 100.0);
+                        }
+                    } else if let Ok(c) = s.parse::<f64>() {
+                        cpu_cores = Some(c);
+                    }
+                }
                 "cpu_cores" => cpu_cores = val.parse::<f64>().ok(),
                 "cpu_weight" => cpu_weight = val.parse::<u32>().ok(),
                 "pids_max" => pids_max = val.parse::<u32>().ok(),
-                "check_interval_sec" => health_interval_sec = val.parse::<u64>().ok(),
-                "check_command" => health_command = Some(parse_string_array(&val)),
-                "timeout_sec" => health_timeout_sec = val.parse::<u64>().unwrap_or(5),
+                "check_interval_sec" | "health_interval_sec" => health_interval_sec = val.parse::<u64>().ok(),
+                "check_command" | "health_command" => {
+                    let s = strip_quotes(&val);
+                    if val.trim().starts_with('[') {
+                        health_command = Some(parse_string_array(&val));
+                    } else if !s.is_empty() {
+                        health_command = Some(s.split_whitespace().map(|x| x.to_string()).collect());
+                    }
+                }
+                "timeout_sec" | "health_timeout_sec" => health_timeout_sec = val.parse::<u64>().unwrap_or(5),
                 "restart_on_unhealthy" => restart_on_unhealthy = val == "true",
                 _ => {}
             }
@@ -995,6 +1076,7 @@ fn parse_service_toml(path: &Path) -> Result<ServiceConfig, String> {
         health_command,
         health_timeout_sec,
         restart_on_unhealthy,
+        socket,
     })
 }
 
@@ -1058,7 +1140,32 @@ fn current_iso_timestamp() -> String {
 // Main Entrypoint
 // ---------------------------------------------------------------------------
 
-fn main() {
+fn main() -> ExitCode {
+    let args: Vec<String> = std::env::args().collect();
+    for arg in &args[1..] {
+        match arg.as_str() {
+            "-h" | "--help" => {
+                println!("Usage: ferro-superd [OPTIONS]");
+                println!();
+                println!("FerroOS Service Supervisor Daemon");
+                println!();
+                println!("Options:");
+                println!("  -h, --help       Print help information");
+                println!("  -v, --version    Print version information");
+                return ExitCode::SUCCESS;
+            }
+            "-v" | "--version" => {
+                println!("ferro-superd {}", env!("CARGO_PKG_VERSION"));
+                return ExitCode::SUCCESS;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("ferro-superd: unrecognized option '{}'", other);
+                return ExitCode::FAILURE;
+            }
+            _ => {}
+        }
+    }
+
     println!("================================================================");
     println!("   FERRO-SUPERD: Pure-Rust Cgroup v2 Service Supervisor Daemon   ");
     println!("================================================================");
@@ -1069,7 +1176,7 @@ fn main() {
     // Auto-start any service configured with restart = "always"
     {
         let services_to_start: Vec<String> = {
-            let lock = supervisor.services.lock().unwrap();
+            let lock = supervisor.services.lock().unwrap_or_else(|p| p.into_inner());
             lock.iter()
                 .filter(|(_, svc)| svc.config.restart_policy == RestartPolicy::Always)
                 .map(|(name, _)| name.clone())
@@ -1092,6 +1199,73 @@ fn main() {
         run_health_check_loop(sup2);
     });
 
+    // Start socket activation listeners
+    start_socket_activation_listeners(Arc::clone(&supervisor));
+
     // Start IPC server (blocks)
-    run_ipc_server(supervisor);
+    if let Err(e) = run_ipc_server(supervisor) {
+        eprintln!("[ferro-superd] Fatal IPC server error: {}", e);
+        return ExitCode::FAILURE;
+    }
+
+    ExitCode::SUCCESS
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_manifest_toml() {
+        let file_path = std::env::temp_dir().join(format!("test_svc_{}.toml", std::process::id()));
+        let toml_data = r#"
+[service]
+name = "test-service"
+description = "Test Supervisor Service"
+command = ["/bin/echo", "hello", "world"]
+restart = "on-failure"
+restart_delay_ms = 750
+memory_max_mb = 256
+cpu_quota = "150%"
+pids_max = 32
+socket = "/run/test.sock"
+"#;
+        fs::write(&file_path, toml_data).unwrap();
+        let cfg = parse_service_toml(&file_path).expect("parse should succeed");
+        let _ = fs::remove_file(&file_path);
+
+        assert_eq!(cfg.name, "test-service");
+        assert_eq!(cfg.command, vec!["/bin/echo", "hello", "world"]);
+        assert_eq!(cfg.restart_policy, RestartPolicy::OnFailure);
+        assert_eq!(cfg.backoff_ms, 750);
+        assert_eq!(cfg.memory_max_mb, Some(256));
+        assert_eq!(cfg.cpu_cores, Some(1.5));
+        assert_eq!(cfg.pids_max, Some(32));
+        assert_eq!(cfg.socket.as_deref(), Some("/run/test.sock"));
+    }
+
+    #[test]
+    fn test_parse_manifest_string_command() {
+        let file_path = std::env::temp_dir().join(format!("str_svc_{}.toml", std::process::id()));
+        let toml_data = r#"
+name = "string-cmd"
+command = "/usr/bin/python3 main.py --port 8080"
+restart = "never"
+"#;
+        fs::write(&file_path, toml_data).unwrap();
+        let cfg = parse_service_toml(&file_path).expect("parse should succeed");
+        let _ = fs::remove_file(&file_path);
+
+        assert_eq!(cfg.name, "string-cmd");
+        assert_eq!(cfg.command, vec!["/usr/bin/python3", "main.py", "--port", "8080"]);
+        assert_eq!(cfg.restart_policy, RestartPolicy::Never);
+    }
+
+    #[test]
+    fn test_extract_json_field() {
+        let json = r#"{"action":"start","service":"nginx"}"#;
+        assert_eq!(extract_json_field(json, "action").as_deref(), Some("start"));
+        assert_eq!(extract_json_field(json, "service").as_deref(), Some("nginx"));
+        assert_eq!(extract_json_field(json, "unknown"), None);
+    }
 }

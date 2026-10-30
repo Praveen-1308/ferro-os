@@ -44,8 +44,13 @@ pub fn run_envsubst(args: &[String]) -> ExitCode {
 
     let mut filter_vars: Option<Vec<String>> = None;
     let mut input_file: Option<String> = None;
+    let mut parsing_options = true;
 
     for arg in args {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            continue;
+        }
         if arg.starts_with('$') {
             // Extract variable names from format string e.g. '$FOO,$BAR' or '$FOO $BAR'
             let mut vars = Vec::new();
@@ -77,7 +82,10 @@ pub fn run_envsubst(args: &[String]) -> ExitCode {
                 vars.push(cur);
             }
             filter_vars = Some(vars);
-        } else if !arg.starts_with('-') {
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("envsubst: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             input_file = Some(arg.clone());
         }
     }
@@ -1105,41 +1113,58 @@ pub fn run_patch(args: &[String]) -> ExitCode {
     let mut target_override: Option<String> = None;
 
     let mut i = 0;
+    let mut parsing_options = true;
     while i < args.len() {
         let arg = &args[i];
-        if (arg == "-p" || arg == "--strip") && i + 1 < args.len() {
-            strip_count = args[i + 1].parse::<usize>().unwrap_or(0);
-            i += 2;
-        } else if let Some(p) = arg.strip_prefix("-p") {
-            strip_count = p.parse::<usize>().unwrap_or(0);
+        if parsing_options && arg == "--" {
+            parsing_options = false;
             i += 1;
-        } else if arg == "-R" || arg == "--reverse" {
+            continue;
+        }
+        if parsing_options && (arg == "-p" || arg == "--strip") {
+            if i + 1 < args.len() {
+                strip_count = args[i + 1].parse::<usize>().unwrap_or(0);
+                i += 2;
+            } else {
+                eprintln!("patch: option requires an argument -- 'p'");
+                return ExitCode::from(1);
+            }
+        } else if parsing_options && arg.starts_with("-p") {
+            strip_count = arg[2..].parse::<usize>().unwrap_or(0);
+            i += 1;
+        } else if parsing_options && (arg == "-R" || arg == "--reverse") {
             reverse = true;
             i += 1;
-        } else if (arg == "-i" || arg == "--input") && i + 1 < args.len() {
-            patch_file = Some(args[i + 1].clone());
-            i += 2;
-        } else if !arg.starts_with('-') {
+        } else if parsing_options && (arg == "-i" || arg == "--input") {
+            if i + 1 < args.len() {
+                patch_file = Some(args[i + 1].clone());
+                i += 2;
+            } else {
+                eprintln!("patch: option requires an argument -- 'i'");
+                return ExitCode::from(1);
+            }
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("patch: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             if target_override.is_none() {
                 target_override = Some(arg.clone());
             } else if patch_file.is_none() {
                 patch_file = Some(arg.clone());
             }
             i += 1;
-        } else {
-            i += 1;
         }
     }
 
     let patch_content = match patch_file {
-        Some(ref f) => match fs::read_to_string(f) {
+        Some(ref f) if f != "-" => match fs::read_to_string(f) {
             Ok(c) => c,
             Err(e) => {
                 eprintln!("patch: cannot read {}: {}", f, e);
                 return ExitCode::from(1);
             }
         },
-        None => {
+        _ => {
             let mut s = String::new();
             if let Err(e) = io::stdin().read_to_string(&mut s) {
                 eprintln!("patch: stdin: {}", e);
@@ -1163,10 +1188,10 @@ fn apply_unified_patch(
 
     for line in patch.lines() {
         if line.starts_with("--- ") && target_file.is_none() && reverse {
-            let raw_path = line[4..].split('\t').next().unwrap_or("").trim();
+            let raw_path = line[4..].split('\t').next().unwrap_or("").trim().trim_matches('"');
             target_file = Some(strip_path(raw_path, strip));
         } else if line.starts_with("+++ ") && target_file.is_none() && !reverse {
-            let raw_path = line[4..].split('\t').next().unwrap_or("").trim();
+            let raw_path = line[4..].split('\t').next().unwrap_or("").trim().trim_matches('"');
             target_file = Some(strip_path(raw_path, strip));
         }
     }
@@ -1239,7 +1264,16 @@ fn apply_unified_patch(
         return ExitCode::from(1);
     }
 
-    println!("patching file {}", file_to_patch);
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+    if let Err(e) = writeln!(handle, "patching file {}", file_to_patch) {
+        if e.kind() == io::ErrorKind::BrokenPipe {
+            return ExitCode::SUCCESS;
+        }
+        eprintln!("patch: write error: {}", e);
+        return ExitCode::from(1);
+    }
+
     ExitCode::SUCCESS
 }
 
@@ -1281,30 +1315,38 @@ pub fn run_json(args: &[String]) -> ExitCode {
     let mut list_keys = false;
     let mut selector = String::new();
     let mut file_path: Option<String> = None;
+    let mut parsing_options = true;
 
     for arg in args {
-        if arg == "-p" || arg == "--pretty" {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            continue;
+        }
+        if parsing_options && (arg == "-p" || arg == "--pretty") {
             pretty = true;
-        } else if arg == "-r" || arg == "--raw" {
+        } else if parsing_options && (arg == "-r" || arg == "--raw") {
             raw = true;
-        } else if arg == "--keys" {
+        } else if parsing_options && arg == "--keys" {
             list_keys = true;
         } else if arg.starts_with('.') {
             selector = arg.clone();
-        } else if !arg.starts_with('-') {
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("json: unrecognized option: '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             file_path = Some(arg.clone());
         }
     }
 
     let content = match file_path {
-        Some(ref p) => match fs::read_to_string(p) {
+        Some(ref p) if p != "-" => match fs::read_to_string(p) {
             Ok(c) => c,
             Err(e) => {
                 eprintln!("json: cannot read {}: {}", p, e);
                 return ExitCode::from(1);
             }
         },
-        None => {
+        _ => {
             let mut s = String::new();
             if let Err(e) = io::stdin().read_to_string(&mut s) {
                 eprintln!("json: stdin: {}", e);
@@ -1327,14 +1369,26 @@ pub fn run_json(args: &[String]) -> ExitCode {
     } else {
         match query_json(&parsed, &selector) {
             Some(v) => v,
-            None => return ExitCode::from(1),
+            None => {
+                eprintln!("json: property not found for selector '{}'", selector);
+                return ExitCode::from(1);
+            }
         }
     };
+
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
 
     if list_keys {
         if let JsonVal::Object(map) = target_val {
             for (k, _) in map {
-                println!("{}", k);
+                if let Err(e) = writeln!(handle, "{}", k) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
+                    }
+                    eprintln!("json: write error: {}", e);
+                    return ExitCode::from(1);
+                }
             }
             return ExitCode::SUCCESS;
         } else {
@@ -1345,15 +1399,29 @@ pub fn run_json(args: &[String]) -> ExitCode {
 
     if raw {
         if let JsonVal::String(s) = target_val {
-            println!("{}", s);
+            if let Err(e) = writeln!(handle, "{}", s) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+                eprintln!("json: write error: {}", e);
+                return ExitCode::from(1);
+            }
             return ExitCode::SUCCESS;
         }
     }
 
-    if pretty {
-        println!("{}", target_val.to_pretty_string(0));
+    let out_str = if pretty {
+        target_val.to_pretty_string(0)
     } else {
-        println!("{}", target_val.to_compact_string());
+        target_val.to_compact_string()
+    };
+
+    if let Err(e) = writeln!(handle, "{}", out_str) {
+        if e.kind() == io::ErrorKind::BrokenPipe {
+            return ExitCode::SUCCESS;
+        }
+        eprintln!("json: write error: {}", e);
+        return ExitCode::from(1);
     }
 
     ExitCode::SUCCESS
@@ -1555,6 +1623,27 @@ pub fn query_json<'a>(val: &'a JsonVal, selector: &str) -> Option<&'a JsonVal> {
             } else {
                 return None;
             }
+        } else if let Some(bracket_pos) = part.find('[') {
+            // E.g. "containers[0]" -> object key "containers", then array index 0
+            if !part.ends_with(']') {
+                return None;
+            }
+            let key = &part[..bracket_pos];
+            let idx_str = &part[bracket_pos + 1..part.len() - 1];
+            let idx = idx_str.parse::<usize>().ok()?;
+
+            if !key.is_empty() {
+                if let JsonVal::Object(obj) = cur {
+                    cur = obj.iter().find(|(k, _)| k == key).map(|(_, v)| v)?;
+                } else {
+                    return None;
+                }
+            }
+            if let JsonVal::Array(arr) = cur {
+                cur = arr.get(idx)?;
+            } else {
+                return None;
+            }
         } else {
             if let JsonVal::Object(obj) = cur {
                 cur = obj.iter().find(|(k, _)| k == part).map(|(_, v)| v)?;
@@ -1705,29 +1794,51 @@ pub fn run_chattr(args: &[String]) -> ExitCode {
 
 pub fn run_dos2unix(args: &[String]) -> ExitCode {
     let mut files = Vec::new();
+    let mut parsing_options = true;
     for arg in args {
-        if arg == "-h" || arg == "--help" {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            continue;
+        }
+        if parsing_options && (arg == "-h" || arg == "--help") {
             println!("Usage: dos2unix [file...]");
             println!("Convert CRLF line breaks to LF and strip UTF-8 BOM in-place or via stdin.");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') {
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("dos2unix: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
+        } else {
             files.push(arg.as_str());
         }
     }
 
     if files.is_empty() {
-        let mut buf = Vec::new();
-        if io::stdin().read_to_end(&mut buf).is_err() {
-            return ExitCode::FAILURE;
-        }
-        let cleaned = strip_crlf(&buf);
-        let _ = io::stdout().write_all(&cleaned);
-        let _ = io::stdout().flush();
-        return ExitCode::SUCCESS;
+        files.push("-");
     }
 
     let mut success = true;
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+
     for file in files {
+        if file == "-" {
+            let mut buf = Vec::new();
+            if let Err(e) = io::stdin().read_to_end(&mut buf) {
+                eprintln!("dos2unix: stdin: {}", e);
+                return ExitCode::FAILURE;
+            }
+            let cleaned = strip_crlf(&buf);
+            if let Err(e) = handle.write_all(&cleaned) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+                eprintln!("dos2unix: write error: {}", e);
+                return ExitCode::FAILURE;
+            }
+            let _ = handle.flush();
+            continue;
+        }
+
         match fs::read(file) {
             Ok(buf) => {
                 let cleaned = strip_crlf(&buf);
@@ -1769,29 +1880,51 @@ pub fn strip_crlf(data: &[u8]) -> Vec<u8> {
 
 pub fn run_unix2dos(args: &[String]) -> ExitCode {
     let mut files = Vec::new();
+    let mut parsing_options = true;
     for arg in args {
-        if arg == "-h" || arg == "--help" {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            continue;
+        }
+        if parsing_options && (arg == "-h" || arg == "--help") {
             println!("Usage: unix2dos [file...]");
             println!("Convert LF line breaks to CRLF in-place or via stdin.");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') {
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("unix2dos: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
+        } else {
             files.push(arg.as_str());
         }
     }
 
     if files.is_empty() {
-        let mut buf = Vec::new();
-        if io::stdin().read_to_end(&mut buf).is_err() {
-            return ExitCode::FAILURE;
-        }
-        let converted = convert_to_crlf(&buf);
-        let _ = io::stdout().write_all(&converted);
-        let _ = io::stdout().flush();
-        return ExitCode::SUCCESS;
+        files.push("-");
     }
 
     let mut success = true;
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+
     for file in files {
+        if file == "-" {
+            let mut buf = Vec::new();
+            if let Err(e) = io::stdin().read_to_end(&mut buf) {
+                eprintln!("unix2dos: stdin: {}", e);
+                return ExitCode::FAILURE;
+            }
+            let converted = convert_to_crlf(&buf);
+            if let Err(e) = handle.write_all(&converted) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+                eprintln!("unix2dos: write error: {}", e);
+                return ExitCode::FAILURE;
+            }
+            let _ = handle.flush();
+            continue;
+        }
+
         match fs::read(file) {
             Ok(buf) => {
                 let converted = convert_to_crlf(&buf);
@@ -1838,7 +1971,21 @@ pub fn run_sponge(args: &[String]) -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
-    let target_file = args.iter().find(|a| !a.starts_with('-')).map(|s| s.as_str());
+    let mut target_file: Option<&str> = None;
+    let mut parsing_options = true;
+    for arg in args {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            continue;
+        }
+        if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("sponge: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
+        }
+        if target_file.is_none() {
+            target_file = Some(arg.as_str());
+        }
+    }
 
     let mut buffer = Vec::new();
     if let Err(e) = io::stdin().read_to_end(&mut buffer) {
@@ -1849,8 +1996,9 @@ pub fn run_sponge(args: &[String]) -> ExitCode {
     if let Some(target) = target_file {
         let target_path = Path::new(target);
         let parent = target_path.parent().unwrap_or_else(|| Path::new("."));
+        let parent_dir = if parent.as_os_str().is_empty() { Path::new(".") } else { parent };
         let temp_name = format!(".sponge_tmp_{}_{}", std::process::id(), target_path.file_name().unwrap_or_default().to_string_lossy());
-        let temp_path = parent.join(temp_name);
+        let temp_path = parent_dir.join(temp_name);
 
         if let Err(e) = fs::write(&temp_path, &buffer) {
             eprintln!("sponge: failed to write temporary buffer: {}", e);
@@ -1867,8 +2015,16 @@ pub fn run_sponge(args: &[String]) -> ExitCode {
             let _ = fs::remove_file(&temp_path);
         }
     } else {
-        let _ = io::stdout().write_all(&buffer);
-        let _ = io::stdout().flush();
+        let stdout = io::stdout();
+        let mut handle = stdout.lock();
+        if let Err(e) = handle.write_all(&buffer) {
+            if e.kind() == io::ErrorKind::BrokenPipe {
+                return ExitCode::SUCCESS;
+            }
+            eprintln!("sponge: write error: {}", e);
+            return ExitCode::FAILURE;
+        }
+        let _ = handle.flush();
     }
 
     ExitCode::SUCCESS
@@ -1887,7 +2043,20 @@ pub fn run_ts(args: &[String]) -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
-    let format_str = args.iter().find(|a| !a.starts_with('-')).cloned().unwrap_or_else(|| "[%H:%M:%S]".to_string());
+    let mut format_str = "[%H:%M:%S]".to_string();
+    let mut parsing_options = true;
+    for arg in args {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            continue;
+        }
+        if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("ts: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
+        }
+        format_str = arg.clone();
+        break;
+    }
 
     let stdin = io::stdin();
     let reader = stdin.lock();
@@ -1910,12 +2079,21 @@ pub fn run_ts(args: &[String]) -> ExitCode {
                 ts = ts.replace("%S", &format!("{:02}", second));
                 ts = ts.replace("%ms", &format!("{:03}", sub_ms));
 
-                if writeln!(writer, "{} {}", ts, line).is_err() {
-                    break;
+                if let Err(e) = writeln!(writer, "{} {}", ts, line) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
+                    }
+                    eprintln!("ts: write error: {}", e);
+                    return ExitCode::FAILURE;
                 }
             }
-            Err(e) if e.kind() == io::ErrorKind::BrokenPipe => break,
-            Err(_) => break,
+            Err(e) => {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+                eprintln!("ts: read error: {}", e);
+                return ExitCode::FAILURE;
+            }
         }
     }
 

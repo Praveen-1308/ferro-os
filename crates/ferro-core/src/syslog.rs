@@ -138,6 +138,59 @@ fn format_epoch_seconds(secs: u64) -> String {
     format!("{:02}:{:02}:{:02}", h, m, s)
 }
 
+/// Parse priority from facility.severity (e.g. "user.notice") or integer string (e.g. "13")
+pub fn parse_syslog_priority(s: &str) -> Result<u8, String> {
+    if let Ok(num) = s.parse::<u8>() {
+        return Ok(num);
+    }
+    let parts: Vec<&str> = s.split('.').collect();
+    let (fac_str, sev_str) = if parts.len() == 2 {
+        (parts[0], parts[1])
+    } else if parts.len() == 1 {
+        ("user", parts[0])
+    } else {
+        return Err(format!("invalid priority format '{}'", s));
+    };
+
+    let fac = match fac_str.to_ascii_lowercase().as_str() {
+        "kern" => 0,
+        "user" => 1,
+        "mail" => 2,
+        "daemon" => 3,
+        "auth" => 4,
+        "syslog" => 5,
+        "lpr" => 6,
+        "news" => 7,
+        "uucp" => 8,
+        "cron" => 9,
+        "authpriv" => 10,
+        "ftp" => 11,
+        "local0" => 16,
+        "local1" => 17,
+        "local2" => 18,
+        "local3" => 19,
+        "local4" => 20,
+        "local5" => 21,
+        "local6" => 22,
+        "local7" => 23,
+        _ => return Err(format!("unknown facility '{}'", fac_str)),
+    };
+
+    let sev = match sev_str.to_ascii_lowercase().as_str() {
+        "emerg" | "panic" => 0,
+        "alert" => 1,
+        "crit" => 2,
+        "err" | "error" => 3,
+        "warning" | "warn" => 4,
+        "notice" => 5,
+        "info" => 6,
+        "debug" => 7,
+        _ => return Err(format!("unknown severity '{}'", sev_str)),
+    };
+
+    Ok(fac * 8 + sev)
+}
+
 /// Run the pure-Rust logging daemon (`ferrod` / `syslogd`)
 pub fn run_ferrod(args: &[String]) -> ExitCode {
     let mut foreground = false;
@@ -153,18 +206,27 @@ pub fn run_ferrod(args: &[String]) -> ExitCode {
                 if i + 1 < args.len() {
                     socket_path = args[i + 1].clone();
                     i += 1;
+                } else {
+                    eprintln!("ferrod: option requires an argument -- 's'");
+                    return ExitCode::FAILURE;
                 }
             }
             "-t" | "--tag" => {
                 if i + 1 < args.len() {
                     test_tag = args[i + 1].clone();
                     i += 1;
+                } else {
+                    eprintln!("ferrod: option requires an argument -- 't'");
+                    return ExitCode::FAILURE;
                 }
             }
             "--test" | "-m" => {
                 if i + 1 < args.len() {
                     test_msg = Some(args[i + 1].clone());
                     i += 1;
+                } else {
+                    eprintln!("ferrod: option requires an argument: '{}'", args[i]);
+                    return ExitCode::FAILURE;
                 }
             }
             "--help" | "-h" => {
@@ -176,7 +238,14 @@ pub fn run_ferrod(args: &[String]) -> ExitCode {
                 println!("  -t, --tag <TAG>      Tag to use when sending test log");
                 return ExitCode::SUCCESS;
             }
-            _ => {}
+            arg if arg.starts_with('-') => {
+                eprintln!("ferrod: unrecognized option '{}'", arg);
+                return ExitCode::FAILURE;
+            }
+            _ => {
+                eprintln!("ferrod: unexpected operand '{}'", args[i]);
+                return ExitCode::FAILURE;
+            }
         }
         i += 1;
     }
@@ -293,7 +362,11 @@ pub fn send_syslog_message(socket_path: &str, tag: &str, pri: u8, msg: &str) -> 
     let packet = format!("<{}>{}: {}\n", pri, tag, msg);
 
     // Bind temporary client datagram socket
-    let client_path = format!("/tmp/ferro_log_client_{}.sock", std::process::id());
+    let client_path = format!(
+        "/tmp/ferro_log_client_{}_{}.sock",
+        std::process::id(),
+        SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0)
+    );
     let _ = fs::remove_file(&client_path);
 
     let client_sock = match UnixDatagram::bind(&client_path) {
@@ -310,25 +383,33 @@ pub fn send_syslog_message(socket_path: &str, tag: &str, pri: u8, msg: &str) -> 
         }
     };
 
-    let res = client_sock.send_to(packet.as_bytes(), socket_path);
+    let mut delivered = false;
+
+    // 1. Try configured socket_path
+    if client_sock.send_to(packet.as_bytes(), socket_path).is_ok() {
+        delivered = true;
+    }
+
+    // 2. Fallback attempt: macOS /var/run/syslog
+    #[cfg(target_os = "macos")]
+    if !delivered {
+        let _ = client_sock.send_to(packet.as_bytes(), "/var/run/syslog").map(|_| { delivered = true; });
+    }
+
+    // 3. Fallback attempt: Linux /dev/log if custom socket failed
+    if !delivered && socket_path != DEFAULT_SOCKET_PATH {
+        let _ = client_sock.send_to(packet.as_bytes(), DEFAULT_SOCKET_PATH).map(|_| { delivered = true; });
+    }
+
     let _ = fs::remove_file(&client_path);
 
-    if res.is_ok() {
+    if delivered {
         return ExitCode::SUCCESS;
     }
 
-    // Fallback attempt: macOS /var/run/syslog or local file fallback
-    #[cfg(target_os = "macos")]
-    if socket_path == DEFAULT_SOCKET_PATH {
-        if let Ok(mac_sock) = UnixDatagram::unbound() {
-            if mac_sock.send_to(packet.as_bytes(), "/var/run/syslog").is_ok() {
-                return ExitCode::SUCCESS;
-            }
-        }
-    }
-
-    // Local fallback: write directly to default log file
+    // 4. Local fallback: write directly to default log files safely
     append_log_line(DEFAULT_LOG_FILE, packet.trim());
+    append_log_line(RUN_LOG_FILE, packet.trim());
     ExitCode::SUCCESS
 }
 
@@ -338,38 +419,79 @@ pub fn run_logger(args: &[String]) -> ExitCode {
     let mut pri = 13u8; // user.notice (1 * 8 + 5)
     let mut socket_path = DEFAULT_SOCKET_PATH.to_string();
     let mut message_parts = Vec::new();
+    let mut end_of_options = false;
 
     let mut i = 0;
     while i < args.len() {
-        match args[i].as_str() {
+        let arg = &args[i];
+        if end_of_options {
+            message_parts.push(arg.clone());
+            i += 1;
+            continue;
+        }
+
+        if arg == "--" {
+            end_of_options = true;
+            i += 1;
+            continue;
+        }
+
+        match arg.as_str() {
+            "-h" | "--help" => {
+                println!("Usage: logger [options] [message]");
+                println!("Enter messages into the system log.");
+                println!("Options:");
+                println!("  -t, --tag <tag>           Mark each line with the specified tag");
+                println!("  -p, --priority <priority> Priority (e.g. user.notice, daemon.err, 13)");
+                println!("  -u, --socket <path>       Write to the specified Unix domain socket");
+                println!("  -h, --help                Display this help and exit");
+                return ExitCode::SUCCESS;
+            }
             "-t" | "--tag" => {
                 if i + 1 < args.len() {
                     tag = args[i + 1].clone();
-                    i += 1;
+                    i += 2;
+                } else {
+                    eprintln!("logger: option requires an argument -- 't'");
+                    return ExitCode::FAILURE;
                 }
             }
             "-p" | "--priority" => {
                 if i + 1 < args.len() {
-                    if let Ok(p) = args[i + 1].parse::<u8>() {
-                        pri = p;
+                    match parse_syslog_priority(&args[i + 1]) {
+                        Ok(p) => pri = p,
+                        Err(err) => {
+                            eprintln!("logger: {}", err);
+                            return ExitCode::FAILURE;
+                        }
                     }
-                    i += 1;
+                    i += 2;
+                } else {
+                    eprintln!("logger: option requires an argument -- 'p'");
+                    return ExitCode::FAILURE;
                 }
             }
             "-u" | "--socket" => {
                 if i + 1 < args.len() {
                     socket_path = args[i + 1].clone();
-                    i += 1;
+                    i += 2;
+                } else {
+                    eprintln!("logger: option requires an argument -- 'u'");
+                    return ExitCode::FAILURE;
                 }
             }
+            opt if opt.starts_with('-') && opt != "-" => {
+                eprintln!("logger: invalid option -- '{}'", opt);
+                return ExitCode::FAILURE;
+            }
             _ => {
-                message_parts.push(args[i].clone());
+                message_parts.push(arg.clone());
+                i += 1;
             }
         }
-        i += 1;
     }
 
-    let message = if message_parts.is_empty() {
+    let message = if message_parts.is_empty() || (message_parts.len() == 1 && message_parts[0] == "-") {
         // Read from stdin
         let mut input = String::new();
         let _ = io::stdin().read_to_string(&mut input);
@@ -397,37 +519,59 @@ pub fn run_logs(args: &[String]) -> ExitCode {
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
-            "-f" | "--follow" => follow = true,
+            "-f" | "--follow" => {
+                follow = true;
+                i += 1;
+            }
             "-n" | "--lines" => {
                 if i + 1 < args.len() {
-                    if let Ok(n) = args[i + 1].parse::<usize>() {
-                        line_limit = n;
+                    match args[i + 1].parse::<usize>() {
+                        Ok(n) => line_limit = n,
+                        Err(_) => {
+                            eprintln!("logs: invalid line limit '{}'", args[i + 1]);
+                            return ExitCode::FAILURE;
+                        }
                     }
-                    i += 1;
+                    i += 2;
+                } else {
+                    eprintln!("logs: option requires an argument -- 'n'");
+                    return ExitCode::FAILURE;
                 }
             }
             "-g" | "--grep" => {
                 if i + 1 < args.len() {
                     grep_filter = Some(args[i + 1].clone());
-                    i += 1;
+                    i += 2;
+                } else {
+                    eprintln!("logs: option requires an argument -- 'g'");
+                    return ExitCode::FAILURE;
                 }
             }
             "-l" | "--level" => {
                 if i + 1 < args.len() {
                     level_filter = Some(args[i + 1].to_uppercase());
-                    i += 1;
+                    i += 2;
+                } else {
+                    eprintln!("logs: option requires an argument -- 'l'");
+                    return ExitCode::FAILURE;
                 }
             }
             "-u" | "--unit" => {
                 if i + 1 < args.len() {
                     grep_filter = Some(args[i + 1].clone());
-                    i += 1;
+                    i += 2;
+                } else {
+                    eprintln!("logs: option requires an argument -- 'u'");
+                    return ExitCode::FAILURE;
                 }
             }
             "--file" => {
                 if i + 1 < args.len() {
                     target_file = args[i + 1].clone();
-                    i += 1;
+                    i += 2;
+                } else {
+                    eprintln!("logs: option requires an argument -- 'file'");
+                    return ExitCode::FAILURE;
                 }
             }
             "--help" | "-h" => {
@@ -442,9 +586,15 @@ pub fn run_logs(args: &[String]) -> ExitCode {
                 println!("  -u, --unit <NAME>    Filter by service or process unit name");
                 return ExitCode::SUCCESS;
             }
-            _ => {}
+            arg if arg.starts_with('-') => {
+                eprintln!("logs: unrecognized option '{}'", arg);
+                return ExitCode::FAILURE;
+            }
+            _ => {
+                eprintln!("logs: extra operand '{}'", args[i]);
+                return ExitCode::FAILURE;
+            }
         }
-        i += 1;
     }
 
     // Try target_file first, fallback to RUN_LOG_FILE or /var/log/messages
@@ -501,8 +651,13 @@ pub fn run_logs(args: &[String]) -> ExitCode {
         0
     };
 
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
     for line in &filtered[start_idx..] {
-        println!("{}", line);
+        if writeln!(out, "{}", line).is_err() {
+            return ExitCode::SUCCESS;
+        }
     }
 
     if follow {
@@ -519,7 +674,9 @@ pub fn run_logs(args: &[String]) -> ExitCode {
                             .as_ref()
                             .map_or(true, |lvl| line.contains(&format!("[{}]", lvl)));
                         if pass_grep && pass_lvl {
-                            println!("{}", line);
+                            if writeln!(out, "{}", line).is_err() {
+                                return ExitCode::SUCCESS;
+                            }
                         }
                     }
                     last_len = current_lines.len();
@@ -534,9 +691,29 @@ pub fn run_logs(args: &[String]) -> ExitCode {
 /// Applet: `dmesg` (read kernel boot messages and ring buffer)
 pub fn run_dmesg(args: &[String]) -> ExitCode {
     let mut follow = false;
-    if args.iter().any(|a| a == "-w" || a == "--follow") {
-        follow = true;
+    for arg in args {
+        match arg.as_str() {
+            "-w" | "--follow" => follow = true,
+            "-h" | "--help" => {
+                println!("Usage: dmesg [options]");
+                println!("Display or control the kernel ring buffer.");
+                println!("  -w, --follow    Wait for new messages");
+                println!("  -h, --help      Display this help and exit");
+                return ExitCode::SUCCESS;
+            }
+            arg if arg.starts_with('-') => {
+                eprintln!("dmesg: unrecognized option '{}'", arg);
+                return ExitCode::FAILURE;
+            }
+            _ => {
+                eprintln!("dmesg: extra operand '{}'", arg);
+                return ExitCode::FAILURE;
+            }
+        }
     }
+
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
 
     // Attempt 1: /dev/kmsg
     if let Ok(file) = File::open("/dev/kmsg") {
@@ -550,7 +727,9 @@ pub fn run_dmesg(args: &[String]) -> ExitCode {
                 thread::sleep(Duration::from_millis(100));
                 continue;
             }
-            print!("{}", line);
+            if write!(out, "{}", line).is_err() {
+                return ExitCode::SUCCESS;
+            }
             line.clear();
         }
         return ExitCode::SUCCESS;
@@ -564,16 +743,21 @@ pub fn run_dmesg(args: &[String]) -> ExitCode {
             if bytes == 0 {
                 break;
             }
-            print!("{}", line);
+            if write!(out, "{}", line).is_err() {
+                return ExitCode::SUCCESS;
+            }
             line.clear();
         }
         return ExitCode::SUCCESS;
     }
 
     // Attempt 3: Fallback - kernel entries in /var/log/syslog or /run/ferro/syslog.log
-    println!(
+    if writeln!(
+        out,
         "[dmesg] Direct /dev/kmsg restricted by container sandbox. Reading kernel log stream:"
-    );
+    ).is_err() {
+        return ExitCode::SUCCESS;
+    }
     let _ = run_logs(&[
         "-g".to_string(),
         "kern".to_string(),
@@ -581,4 +765,32 @@ pub fn run_dmesg(args: &[String]) -> ExitCode {
         "100".to_string(),
     ]);
     ExitCode::SUCCESS
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_syslog_priority() {
+        assert_eq!(parse_syslog_priority("13"), Ok(13));
+        assert_eq!(parse_syslog_priority("user.notice"), Ok(13));
+        assert_eq!(parse_syslog_priority("kern.emerg"), Ok(0));
+        assert_eq!(parse_syslog_priority("daemon.err"), Ok(27));
+        assert_eq!(parse_syslog_priority("local0.info"), Ok(134));
+
+        assert!(parse_syslog_priority("badfac.info").is_err());
+        assert!(parse_syslog_priority("user.badsev").is_err());
+        assert!(parse_syslog_priority("a.b.c").is_err());
+    }
+
+    #[test]
+    fn test_syslog_cli_argument_rejections() {
+        // Unknown flags
+        assert_eq!(run_ferrod(&["--invalid-opt".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_logger(&["-x".to_string(), "msg".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_logs(&["--invalid-opt".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_logs(&["-n".to_string(), "notanumber".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_dmesg(&["--invalid-opt".to_string()]), ExitCode::FAILURE);
+    }
 }

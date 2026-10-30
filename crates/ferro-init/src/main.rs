@@ -609,10 +609,37 @@ mod linux_init {
     // -------------------------------------------------------------
     fn mount_fs(source: &str, target: &str, fstype: &str, flags: u64, data: Option<&str>) {
         let _ = fs::create_dir_all(target);
-        let c_src = CString::new(source).unwrap();
-        let c_tgt = CString::new(target).unwrap();
-        let c_fst = CString::new(fstype).unwrap();
-        let c_data = data.map(|d| CString::new(d).unwrap());
+        let c_src = match CString::new(source) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("[ferro-init] Error: invalid source string '{}': {}", source, e);
+                return;
+            }
+        };
+        let c_tgt = match CString::new(target) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("[ferro-init] Error: invalid target string '{}': {}", target, e);
+                return;
+            }
+        };
+        let c_fst = match CString::new(fstype) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("[ferro-init] Error: invalid fstype string '{}': {}", fstype, e);
+                return;
+            }
+        };
+        let c_data = match data {
+            Some(d) => match CString::new(d) {
+                Ok(c) => Some(c),
+                Err(e) => {
+                    eprintln!("[ferro-init] Error: invalid mount data option: {}", e);
+                    return;
+                }
+            },
+            None => None,
+        };
 
         let res = unsafe {
             libc::mount(
@@ -822,9 +849,12 @@ root ALL=(ALL:ALL) ALL
     }
 
     fn set_hostname(name: &str) {
-        let c_name = CString::new(name).unwrap();
-        unsafe {
-            libc::sethostname(c_name.as_ptr(), name.len());
+        if let Ok(c_name) = CString::new(name) {
+            unsafe {
+                libc::sethostname(c_name.as_ptr(), name.len());
+            }
+        } else {
+            eprintln!("[ferro-init] Error: invalid hostname '{}'", name);
         }
     }
 
@@ -916,15 +946,16 @@ root ALL=(ALL:ALL) ALL
             }
 
             // Re-exec PID 1 in the new rootfs
-            let c_init = CString::new("/init").unwrap();
-            let args = [c_init.as_ptr(), std::ptr::null()];
-            libc::execv(c_init.as_ptr(), args.as_ptr());
+            if let Ok(c_init) = CString::new("/init") {
+                let args = [c_init.as_ptr(), std::ptr::null()];
+                libc::execv(c_init.as_ptr(), args.as_ptr());
+            }
 
             // Fallback to /bin/ferro-core
-            let c_core = CString::new("/bin/ferro-core").unwrap();
-            let c_sh = CString::new("sh").unwrap();
-            let args_fallback = [c_core.as_ptr(), c_sh.as_ptr(), std::ptr::null()];
-            libc::execv(c_core.as_ptr(), args_fallback.as_ptr());
+            if let (Ok(c_core), Ok(c_sh)) = (CString::new("/bin/ferro-core"), CString::new("sh")) {
+                let args_fallback = [c_core.as_ptr(), c_sh.as_ptr(), std::ptr::null()];
+                libc::execv(c_core.as_ptr(), args_fallback.as_ptr());
+            }
         }
 
         true
@@ -1338,18 +1369,37 @@ fn elevate_system_limits() {
 fn main() -> ExitCode {
     elevate_system_limits();
 
-    if std::env::args().any(|a| a == "--fdstore-only" || a == "fdstore") {
-        println!("[ferro-init] Running standalone FD Store daemon...");
-        let srv = fdstore::FdStoreServer::new();
-        match srv.start() {
-            Ok(handle) => {
-                let _ = handle.join();
-                return ExitCode::SUCCESS;
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(first) = args.first() {
+        if first == "--help" || first == "-h" || first == "help" {
+            println!("Usage: ferro-init [options]");
+            println!("FerroOS PID 1 Init System & Advanced Recovery Environment");
+            println!();
+            println!("Options:");
+            println!("  --fdstore-only, fdstore   Run standalone SCM_RIGHTS FD Store daemon");
+            println!("  --version, -v             Print version information");
+            println!("  --help, -h                Print this help message");
+            return ExitCode::SUCCESS;
+        } else if first == "--version" || first == "-v" || first == "version" {
+            println!("ferro-init v2.3.0 (FerroOS PID 1 Core Init)");
+            return ExitCode::SUCCESS;
+        } else if first == "--fdstore-only" || first == "fdstore" {
+            println!("[ferro-init] Running standalone FD Store daemon...");
+            let srv = fdstore::FdStoreServer::new();
+            match srv.start() {
+                Ok(handle) => {
+                    let _ = handle.join();
+                    return ExitCode::SUCCESS;
+                }
+                Err(e) => {
+                    eprintln!("[ferro-init] Failed to start FD Store: {}", e);
+                    return ExitCode::FAILURE;
+                }
             }
-            Err(e) => {
-                eprintln!("[ferro-init] Failed to start FD Store: {}", e);
-                return ExitCode::FAILURE;
-            }
+        } else if first.starts_with("--") {
+            eprintln!("ferro-init: unrecognized option '{}'", first);
+            eprintln!("Try 'ferro-init --help' for more information.");
+            return ExitCode::FAILURE;
         }
     }
 

@@ -46,6 +46,11 @@ pub fn run_zcat(args: &[String]) -> ExitCode {
 }
 
 fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> ExitCode {
+    let cmd_name = if decompress {
+        if to_stdout { "zcat" } else { "gunzip" }
+    } else {
+        "gzip"
+    };
     let mut keep = false;
     let mut force = false;
     let mut level = 6u32;
@@ -54,7 +59,14 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-d" || arg == "--decompress" || arg == "--uncompress" {
+        if arg == "--" {
+            i += 1;
+            while i < args.len() {
+                files.push(args[i].clone());
+                i += 1;
+            }
+            break;
+        } else if arg == "-d" || arg == "--decompress" || arg == "--uncompress" {
             decompress = true;
             i += 1;
         } else if arg == "-c" || arg == "--stdout" || arg == "--to-stdout" {
@@ -76,7 +88,7 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
             level = 9;
             i += 1;
         } else if arg == "--help" || arg == "-h" {
-            println!("Usage: gzip [OPTION]... [FILE]...");
+            println!("Usage: {} [OPTION]... [FILE]...", cmd_name);
             println!("Compress or uncompress FILEs (by default, compress FILES in-place).");
             println!("  -c, --stdout      write on standard output, keep original files unchanged");
             println!("  -d, --decompress  decompress");
@@ -89,7 +101,8 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
             files.push(arg.clone());
             i += 1;
         } else {
-            i += 1;
+            eprintln!("{}: unrecognized option '{}'", cmd_name, arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -108,7 +121,7 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
                 let mut out = stdout.lock();
                 if let Err(e) = io::copy(&mut decoder, &mut out) {
                     if e.kind() != io::ErrorKind::BrokenPipe {
-                        eprintln!("gzip: stdin: {}", e);
+                        eprintln!("{}: stdin: {}", cmd_name, e);
                         exit_code = ExitCode::from(1);
                     }
                 }
@@ -118,27 +131,45 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
                 let mut encoder = GzEncoder::new(stdout.lock(), Compression::new(level));
                 if let Err(e) = io::copy(&mut stdin.lock(), &mut encoder) {
                     if e.kind() != io::ErrorKind::BrokenPipe {
-                        eprintln!("gzip: stdin: {}", e);
+                        eprintln!("{}: stdin: {}", cmd_name, e);
                         exit_code = ExitCode::from(1);
                     }
                 }
-                let _ = encoder.finish();
+                if let Err(e) = encoder.finish() {
+                    if e.kind() != io::ErrorKind::BrokenPipe {
+                        eprintln!("{}: stdin: write error: {}", cmd_name, e);
+                        exit_code = ExitCode::from(1);
+                    }
+                }
             }
             continue;
         }
 
         let path = Path::new(&file_str);
         if !path.exists() {
-            eprintln!("gzip: {}: No such file or directory", file_str);
+            eprintln!("{}: {}: No such file or directory", cmd_name, file_str);
+            exit_code = ExitCode::from(1);
+            continue;
+        }
+
+        if path.is_dir() {
+            eprintln!("{}: {}: Is a directory -- ignored", cmd_name, file_str);
             exit_code = ExitCode::from(1);
             continue;
         }
 
         if decompress {
+            let file_size = path.metadata().map(|m| m.len()).unwrap_or(0);
+            if file_size == 0 {
+                eprintln!("{}: {}: unexpected end of file", cmd_name, file_str);
+                exit_code = ExitCode::from(1);
+                continue;
+            }
+
             let out_path = if to_stdout {
                 None
-            } else if file_str.ends_with(".gz") {
-                Some(PathBuf::from(&file_str[..file_str.len() - 3]))
+            } else if let Some(stripped) = file_str.strip_suffix(".gz") {
+                Some(PathBuf::from(stripped))
             } else {
                 Some(PathBuf::from(format!("{}.out", file_str)))
             };
@@ -146,7 +177,7 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
             let in_file = match File::open(path) {
                 Ok(f) => f,
                 Err(e) => {
-                    eprintln!("gzip: cannot open '{}': {}", file_str, e);
+                    eprintln!("{}: cannot open '{}': {}", cmd_name, file_str, e);
                     exit_code = ExitCode::from(1);
                     continue;
                 }
@@ -156,14 +187,14 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
 
             if let Some(target) = out_path {
                 if target.exists() && !force {
-                    eprintln!("gzip: {}: destination already exists (use -f to overwrite)", target.display());
+                    eprintln!("{}: {}: destination already exists (use -f to overwrite)", cmd_name, target.display());
                     exit_code = ExitCode::from(1);
                     continue;
                 }
                 match File::create(&target) {
                     Ok(mut out_file) => {
                         if let Err(e) = io::copy(&mut decoder, &mut out_file) {
-                            eprintln!("gzip: {}: corrupted gzip stream: {}", file_str, e);
+                            eprintln!("{}: {}: corrupted gzip stream: {}", cmd_name, file_str, e);
                             exit_code = ExitCode::from(1);
                             let _ = fs::remove_file(&target);
                             continue;
@@ -173,7 +204,7 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
                         }
                     }
                     Err(e) => {
-                        eprintln!("gzip: cannot create '{}': {}", target.display(), e);
+                        eprintln!("{}: cannot create '{}': {}", cmd_name, target.display(), e);
                         exit_code = ExitCode::from(1);
                     }
                 }
@@ -182,7 +213,7 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
                 let mut out = stdout.lock();
                 if let Err(e) = io::copy(&mut decoder, &mut out) {
                     if e.kind() != io::ErrorKind::BrokenPipe {
-                        eprintln!("gzip: {}: {}", file_str, e);
+                        eprintln!("{}: {}: corrupted gzip stream: {}", cmd_name, file_str, e);
                         exit_code = ExitCode::from(1);
                     }
                 }
@@ -198,7 +229,7 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
             let in_file = match File::open(path) {
                 Ok(f) => f,
                 Err(e) => {
-                    eprintln!("gzip: cannot open '{}': {}", file_str, e);
+                    eprintln!("{}: cannot open '{}': {}", cmd_name, file_str, e);
                     exit_code = ExitCode::from(1);
                     continue;
                 }
@@ -208,7 +239,7 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
 
             if let Some(target) = out_path {
                 if target.exists() && !force {
-                    eprintln!("gzip: {}: already exists (use -f to overwrite)", target.display());
+                    eprintln!("{}: {}: already exists (use -f to overwrite)", cmd_name, target.display());
                     exit_code = ExitCode::from(1);
                     continue;
                 }
@@ -216,13 +247,13 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
                     Ok(out_file) => {
                         let mut encoder = GzEncoder::new(out_file, Compression::new(level));
                         if let Err(e) = io::copy(&mut reader, &mut encoder) {
-                            eprintln!("gzip: {}: compression error: {}", file_str, e);
+                            eprintln!("{}: {}: compression error: {}", cmd_name, file_str, e);
                             exit_code = ExitCode::from(1);
                             let _ = fs::remove_file(&target);
                             continue;
                         }
                         if let Err(e) = encoder.finish() {
-                            eprintln!("gzip: {}: write error: {}", file_str, e);
+                            eprintln!("{}: {}: write error: {}", cmd_name, file_str, e);
                             exit_code = ExitCode::from(1);
                             let _ = fs::remove_file(&target);
                             continue;
@@ -232,7 +263,7 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
                         }
                     }
                     Err(e) => {
-                        eprintln!("gzip: cannot create '{}': {}", target.display(), e);
+                        eprintln!("{}: cannot create '{}': {}", cmd_name, target.display(), e);
                         exit_code = ExitCode::from(1);
                     }
                 }
@@ -241,11 +272,16 @@ fn run_gzip_mode(args: &[String], mut decompress: bool, mut to_stdout: bool) -> 
                 let mut encoder = GzEncoder::new(stdout.lock(), Compression::new(level));
                 if let Err(e) = io::copy(&mut reader, &mut encoder) {
                     if e.kind() != io::ErrorKind::BrokenPipe {
-                        eprintln!("gzip: {}: {}", file_str, e);
+                        eprintln!("{}: {}: {}", cmd_name, file_str, e);
                         exit_code = ExitCode::from(1);
                     }
                 }
-                let _ = encoder.finish();
+                if let Err(e) = encoder.finish() {
+                    if e.kind() != io::ErrorKind::BrokenPipe {
+                        eprintln!("{}: {}: write error: {}", cmd_name, file_str, e);
+                        exit_code = ExitCode::from(1);
+                    }
+                }
             }
         }
     }
@@ -285,22 +321,82 @@ pub fn run_dd(args: &[String]) -> ExitCode {
         } else if let Some(val) = arg.strip_prefix("of=") {
             of_file = Some(val.to_string());
         } else if let Some(val) = arg.strip_prefix("bs=") {
-            if let Some(bytes) = parse_block_size(val) {
-                bs = bytes;
+            match parse_block_size(val) {
+                Some(0) => {
+                    eprintln!("dd: invalid number of bytes: '0'");
+                    return ExitCode::from(1);
+                }
+                Some(bytes) => bs = bytes,
+                None => {
+                    eprintln!("dd: invalid number: '{}'", val);
+                    return ExitCode::from(1);
+                }
+            }
+        } else if let Some(val) = arg.strip_prefix("ibs=") {
+            match parse_block_size(val) {
+                Some(0) => {
+                    eprintln!("dd: invalid number of bytes: '0'");
+                    return ExitCode::from(1);
+                }
+                Some(bytes) => bs = bytes,
+                None => {
+                    eprintln!("dd: invalid number: '{}'", val);
+                    return ExitCode::from(1);
+                }
+            }
+        } else if let Some(val) = arg.strip_prefix("obs=") {
+            match parse_block_size(val) {
+                Some(0) => {
+                    eprintln!("dd: invalid number of bytes: '0'");
+                    return ExitCode::from(1);
+                }
+                Some(_) => {},
+                None => {
+                    eprintln!("dd: invalid number: '{}'", val);
+                    return ExitCode::from(1);
+                }
             }
         } else if let Some(val) = arg.strip_prefix("count=") {
-            count = val.parse::<usize>().ok();
+            match val.parse::<usize>() {
+                Ok(c) => count = Some(c),
+                Err(_) => {
+                    eprintln!("dd: invalid number: '{}'", val);
+                    return ExitCode::from(1);
+                }
+            }
         } else if let Some(val) = arg.strip_prefix("skip=") {
-            skip = val.parse::<usize>().unwrap_or(0);
+            match val.parse::<usize>() {
+                Ok(s) => skip = s,
+                Err(_) => {
+                    eprintln!("dd: invalid number: '{}'", val);
+                    return ExitCode::from(1);
+                }
+            }
         } else if let Some(val) = arg.strip_prefix("seek=") {
-            seek = val.parse::<usize>().unwrap_or(0);
+            match val.parse::<usize>() {
+                Ok(s) => seek = s,
+                Err(_) => {
+                    eprintln!("dd: invalid number: '{}'", val);
+                    return ExitCode::from(1);
+                }
+            }
         } else if let Some(val) = arg.strip_prefix("conv=") {
             if val.contains("fsync") {
                 conv_fsync = true;
             }
-        } else if arg == "status=none" {
-            status_none = true;
+        } else if let Some(val) = arg.strip_prefix("status=") {
+            if val == "none" {
+                status_none = true;
+            }
+        } else {
+            eprintln!("dd: unrecognized operand '{}'", arg);
+            return ExitCode::from(1);
         }
+    }
+
+    if bs == 0 {
+        eprintln!("dd: invalid number of bytes: '0'");
+        return ExitCode::from(1);
     }
 
     let mut reader: Box<dyn Read> = if let Some(ref path) = if_file {
@@ -355,6 +451,9 @@ pub fn run_dd(args: &[String]) -> ExitCode {
             Ok(n) => {
                 total_records_in += 1;
                 if let Err(e) = writer.write_all(&buffer[..n]) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        break;
+                    }
                     eprintln!("dd: error writing output: {}", e);
                     return ExitCode::from(1);
                 }
@@ -402,14 +501,17 @@ pub fn run_dd(args: &[String]) -> ExitCode {
 
 fn parse_block_size(s: &str) -> Option<usize> {
     let s = s.trim();
+    if s.is_empty() {
+        return None;
+    }
     if let Some(num) = s.strip_suffix('K').or_else(|| s.strip_suffix('k')) {
-        num.parse::<usize>().ok().map(|n| n * 1024)
+        num.parse::<usize>().ok().and_then(|n| n.checked_mul(1024))
     } else if let Some(num) = s.strip_suffix('M').or_else(|| s.strip_suffix('m')) {
-        num.parse::<usize>().ok().map(|n| n * 1024 * 1024)
+        num.parse::<usize>().ok().and_then(|n| n.checked_mul(1024 * 1024))
     } else if let Some(num) = s.strip_suffix('G').or_else(|| s.strip_suffix('g')) {
-        num.parse::<usize>().ok().map(|n| n * 1024 * 1024 * 1024)
+        num.parse::<usize>().ok().and_then(|n| n.checked_mul(1024 * 1024 * 1024))
     } else if let Some(num) = s.strip_suffix('b') {
-        num.parse::<usize>().ok().map(|n| n * 512)
+        num.parse::<usize>().ok().and_then(|n| n.checked_mul(512))
     } else {
         s.parse::<usize>().ok()
     }
@@ -426,7 +528,7 @@ pub fn run_mknod(args: &[String]) -> ExitCode {
         println!("  b      create a block (buffered) special file");
         println!("  c, u   create a character (unbuffered) special file");
         println!("  p      create a FIFO (named pipe)");
-        println!("  -m MODE  set file permission bits to MODE, not a=rw - umask");
+        println!("  -m, --mode=MODE  set file permission bits to MODE, not a=rw - umask");
         return ExitCode::SUCCESS;
     }
 
@@ -440,14 +542,51 @@ pub fn run_mknod(args: &[String]) -> ExitCode {
 
     let mut i = 0;
     while i < args.len() {
-        if args[i] == "-m" && i + 1 < args.len() {
-            mode_octal = u32::from_str_radix(&args[i + 1], 8).unwrap_or(0o666);
-            i += 2;
+        if args[i] == "-m" || args[i] == "--mode" {
+            if i + 1 < args.len() {
+                match u32::from_str_radix(&args[i + 1], 8) {
+                    Ok(m) => mode_octal = m,
+                    Err(_) => {
+                        eprintln!("mknod: invalid mode '{}'", args[i + 1]);
+                        return ExitCode::from(1);
+                    }
+                }
+                i += 2;
+            } else {
+                eprintln!("mknod: option requires an argument -- 'm'");
+                return ExitCode::from(1);
+            }
+        } else if let Some(m_str) = args[i].strip_prefix("-m") {
+            match u32::from_str_radix(m_str, 8) {
+                Ok(m) => mode_octal = m,
+                Err(_) => {
+                    eprintln!("mknod: invalid mode '{}'", m_str);
+                    return ExitCode::from(1);
+                }
+            }
+            i += 1;
+        } else if let Some(m_str) = args[i].strip_prefix("--mode=") {
+            match u32::from_str_radix(m_str, 8) {
+                Ok(m) => mode_octal = m,
+                Err(_) => {
+                    eprintln!("mknod: invalid mode '{}'", m_str);
+                    return ExitCode::from(1);
+                }
+            }
+            i += 1;
+        } else if args[i] == "--" {
+            i += 1;
+            while i < args.len() {
+                positional.push(args[i].as_str());
+                i += 1;
+            }
+            break;
         } else if !args[i].starts_with('-') {
             positional.push(args[i].as_str());
             i += 1;
         } else {
-            i += 1;
+            eprintln!("mknod: unrecognized option '{}'", args[i]);
+            return ExitCode::from(1);
         }
     }
 
@@ -468,14 +607,36 @@ pub fn run_mknod(args: &[String]) -> ExitCode {
         };
 
         let (file_type_mode, dev_id) = match dev_type {
-            "p" => (libc::S_IFIFO, 0),
+            "p" => {
+                if positional.len() > 2 {
+                    eprintln!("mknod: extra operand '{}'", positional[2]);
+                    return ExitCode::from(1);
+                }
+                (libc::S_IFIFO, 0)
+            }
             "c" | "u" => {
                 if positional.len() < 4 {
                     eprintln!("mknod: special files require major and minor device numbers");
                     return ExitCode::from(1);
                 }
-                let major = positional[2].parse::<u32>().unwrap_or(0);
-                let minor = positional[3].parse::<u32>().unwrap_or(0);
+                if positional.len() > 4 {
+                    eprintln!("mknod: extra operand '{}'", positional[4]);
+                    return ExitCode::from(1);
+                }
+                let major = match positional[2].parse::<u32>() {
+                    Ok(m) => m,
+                    Err(_) => {
+                        eprintln!("mknod: invalid major device number '{}'", positional[2]);
+                        return ExitCode::from(1);
+                    }
+                };
+                let minor = match positional[3].parse::<u32>() {
+                    Ok(m) => m,
+                    Err(_) => {
+                        eprintln!("mknod: invalid minor device number '{}'", positional[3]);
+                        return ExitCode::from(1);
+                    }
+                };
                 (libc::S_IFCHR, libc::makedev(major as _, minor as _))
             }
             "b" => {
@@ -483,8 +644,24 @@ pub fn run_mknod(args: &[String]) -> ExitCode {
                     eprintln!("mknod: special files require major and minor device numbers");
                     return ExitCode::from(1);
                 }
-                let major = positional[2].parse::<u32>().unwrap_or(0);
-                let minor = positional[3].parse::<u32>().unwrap_or(0);
+                if positional.len() > 4 {
+                    eprintln!("mknod: extra operand '{}'", positional[4]);
+                    return ExitCode::from(1);
+                }
+                let major = match positional[2].parse::<u32>() {
+                    Ok(m) => m,
+                    Err(_) => {
+                        eprintln!("mknod: invalid major device number '{}'", positional[2]);
+                        return ExitCode::from(1);
+                    }
+                };
+                let minor = match positional[3].parse::<u32>() {
+                    Ok(m) => m,
+                    Err(_) => {
+                        eprintln!("mknod: invalid minor device number '{}'", positional[3]);
+                        return ExitCode::from(1);
+                    }
+                };
                 (libc::S_IFBLK, libc::makedev(major as _, minor as _))
             }
             _ => {
@@ -504,6 +681,7 @@ pub fn run_mknod(args: &[String]) -> ExitCode {
     }
     #[cfg(not(unix))]
     {
+        let _ = (name, dev_type, mode_octal);
         eprintln!("mknod: device nodes not supported on non-unix host");
         ExitCode::from(1)
     }
@@ -517,48 +695,91 @@ pub fn run_mkfifo(args: &[String]) -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
-    if args.is_empty() {
-        eprintln!("mkfifo: missing operand");
-        return ExitCode::from(1);
-    }
-
     let mut mode_octal = 0o666u32;
     let mut names = Vec::new();
 
     let mut i = 0;
     while i < args.len() {
-        if args[i] == "-m" && i + 1 < args.len() {
-            mode_octal = u32::from_str_radix(&args[i + 1], 8).unwrap_or(0o666);
-            i += 2;
+        if args[i] == "-m" || args[i] == "--mode" {
+            if i + 1 < args.len() {
+                match u32::from_str_radix(&args[i + 1], 8) {
+                    Ok(m) => mode_octal = m,
+                    Err(_) => {
+                        eprintln!("mkfifo: invalid mode '{}'", args[i + 1]);
+                        return ExitCode::from(1);
+                    }
+                }
+                i += 2;
+            } else {
+                eprintln!("mkfifo: option requires an argument -- 'm'");
+                return ExitCode::from(1);
+            }
+        } else if let Some(m_str) = args[i].strip_prefix("-m") {
+            match u32::from_str_radix(m_str, 8) {
+                Ok(m) => mode_octal = m,
+                Err(_) => {
+                    eprintln!("mkfifo: invalid mode '{}'", m_str);
+                    return ExitCode::from(1);
+                }
+            }
+            i += 1;
+        } else if let Some(m_str) = args[i].strip_prefix("--mode=") {
+            match u32::from_str_radix(m_str, 8) {
+                Ok(m) => mode_octal = m,
+                Err(_) => {
+                    eprintln!("mkfifo: invalid mode '{}'", m_str);
+                    return ExitCode::from(1);
+                }
+            }
+            i += 1;
+        } else if args[i] == "--" {
+            i += 1;
+            while i < args.len() {
+                names.push(args[i].as_str());
+                i += 1;
+            }
+            break;
         } else if !args[i].starts_with('-') {
             names.push(args[i].as_str());
             i += 1;
         } else {
-            i += 1;
+            eprintln!("mkfifo: unrecognized option '{}'", args[i]);
+            return ExitCode::from(1);
         }
     }
 
-    let mut exit_code = ExitCode::SUCCESS;
-    for name in names {
-        #[cfg(unix)]
-        unsafe {
-            use std::ffi::CString;
-            let c_name = match CString::new(name) {
-                Ok(c) => c,
-                Err(_) => {
+    if names.is_empty() {
+        eprintln!("mkfifo: missing operand");
+        return ExitCode::from(1);
+    }
+
+    #[cfg(unix)]
+    {
+        let mut exit_code = ExitCode::SUCCESS;
+        for name in names {
+            unsafe {
+                use std::ffi::CString;
+                let c_name = match CString::new(name) {
+                    Ok(c) => c,
+                    Err(_) => {
+                        exit_code = ExitCode::from(1);
+                        continue;
+                    }
+                };
+                if libc::mkfifo(c_name.as_ptr(), mode_octal as libc::mode_t) != 0 {
+                    let err = io::Error::last_os_error();
+                    eprintln!("mkfifo: cannot create fifo '{}': {}", name, err);
                     exit_code = ExitCode::from(1);
-                    continue;
                 }
-            };
-            if libc::mkfifo(c_name.as_ptr(), mode_octal as libc::mode_t) != 0 {
-                let err = io::Error::last_os_error();
-                eprintln!("mkfifo: cannot create fifo '{}': {}", name, err);
-                exit_code = ExitCode::from(1);
             }
         }
+        exit_code
     }
-
-    exit_code
+    #[cfg(not(unix))]
+    {
+        eprintln!("mkfifo: named pipes not supported on non-unix host");
+        ExitCode::from(1)
+    }
 }
 
 // ============================================================================
@@ -591,7 +812,8 @@ pub fn run_time(args: &[String]) -> ExitCode {
         } else if !args[cmd_idx].starts_with('-') {
             break;
         } else {
-            cmd_idx += 1;
+            eprintln!("time: unrecognized option '{}'", args[cmd_idx]);
+            return ExitCode::from(1);
         }
     }
 
@@ -673,9 +895,19 @@ pub fn run_pidof(args: &[String]) -> ExitCode {
     for arg in args {
         if arg == "-s" {
             single = true;
+        } else if arg == "--" {
+            // separator
         } else if !arg.starts_with('-') {
             names.push(arg.as_str());
+        } else {
+            eprintln!("pidof: invalid option -- '{}'", arg);
+            return ExitCode::from(1);
         }
+    }
+
+    if names.is_empty() {
+        eprintln!("pidof: missing program name");
+        return ExitCode::from(1);
     }
 
     let mut matched_pids = Vec::new();
@@ -764,7 +996,8 @@ pub fn run_flock(args: &[String]) -> ExitCode {
         } else if !args[file_idx].starts_with('-') {
             break;
         } else {
-            file_idx += 1;
+            eprintln!("flock: invalid option -- '{}'", args[file_idx]);
+            return ExitCode::from(1);
         }
     }
 
@@ -855,14 +1088,28 @@ pub fn run_nc(args: &[String]) -> ExitCode {
         } else if arg == "-v" {
             verbose = true;
             i += 1;
-        } else if (arg == "-p" || arg == "--port") && i + 1 < args.len() {
-            port_str = Some(args[i + 1].clone());
-            i += 2;
-        } else if (arg == "-w" || arg == "--timeout") && i + 1 < args.len() {
-            if let Ok(secs) = args[i + 1].parse::<u64>() {
-                timeout_dur = Duration::from_secs(secs);
+        } else if arg == "-p" || arg == "--port" {
+            if i + 1 < args.len() {
+                port_str = Some(args[i + 1].clone());
+                i += 2;
+            } else {
+                eprintln!("nc: option requires an argument -- 'p'");
+                return ExitCode::from(1);
             }
-            i += 2;
+        } else if arg == "-w" || arg == "--timeout" {
+            if i + 1 < args.len() {
+                match args[i + 1].parse::<u64>() {
+                    Ok(secs) => timeout_dur = Duration::from_secs(secs),
+                    Err(_) => {
+                        eprintln!("nc: invalid timeout '{}'", args[i + 1]);
+                        return ExitCode::from(1);
+                    }
+                }
+                i += 2;
+            } else {
+                eprintln!("nc: option requires an argument -- 'w'");
+                return ExitCode::from(1);
+            }
         } else if arg.starts_with('-') && !arg.starts_with("--") && arg.len() > 1 && arg[1..].chars().all(|c| "lzv".contains(c)) {
             for c in arg[1..].chars() {
                 match c {
@@ -881,7 +1128,8 @@ pub fn run_nc(args: &[String]) -> ExitCode {
             }
             i += 1;
         } else {
-            i += 1;
+            eprintln!("nc: invalid option -- '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -912,7 +1160,11 @@ pub fn run_nc(args: &[String]) -> ExitCode {
                 if n == 0 {
                     break;
                 }
-                let _ = out.write_all(&buf[..n]);
+                if let Err(e) = out.write_all(&buf[..n]) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        break;
+                    }
+                }
                 let _ = out.flush();
             }
         }
@@ -976,7 +1228,13 @@ pub fn run_nc(args: &[String]) -> ExitCode {
                 if verbose {
                     eprintln!("Connected to {}", target);
                 }
-                let mut reader_stream = stream.try_clone().unwrap();
+                let mut reader_stream = match stream.try_clone() {
+                    Ok(s) => s,
+                    Err(e) => {
+                        eprintln!("nc: failed to clone stream: {}", e);
+                        return ExitCode::from(1);
+                    }
+                };
                 let thread_handle = thread::spawn(move || {
                     let mut buf = [0u8; 4096];
                     let stdout = io::stdout();
@@ -985,7 +1243,11 @@ pub fn run_nc(args: &[String]) -> ExitCode {
                         if n == 0 {
                             break;
                         }
-                        let _ = out.write_all(&buf[..n]);
+                        if let Err(e) = out.write_all(&buf[..n]) {
+                            if e.kind() == io::ErrorKind::BrokenPipe {
+                                break;
+                            }
+                        }
                         let _ = out.flush();
                     }
                 });
@@ -996,7 +1258,9 @@ pub fn run_nc(args: &[String]) -> ExitCode {
                     if n == 0 {
                         break;
                     }
-                    let _ = stream.write_all(&in_buf[..n]);
+                    if let Err(_) = stream.write_all(&in_buf[..n]) {
+                        break;
+                    }
                 }
                 let _ = thread_handle.join();
                 ExitCode::SUCCESS
@@ -1020,6 +1284,11 @@ pub fn run_route(args: &[String]) -> ExitCode {
             println!("Show the IP routing table.");
             println!("  -n    don't resolve names");
             return ExitCode::SUCCESS;
+        } else if arg == "-n" {
+            // accepted
+        } else if arg.starts_with('-') {
+            eprintln!("route: invalid option -- '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -1115,12 +1384,28 @@ pub fn run_taskkill(args: &[String]) -> ExitCode {
         if arg.eq_ignore_ascii_case("/F") || arg == "-f" {
             force = true;
             i += 1;
-        } else if (arg.eq_ignore_ascii_case("/IM") || arg == "-im") && i + 1 < args.len() {
-            image_name = Some(args[i + 1].clone());
-            i += 2;
-        } else if (arg.eq_ignore_ascii_case("/PID") || arg == "-pid") && i + 1 < args.len() {
-            pid = args[i + 1].parse::<i32>().ok();
-            i += 2;
+        } else if arg.eq_ignore_ascii_case("/IM") || arg == "-im" {
+            if i + 1 < args.len() {
+                image_name = Some(args[i + 1].clone());
+                i += 2;
+            } else {
+                eprintln!("taskkill: ERROR: /IM option requires an image name.");
+                return ExitCode::FAILURE;
+            }
+        } else if arg.eq_ignore_ascii_case("/PID") || arg == "-pid" {
+            if i + 1 < args.len() {
+                match args[i + 1].parse::<i32>() {
+                    Ok(p) => pid = Some(p),
+                    Err(_) => {
+                        eprintln!("taskkill: ERROR: Invalid PID specified: '{}'", args[i + 1]);
+                        return ExitCode::FAILURE;
+                    }
+                }
+                i += 2;
+            } else {
+                eprintln!("taskkill: ERROR: /PID option requires a PID argument.");
+                return ExitCode::FAILURE;
+            }
         } else if arg == "--help" || arg == "-h" {
             println!("Usage: taskkill [/F] [/IM imagename | /PID processid]");
             println!("Terminate tasks by process id or image name.");
@@ -1129,7 +1414,8 @@ pub fn run_taskkill(args: &[String]) -> ExitCode {
             println!("  /PID processid  specify the PID of the process to be terminated");
             return ExitCode::SUCCESS;
         } else {
-            i += 1;
+            eprintln!("taskkill: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
         }
     }
 
@@ -1242,5 +1528,34 @@ mod tests {
         assert_eq!(parse_block_size("1K"), Some(1024));
         assert_eq!(parse_block_size("10M"), Some(10485760));
         assert_eq!(parse_block_size("1b"), Some(512));
+    }
+
+    #[test]
+    fn test_dd_zero_bs_and_count() {
+        assert_eq!(run_dd(&["bs=0".to_string()]), ExitCode::from(1));
+        assert_eq!(run_dd(&["bs=invalid".to_string()]), ExitCode::from(1));
+        assert_eq!(run_dd(&["unknown_operand".to_string()]), ExitCode::from(1));
+        assert_eq!(run_dd(&["count=0".to_string(), "status=none".to_string()]), ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn test_gzip_validation() {
+        assert_eq!(run_gzip(&["--invalid-option".to_string()]), ExitCode::from(1));
+        assert_eq!(run_gunzip(&["--invalid-option".to_string()]), ExitCode::from(1));
+        assert_eq!(run_gzip(&["/nonexistent_file_xyz_123".to_string()]), ExitCode::from(1));
+        assert_eq!(run_gunzip(&["/nonexistent_file_xyz_123.gz".to_string()]), ExitCode::from(1));
+    }
+
+    #[test]
+    fn test_mknod_mkfifo_validation() {
+        assert_eq!(run_mknod(&[]), ExitCode::from(1));
+        assert_eq!(run_mknod(&["--invalid".to_string()]), ExitCode::from(1));
+        assert_eq!(run_mknod(&["-m".to_string()]), ExitCode::from(1));
+        assert_eq!(run_mknod(&["foo".to_string(), "c".to_string()]), ExitCode::from(1));
+        assert_eq!(run_mknod(&["foo".to_string(), "c".to_string(), "abc".to_string(), "def".to_string()]), ExitCode::from(1));
+
+        assert_eq!(run_mkfifo(&[]), ExitCode::from(1));
+        assert_eq!(run_mkfifo(&["--invalid".to_string()]), ExitCode::from(1));
+        assert_eq!(run_mkfifo(&["-m".to_string()]), ExitCode::from(1));
     }
 }

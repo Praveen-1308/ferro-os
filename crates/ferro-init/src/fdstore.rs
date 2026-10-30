@@ -222,12 +222,12 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
                     }
 
                     if let Some(fd) = recvd_fd {
-                        let mut map = store.lock().unwrap();
+                        let mut map = store.lock().unwrap_or_else(|p| p.into_inner());
                         if map.len() >= MAX_STORED_FDS && !map.contains_key(&name) {
                             let _ = send_fd(
                                 raw_sock,
                                 -1,
-                                "ERROR FD Store Capacity Exceeded (max 1024)\n",
+                                &format!("ERROR FD Store Capacity Exceeded (max {})\n", MAX_STORED_FDS),
                             );
                             libc::close(fd);
                             return;
@@ -258,7 +258,7 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
                 }
                 if parts.len() >= 2 {
                     let name = parts[1];
-                    let map = store.lock().unwrap();
+                    let map = store.lock().unwrap_or_else(|p| p.into_inner());
                     if let Some(&stored_fd) = map.get(name) {
                         let dup_fd = libc::dup(stored_fd);
                         let resp = format!("FOUND {}\n", name);
@@ -275,7 +275,7 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
                 if let Some(fd) = recvd_fd {
                     libc::close(fd);
                 }
-                let map = store.lock().unwrap();
+                let map = store.lock().unwrap_or_else(|p| p.into_inner());
                 let mut list = String::new();
                 for (k, v) in map.iter() {
                     list.push_str(&format!("{}: {}\n", k, v));
@@ -291,7 +291,7 @@ fn handle_client(stream: UnixStream, store: Arc<Mutex<HashMap<String, libc::c_in
                 }
                 if parts.len() >= 2 {
                     let name = parts[1];
-                    let mut map = store.lock().unwrap();
+                    let mut map = store.lock().unwrap_or_else(|p| p.into_inner());
                     if let Some(fd) = map.remove(name) {
                         libc::close(fd);
                         let resp = format!("REMOVED {}\n", name);

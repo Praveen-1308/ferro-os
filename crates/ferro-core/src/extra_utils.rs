@@ -134,7 +134,7 @@ fn scan_running_processes() -> Vec<ProcInfo> {
                 let name = entry.file_name().to_string_lossy().to_string();
                 if let Ok(pid) = name.parse::<i32>() {
                     let p = entry.path();
-                    let comm = fs::read_to_string(p.join("comm"))
+                    let mut comm = fs::read_to_string(p.join("comm"))
                         .unwrap_or_default()
                         .trim()
                         .to_string();
@@ -144,6 +144,24 @@ fn scan_running_processes() -> Vec<ProcInfo> {
                         .map(|s| String::from_utf8_lossy(s))
                         .collect::<Vec<_>>()
                         .join(" ");
+
+                    if comm.is_empty() {
+                        if let Ok(stat_text) = fs::read_to_string(p.join("stat")) {
+                            if let (Some(p1), Some(p2)) = (stat_text.find('('), stat_text.rfind(')')) {
+                                if p1 < p2 {
+                                    comm = stat_text[p1 + 1..p2].to_string();
+                                }
+                            }
+                        }
+                    }
+
+                    if comm.is_empty() && cmdline.is_empty() && !p.exists() {
+                        continue;
+                    }
+
+                    if comm.is_empty() {
+                        comm = format!("[{}]", pid);
+                    }
 
                     procs.push(ProcInfo { pid, comm, cmdline });
                 }
@@ -178,22 +196,36 @@ pub fn run_pgrep(args: &[String]) -> ExitCode {
     let mut list_name = false;
     let mut pattern: Option<String> = None;
 
-    for arg in args {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
         if arg == "-f" || arg == "--full" {
             full_cmdline = true;
+            i += 1;
         } else if arg == "-x" || arg == "--exact" {
             exact = true;
+            i += 1;
         } else if arg == "-l" || arg == "--list-name" {
             list_name = true;
+            i += 1;
         } else if arg == "--help" || arg == "-h" {
             println!("Usage: pgrep [options] <pattern>");
             println!("Look up processes based on name and other attributes.");
             println!("  -f, --full        use full process name to match");
             println!("  -x, --exact       match exactly with the command name");
             println!("  -l, --list-name   list the process name as well as the process ID");
+            println!("  -h, --help        display this help and exit");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') && pattern.is_none() {
+        } else if arg.starts_with('-') {
+            eprintln!("pgrep: unrecognized option '{}'", arg);
+            return ExitCode::from(2);
+        } else {
+            if pattern.is_some() {
+                eprintln!("pgrep: extra operand '{}'", arg);
+                return ExitCode::from(2);
+            }
             pattern = Some(arg.clone());
+            i += 1;
         }
     }
 
@@ -207,6 +239,9 @@ pub fn run_pgrep(args: &[String]) -> ExitCode {
 
     let procs = scan_running_processes();
     let mut matched = 0;
+
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
 
     for proc in procs {
         let pat_lower = pat.to_lowercase();
@@ -229,10 +264,13 @@ pub fn run_pgrep(args: &[String]) -> ExitCode {
 
         if is_match {
             matched += 1;
-            if list_name {
-                println!("{} {}", proc.pid, proc.comm);
+            let res = if list_name {
+                writeln!(out, "{} {}", proc.pid, proc.comm)
             } else {
-                println!("{}", proc.pid);
+                writeln!(out, "{}", proc.pid)
+            };
+            if res.is_err() {
+                return ExitCode::SUCCESS; // BrokenPipe handled
             }
         }
     }
@@ -250,26 +288,42 @@ pub fn run_pkill(args: &[String]) -> ExitCode {
     let mut signal = 15i32; // SIGTERM
     let mut pattern: Option<String> = None;
 
-    for arg in args {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
         if arg == "-f" || arg == "--full" {
             full_cmdline = true;
+            i += 1;
         } else if arg == "-x" || arg == "--exact" {
             exact = true;
-        } else if arg == "-9" || arg == "-KILL" {
-            signal = 9;
-        } else if arg == "-15" || arg == "-TERM" {
-            signal = 15;
-        } else if arg == "-HUP" || arg == "-1" {
-            signal = 1;
+            i += 1;
         } else if arg == "--help" || arg == "-h" {
             println!("Usage: pkill [options] <pattern>");
             println!("Signal processes based on name and other attributes.");
             println!("  -f, --full        use full process name to match");
             println!("  -x, --exact       match exactly with the command name");
             println!("  -SIGNAL           signal to send (default 15 SIGTERM)");
+            println!("  -h, --help        display this help and exit");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') && pattern.is_none() {
+        } else if arg.starts_with('-') && arg.len() > 1 && pattern.is_none() {
+            match crate::proc_ledger::parse_signal(arg) {
+                Ok(sig) => signal = sig,
+                Err(err) => {
+                    eprintln!("pkill: {}", err);
+                    return ExitCode::from(2);
+                }
+            }
+            i += 1;
+        } else if arg.starts_with('-') {
+            eprintln!("pkill: unrecognized option '{}'", arg);
+            return ExitCode::from(2);
+        } else {
+            if pattern.is_some() {
+                eprintln!("pkill: extra operand '{}'", arg);
+                return ExitCode::from(2);
+            }
             pattern = Some(arg.clone());
+            i += 1;
         }
     }
 
@@ -313,6 +367,10 @@ pub fn run_pkill(args: &[String]) -> ExitCode {
                     signaled += 1;
                 }
             }
+            #[cfg(not(unix))]
+            {
+                signaled += 1;
+            }
         }
     }
 
@@ -333,21 +391,48 @@ pub fn run_killall(args: &[String]) -> ExitCode {
     let mut verbose = false;
     let mut names = Vec::new();
 
-    for arg in args {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
         if arg == "-v" || arg == "--verbose" {
             verbose = true;
-        } else if arg == "-9" {
-            signal = 9;
-        } else if arg == "-15" {
-            signal = 15;
+            i += 1;
+        } else if arg == "-s" || arg == "--signal" {
+            if i + 1 < args.len() {
+                match crate::proc_ledger::parse_signal(&args[i + 1]) {
+                    Ok(sig) => signal = sig,
+                    Err(err) => {
+                        eprintln!("killall: {}", err);
+                        return ExitCode::from(1);
+                    }
+                }
+                i += 2;
+            } else {
+                eprintln!("killall: option requires an argument: '{}'", arg);
+                return ExitCode::from(1);
+            }
         } else if arg == "--help" || arg == "-h" {
             println!("Usage: killall [options] <name>...");
             println!("Kill processes by name.");
             println!("  -v, --verbose   report if signal was successfully sent");
             println!("  -s, --signal    specify signal to send (default 15)");
+            println!("  -h, --help      display this help and exit");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') {
+        } else if arg.starts_with('-') && arg.len() > 1 && names.is_empty() {
+            match crate::proc_ledger::parse_signal(arg) {
+                Ok(sig) => signal = sig,
+                Err(err) => {
+                    eprintln!("killall: {}", err);
+                    return ExitCode::from(1);
+                }
+            }
+            i += 1;
+        } else if arg.starts_with('-') {
+            eprintln!("killall: invalid option -- '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             names.push(arg.as_str());
+            i += 1;
         }
     }
 
@@ -377,6 +462,14 @@ pub fn run_killall(args: &[String]) -> ExitCode {
                         }
                     }
                 }
+                #[cfg(not(unix))]
+                {
+                    total_signaled += 1;
+                    found = true;
+                    if verbose {
+                        println!("Simulated: Killed {} ({}) with signal {}", proc.comm, proc.pid, signal);
+                    }
+                }
             }
         }
         if !found {
@@ -397,12 +490,20 @@ pub fn run_killall(args: &[String]) -> ExitCode {
 
 pub fn run_tac(args: &[String]) -> ExitCode {
     let mut files = Vec::new();
+    let mut parsing_options = true;
     for arg in args {
-        if arg == "--help" || arg == "-h" {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            continue;
+        }
+        if parsing_options && (arg == "--help" || arg == "-h") {
             println!("Usage: tac [FILE]...");
             println!("Write each FILE to standard output, last line first.");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("tac: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             files.push(arg.clone());
         }
     }
@@ -410,6 +511,10 @@ pub fn run_tac(args: &[String]) -> ExitCode {
     if files.is_empty() {
         files.push("-".to_string());
     }
+
+    let mut exit_code = ExitCode::SUCCESS;
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
 
     for file in files {
         let reader: Box<dyn BufRead> = if file == "-" {
@@ -419,31 +524,53 @@ pub fn run_tac(args: &[String]) -> ExitCode {
                 Ok(f) => Box::new(BufReader::new(f)),
                 Err(e) => {
                     eprintln!("tac: {}: {}", file, e);
+                    exit_code = ExitCode::from(1);
                     continue;
                 }
             }
         };
 
         let mut lines = Vec::new();
-        for l in reader.lines().flatten() {
-            lines.push(l);
+        for l in reader.lines() {
+            match l {
+                Ok(line) => lines.push(line),
+                Err(e) => {
+                    eprintln!("tac: {}: {}", file, e);
+                    exit_code = ExitCode::from(1);
+                    break;
+                }
+            }
         }
         for l in lines.iter().rev() {
-            println!("{}", l);
+            if let Err(e) = writeln!(out, "{}", l) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+                eprintln!("tac: write error: {}", e);
+                return ExitCode::from(1);
+            }
         }
     }
 
-    ExitCode::SUCCESS
+    exit_code
 }
 
 pub fn run_rev(args: &[String]) -> ExitCode {
     let mut files = Vec::new();
+    let mut parsing_options = true;
     for arg in args {
-        if arg == "--help" || arg == "-h" {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            continue;
+        }
+        if parsing_options && (arg == "--help" || arg == "-h") {
             println!("Usage: rev [FILE]...");
             println!("Reverse lines character-wise.");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("rev: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             files.push(arg.clone());
         }
     }
@@ -451,6 +578,10 @@ pub fn run_rev(args: &[String]) -> ExitCode {
     if files.is_empty() {
         files.push("-".to_string());
     }
+
+    let mut exit_code = ExitCode::SUCCESS;
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
 
     for file in files {
         let reader: Box<dyn BufRead> = if file == "-" {
@@ -460,35 +591,83 @@ pub fn run_rev(args: &[String]) -> ExitCode {
                 Ok(f) => Box::new(BufReader::new(f)),
                 Err(e) => {
                     eprintln!("rev: {}: {}", file, e);
+                    exit_code = ExitCode::from(1);
                     continue;
                 }
             }
         };
 
-        for l in reader.lines().flatten() {
-            let reversed: String = l.chars().rev().collect();
-            println!("{}", reversed);
+        for l in reader.lines() {
+            match l {
+                Ok(line) => {
+                    let reversed: String = line.chars().rev().collect();
+                    if let Err(e) = writeln!(out, "{}", reversed) {
+                        if e.kind() == io::ErrorKind::BrokenPipe {
+                            return ExitCode::SUCCESS;
+                        }
+                        eprintln!("rev: write error: {}", e);
+                        return ExitCode::from(1);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("rev: {}: {}", file, e);
+                    exit_code = ExitCode::from(1);
+                    break;
+                }
+            }
         }
     }
 
-    ExitCode::SUCCESS
+    exit_code
 }
 
 pub fn run_nl(args: &[String]) -> ExitCode {
     let mut number_empty = false;
     let mut files = Vec::new();
+    let mut i = 0;
+    let mut parsing_options = true;
 
-    for arg in args {
-        if arg == "-ba" || arg == "-b" {
+    while i < args.len() {
+        let arg = &args[i];
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            i += 1;
+            continue;
+        }
+        if parsing_options && arg == "-ba" {
             number_empty = true;
-        } else if arg == "--help" || arg == "-h" {
+            i += 1;
+        } else if parsing_options && arg == "-bt" {
+            number_empty = false;
+            i += 1;
+        } else if parsing_options && arg == "-b" {
+            if i + 1 < args.len() {
+                match args[i + 1].as_str() {
+                    "a" => number_empty = true,
+                    "t" => number_empty = false,
+                    other => {
+                        eprintln!("nl: invalid body numbering style: '{}'", other);
+                        return ExitCode::from(1);
+                    }
+                }
+                i += 2;
+            } else {
+                eprintln!("nl: option requires an argument -- 'b'");
+                return ExitCode::from(1);
+            }
+        } else if parsing_options && (arg == "--help" || arg == "-h") {
             println!("Usage: nl [OPTION]... [FILE]...");
             println!("Write each FILE to standard output, with line numbers added.");
-            println!("  -ba   number all lines");
-            println!("  -bt   number only nonempty lines (default)");
+            println!("  -ba        number all lines");
+            println!("  -bt        number only nonempty lines (default)");
+            println!("  -b STYLE   STYLE: 'a' (all) or 't' (nonempty)");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("nl: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             files.push(arg.clone());
+            i += 1;
         }
     }
 
@@ -496,7 +675,11 @@ pub fn run_nl(args: &[String]) -> ExitCode {
         files.push("-".to_string());
     }
 
+    let mut exit_code = ExitCode::SUCCESS;
     let mut line_no = 1usize;
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
     for file in files {
         let reader: Box<dyn BufRead> = if file == "-" {
             Box::new(BufReader::new(io::stdin()))
@@ -505,22 +688,40 @@ pub fn run_nl(args: &[String]) -> ExitCode {
                 Ok(f) => Box::new(BufReader::new(f)),
                 Err(e) => {
                     eprintln!("nl: {}: {}", file, e);
+                    exit_code = ExitCode::from(1);
                     continue;
                 }
             }
         };
 
-        for l in reader.lines().flatten() {
-            if l.is_empty() && !number_empty {
-                println!();
-            } else {
-                println!("{:6}\t{}", line_no, l);
-                line_no += 1;
+        for l in reader.lines() {
+            match l {
+                Ok(line) => {
+                    let write_res = if line.is_empty() && !number_empty {
+                        writeln!(out)
+                    } else {
+                        let res = writeln!(out, "{:6}\t{}", line_no, line);
+                        line_no += 1;
+                        res
+                    };
+                    if let Err(e) = write_res {
+                        if e.kind() == io::ErrorKind::BrokenPipe {
+                            return ExitCode::SUCCESS;
+                        }
+                        eprintln!("nl: write error: {}", e);
+                        return ExitCode::from(1);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("nl: {}: {}", file, e);
+                    exit_code = ExitCode::from(1);
+                    break;
+                }
             }
         }
     }
 
-    ExitCode::SUCCESS
+    exit_code
 }
 
 pub fn run_paste(args: &[String]) -> ExitCode {
@@ -529,9 +730,15 @@ pub fn run_paste(args: &[String]) -> ExitCode {
     let mut files = Vec::new();
 
     let mut i = 0;
+    let mut parsing_options = true;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-d" {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            i += 1;
+            continue;
+        }
+        if parsing_options && arg == "-d" {
             if i + 1 < args.len() {
                 delimiter = args[i + 1].clone();
                 i += 2;
@@ -539,22 +746,23 @@ pub fn run_paste(args: &[String]) -> ExitCode {
                 eprintln!("paste: option requires an argument -- 'd'");
                 return ExitCode::from(1);
             }
-        } else if let Some(d) = arg.strip_prefix("-d") {
-            delimiter = d.to_string();
+        } else if parsing_options && arg.starts_with("-d") {
+            delimiter = arg[2..].to_string();
             i += 1;
-        } else if arg == "-s" || arg == "--serial" {
+        } else if parsing_options && (arg == "-s" || arg == "--serial") {
             serial = true;
             i += 1;
-        } else if arg == "--help" || arg == "-h" {
+        } else if parsing_options && (arg == "--help" || arg == "-h") {
             println!("Usage: paste [OPTION]... [FILE]...");
             println!("Write lines consisting of the sequentially corresponding lines from each FILE, separated by TABs.");
             println!("  -d LIST, --delimiters=LIST  reuse characters from LIST instead of TABs");
             println!("  -s, --serial                paste one file at a time instead of in parallel");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
-            files.push(arg.clone());
-            i += 1;
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("paste: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         } else {
+            files.push(arg.clone());
             i += 1;
         }
     }
@@ -563,10 +771,26 @@ pub fn run_paste(args: &[String]) -> ExitCode {
         files.push("-".to_string());
     }
 
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
     if serial {
-        for file in files {
-            let lines = read_file_lines(&file);
-            println!("{}", lines.join(&delimiter));
+        for file in &files {
+            match read_file_lines(file) {
+                Ok(lines) => {
+                    if let Err(e) = writeln!(out, "{}", lines.join(&delimiter)) {
+                        if e.kind() == io::ErrorKind::BrokenPipe {
+                            return ExitCode::SUCCESS;
+                        }
+                        eprintln!("paste: write error: {}", e);
+                        return ExitCode::from(1);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("paste: {}: {}", file, e);
+                    return ExitCode::from(1);
+                }
+            }
         }
         return ExitCode::SUCCESS;
     }
@@ -575,9 +799,16 @@ pub fn run_paste(args: &[String]) -> ExitCode {
     let mut max_lines = 0;
 
     for file in &files {
-        let lines = read_file_lines(file);
-        max_lines = max_lines.max(lines.len());
-        all_file_lines.push(lines);
+        match read_file_lines(file) {
+            Ok(lines) => {
+                max_lines = max_lines.max(lines.len());
+                all_file_lines.push(lines);
+            }
+            Err(e) => {
+                eprintln!("paste: {}: {}", file, e);
+                return ExitCode::from(1);
+            }
+        }
     }
 
     for row in 0..max_lines {
@@ -589,22 +820,25 @@ pub fn run_paste(args: &[String]) -> ExitCode {
                 row_parts.push("");
             }
         }
-        println!("{}", row_parts.join(&delimiter));
+        if let Err(e) = writeln!(out, "{}", row_parts.join(&delimiter)) {
+            if e.kind() == io::ErrorKind::BrokenPipe {
+                return ExitCode::SUCCESS;
+            }
+            eprintln!("paste: write error: {}", e);
+            return ExitCode::from(1);
+        }
     }
 
     ExitCode::SUCCESS
 }
 
-fn read_file_lines(file: &str) -> Vec<String> {
+fn read_file_lines(file: &str) -> io::Result<Vec<String>> {
     let reader: Box<dyn BufRead> = if file == "-" {
         Box::new(BufReader::new(io::stdin()))
     } else {
-        match File::open(file) {
-            Ok(f) => Box::new(BufReader::new(f)),
-            Err(_) => return Vec::new(),
-        }
+        Box::new(BufReader::new(File::open(file)?))
     };
-    reader.lines().flatten().collect()
+    reader.lines().collect()
 }
 
 pub fn run_fold(args: &[String]) -> ExitCode {
@@ -612,28 +846,69 @@ pub fn run_fold(args: &[String]) -> ExitCode {
     let mut files = Vec::new();
 
     let mut i = 0;
+    let mut parsing_options = true;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-w" || arg == "--width" {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            i += 1;
+            continue;
+        }
+        if parsing_options && (arg == "-w" || arg == "--width") {
             if i + 1 < args.len() {
-                width = args[i + 1].parse::<usize>().unwrap_or(80);
+                match args[i + 1].parse::<usize>() {
+                    Ok(0) => {
+                        eprintln!("fold: invalid number of columns: '0'");
+                        return ExitCode::from(1);
+                    }
+                    Ok(w) => width = w,
+                    Err(_) => {
+                        eprintln!("fold: invalid number of columns: '{}'", args[i + 1]);
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
                 eprintln!("fold: option requires an argument -- 'w'");
                 return ExitCode::from(1);
             }
-        } else if let Some(w) = arg.strip_prefix("-w") {
-            width = w.parse::<usize>().unwrap_or(80);
+        } else if parsing_options && arg.starts_with("-w") {
+            match arg[2..].parse::<usize>() {
+                Ok(0) => {
+                    eprintln!("fold: invalid number of columns: '0'");
+                    return ExitCode::from(1);
+                }
+                Ok(w) => width = w,
+                Err(_) => {
+                    eprintln!("fold: invalid number of columns: '{}'", &arg[2..]);
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
-        } else if arg == "--help" || arg == "-h" {
+        } else if parsing_options && arg.starts_with('-') && arg.len() > 1 && arg[1..].chars().all(|c| c.is_ascii_digit()) {
+            match arg[1..].parse::<usize>() {
+                Ok(0) => {
+                    eprintln!("fold: invalid number of columns: '0'");
+                    return ExitCode::from(1);
+                }
+                Ok(w) => width = w,
+                Err(_) => {
+                    eprintln!("fold: invalid number of columns: '{}'", &arg[1..]);
+                    return ExitCode::from(1);
+                }
+            }
+            i += 1;
+        } else if parsing_options && (arg == "--help" || arg == "-h") {
             println!("Usage: fold [OPTION]... [FILE]...");
             println!("Wrap input lines in each FILE (standard input by default), writing to standard output.");
             println!("  -w, --width=WIDTH   use WIDTH columns instead of 80");
+            println!("  -WIDTH              use WIDTH columns");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
-            files.push(arg.clone());
-            i += 1;
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("fold: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         } else {
+            files.push(arg.clone());
             i += 1;
         }
     }
@@ -641,6 +916,10 @@ pub fn run_fold(args: &[String]) -> ExitCode {
     if files.is_empty() {
         files.push("-".to_string());
     }
+
+    let mut exit_code = ExitCode::SUCCESS;
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
 
     for file in files {
         let reader: Box<dyn BufRead> = if file == "-" {
@@ -650,22 +929,47 @@ pub fn run_fold(args: &[String]) -> ExitCode {
                 Ok(f) => Box::new(BufReader::new(f)),
                 Err(e) => {
                     eprintln!("fold: {}: {}", file, e);
+                    exit_code = ExitCode::from(1);
                     continue;
                 }
             }
         };
 
-        for l in reader.lines().flatten() {
-            let mut start = 0;
-            while start < l.len() {
-                let end = (start + width).min(l.len());
-                println!("{}", &l[start..end]);
-                start = end;
+        for l in reader.lines() {
+            match l {
+                Ok(line) => {
+                    let chars: Vec<char> = line.chars().collect();
+                    if chars.is_empty() {
+                        if let Err(e) = writeln!(out) {
+                            if e.kind() == io::ErrorKind::BrokenPipe {
+                                return ExitCode::SUCCESS;
+                            }
+                            eprintln!("fold: write error: {}", e);
+                            return ExitCode::from(1);
+                        }
+                    } else {
+                        for chunk in chars.chunks(width) {
+                            let s: String = chunk.iter().collect();
+                            if let Err(e) = writeln!(out, "{}", s) {
+                                if e.kind() == io::ErrorKind::BrokenPipe {
+                                    return ExitCode::SUCCESS;
+                                }
+                                eprintln!("fold: write error: {}", e);
+                                return ExitCode::from(1);
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("fold: {}: {}", file, e);
+                    exit_code = ExitCode::from(1);
+                    break;
+                }
             }
         }
     }
 
-    ExitCode::SUCCESS
+    exit_code
 }
 
 // ============================================================================
@@ -680,15 +984,21 @@ pub fn run_watch(args: &[String]) -> ExitCode {
     }
 
     let mut interval = Duration::from_secs(2);
-    let mut cmd_idx = 0;
+    let mut cmd_idx = None;
 
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
         if arg == "-n" || arg == "--interval" {
             if i + 1 < args.len() {
-                if let Ok(sec) = args[i + 1].parse::<f64>() {
-                    interval = Duration::from_millis((sec * 1000.0) as u64);
+                match args[i + 1].parse::<f64>() {
+                    Ok(sec) if sec > 0.0 => {
+                        interval = Duration::from_millis((sec * 1000.0) as u64);
+                    }
+                    _ => {
+                        eprintln!("watch: invalid interval: '{}'", args[i + 1]);
+                        return ExitCode::from(1);
+                    }
                 }
                 i += 2;
             } else {
@@ -696,8 +1006,14 @@ pub fn run_watch(args: &[String]) -> ExitCode {
                 return ExitCode::from(1);
             }
         } else if let Some(n) = arg.strip_prefix("-n") {
-            if let Ok(sec) = n.parse::<f64>() {
-                interval = Duration::from_millis((sec * 1000.0) as u64);
+            match n.parse::<f64>() {
+                Ok(sec) if sec > 0.0 => {
+                    interval = Duration::from_millis((sec * 1000.0) as u64);
+                }
+                _ => {
+                    eprintln!("watch: invalid interval: '{}'", n);
+                    return ExitCode::from(1);
+                }
             }
             i += 1;
         } else if arg == "--help" || arg == "-h" {
@@ -705,32 +1021,47 @@ pub fn run_watch(args: &[String]) -> ExitCode {
             println!("Execute a program periodically, showing output fullscreen.");
             println!("  -n, --interval=<secs>  seconds to wait between updates (default 2.0)");
             return ExitCode::SUCCESS;
+        } else if arg == "--" {
+            if i + 1 < args.len() {
+                cmd_idx = Some(i + 1);
+            }
+            break;
         } else if !arg.starts_with('-') {
-            cmd_idx = i;
+            cmd_idx = Some(i);
             break;
         } else {
-            i += 1;
+            eprintln!("watch: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
-    if cmd_idx >= args.len() {
-        eprintln!("watch: missing command");
-        return ExitCode::from(1);
-    }
+    let start_idx = match cmd_idx {
+        Some(idx) if idx < args.len() => idx,
+        _ => {
+            eprintln!("watch: missing command");
+            return ExitCode::from(1);
+        }
+    };
 
-    let cmd_str = args[cmd_idx..].join(" ");
+    let cmd_str = args[start_idx..].join(" ");
     let hostname = env::var("HOSTNAME").unwrap_or_else(|_| "ferro".to_string());
 
     loop {
         // Clear terminal screen and reset cursor
-        print!("\x1b[2J\x1b[H");
         let now_str = match SystemTime::now().duration_since(UNIX_EPOCH) {
             Ok(d) => format!("UTC epoch: {}", d.as_secs()),
             Err(_) => String::new(),
         };
 
-        println!("Every {:.1}s: {:<30} {}: {}", interval.as_secs_f64(), cmd_str, hostname, now_str);
-        println!();
+        let stdout = io::stdout();
+        let mut out = stdout.lock();
+        if write!(out, "\x1b[2J\x1b[H").is_err()
+            || writeln!(out, "Every {:.1}s: {:<30} {}: {}", interval.as_secs_f64(), cmd_str, hostname, now_str).is_err()
+            || writeln!(out).is_err()
+        {
+            return ExitCode::SUCCESS;
+        }
+        let _ = out.flush();
 
         // Run command
         let _ = Command::new("sh")
@@ -753,51 +1084,91 @@ pub fn run_xxd(args: &[String]) -> ExitCode {
     let mut file_path: Option<String> = None;
 
     let mut i = 0;
+    let mut parsing_options = true;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-r" || arg == "-revert" {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            i += 1;
+            continue;
+        }
+        if parsing_options && (arg == "-r" || arg == "-revert") {
             reverse = true;
             i += 1;
-        } else if arg == "-p" || arg == "-plain" {
+        } else if parsing_options && (arg == "-p" || arg == "-plain") {
             plain = true;
             i += 1;
-        } else if arg == "-c" || arg == "-cols" {
+        } else if parsing_options && (arg == "-c" || arg == "-cols") {
             if i + 1 < args.len() {
-                cols = args[i + 1].parse::<usize>().unwrap_or(16);
+                match args[i + 1].parse::<usize>() {
+                    Ok(0) => {
+                        eprintln!("xxd: invalid number of columns");
+                        return ExitCode::from(1);
+                    }
+                    Ok(c) => cols = c,
+                    Err(_) => {
+                        eprintln!("xxd: invalid number of columns");
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
                 eprintln!("xxd: option requires an argument -- 'c'");
                 return ExitCode::from(1);
             }
-        } else if let Some(c) = arg.strip_prefix("-c") {
-            cols = c.parse::<usize>().unwrap_or(16);
+        } else if parsing_options && arg.starts_with("-c") {
+            match arg[2..].parse::<usize>() {
+                Ok(0) => {
+                    eprintln!("xxd: invalid number of columns");
+                    return ExitCode::from(1);
+                }
+                Ok(c) => cols = c,
+                Err(_) => {
+                    eprintln!("xxd: invalid number of columns");
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
-        } else if arg == "--help" || arg == "-h" {
+        } else if parsing_options && (arg == "--help" || arg == "-h") {
             println!("Usage: xxd [options] [infile [outfile]]");
             println!("Make a hexdump or do the reverse.");
             println!("  -p, -plain   output in plain hexdump style");
             println!("  -r, -revert  reverse operation: convert hexdump into binary");
             println!("  -c cols      format <cols> octets per line (default 16)");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
-            file_path = Some(arg.clone());
-            i += 1;
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("xxd: unrecognized option: '{}'", arg);
+            return ExitCode::from(1);
         } else {
+            file_path = Some(arg.clone());
             i += 1;
         }
     }
+
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
 
     if reverse {
         // Reverse mode: convert hex input to binary output
         let mut hex_input = String::new();
         if let Some(ref path) = file_path {
             if path == "-" {
-                let _ = io::stdin().read_to_string(&mut hex_input);
-            } else if let Ok(s) = fs::read_to_string(path) {
-                hex_input = s;
+                if let Err(e) = io::stdin().read_to_string(&mut hex_input) {
+                    eprintln!("xxd: stdin: {}", e);
+                    return ExitCode::from(1);
+                }
+            } else {
+                match fs::read_to_string(path) {
+                    Ok(s) => hex_input = s,
+                    Err(e) => {
+                        eprintln!("xxd: {}: {}", path, e);
+                        return ExitCode::from(1);
+                    }
+                }
             }
-        } else {
-            let _ = io::stdin().read_to_string(&mut hex_input);
+        } else if let Err(e) = io::stdin().read_to_string(&mut hex_input) {
+            eprintln!("xxd: stdin: {}", e);
+            return ExitCode::from(1);
         }
 
         let mut bin_bytes = Vec::new();
@@ -826,14 +1197,23 @@ pub fn run_xxd(args: &[String]) -> ExitCode {
                 }
             }
         }
-        let _ = io::stdout().write_all(&bin_bytes);
+        if let Err(e) = out.write_all(&bin_bytes) {
+            if e.kind() == io::ErrorKind::BrokenPipe {
+                return ExitCode::SUCCESS;
+            }
+            eprintln!("xxd: write error: {}", e);
+            return ExitCode::from(1);
+        }
         return ExitCode::SUCCESS;
     }
 
     let input_bytes = if let Some(ref path) = file_path {
         if path == "-" {
             let mut buf = Vec::new();
-            let _ = io::stdin().read_to_end(&mut buf);
+            if let Err(e) = io::stdin().read_to_end(&mut buf) {
+                eprintln!("xxd: stdin: {}", e);
+                return ExitCode::from(1);
+            }
             buf
         } else {
             match fs::read(path) {
@@ -846,42 +1226,60 @@ pub fn run_xxd(args: &[String]) -> ExitCode {
         }
     } else {
         let mut buf = Vec::new();
-        let _ = io::stdin().read_to_end(&mut buf);
+        if let Err(e) = io::stdin().read_to_end(&mut buf) {
+            eprintln!("xxd: stdin: {}", e);
+            return ExitCode::from(1);
+        }
         buf
     };
 
     let mut offset = 0usize;
     for chunk in input_bytes.chunks(cols) {
         if plain {
+            let mut line = String::new();
             for b in chunk {
-                print!("{:02x}", b);
+                use std::fmt::Write;
+                let _ = write!(line, "{:02x}", b);
             }
-            println!();
+            if let Err(e) = writeln!(out, "{}", line) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+                eprintln!("xxd: write error: {}", e);
+                return ExitCode::from(1);
+            }
         } else {
             // Canonical xxd format: 00000000: 4865 6c6c ...  Hello World!
-            print!("{:08x}: ", offset);
+            let mut line = format!("{:08x}: ", offset);
             for (idx, b) in chunk.iter().enumerate() {
-                print!("{:02x}", b);
+                use std::fmt::Write;
+                let _ = write!(line, "{:02x}", b);
                 if idx % 2 == 1 {
-                    print!(" ");
+                    line.push(' ');
                 }
             }
             if chunk.len() < cols {
                 let missing_bytes = cols - chunk.len();
                 let missing_spaces = missing_bytes * 2 + (missing_bytes / 2);
                 for _ in 0..missing_spaces {
-                    print!(" ");
+                    line.push(' ');
                 }
             }
-            print!("  ");
+            line.push_str("  ");
             for &b in chunk {
                 if b.is_ascii_graphic() || b == b' ' {
-                    print!("{}", b as char);
+                    line.push(b as char);
                 } else {
-                    print!(".");
+                    line.push('.');
                 }
             }
-            println!();
+            if let Err(e) = writeln!(out, "{}", line) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+                eprintln!("xxd: write error: {}", e);
+                return ExitCode::from(1);
+            }
         }
         offset += chunk.len();
     }
@@ -892,16 +1290,24 @@ pub fn run_xxd(args: &[String]) -> ExitCode {
 pub fn run_hexdump(args: &[String]) -> ExitCode {
     let mut canonical = false;
     let mut file_path: Option<String> = None;
+    let mut parsing_options = true;
 
     for arg in args {
-        if arg == "-C" || arg == "--canonical" {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            continue;
+        }
+        if parsing_options && (arg == "-C" || arg == "--canonical") {
             canonical = true;
-        } else if arg == "--help" || arg == "-h" {
+        } else if parsing_options && (arg == "--help" || arg == "-h") {
             println!("Usage: hexdump [options] file...");
             println!("Display file contents in hexadecimal, decimal, octal, or ascii.");
             println!("  -C, --canonical  canonical hex+ASCII display");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("hexdump: unrecognized option: '{}'", arg);
+            return ExitCode::from(1);
+        } else {
             file_path = Some(arg.clone());
         }
     }
@@ -913,6 +1319,8 @@ pub fn run_hexdump(args: &[String]) -> ExitCode {
     }
     if let Some(p) = file_path {
         xxd_args.push(p);
+    } else {
+        xxd_args.push("-".to_string());
     }
 
     run_xxd(&xxd_args)
@@ -1334,20 +1742,38 @@ pub fn run_shuf(args: &[String]) -> ExitCode {
     let mut file_path: Option<String> = None;
 
     let mut i = 0;
+    let mut parsing_options = true;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-n" || arg == "--head-count" {
+        if parsing_options && arg == "--" {
+            parsing_options = false;
+            i += 1;
+            continue;
+        }
+        if parsing_options && (arg == "-n" || arg == "--head-count") {
             if i + 1 < args.len() {
-                head_count = args[i + 1].parse::<usize>().ok();
+                match args[i + 1].parse::<usize>() {
+                    Ok(n) => head_count = Some(n),
+                    Err(_) => {
+                        eprintln!("shuf: invalid line count: '{}'", args[i + 1]);
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
                 eprintln!("shuf: option requires an argument -- 'n'");
                 return ExitCode::from(1);
             }
-        } else if let Some(n) = arg.strip_prefix("-n") {
-            head_count = n.parse::<usize>().ok();
+        } else if parsing_options && arg.starts_with("-n") {
+            match arg[2..].parse::<usize>() {
+                Ok(n) => head_count = Some(n),
+                Err(_) => {
+                    eprintln!("shuf: invalid line count: '{}'", &arg[2..]);
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
-        } else if arg == "-i" || arg == "--input-range" {
+        } else if parsing_options && (arg == "-i" || arg == "--input-range") {
             if i + 1 < args.len() {
                 let range_str = &args[i + 1];
                 if let Some((lo, hi)) = range_str.split_once('-') {
@@ -1370,7 +1796,8 @@ pub fn run_shuf(args: &[String]) -> ExitCode {
                 eprintln!("shuf: option requires an argument -- 'i'");
                 return ExitCode::from(1);
             }
-        } else if let Some(r) = arg.strip_prefix("-i") {
+        } else if parsing_options && arg.starts_with("-i") {
+            let r = &arg[2..];
             if let Some((lo, hi)) = r.split_once('-') {
                 if let (Ok(l), Ok(h)) = (lo.parse::<i64>(), hi.parse::<i64>()) {
                     if l > h {
@@ -1387,12 +1814,12 @@ pub fn run_shuf(args: &[String]) -> ExitCode {
                 return ExitCode::from(1);
             }
             i += 1;
-        } else if arg == "-e" || arg == "--echo" {
+        } else if parsing_options && (arg == "-e" || arg == "--echo") {
             for a in &args[i + 1..] {
                 echo_args.push(a.clone());
             }
             break;
-        } else if arg == "--help" || arg == "-h" {
+        } else if parsing_options && (arg == "--help" || arg == "-h") {
             println!("Usage: shuf [OPTION]... [FILE]");
             println!("  or:  shuf -e [OPTION]... [ARG]...");
             println!("  or:  shuf -i LO-HI [OPTION]...");
@@ -1401,10 +1828,11 @@ pub fn run_shuf(args: &[String]) -> ExitCode {
             println!("  -i, --input-range=LO-HI  treat each number LO through HI as an input line");
             println!("  -n, --head-count=COUNT   output at most COUNT lines");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
-            file_path = Some(arg.clone());
-            i += 1;
+        } else if parsing_options && arg.starts_with('-') && arg != "-" {
+            eprintln!("shuf: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         } else {
+            file_path = Some(arg.clone());
             i += 1;
         }
     }
@@ -1412,20 +1840,36 @@ pub fn run_shuf(args: &[String]) -> ExitCode {
     let mut lines = if !echo_args.is_empty() {
         echo_args
     } else if let Some((lo, hi)) = input_range {
+        let count = (hi - lo).saturating_add(1);
+        if count > 10_000_000 {
+            eprintln!("shuf: input range too large");
+            return ExitCode::from(1);
+        }
         (lo..=hi).map(|n| n.to_string()).collect()
     } else {
         let reader: Box<dyn BufRead> = if file_path.as_deref() == Some("-") || file_path.is_none() {
             Box::new(BufReader::new(io::stdin()))
         } else {
-            match File::open(file_path.as_ref().unwrap()) {
+            let p = file_path.as_ref().unwrap();
+            match File::open(p) {
                 Ok(f) => Box::new(BufReader::new(f)),
                 Err(e) => {
-                    eprintln!("shuf: {}: {}", file_path.unwrap(), e);
+                    eprintln!("shuf: {}: {}", p, e);
                     return ExitCode::from(1);
                 }
             }
         };
-        reader.lines().flatten().collect()
+        let mut read_lines = Vec::new();
+        for l in reader.lines() {
+            match l {
+                Ok(line) => read_lines.push(line),
+                Err(e) => {
+                    eprintln!("shuf: read error: {}", e);
+                    return ExitCode::from(1);
+                }
+            }
+        }
+        read_lines
     };
 
     // Fisher-Yates shuffle
@@ -1441,8 +1885,16 @@ pub fn run_shuf(args: &[String]) -> ExitCode {
     }
 
     let limit = head_count.unwrap_or(lines.len()).min(lines.len());
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
     for l in &lines[..limit] {
-        println!("{}", l);
+        if let Err(e) = writeln!(out, "{}", l) {
+            if e.kind() == io::ErrorKind::BrokenPipe {
+                return ExitCode::SUCCESS;
+            }
+            eprintln!("shuf: write error: {}", e);
+            return ExitCode::from(1);
+        }
     }
 
     ExitCode::SUCCESS
@@ -1496,5 +1948,15 @@ mod tests {
             .map(|c| String::from_utf8_lossy(c).to_string())
             .collect();
         assert_eq!(wrapped, vec!["1234", "5678", "90"]);
+    }
+
+    #[test]
+    fn test_pgrep_pkill_killall_cli_errors() {
+        assert_eq!(run_pgrep(&[]), ExitCode::from(2));
+        assert_eq!(run_pgrep(&["--invalid-flag".to_string()]), ExitCode::from(2));
+        assert_eq!(run_pkill(&[]), ExitCode::from(2));
+        assert_eq!(run_pkill(&["-INVALID".to_string(), "proc".to_string()]), ExitCode::from(2));
+        assert_eq!(run_killall(&[]), ExitCode::from(1));
+        assert_eq!(run_killall(&["-INVALID".to_string(), "proc".to_string()]), ExitCode::from(1));
     }
 }

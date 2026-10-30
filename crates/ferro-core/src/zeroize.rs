@@ -92,6 +92,7 @@ pub fn run_zeroize(args: &[String]) -> ExitCode {
 
     let mut run_test = false;
     let mut delete_file = false;
+    let mut force = false;
     let mut files = Vec::new();
 
     let mut i = 0;
@@ -104,11 +105,13 @@ pub fn run_zeroize(args: &[String]) -> ExitCode {
             delete_file = true;
             i += 1;
         } else if arg == "-f" || arg == "--force" {
+            force = true;
             i += 1;
-        } else if !arg.starts_with('-') {
-            files.push(arg.clone());
-            i += 1;
+        } else if arg.starts_with('-') {
+            eprintln!("zeroize: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         } else {
+            files.push(arg.clone());
             i += 1;
         }
     }
@@ -145,7 +148,24 @@ pub fn run_zeroize(args: &[String]) -> ExitCode {
         let file_len = meta.len() as usize;
         if file_len > 0 {
             let zero_buf = vec![0u8; 4096.min(file_len)];
-            match OpenOptions::new().write(true).open(p) {
+            let mut open_res = OpenOptions::new().write(true).open(p);
+            if open_res.is_err() && force {
+                let mut perms = meta.permissions();
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    perms.set_mode(0o600);
+                    let _ = std::fs::set_permissions(p, perms);
+                }
+                #[cfg(not(unix))]
+                {
+                    perms.set_readonly(false);
+                    let _ = std::fs::set_permissions(p, perms);
+                }
+                open_res = OpenOptions::new().write(true).open(p);
+            }
+
+            match open_res {
                 Ok(mut f) => {
                     let mut written = 0;
                     while written < file_len {
@@ -220,5 +240,12 @@ mod tests {
             let _sec = SecureZeroizingSecret::new(buf);
         }
         assert!(DROPPED_AND_ZEROED.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn test_zeroize_cli_arguments() {
+        assert_eq!(run_zeroize(&[]), ExitCode::from(1));
+        assert_eq!(run_zeroize(&["--invalid-option".to_string()]), ExitCode::from(1));
+        assert_eq!(run_zeroize(&["--test".to_string()]), ExitCode::SUCCESS);
     }
 }
