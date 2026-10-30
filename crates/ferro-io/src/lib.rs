@@ -855,7 +855,12 @@ pub unsafe extern "C" fn pread(
     }
 
     ensure_symbols_initialized();
-    let real_fn: PreadFn = std::mem::transmute(REAL_PREAD.load(Ordering::Acquire));
+    let ptr = REAL_PREAD.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: PreadFn = std::mem::transmute(ptr);
 
     if is_secure_execution() || count < MIN_URING_IO_BYTES || count > u32::MAX as size_t {
         return real_fn(fd, buf, count, offset);
@@ -921,7 +926,12 @@ pub unsafe extern "C" fn pwrite(
     }
 
     ensure_symbols_initialized();
-    let real_fn: PwriteFn = std::mem::transmute(REAL_PWRITE.load(Ordering::Acquire));
+    let ptr = REAL_PWRITE.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: PwriteFn = std::mem::transmute(ptr);
 
     if is_secure_execution() || count < MIN_URING_IO_BYTES || count > u32::MAX as size_t {
         return real_fn(fd, buf, count, offset);
@@ -977,7 +987,15 @@ pub unsafe extern "C" fn pwrite64(
 #[no_mangle]
 pub unsafe extern "C" fn fdatasync(fd: c_int) -> c_int {
     ensure_symbols_initialized();
-    let real_fn: FdatasyncFn = std::mem::transmute(REAL_FDATASYNC.load(Ordering::Acquire));
+    let mut ptr = REAL_FDATASYNC.load(Ordering::Acquire);
+    if ptr.is_null() {
+        ptr = REAL_FSYNC.load(Ordering::Acquire);
+    }
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: FdatasyncFn = std::mem::transmute(ptr);
 
     if is_secure_execution() {
         return real_fn(fd);
@@ -1023,7 +1041,12 @@ pub unsafe extern "C" fn fdatasync(fd: c_int) -> c_int {
 #[no_mangle]
 pub unsafe extern "C" fn fsync(fd: c_int) -> c_int {
     ensure_symbols_initialized();
-    let real_fn: FsyncFn = std::mem::transmute(REAL_FSYNC.load(Ordering::Acquire));
+    let ptr = REAL_FSYNC.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: FsyncFn = std::mem::transmute(ptr);
 
     if is_secure_execution() {
         return real_fn(fd);
@@ -1072,7 +1095,12 @@ pub unsafe extern "C" fn close(fd: c_int) -> c_int {
         FD_TYPE_CACHE[fd as usize].store(0, Ordering::Relaxed);
     }
     ensure_symbols_initialized();
-    let real_fn: CloseFn = std::mem::transmute(REAL_CLOSE.load(Ordering::Acquire));
+    let ptr = REAL_CLOSE.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: CloseFn = std::mem::transmute(ptr);
     real_fn(fd)
 }
 
@@ -1082,7 +1110,12 @@ pub unsafe extern "C" fn dup2(oldfd: c_int, newfd: c_int) -> c_int {
         FD_TYPE_CACHE[newfd as usize].store(0, Ordering::Relaxed);
     }
     ensure_symbols_initialized();
-    let real_fn: Dup2Fn = std::mem::transmute(REAL_DUP2.load(Ordering::Acquire));
+    let ptr = REAL_DUP2.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: Dup2Fn = std::mem::transmute(ptr);
     real_fn(oldfd, newfd)
 }
 
@@ -1092,14 +1125,31 @@ pub unsafe extern "C" fn dup3(oldfd: c_int, newfd: c_int, flags: c_int) -> c_int
         FD_TYPE_CACHE[newfd as usize].store(0, Ordering::Relaxed);
     }
     ensure_symbols_initialized();
-    let real_fn: Dup3Fn = std::mem::transmute(REAL_DUP3.load(Ordering::Acquire));
+    let ptr = REAL_DUP3.load(Ordering::Acquire);
+    if ptr.is_null() {
+        if flags == 0 {
+            let dup2_ptr = REAL_DUP2.load(Ordering::Acquire);
+            if !dup2_ptr.is_null() {
+                let dup2_fn: Dup2Fn = std::mem::transmute(dup2_ptr);
+                return dup2_fn(oldfd, newfd);
+            }
+        }
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: Dup3Fn = std::mem::transmute(ptr);
     real_fn(oldfd, newfd, flags)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn socket(domain: c_int, socket_type: c_int, protocol: c_int) -> c_int {
     ensure_symbols_initialized();
-    let real_fn: SocketFn = std::mem::transmute(REAL_SOCKET.load(Ordering::Acquire));
+    let ptr = REAL_SOCKET.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: SocketFn = std::mem::transmute(ptr);
     let fd = real_fn(domain, socket_type, protocol);
 
     if fd >= 0 && (fd as usize) < MAX_CACHED_FDS {
@@ -1130,7 +1180,12 @@ pub unsafe extern "C" fn connect(
 ) -> c_int {
     ensure_symbols_initialized();
     optimize_tcp_socket(sockfd, addr, addrlen);
-    let real_fn: ConnectFn = std::mem::transmute(REAL_CONNECT.load(Ordering::Acquire));
+    let ptr = REAL_CONNECT.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: ConnectFn = std::mem::transmute(ptr);
     real_fn(sockfd, addr, addrlen)
 }
 
@@ -1141,7 +1196,12 @@ pub unsafe extern "C" fn accept(
     addrlen: *mut socklen_t,
 ) -> c_int {
     ensure_symbols_initialized();
-    let real_fn: AcceptFn = std::mem::transmute(REAL_ACCEPT.load(Ordering::Acquire));
+    let ptr = REAL_ACCEPT.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: AcceptFn = std::mem::transmute(ptr);
     let fd = real_fn(sockfd, addr, addrlen);
     if fd >= 0 {
         let len = if addrlen.is_null() { 0 } else { *addrlen };
@@ -1158,7 +1218,24 @@ pub unsafe extern "C" fn accept4(
     flags: c_int,
 ) -> c_int {
     ensure_symbols_initialized();
-    let real_fn: Accept4Fn = std::mem::transmute(REAL_ACCEPT4.load(Ordering::Acquire));
+    let ptr = REAL_ACCEPT4.load(Ordering::Acquire);
+    if ptr.is_null() {
+        if flags == 0 {
+            let accept_ptr = REAL_ACCEPT.load(Ordering::Acquire);
+            if !accept_ptr.is_null() {
+                let accept_fn: AcceptFn = std::mem::transmute(accept_ptr);
+                let fd = accept_fn(sockfd, addr, addrlen);
+                if fd >= 0 {
+                    let len = if addrlen.is_null() { 0 } else { *addrlen };
+                    optimize_tcp_socket(fd, addr, len);
+                }
+                return fd;
+            }
+        }
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: Accept4Fn = std::mem::transmute(ptr);
     let fd = real_fn(sockfd, addr, addrlen, flags);
     if fd >= 0 {
         let len = if addrlen.is_null() { 0 } else { *addrlen };
@@ -1170,14 +1247,24 @@ pub unsafe extern "C" fn accept4(
 #[no_mangle]
 pub unsafe extern "C" fn epoll_create1(flags: c_int) -> c_int {
     ensure_symbols_initialized();
-    let real_fn: EpollCreate1Fn = std::mem::transmute(REAL_EPOLL_CREATE1.load(Ordering::Acquire));
+    let ptr = REAL_EPOLL_CREATE1.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: EpollCreate1Fn = std::mem::transmute(ptr);
     real_fn(flags)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn epoll_ctl(epfd: c_int, op: c_int, fd: c_int, event: *mut c_void) -> c_int {
     ensure_symbols_initialized();
-    let real_fn: EpollCtlFn = std::mem::transmute(REAL_EPOLL_CTL.load(Ordering::Acquire));
+    let ptr = REAL_EPOLL_CTL.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: EpollCtlFn = std::mem::transmute(ptr);
     real_fn(epfd, op, fd, event)
 }
 
@@ -1189,7 +1276,12 @@ pub unsafe extern "C" fn epoll_wait(
     timeout: c_int,
 ) -> c_int {
     ensure_symbols_initialized();
-    let real_fn: EpollWaitFn = std::mem::transmute(REAL_EPOLL_WAIT.load(Ordering::Acquire));
+    let ptr = REAL_EPOLL_WAIT.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: EpollWaitFn = std::mem::transmute(ptr);
     real_fn(epfd, events, maxevents, timeout)
 }
 
@@ -1224,5 +1316,18 @@ mod tests {
     #[test]
     fn test_queue_entries_bounds() {
         assert_eq!(FERRO_URING_ENTRIES, 256);
+    }
+
+    #[test]
+    fn test_null_symbol_fallback_safety() {
+        // Calling intercepted symbols on unsupported platforms returns -1 with ENOSYS without crashing
+        unsafe {
+            ensure_symbols_initialized();
+            // Test that epoll_create1 or dup3 does not panic if unmapped on platform
+            let res = epoll_create1(0);
+            if REAL_EPOLL_CREATE1.load(Ordering::Acquire).is_null() {
+                assert_eq!(res, -1);
+            }
+        }
     }
 }
