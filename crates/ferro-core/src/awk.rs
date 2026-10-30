@@ -807,15 +807,15 @@ mod tests {
         // Invalid or extreme field numbers shouldn't panic
         let mut ctx = AwkContext::new(None, HashMap::new(), HashMap::new());
         ctx.set_record("alpha beta".to_string());
-        let (val, str_val) = ctx.eval_expr(&AwkExpr::Field(Box::new(AwkExpr::Number(-1.0))));
+        let (val, str_val) = ctx.eval_expr(&AwkExpr::Field(Box::new(AwkExpr::NumberLit(-1.0))));
         assert_eq!(val, 0.0);
         assert_eq!(str_val, "");
 
-        let (val_nan, str_val_nan) = ctx.eval_expr(&AwkExpr::Field(Box::new(AwkExpr::Number(f64::NAN))));
+        let (val_nan, str_val_nan) = ctx.eval_expr(&AwkExpr::Field(Box::new(AwkExpr::NumberLit(f64::NAN))));
         assert_eq!(val_nan, 0.0);
         assert_eq!(str_val_nan, "");
 
-        let (val_huge, str_val_huge) = ctx.eval_expr(&AwkExpr::Field(Box::new(AwkExpr::Number(1e20))));
+        let (val_huge, str_val_huge) = ctx.eval_expr(&AwkExpr::Field(Box::new(AwkExpr::NumberLit(1e20))));
         assert_eq!(val_huge, 0.0);
         assert_eq!(str_val_huge, "");
     }

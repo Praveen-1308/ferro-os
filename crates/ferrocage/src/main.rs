@@ -455,13 +455,32 @@ fn handle_run(args: &[String]) -> ExitCode {
     }
 }
 
+fn truncate_str(s: &str, max_chars: usize) -> &str {
+    match s.char_indices().nth(max_chars) {
+        None => s,
+        Some((idx, _)) => &s[..idx],
+    }
+}
+
 // ---------------------------------------------------------------------------
 // ferrocage ps
 // ---------------------------------------------------------------------------
 
 fn handle_ps(args: &[String]) -> ExitCode {
-    let show_all = args.iter().any(|a| a == "-a" || a == "--all");
-    let json_format = args.iter().any(|a| a == "--format=json" || a == "json");
+    let mut show_all = false;
+    let mut json_format = false;
+
+    for arg in args {
+        match arg.as_str() {
+            "-a" | "--all" => show_all = true,
+            "--format=json" | "json" => json_format = true,
+            other if other.starts_with('-') => {
+                eprintln!("ferrocage ps: unknown flag '{}'", other);
+                return ExitCode::FAILURE;
+            }
+            _ => {}
+        }
+    }
 
     let containers = load_all_containers();
 
@@ -487,10 +506,15 @@ fn handle_ps(args: &[String]) -> ExitCode {
         }
 
         let cmd_str = c.command.join(" ");
-        let cmd_trunc = if cmd_str.len() > 22 {
-            format!("\"{}...\"", &cmd_str[..20])
+        let (cmd_trunc, truncated) = if cmd_str.chars().count() > 22 {
+            (truncate_str(&cmd_str, 20), true)
         } else {
-            format!("\"{}\"", cmd_str)
+            (cmd_str.as_str(), false)
+        };
+        let cmd_display = if truncated {
+            format!("\"{}...\"", cmd_trunc)
+        } else {
+            format!("\"{}\"", cmd_trunc)
         };
 
         let status_str = if running {
@@ -504,9 +528,9 @@ fn handle_ps(args: &[String]) -> ExitCode {
 
         println!(
             "{:<14} {:<18} {:<24} {:<14} {:<16} {}",
-            &c.id[..12],
+            truncate_str(&c.id, 12),
             c.image,
-            cmd_trunc,
+            cmd_display,
             created_str,
             status_str,
             c.name
@@ -525,11 +549,33 @@ fn handle_stop(args: &[String]) -> ExitCode {
         eprintln!("Usage: ferrocage stop <container_id> [--timeout sec]");
         return ExitCode::FAILURE;
     }
-    let target = &args[0];
-    let timeout_sec = if args.len() >= 3 && args[1] == "--timeout" {
-        args[2].parse::<u64>().unwrap_or(5)
-    } else {
-        5
+    let mut target = None;
+    let mut timeout_sec = 5;
+    let mut idx = 0;
+    while idx < args.len() {
+        let arg = &args[idx];
+        if arg == "--timeout" || arg == "-t" {
+            if idx + 1 < args.len() {
+                timeout_sec = args[idx + 1].parse::<u64>().unwrap_or(5);
+                idx += 2;
+            } else {
+                eprintln!("ferrocage stop: option '{}' requires an argument", arg);
+                return ExitCode::FAILURE;
+            }
+        } else if arg.starts_with('-') {
+            eprintln!("ferrocage stop: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
+        } else {
+            if target.is_none() {
+                target = Some(arg.as_str());
+            }
+            idx += 1;
+        }
+    }
+
+    let Some(target) = target else {
+        eprintln!("Usage: ferrocage stop <container_id> [--timeout sec]");
+        return ExitCode::FAILURE;
     };
 
     if let Some(mut state) = find_container(target) {
@@ -577,12 +623,29 @@ fn handle_start(args: &[String]) -> ExitCode {
         eprintln!("Usage: ferrocage start <container_id>");
         return ExitCode::FAILURE;
     }
-    let target = &args[0];
+    let mut target = None;
+    for arg in args {
+        if arg.starts_with('-') {
+            eprintln!("ferrocage start: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
+        } else if target.is_none() {
+            target = Some(arg.as_str());
+        }
+    }
+    let Some(target) = target else {
+        eprintln!("Usage: ferrocage start <container_id>");
+        return ExitCode::FAILURE;
+    };
 
     if let Some(mut state) = find_container(target) {
         if is_running(&state) {
             println!("Container '{}' is already running", target);
             return ExitCode::SUCCESS;
+        }
+
+        if state.command.is_empty() {
+            eprintln!("ferrocage: container '{}' has no command configured", target);
+            return ExitCode::FAILURE;
         }
 
         let mut cmd = Command::new(&state.command[0]);
@@ -620,8 +683,27 @@ fn handle_rm(args: &[String]) -> ExitCode {
         eprintln!("Usage: ferrocage rm [-f] <container_id>");
         return ExitCode::FAILURE;
     }
-    let force = args.iter().any(|a| a == "-f" || a == "--force");
-    let target = args.iter().find(|a| !a.starts_with('-')).cloned().unwrap_or_default();
+    let mut force = false;
+    let mut target = None;
+    for arg in args {
+        match arg.as_str() {
+            "-f" | "--force" => force = true,
+            other if other.starts_with('-') => {
+                eprintln!("ferrocage rm: unrecognized option '{}'", other);
+                return ExitCode::FAILURE;
+            }
+            other => {
+                if target.is_none() {
+                    target = Some(other.clone());
+                }
+            }
+        }
+    }
+
+    let Some(target) = target else {
+        eprintln!("Usage: ferrocage rm [-f] <container_id>");
+        return ExitCode::FAILURE;
+    };
 
     if let Some(state) = find_container(&target) {
         if is_running(&state) {
@@ -656,11 +738,40 @@ fn handle_logs(args: &[String]) -> ExitCode {
         eprintln!("Usage: ferrocage logs [-n lines] <container_id>");
         return ExitCode::FAILURE;
     }
-    let target = args.iter().find(|a| !a.starts_with('-') && *a != "logs").cloned().unwrap_or_default();
-    let num_lines = if let Some(pos) = args.iter().position(|a| a == "-n") {
-        args.get(pos + 1).and_then(|v| v.parse::<usize>().ok()).unwrap_or(50)
-    } else {
-        50
+    let mut target = None;
+    let mut num_lines = 50;
+    let mut idx = 0;
+    while idx < args.len() {
+        let arg = &args[idx];
+        match arg.as_str() {
+            "-f" | "--follow" => {
+                idx += 1;
+            }
+            "-n" | "--tail" => {
+                if idx + 1 < args.len() {
+                    num_lines = args[idx + 1].parse::<usize>().unwrap_or(50);
+                    idx += 2;
+                } else {
+                    eprintln!("ferrocage logs: option '{}' requires an argument", arg);
+                    return ExitCode::FAILURE;
+                }
+            }
+            other if other.starts_with('-') => {
+                eprintln!("ferrocage logs: unrecognized option '{}'", other);
+                return ExitCode::FAILURE;
+            }
+            other => {
+                if target.is_none() {
+                    target = Some(other.clone());
+                }
+                idx += 1;
+            }
+        }
+    }
+
+    let Some(target) = target else {
+        eprintln!("Usage: ferrocage logs [-n lines] <container_id>");
+        return ExitCode::FAILURE;
     };
 
     if let Some(state) = find_container(&target) {
@@ -688,7 +799,20 @@ fn handle_inspect(args: &[String]) -> ExitCode {
         eprintln!("Usage: ferrocage inspect <container_id>");
         return ExitCode::FAILURE;
     }
-    let target = &args[0];
+    let mut target = None;
+    for arg in args {
+        if arg.starts_with('-') {
+            eprintln!("ferrocage inspect: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
+        } else if target.is_none() {
+            target = Some(arg.as_str());
+        }
+    }
+    let Some(target) = target else {
+        eprintln!("Usage: ferrocage inspect <container_id>");
+        return ExitCode::FAILURE;
+    };
+
     if let Some(state) = find_container(target) {
         println!("{}", format_state_json(&state));
         ExitCode::SUCCESS
@@ -705,8 +829,16 @@ fn handle_exec(args: &[String]) -> ExitCode {
     }
 
     let mut idx = 0;
-    while idx < args.len() && args[idx].starts_with('-') {
-        idx += 1; // skip -i, -t
+    while idx < args.len() {
+        let arg = &args[idx];
+        if arg == "-i" || arg == "-t" || arg == "-it" || arg == "-ti" {
+            idx += 1;
+        } else if arg.starts_with('-') {
+            eprintln!("ferrocage exec: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
+        } else {
+            break;
+        }
     }
 
     if idx >= args.len() {
@@ -729,11 +861,13 @@ fn handle_exec(args: &[String]) -> ExitCode {
             return ExitCode::FAILURE;
         }
 
-        let _pid = state.pid.unwrap();
+        let Some(pid) = state.pid else {
+            eprintln!("Container '{}' has no active PID", target);
+            return ExitCode::FAILURE;
+        };
 
         #[cfg(target_os = "linux")]
         {
-            let pid = _pid;
             // Join container namespaces via setns()
             let ns_types = ["mnt", "net", "ipc", "uts", "pid"];
             for ns in &ns_types {

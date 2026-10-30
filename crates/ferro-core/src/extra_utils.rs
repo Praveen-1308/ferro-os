@@ -1959,4 +1959,64 @@ mod tests {
         assert_eq!(run_killall(&[]), ExitCode::from(1));
         assert_eq!(run_killall(&["-INVALID".to_string(), "proc".to_string()]), ExitCode::from(1));
     }
+
+    #[test]
+    fn test_cluster1_extra_utils_cli_errors() {
+        // tac
+        assert_eq!(run_tac(&["--invalid-option".to_string()]), ExitCode::from(1));
+        assert_eq!(run_tac(&["/nonexistent_file_path_for_tac".to_string()]), ExitCode::from(1));
+
+        // rev
+        assert_eq!(run_rev(&["--invalid-option".to_string()]), ExitCode::from(1));
+        assert_eq!(run_rev(&["/nonexistent_file_path_for_rev".to_string()]), ExitCode::from(1));
+
+        // nl
+        assert_eq!(run_nl(&["--invalid-option".to_string()]), ExitCode::from(1));
+        assert_eq!(run_nl(&["/nonexistent_file_path_for_nl".to_string()]), ExitCode::from(1));
+
+        // paste
+        assert_eq!(run_paste(&["--invalid-option".to_string()]), ExitCode::from(1));
+        assert_eq!(run_paste(&["/nonexistent_file_path_for_paste".to_string()]), ExitCode::from(1));
+
+        // fold
+        assert_eq!(run_fold(&["--invalid-option".to_string()]), ExitCode::from(1));
+        assert_eq!(run_fold(&["-w".to_string(), "0".to_string()]), ExitCode::from(1));
+        assert_eq!(run_fold(&["-w".to_string(), "abc".to_string()]), ExitCode::from(1));
+        assert_eq!(run_fold(&["-0".to_string()]), ExitCode::from(1));
+        assert_eq!(run_fold(&["/nonexistent_file_path_for_fold".to_string()]), ExitCode::from(1));
+
+        // watch
+        assert_eq!(run_watch(&[]), ExitCode::from(1));
+        assert_eq!(run_watch(&["-n".to_string(), "2".to_string()]), ExitCode::from(1));
+        assert_eq!(run_watch(&["-n".to_string(), "0".to_string(), "echo".to_string()]), ExitCode::from(1));
+        assert_eq!(run_watch(&["--invalid-option".to_string()]), ExitCode::from(1));
+
+        // xxd
+        assert_eq!(run_xxd(&["--invalid-option".to_string()]), ExitCode::from(1));
+        assert_eq!(run_xxd(&["-c".to_string(), "0".to_string()]), ExitCode::from(1));
+        assert_eq!(run_xxd(&["-c".to_string()]), ExitCode::from(1));
+        assert_eq!(run_xxd(&["-r".to_string()]), ExitCode::from(1));
+        assert_eq!(run_xxd(&["/nonexistent_file_path_for_xxd".to_string()]), ExitCode::from(1));
+
+        // hexdump
+        assert_eq!(run_hexdump(&["--invalid-option".to_string()]), ExitCode::from(1));
+
+        // shuf
+        assert_eq!(run_shuf(&["--invalid-option".to_string()]), ExitCode::from(1));
+        assert_eq!(run_shuf(&["-n".to_string()]), ExitCode::from(1));
+        assert_eq!(run_shuf(&["-n".to_string(), "invalid".to_string()]), ExitCode::from(1));
+        assert_eq!(run_shuf(&["-i".to_string()]), ExitCode::from(1));
+        assert_eq!(run_shuf(&["-i".to_string(), "5-2".to_string()]), ExitCode::from(1));
+        assert_eq!(run_shuf(&["-i".to_string(), "1-1000000000".to_string()]), ExitCode::from(1));
+        assert_eq!(run_shuf(&["/nonexistent_file_path_for_shuf".to_string()]), ExitCode::from(1));
+    }
+
+    #[test]
+    fn test_fold_multibyte_safety() {
+        // Multi-byte chars: '🦀' is 4 bytes. If sliced at byte 2 or 3, it would panic.
+        let text = "🦀🦀🦀";
+        let chars: Vec<char> = text.chars().collect();
+        let chunks: Vec<String> = chars.chunks(2).map(|c| c.iter().collect()).collect();
+        assert_eq!(chunks, vec!["🦀🦀", "🦀"]);
+    }
 }

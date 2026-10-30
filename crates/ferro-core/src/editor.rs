@@ -933,4 +933,37 @@ mod tests {
         assert_eq!(buf.lines.len(), 1);
         assert_eq!(buf.lines[0], "first");
     }
+
+    #[test]
+    fn test_vi_multibyte_helpers() {
+        let mut s = "🦀rust🚀".to_string();
+        assert_eq!(line_char_count(&s), 6); // 🦀 (1), r, u, s, t, 🚀 (1)
+        assert_eq!(char_to_byte_index(&s, 0), 0);
+        assert_eq!(char_to_byte_index(&s, 1), 4); // 🦀 is 4 bytes
+        assert_eq!(char_to_byte_index(&s, 5), 8); // 't' ends, 🚀 begins at byte 8
+
+        // Insert char at index
+        insert_char_at(&mut s, 1, '⚡'); // 🦀⚡rust🚀
+        assert_eq!(s, "🦀⚡rust🚀");
+        assert_eq!(line_char_count(&s), 7);
+
+        // Remove char at index
+        remove_char_at(&mut s, 1); // removes ⚡
+        assert_eq!(s, "🦀rust🚀");
+
+        // Split line
+        let rem = split_line_at(&mut s, 5); // split right before 🚀
+        assert_eq!(s, "🦀rust");
+        assert_eq!(rem, "🚀");
+    }
+
+    #[test]
+    fn test_editor_cli_rejections() {
+        // run_ed unrecognized option
+        assert_eq!(run_ed(&["--invalid-option".to_string()]), ExitCode::from(1));
+        // run_ed missing -p prompt arg
+        assert_eq!(run_ed(&["-p".to_string()]), ExitCode::from(1));
+        // run_vi unrecognized option
+        assert_eq!(run_vi(&["--invalid-option".to_string()]), ExitCode::from(1));
+    }
 }

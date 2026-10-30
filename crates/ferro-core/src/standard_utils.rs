@@ -1814,28 +1814,57 @@ pub fn sha256_bytes(data: &[u8]) -> String {
 // ============================================================================
 
 pub fn run_printenv(args: &[String]) -> ExitCode {
-    if args.is_empty() {
-        for (k, v) in env::vars() {
-            println!("{}={}", k, v);
+    let mut null_term = false;
+    let mut vars = Vec::new();
+
+    for arg in args {
+        if arg == "-0" || arg == "--null" {
+            null_term = true;
+        } else if arg == "--help" || arg == "-h" {
+            println!("Usage: printenv [OPTION]... [VARIABLE]...");
+            println!("Print the values of the specified environment VARIABLE(s).");
+            println!("If no VARIABLE is specified, print name and value pairs for them all.");
+            println!("  -0, --null     end each output line with NUL, not newline");
+            return ExitCode::SUCCESS;
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("printenv: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else {
+            vars.push(arg);
         }
-        return ExitCode::SUCCESS;
     }
 
-    if args[0] == "--help" || args[0] == "-h" {
-        println!("Usage: printenv [OPTION]... [VARIABLE]...");
-        println!("Print the values of the specified environment VARIABLE(s).");
-        println!("If no VARIABLE is specified, print name and value pairs for them all.");
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+    let sep = if null_term { "\0" } else { "\n" };
+
+    if vars.is_empty() {
+        for (k, v) in env::vars() {
+            if let Err(e) = write!(out, "{}={}{}", k, v, sep) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+                return ExitCode::from(1);
+            }
+        }
+        let _ = out.flush();
         return ExitCode::SUCCESS;
     }
 
     let mut all_found = true;
-    for arg in args {
-        if let Ok(val) = env::var(arg) {
-            println!("{}", val);
+    for var in vars {
+        if let Ok(val) = env::var(var) {
+            if let Err(e) = write!(out, "{}{}", val, sep) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+                return ExitCode::from(1);
+            }
         } else {
             all_found = false;
         }
     }
+    let _ = out.flush();
 
     if all_found {
         ExitCode::SUCCESS
@@ -1880,7 +1909,8 @@ pub fn run_wget(args: &[String]) -> ExitCode {
             url = Some(arg.clone());
             i += 1;
         } else {
-            i += 1;
+            eprintln!("wget: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -1919,11 +1949,30 @@ pub fn run_ping(args: &[String]) -> ExitCode {
         let arg = &args[i];
         if arg == "-c" || arg == "--count" {
             if i + 1 < args.len() {
-                count = args[i + 1].parse::<usize>().unwrap_or(4);
-                i += 2;
+                match args[i + 1].parse::<usize>() {
+                    Ok(c) if c > 0 => {
+                        count = c;
+                        i += 2;
+                    }
+                    _ => {
+                        eprintln!("ping: invalid count of packets to transmit: '{}'", args[i + 1]);
+                        return ExitCode::from(1);
+                    }
+                }
             } else {
                 eprintln!("ping: option requires an argument -- 'c'");
                 return ExitCode::from(1);
+            }
+        } else if let Some(c_str) = arg.strip_prefix("-c") {
+            match c_str.parse::<usize>() {
+                Ok(c) if c > 0 => {
+                    count = c;
+                    i += 1;
+                }
+                _ => {
+                    eprintln!("ping: invalid count of packets to transmit: '{}'", c_str);
+                    return ExitCode::from(1);
+                }
             }
         } else if arg == "--help" || arg == "-h" {
             println!("Usage: ping [OPTION]... destination");
@@ -1934,7 +1983,8 @@ pub fn run_ping(args: &[String]) -> ExitCode {
             target_host = Some(arg.clone());
             i += 1;
         } else {
-            i += 1;
+            eprintln!("ping: invalid option -- '{}'", arg.trim_start_matches('-'));
+            return ExitCode::from(1);
         }
     }
 
