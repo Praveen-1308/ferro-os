@@ -18,7 +18,7 @@ use std::process::ExitCode;
 // ============================================================================
 
 pub fn run_awk(args: &[String]) -> ExitCode {
-    if args.is_empty() || args.iter().any(|a| a == "--help" || a == "-h") {
+    if args.iter().any(|a| a == "--help" || a == "-h") {
         println!("Usage: awk [-F fs] [-v var=val] [-f progfile | 'program'] [file ...]");
         println!("Pattern scanning and text processing language in 100% pure Rust.");
         println!("  -F fs         define input field separator (e.g. -F: or -F',')");
@@ -30,6 +30,11 @@ pub fn run_awk(args: &[String]) -> ExitCode {
         println!("  awk 'NR > 1 {{sum += $2}} END {{print sum}}' data.txt");
         println!("  awk '/ERROR/ {{print $0}}' /var/log/syslog");
         return ExitCode::SUCCESS;
+    }
+
+    if args.is_empty() {
+        eprintln!("awk: no program text specified");
+        return ExitCode::from(1);
     }
 
     let mut fs_separator: Option<String> = None;

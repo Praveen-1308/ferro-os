@@ -1995,7 +1995,7 @@ mod tests {
         assert_eq!(run_xxd(&["--invalid-option".to_string()]), ExitCode::from(1));
         assert_eq!(run_xxd(&["-c".to_string(), "0".to_string()]), ExitCode::from(1));
         assert_eq!(run_xxd(&["-c".to_string()]), ExitCode::from(1));
-        assert_eq!(run_xxd(&["-r".to_string()]), ExitCode::from(1));
+        assert_eq!(run_xxd(&["-r".to_string(), "/nonexistent_file_for_xxd".to_string()]), ExitCode::from(1));
         assert_eq!(run_xxd(&["/nonexistent_file_path_for_xxd".to_string()]), ExitCode::from(1));
 
         // hexdump

@@ -2123,4 +2123,38 @@ mod tests {
         assert_eq!(parse_ranges("1-3"), Some(vec![1, 2, 3]));
         assert_eq!(parse_ranges("4,2,3"), Some(vec![2, 3, 4]));
     }
+
+    #[test]
+    fn test_cut_cli_validations() {
+        assert_eq!(run_cut(&["-d".into(), "".into(), "-f".into(), "1".into()]), ExitCode::from(1));
+        assert_eq!(run_cut(&["-d".into(), "::".into(), "-f".into(), "1".into()]), ExitCode::from(1));
+        assert_eq!(run_cut(&["-f".into(), "0".into()]), ExitCode::from(1));
+        assert_eq!(run_cut(&["-f".into(), "5-2".into()]), ExitCode::from(1));
+        assert_eq!(run_cut(&["-f".into(), "abc".into()]), ExitCode::from(1));
+        assert_eq!(run_cut(&["--invalid".into()]), ExitCode::from(1));
+    }
+
+    #[test]
+    fn test_tr_cli_validations() {
+        assert_eq!(run_tr(&[]), ExitCode::from(1));
+        assert_eq!(run_tr(&["".into()]), ExitCode::from(1));
+        assert_eq!(run_tr(&["a-z".into()]), ExitCode::from(1));
+        assert_eq!(run_tr(&["z-a".into(), "a-z".into()]), ExitCode::from(1));
+        assert_eq!(run_tr(&["-x".into(), "a".into(), "b".into()]), ExitCode::from(1));
+    }
+
+    #[test]
+    fn test_seq_cli_validations() {
+        assert_eq!(run_seq(&[]), ExitCode::from(1));
+        assert_eq!(run_seq(&["1".into(), "0".into(), "10".into()]), ExitCode::from(1));
+        assert_eq!(run_seq(&["foo".into()]), ExitCode::from(1));
+        assert_eq!(run_seq(&["--unknown".into()]), ExitCode::from(1));
+    }
+
+    #[test]
+    fn test_printenv_and_wget_and_ping_validations() {
+        assert_eq!(run_printenv(&["--invalid".into()]), ExitCode::from(1));
+        assert_eq!(run_wget(&["--unknown".into()]), ExitCode::from(1));
+        assert_eq!(run_ping(&["-c".into(), "0".into(), "localhost".into()]), ExitCode::from(1));
+    }
 }

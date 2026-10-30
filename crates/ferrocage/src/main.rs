@@ -200,30 +200,65 @@ fn handle_run(args: &[String]) -> ExitCode {
         if arg == "-d" || arg == "--detach" {
             detach = true;
             idx += 1;
-        } else if (arg == "-b" || arg == "--bundle") && idx + 1 < args.len() {
-            bundle_dir = Some(PathBuf::from(&args[idx + 1]));
-            idx += 2;
-        } else if (arg == "-m" || arg == "--memory") && idx + 1 < args.len() {
-            memory_bytes = parse_memory_spec(&args[idx + 1]);
-            idx += 2;
-        } else if arg == "--cpus" && idx + 1 < args.len() {
-            cpus = args[idx + 1].parse::<f32>().ok();
-            idx += 2;
-        } else if arg == "--pids-max" && idx + 1 < args.len() {
-            pids_max = args[idx + 1].parse::<u32>().ok();
-            idx += 2;
-        } else if (arg == "-v" || arg == "--volume") && idx + 1 < args.len() {
-            volumes.push(args[idx + 1].clone());
-            idx += 2;
-        } else if arg == "--name" && idx + 1 < args.len() {
-            custom_name = Some(args[idx + 1].clone());
-            idx += 2;
+        } else if arg == "-b" || arg == "--bundle" {
+            if idx + 1 < args.len() {
+                bundle_dir = Some(PathBuf::from(&args[idx + 1]));
+                idx += 2;
+            } else {
+                eprintln!("ferrocage run: option '{}' requires an argument", arg);
+                return ExitCode::FAILURE;
+            }
+        } else if arg == "-m" || arg == "--memory" {
+            if idx + 1 < args.len() {
+                memory_bytes = parse_memory_spec(&args[idx + 1]);
+                idx += 2;
+            } else {
+                eprintln!("ferrocage run: option '{}' requires an argument", arg);
+                return ExitCode::FAILURE;
+            }
+        } else if arg == "--cpus" {
+            if idx + 1 < args.len() {
+                cpus = args[idx + 1].parse::<f32>().ok();
+                idx += 2;
+            } else {
+                eprintln!("ferrocage run: option '{}' requires an argument", arg);
+                return ExitCode::FAILURE;
+            }
+        } else if arg == "--pids-max" {
+            if idx + 1 < args.len() {
+                pids_max = args[idx + 1].parse::<u32>().ok();
+                idx += 2;
+            } else {
+                eprintln!("ferrocage run: option '{}' requires an argument", arg);
+                return ExitCode::FAILURE;
+            }
+        } else if arg == "-v" || arg == "--volume" {
+            if idx + 1 < args.len() {
+                volumes.push(args[idx + 1].clone());
+                idx += 2;
+            } else {
+                eprintln!("ferrocage run: option '{}' requires an argument", arg);
+                return ExitCode::FAILURE;
+            }
+        } else if arg == "--name" {
+            if idx + 1 < args.len() {
+                custom_name = Some(args[idx + 1].clone());
+                idx += 2;
+            } else {
+                eprintln!("ferrocage run: option '{}' requires an argument", arg);
+                return ExitCode::FAILURE;
+            }
         } else if arg == "--rm" {
             auto_rm = true;
             idx += 1;
-        } else if arg == "--net" && idx + 1 < args.len() {
-            network = args[idx + 1].clone();
-            idx += 2;
+        } else if arg == "--net" {
+            if idx + 1 < args.len() {
+                network = args[idx + 1].clone();
+                idx += 2;
+            } else {
+                eprintln!("ferrocage run: option '{}' requires an argument", arg);
+                return ExitCode::FAILURE;
+            }
         } else if !arg.starts_with('-') {
             image = arg.clone();
             idx += 1;
@@ -233,7 +268,7 @@ fn handle_run(args: &[String]) -> ExitCode {
             }
             break;
         } else {
-            eprintln!("Unknown run option: {}", arg);
+            eprintln!("ferrocage run: unrecognized option '{}'", arg);
             return ExitCode::FAILURE;
         }
     }
@@ -694,7 +729,7 @@ fn handle_rm(args: &[String]) -> ExitCode {
             }
             other => {
                 if target.is_none() {
-                    target = Some(other.clone());
+                    target = Some(other);
                 }
             }
         }
@@ -708,7 +743,7 @@ fn handle_rm(args: &[String]) -> ExitCode {
     if let Some(state) = find_container(&target) {
         if is_running(&state) {
             if force {
-                let _ = handle_stop(&[target.clone()]);
+                let _ = handle_stop(&[target.to_string()]);
             } else {
                 eprintln!("Error: container '{}' is running. Stop the container first or use -f", target);
                 return ExitCode::FAILURE;
@@ -762,7 +797,7 @@ fn handle_logs(args: &[String]) -> ExitCode {
             }
             other => {
                 if target.is_none() {
-                    target = Some(other.clone());
+                    target = Some(other);
                 }
                 idx += 1;
             }
@@ -861,13 +896,14 @@ fn handle_exec(args: &[String]) -> ExitCode {
             return ExitCode::FAILURE;
         }
 
-        let Some(pid) = state.pid else {
+        let Some(_pid) = state.pid else {
             eprintln!("Container '{}' has no active PID", target);
             return ExitCode::FAILURE;
         };
 
         #[cfg(target_os = "linux")]
         {
+            let pid = _pid;
             // Join container namespaces via setns()
             let ns_types = ["mnt", "net", "ipc", "uts", "pid"];
             for ns in &ns_types {
@@ -899,7 +935,14 @@ fn handle_exec(args: &[String]) -> ExitCode {
     }
 }
 
-fn handle_images(_args: &[String]) -> ExitCode {
+fn handle_images(args: &[String]) -> ExitCode {
+    for arg in args {
+        if arg.starts_with('-') {
+            eprintln!("ferrocage images: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
+        }
+    }
+
     println!("{:<24} {:<12} {:<16} {}", "REPOSITORY", "TAG", "SIZE", "LOCATION");
     let images_dir = get_images_dir();
     let _ = fs::create_dir_all(&images_dir);
@@ -936,8 +979,8 @@ fn configure_container_isolation(
             let gid = libc::getgid();
 
             // 1. Mandatory namespace isolation for every container:
-            // UTS (hostname), IPC (shared mem), Mount (private fs).
-            let mut clone_flags = libc::CLONE_NEWNS | libc::CLONE_NEWUTS | libc::CLONE_NEWIPC;
+            // UTS (hostname), IPC (shared mem), Mount (private fs), PID (isolated PID 1).
+            let mut clone_flags = libc::CLONE_NEWNS | libc::CLONE_NEWUTS | libc::CLONE_NEWIPC | libc::CLONE_NEWPID;
             if net_mode != "host" {
                 clone_flags |= libc::CLONE_NEWNET;
             }
@@ -956,16 +999,20 @@ fn configure_container_isolation(
                 false
             };
 
+            // Prevent privilege escalation in child processes (PR_SET_NO_NEW_PRIVS)
+            libc::prctl(38, 1, 0, 0, 0);
+
             if unshared {
                 // Ensure mounts do not propagate back to host
-                let none_str = std::ffi::CString::new("none").unwrap();
-                libc::mount(
-                    std::ptr::null(),
-                    none_str.as_ptr(),
-                    std::ptr::null(),
-                    libc::MS_REC | libc::MS_PRIVATE,
-                    std::ptr::null(),
-                );
+                if let Ok(none_str) = std::ffi::CString::new("none") {
+                    libc::mount(
+                        std::ptr::null(),
+                        none_str.as_ptr(),
+                        std::ptr::null(),
+                        libc::MS_REC | libc::MS_PRIVATE,
+                        std::ptr::null(),
+                    );
+                }
 
                 // Set private container hostname in UTS namespace
                 if let Ok(c_host) = std::ffi::CString::new(c_name.as_str()) {
@@ -1020,11 +1067,34 @@ fn configure_container_isolation(
                         }
                     }
 
-                    // Chroot into rootfs
-                    if let Ok(c_root) = std::ffi::CString::new(rootfs.to_string_lossy().as_bytes()) {
-                        if libc::chroot(c_root.as_ptr()) == 0 {
-                            let c_slash = std::ffi::CString::new("/").unwrap();
-                            let _ = libc::chdir(c_slash.as_ptr());
+                    // Attempt pivot_root first; fallback to chroot
+                    let mut pivoted = false;
+                    let old_root = rootfs.join(".oldroot");
+                    let _ = std::fs::create_dir_all(&old_root);
+                    if let (Ok(new_c), Ok(old_c)) = (
+                        std::ffi::CString::new(rootfs.to_string_lossy().as_bytes()),
+                        std::ffi::CString::new(old_root.to_string_lossy().as_bytes()),
+                    ) {
+                        libc::mount(new_c.as_ptr(), new_c.as_ptr(), std::ptr::null(), libc::MS_BIND | libc::MS_REC, std::ptr::null());
+                        if libc::syscall(libc::SYS_pivot_root, new_c.as_ptr(), old_c.as_ptr()) == 0 {
+                            pivoted = true;
+                            if let Ok(c_slash) = std::ffi::CString::new("/") {
+                                let _ = libc::chdir(c_slash.as_ptr());
+                            }
+                            if let Ok(c_old) = std::ffi::CString::new("/.oldroot") {
+                                libc::umount2(c_old.as_ptr(), libc::MNT_DETACH);
+                            }
+                        }
+                    }
+
+                    if !pivoted {
+                        // Chroot into rootfs
+                        if let Ok(c_root) = std::ffi::CString::new(rootfs.to_string_lossy().as_bytes()) {
+                            if libc::chroot(c_root.as_ptr()) == 0 {
+                                if let Ok(c_slash) = std::ffi::CString::new("/") {
+                                    let _ = libc::chdir(c_slash.as_ptr());
+                                }
+                            }
                         }
                     }
                 } else {
@@ -1119,6 +1189,9 @@ fn setup_cgroup_v2(id: &str, pid: u32, memory_bytes: Option<u64>, cpus: Option<f
     }
 
     let _ = fs::write(cg_dir.join("cgroup.procs"), format!("{}\n", pid));
+
+    // Zero-swap-thrashing policy: disable swap spilling
+    let _ = fs::write(cg_dir.join("memory.swap.max"), "0\n");
 
     if let Some(mem) = memory_bytes {
         let _ = fs::write(cg_dir.join("memory.max"), format!("{}\n", mem));
@@ -1295,12 +1368,12 @@ fn parse_memory_spec(s: &str) -> Option<u64> {
 }
 
 fn generate_id() -> String {
-    let t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+    let t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos();
     format!("{:012x}", t % 0xFFFFFFFFFFFF)
 }
 
 fn current_timestamp() -> u64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
+    SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs()
 }
 
 fn format_duration(sec: u64) -> String {
@@ -1378,5 +1451,31 @@ mod tests {
         assert_eq!(oci.root.as_ref().unwrap().path, "rootfs");
         assert_eq!(oci.linux.as_ref().unwrap().resources.as_ref().unwrap().memory.as_ref().unwrap().limit, Some(268435456));
         assert_eq!(oci.linux.as_ref().unwrap().resources.as_ref().unwrap().pids.as_ref().unwrap().limit, Some(100));
+    }
+
+    #[test]
+    fn test_truncate_str_utf8() {
+        let multi_byte = "🦀 Rust FerroOS ⚡️";
+        // Truncate safely at char boundaries without byte split panic
+        assert_eq!(truncate_str(multi_byte, 4), "🦀 Ru");
+        assert_eq!(truncate_str(multi_byte, 50), multi_byte);
+    }
+
+    #[test]
+    fn test_parse_memory_spec() {
+        assert_eq!(parse_memory_spec("256M"), Some(256 * 1024 * 1024));
+        assert_eq!(parse_memory_spec("1G"), Some(1024 * 1024 * 1024));
+        assert_eq!(parse_memory_spec("64KB"), Some(64 * 1024));
+        assert_eq!(parse_memory_spec("1048576"), Some(1048576));
+    }
+
+    #[test]
+    fn test_parse_state_json() {
+        let json = r#"{"id":"123456789abc","name":"test","image":"ferro-os","command":["echo","hello"],"created_at":1000,"pid":42,"running":true,"status":"running","exit_code":null,"memory_max_bytes":67108864,"cpus":1.5,"pids_max":50,"volumes":[],"network":"host"}"#;
+        let state = parse_state_json(json).expect("should parse state");
+        assert_eq!(state.id, "123456789abc");
+        assert_eq!(state.command, vec!["echo", "hello"]);
+        assert_eq!(state.pid, Some(42));
+        assert_eq!(state.memory_max_bytes, Some(67108864));
     }
 }

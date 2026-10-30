@@ -246,9 +246,14 @@ fn main() -> ExitCode {
     let mut filtered_args = Vec::new();
     let mut i = 1;
     while i < args.len() {
-        if args[i] == "--root" && i + 1 < args.len() {
-            root_path = PathBuf::from(&args[i + 1]);
-            i += 2;
+        if args[i] == "--root" {
+            if i + 1 < args.len() {
+                root_path = PathBuf::from(&args[i + 1]);
+                i += 2;
+            } else {
+                eprintln!("rpk: option '--root' requires an argument");
+                return ExitCode::FAILURE;
+            }
         } else if args[i].starts_with("--root=") {
             let path_part = args[i].trim_start_matches("--root=");
             root_path = PathBuf::from(path_part);
@@ -295,7 +300,17 @@ fn main() -> ExitCode {
         }
         "update" => cmd_update(&root_path),
         "upgrade" => {
-            let security_only = filtered_args.iter().any(|a| a == "--security" || a == "-s");
+            let mut security_only = false;
+            for arg in &filtered_args[1..] {
+                match arg.as_str() {
+                    "--security" | "-s" => security_only = true,
+                    other if other.starts_with('-') => {
+                        eprintln!("rpk upgrade: unrecognized option '{}'", other);
+                        return ExitCode::FAILURE;
+                    }
+                    _ => {}
+                }
+            }
             cmd_upgrade(security_only, &root_path)
         }
         "rollback" => {
@@ -341,9 +356,21 @@ fn main() -> ExitCode {
             let source_dir = &filtered_args[1];
             let output_path = &filtered_args[2];
             let mut arch = None;
-            for idx in 3..filtered_args.len() {
-                if filtered_args[idx] == "--arch" && idx + 1 < filtered_args.len() {
-                    arch = Some(filtered_args[idx + 1].clone());
+            let mut idx = 3;
+            while idx < filtered_args.len() {
+                if filtered_args[idx] == "--arch" {
+                    if idx + 1 < filtered_args.len() {
+                        arch = Some(filtered_args[idx + 1].clone());
+                        idx += 2;
+                    } else {
+                        eprintln!("rpk build: option '--arch' requires an argument");
+                        return ExitCode::FAILURE;
+                    }
+                } else if filtered_args[idx].starts_with('-') {
+                    eprintln!("rpk build: unrecognized option '{}'", filtered_args[idx]);
+                    return ExitCode::FAILURE;
+                } else {
+                    idx += 1;
                 }
             }
             cmd_build(source_dir, output_path, arch.as_deref())
@@ -578,11 +605,17 @@ fn cmd_dispatch_install(args: &[String], root: &Path) -> ExitCode {
         } else if args[i] == "--allow-foreign-glibc" || args[i] == "--force" || args[i] == "-f" {
             allow_foreign_glibc = true;
             i += 1;
-        } else if args[i] == "--sha256" && i + 1 < args.len() {
-            verify_sha = Some(args[i + 1].clone());
-            i += 2;
+        } else if args[i] == "--sha256" {
+            if i + 1 < args.len() {
+                verify_sha = Some(args[i + 1].clone());
+                i += 2;
+            } else {
+                eprintln!("rpk install: option '--sha256' requires an argument");
+                return ExitCode::FAILURE;
+            }
         } else if args[i].starts_with('-') {
-            i += 1;
+            eprintln!("rpk install: unrecognized option '{}'", args[i]);
+            return ExitCode::FAILURE;
         } else {
             targets.push(args[i].clone());
             i += 1;
@@ -984,7 +1017,7 @@ fn cmd_install_native(
                             let resolved = if target.is_absolute() {
                                 target
                             } else {
-                                cur.parent().unwrap().join(target)
+                                cur.parent().unwrap_or(&cur).join(target)
                             };
                             if !resolved.starts_with(&root) {
                                 extraction_failed = true;
@@ -1305,6 +1338,13 @@ fn cmd_rollback(tx_id: Option<&str>, root: &Path) -> ExitCode {
     }
 }
 
+fn truncate_str(s: &str, max_chars: usize) -> &str {
+    match s.char_indices().nth(max_chars) {
+        None => s,
+        Some((idx, _)) => &s[..idx],
+    }
+}
+
 fn cmd_history(root: &Path) -> ExitCode {
     let txs = transaction::list_transactions(root);
     if txs.is_empty() {
@@ -1334,8 +1374,8 @@ fn cmd_history(root: &Path) -> ExitCode {
             "ACTIVE"
         };
         let snap = tx.btrfs_snapshot.as_deref().unwrap_or("JSON Manifest");
-        let target_disp = if tx.target.len() > 28 {
-            format!("{}...", &tx.target[..25])
+        let target_disp = if tx.target.chars().count() > 28 {
+            format!("{}...", truncate_str(&tx.target, 25))
         } else {
             tx.target.clone()
         };
@@ -1609,12 +1649,25 @@ fn cmd_game(args: &[String]) -> ExitCode {
             let mut icon = None;
             let mut i = 2;
             while i < args.len() {
-                if args[i] == "--name" && i + 1 < args.len() {
-                    name = Some(args[i + 1].as_str());
-                    i += 2;
-                } else if args[i] == "--icon" && i + 1 < args.len() {
-                    icon = Some(args[i + 1].as_str());
-                    i += 2;
+                if args[i] == "--name" {
+                    if i + 1 < args.len() {
+                        name = Some(args[i + 1].as_str());
+                        i += 2;
+                    } else {
+                        eprintln!("rpk game shortcut: option '--name' requires an argument");
+                        return ExitCode::FAILURE;
+                    }
+                } else if args[i] == "--icon" {
+                    if i + 1 < args.len() {
+                        icon = Some(args[i + 1].as_str());
+                        i += 2;
+                    } else {
+                        eprintln!("rpk game shortcut: option '--icon' requires an argument");
+                        return ExitCode::FAILURE;
+                    }
+                } else if args[i].starts_with('-') {
+                    eprintln!("rpk game shortcut: unrecognized option '{}'", args[i]);
+                    return ExitCode::FAILURE;
                 } else {
                     i += 1;
                 }
@@ -1733,13 +1786,19 @@ fn cmd_msi_extract(args: &[String]) -> ExitCode {
     let mut target_dir = PathBuf::from("extracted_msi");
     let mut i = 1;
     while i < args.len() {
-        if (args[i] == "--target" || args[i] == "-t") && i + 1 < args.len() {
-            target_dir = PathBuf::from(&args[i + 1]);
-            i += 2;
-        } else if !args[i].starts_with('-') {
-            target_dir = PathBuf::from(&args[i]);
-            i += 1;
+        if args[i] == "--target" || args[i] == "-t" {
+            if i + 1 < args.len() {
+                target_dir = PathBuf::from(&args[i + 1]);
+                i += 2;
+            } else {
+                eprintln!("rpk msi-extract: option '{}' requires an argument", args[i]);
+                return ExitCode::FAILURE;
+            }
+        } else if args[i].starts_with('-') {
+            eprintln!("rpk msi-extract: unrecognized option '{}'", args[i]);
+            return ExitCode::FAILURE;
         } else {
+            target_dir = PathBuf::from(&args[i]);
             i += 1;
         }
     }
@@ -2382,6 +2441,24 @@ mod tests {
         assert!(!temp_dir.join("bin/real_file").exists());
         assert!(!temp_dir.join("bin/symlink_file").exists());
 
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_truncate_str_utf8_in_rpk() {
+        let multi_byte = "📦 Package 🦀 Rust";
+        assert_eq!(truncate_str(multi_byte, 6), "📦 Pack");
+        assert_eq!(truncate_str(multi_byte, 100), multi_byte);
+    }
+
+    #[test]
+    fn test_cmd_dispatch_install_invalid_flags() {
+        let temp_dir = std::env::temp_dir().join(format!("rpk_flag_test_{}", std::process::id()));
+        let _ = fs::create_dir_all(&temp_dir);
+        let code = cmd_dispatch_install(&["--bogus-flag".to_string(), "somepkg".to_string()], &temp_dir);
+        assert_eq!(format!("{:?}", code), format!("{:?}", ExitCode::FAILURE));
+        let code_sha = cmd_dispatch_install(&["--sha256".to_string()], &temp_dir);
+        assert_eq!(format!("{:?}", code_sha), format!("{:?}", ExitCode::FAILURE));
         let _ = fs::remove_dir_all(&temp_dir);
     }
 }

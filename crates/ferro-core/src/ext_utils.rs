@@ -424,38 +424,122 @@ pub fn run_split(args: &[String]) -> ExitCode {
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-l" || arg == "--lines" {
+        if arg == "--" {
+            i += 1;
+            while i < args.len() {
+                if input_file.is_none() {
+                    input_file = Some(args[i].clone());
+                } else if output_prefix == "x" {
+                    output_prefix = args[i].clone();
+                } else {
+                    eprintln!("split: extra operand '{}'", args[i]);
+                    return ExitCode::from(1);
+                }
+                i += 1;
+            }
+            break;
+        } else if arg == "-l" || arg == "--lines" {
             if i + 1 < args.len() {
-                lines_per_file = args[i + 1].parse::<usize>().ok();
+                let val = &args[i + 1];
+                match val.parse::<usize>() {
+                    Ok(n) if n > 0 => lines_per_file = Some(n),
+                    _ => {
+                        eprintln!("split: invalid number of lines: '{}'", val);
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
                 eprintln!("split: option requires an argument -- 'l'");
                 return ExitCode::from(1);
             }
+        } else if let Some(l) = arg.strip_prefix("--lines=") {
+            match l.parse::<usize>() {
+                Ok(n) if n > 0 => lines_per_file = Some(n),
+                _ => {
+                    eprintln!("split: invalid number of lines: '{}'", l);
+                    return ExitCode::from(1);
+                }
+            }
+            i += 1;
         } else if let Some(l) = arg.strip_prefix("-l") {
-            lines_per_file = l.parse::<usize>().ok();
+            match l.parse::<usize>() {
+                Ok(n) if n > 0 => lines_per_file = Some(n),
+                _ => {
+                    eprintln!("split: invalid number of lines: '{}'", l);
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
         } else if arg == "-b" || arg == "--bytes" {
             if i + 1 < args.len() {
-                bytes_per_file = parse_byte_size(&args[i + 1]);
+                let val = &args[i + 1];
+                match parse_byte_size(val) {
+                    Some(n) if n > 0 => bytes_per_file = Some(n),
+                    _ => {
+                        eprintln!("split: invalid number of bytes: '{}'", val);
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
                 eprintln!("split: option requires an argument -- 'b'");
                 return ExitCode::from(1);
             }
+        } else if let Some(b) = arg.strip_prefix("--bytes=") {
+            match parse_byte_size(b) {
+                Some(n) if n > 0 => bytes_per_file = Some(n),
+                _ => {
+                    eprintln!("split: invalid number of bytes: '{}'", b);
+                    return ExitCode::from(1);
+                }
+            }
+            i += 1;
         } else if let Some(b) = arg.strip_prefix("-b") {
-            bytes_per_file = parse_byte_size(b);
+            match parse_byte_size(b) {
+                Some(n) if n > 0 => bytes_per_file = Some(n),
+                _ => {
+                    eprintln!("split: invalid number of bytes: '{}'", b);
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
         } else if arg == "-d" || arg == "--numeric-suffixes" {
             numeric_suffixes = true;
             i += 1;
         } else if arg == "-a" || arg == "--suffix-length" {
             if i + 1 < args.len() {
-                suffix_length = args[i + 1].parse::<usize>().unwrap_or(2);
+                let val = &args[i + 1];
+                match val.parse::<usize>() {
+                    Ok(n) if n > 0 => suffix_length = n,
+                    _ => {
+                        eprintln!("split: invalid suffix length: '{}'", val);
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
-                i += 1;
+                eprintln!("split: option requires an argument -- 'a'");
+                return ExitCode::from(1);
             }
+        } else if let Some(a) = arg.strip_prefix("--suffix-length=") {
+            match a.parse::<usize>() {
+                Ok(n) if n > 0 => suffix_length = n,
+                _ => {
+                    eprintln!("split: invalid suffix length: '{}'", a);
+                    return ExitCode::from(1);
+                }
+            }
+            i += 1;
+        } else if let Some(a) = arg.strip_prefix("-a") {
+            match a.parse::<usize>() {
+                Ok(n) if n > 0 => suffix_length = n,
+                _ => {
+                    eprintln!("split: invalid suffix length: '{}'", a);
+                    return ExitCode::from(1);
+                }
+            }
+            i += 1;
         } else if arg == "--help" || arg == "-h" {
             println!("Usage: split [OPTION]... [FILE [PREFIX]]");
             println!("Output pieces of FILE to PREFIXaa, PREFIXab, ...; default size is 1000 lines, default PREFIX is 'x'.");
@@ -467,13 +551,22 @@ pub fn run_split(args: &[String]) -> ExitCode {
         } else if !arg.starts_with('-') || arg == "-" {
             if input_file.is_none() {
                 input_file = Some(arg.clone());
-            } else {
+            } else if output_prefix == "x" {
                 output_prefix = arg.clone();
+            } else {
+                eprintln!("split: extra operand '{}'", arg);
+                return ExitCode::from(1);
             }
             i += 1;
         } else {
-            i += 1;
+            eprintln!("split: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
+    }
+
+    if bytes_per_file.is_some() && lines_per_file.is_some() {
+        eprintln!("split: cannot split in more than one way");
+        return ExitCode::from(1);
     }
 
     let input_path = input_file.unwrap_or_else(|| "-".to_string());
@@ -517,7 +610,13 @@ pub fn run_split(args: &[String]) -> ExitCode {
                 break;
             }
 
-            let suff = format_suffix(part_index, suffix_length, numeric_suffixes);
+            let suff = match format_suffix(part_index, suffix_length, numeric_suffixes) {
+                Some(s) => s,
+                None => {
+                    eprintln!("split: output file suffixes exhausted");
+                    return ExitCode::from(1);
+                }
+            };
             let out_name = format!("{}{}", output_prefix, suff);
             if let Err(e) = fs::write(&out_name, &part_data) {
                 eprintln!("split: cannot write '{out_name}': {e}");
@@ -548,7 +647,13 @@ pub fn run_split(args: &[String]) -> ExitCode {
                 Ok(l) => {
                     current_part_lines.push(l);
                     if current_part_lines.len() >= lines_limit {
-                        let suff = format_suffix(part_index, suffix_length, numeric_suffixes);
+                        let suff = match format_suffix(part_index, suffix_length, numeric_suffixes) {
+                            Some(s) => s,
+                            None => {
+                                eprintln!("split: output file suffixes exhausted");
+                                return ExitCode::from(1);
+                            }
+                        };
                         let out_name = format!("{}{}", output_prefix, suff);
                         let content = current_part_lines.join("\n") + "\n";
                         if let Err(e) = fs::write(&out_name, content) {
@@ -567,7 +672,13 @@ pub fn run_split(args: &[String]) -> ExitCode {
         }
 
         if !current_part_lines.is_empty() {
-            let suff = format_suffix(part_index, suffix_length, numeric_suffixes);
+            let suff = match format_suffix(part_index, suffix_length, numeric_suffixes) {
+                Some(s) => s,
+                None => {
+                    eprintln!("split: output file suffixes exhausted");
+                    return ExitCode::from(1);
+                }
+            };
             let out_name = format!("{}{}", output_prefix, suff);
             let content = current_part_lines.join("\n") + "\n";
             if let Err(e) = fs::write(&out_name, content) {
@@ -582,21 +693,53 @@ pub fn run_split(args: &[String]) -> ExitCode {
 
 fn parse_byte_size(s: &str) -> Option<u64> {
     let s = s.trim();
-    if s.ends_with('k') || s.ends_with('K') {
-        s[..s.len() - 1].parse::<u64>().ok().map(|n| n * 1024)
-    } else if s.ends_with('m') || s.ends_with('M') {
-        s[..s.len() - 1].parse::<u64>().ok().map(|n| n * 1024 * 1024)
-    } else if s.ends_with('g') || s.ends_with('G') {
-        s[..s.len() - 1].parse::<u64>().ok().map(|n| n * 1024 * 1024 * 1024)
-    } else {
-        s.parse::<u64>().ok()
+    if s.is_empty() {
+        return None;
     }
+    let (num_part, multiplier) = if s.ends_with("TB") || s.ends_with("tb") {
+        (&s[..s.len() - 2], 1024u64 * 1024 * 1024 * 1024)
+    } else if s.ends_with('t') || s.ends_with('T') {
+        (&s[..s.len() - 1], 1024u64 * 1024 * 1024 * 1024)
+    } else if s.ends_with("GB") || s.ends_with("gb") {
+        (&s[..s.len() - 2], 1024u64 * 1024 * 1024)
+    } else if s.ends_with('g') || s.ends_with('G') {
+        (&s[..s.len() - 1], 1024u64 * 1024 * 1024)
+    } else if s.ends_with("MB") || s.ends_with("mb") {
+        (&s[..s.len() - 2], 1024u64 * 1024)
+    } else if s.ends_with('m') || s.ends_with('M') {
+        (&s[..s.len() - 1], 1024u64 * 1024)
+    } else if s.ends_with("KB") || s.ends_with("kb") {
+        (&s[..s.len() - 2], 1024u64)
+    } else if s.ends_with('k') || s.ends_with('K') {
+        (&s[..s.len() - 1], 1024u64)
+    } else if s.ends_with('b') || s.ends_with('B') {
+        (&s[..s.len() - 1], 512u64)
+    } else {
+        (s, 1u64)
+    };
+
+    if num_part.is_empty() {
+        return None;
+    }
+    let n = num_part.parse::<u64>().ok()?;
+    n.checked_mul(multiplier)
 }
 
-fn format_suffix(index: usize, length: usize, numeric: bool) -> String {
+fn format_suffix(index: usize, length: usize, numeric: bool) -> Option<String> {
+    if length == 0 {
+        return None;
+    }
     if numeric {
-        format!("{:0width$}", index, width = length)
+        let max = 10usize.checked_pow(length as u32)?;
+        if index >= max {
+            return None;
+        }
+        Some(format!("{:0width$}", index, width = length))
     } else {
+        let max = 26usize.checked_pow(length as u32)?;
+        if index >= max {
+            return None;
+        }
         let mut res = Vec::new();
         let mut cur = index;
         for _ in 0..length {
@@ -605,7 +748,7 @@ fn format_suffix(index: usize, length: usize, numeric: bool) -> String {
             cur /= 26;
         }
         res.reverse();
-        res.into_iter().collect()
+        Some(res.into_iter().collect())
     }
 }
 
@@ -619,8 +762,17 @@ pub fn run_comm(args: &[String]) -> ExitCode {
     let mut suppress3 = false;
     let mut files = Vec::new();
 
-    for arg in args {
-        if arg == "-1" {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
+        if arg == "--" {
+            i += 1;
+            while i < args.len() {
+                files.push(args[i].clone());
+                i += 1;
+            }
+            break;
+        } else if arg == "-1" {
             suppress1 = true;
         } else if arg == "-2" {
             suppress2 = true;
@@ -648,11 +800,19 @@ pub fn run_comm(args: &[String]) -> ExitCode {
             return ExitCode::SUCCESS;
         } else if !arg.starts_with('-') || arg == "-" {
             files.push(arg.clone());
+        } else {
+            eprintln!("comm: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
+        i += 1;
     }
 
     if files.len() < 2 {
         eprintln!("comm: missing operand (must provide two files)");
+        return ExitCode::from(1);
+    }
+    if files.len() > 2 {
+        eprintln!("comm: extra operand '{}'", files[2]);
         return ExitCode::from(1);
     }
 
@@ -672,6 +832,12 @@ pub fn run_comm(args: &[String]) -> ExitCode {
         }
     };
 
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+    let mut write_line = |s: &str| -> io::Result<()> {
+        writeln!(out, "{}", s)
+    };
+
     let mut i = 0usize;
     let mut j = 0usize;
 
@@ -681,13 +847,26 @@ pub fn run_comm(args: &[String]) -> ExitCode {
 
         if l1 < l2 {
             if !suppress1 {
-                println!("{}", l1);
+                if let Err(e) = write_line(l1) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
+                    }
+                    eprintln!("comm: write error: {e}");
+                    return ExitCode::from(1);
+                }
             }
             i += 1;
         } else if l1 > l2 {
             if !suppress2 {
                 let tab = if !suppress1 { "\t" } else { "" };
-                println!("{}{}", tab, l2);
+                let line = format!("{}{}", tab, l2);
+                if let Err(e) = write_line(&line) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
+                    }
+                    eprintln!("comm: write error: {e}");
+                    return ExitCode::from(1);
+                }
             }
             j += 1;
         } else {
@@ -699,7 +878,14 @@ pub fn run_comm(args: &[String]) -> ExitCode {
                 if !suppress2 {
                     tabs.push('\t');
                 }
-                println!("{}{}", tabs, l1);
+                let line = format!("{}{}", tabs, l1);
+                if let Err(e) = write_line(&line) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
+                    }
+                    eprintln!("comm: write error: {e}");
+                    return ExitCode::from(1);
+                }
             }
             i += 1;
             j += 1;
@@ -708,7 +894,13 @@ pub fn run_comm(args: &[String]) -> ExitCode {
 
     while i < lines1.len() {
         if !suppress1 {
-            println!("{}", lines1[i]);
+            if let Err(e) = write_line(&lines1[i]) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+                eprintln!("comm: write error: {e}");
+                return ExitCode::from(1);
+            }
         }
         i += 1;
     }
@@ -716,7 +908,14 @@ pub fn run_comm(args: &[String]) -> ExitCode {
     while j < lines2.len() {
         if !suppress2 {
             let tab = if !suppress1 { "\t" } else { "" };
-            println!("{}{}", tab, lines2[j]);
+            let line = format!("{}{}", tab, lines2[j]);
+            if let Err(e) = write_line(&line) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+                eprintln!("comm: write error: {e}");
+                return ExitCode::from(1);
+            }
         }
         j += 1;
     }
@@ -745,7 +944,14 @@ pub fn run_truncate(args: &[String]) -> ExitCode {
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-s" || arg == "--size" {
+        if arg == "--" {
+            i += 1;
+            while i < args.len() {
+                files.push(args[i].clone());
+                i += 1;
+            }
+            break;
+        } else if arg == "-s" || arg == "--size" {
             if i + 1 < args.len() {
                 size_spec = Some(args[i + 1].clone());
                 i += 2;
@@ -753,6 +959,9 @@ pub fn run_truncate(args: &[String]) -> ExitCode {
                 eprintln!("truncate: option requires an argument -- 's'");
                 return ExitCode::from(1);
             }
+        } else if let Some(s) = arg.strip_prefix("--size=") {
+            size_spec = Some(s.to_string());
+            i += 1;
         } else if let Some(s) = arg.strip_prefix("-s") {
             size_spec = Some(s.to_string());
             i += 1;
@@ -769,7 +978,8 @@ pub fn run_truncate(args: &[String]) -> ExitCode {
             files.push(arg.clone());
             i += 1;
         } else {
-            i += 1;
+            eprintln!("truncate: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -786,13 +996,18 @@ pub fn run_truncate(args: &[String]) -> ExitCode {
         return ExitCode::from(1);
     }
 
-    let (mode, raw_size_str) = if spec.starts_with('+') {
-        (1, &spec[1..]) // relative increase
-    } else if spec.starts_with('-') {
-        (2, &spec[1..]) // relative decrease
+    let (mode, raw_size_str) = if let Some(rem) = spec.strip_prefix('+') {
+        (1, rem) // relative increase
+    } else if let Some(rem) = spec.strip_prefix('-') {
+        (2, rem) // relative decrease
     } else {
         (0, spec.as_str()) // absolute
     };
+
+    if raw_size_str.is_empty() {
+        eprintln!("truncate: invalid size: '{}'", spec);
+        return ExitCode::from(1);
+    }
 
     let target_bytes = match parse_byte_size(raw_size_str) {
         Some(b) => b,
@@ -849,16 +1064,40 @@ pub fn run_tree(args: &[String]) -> ExitCode {
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "-L" {
+        if arg == "--" {
+            i += 1;
+            while i < args.len() {
+                if target_dir.is_none() {
+                    target_dir = Some(args[i].clone());
+                } else {
+                    eprintln!("tree: extra operand '{}'", args[i]);
+                    return ExitCode::from(1);
+                }
+                i += 1;
+            }
+            break;
+        } else if arg == "-L" {
             if i + 1 < args.len() {
-                max_depth = args[i + 1].parse::<usize>().ok();
+                match args[i + 1].parse::<usize>() {
+                    Ok(l) if l > 0 => max_depth = Some(l),
+                    _ => {
+                        eprintln!("tree: Invalid level, must be greater than 0.");
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
                 eprintln!("tree: option requires an argument -- 'L'");
                 return ExitCode::from(1);
             }
         } else if let Some(l) = arg.strip_prefix("-L") {
-            max_depth = l.parse::<usize>().ok();
+            match l.parse::<usize>() {
+                Ok(n) if n > 0 => max_depth = Some(n),
+                _ => {
+                    eprintln!("tree: Invalid level, must be greater than 0.");
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
         } else if arg == "-a" {
             all = true;
@@ -883,10 +1122,16 @@ pub fn run_tree(args: &[String]) -> ExitCode {
             println!("  -h            Print the size in human readable format");
             return ExitCode::SUCCESS;
         } else if !arg.starts_with('-') {
-            target_dir = Some(arg.clone());
+            if target_dir.is_none() {
+                target_dir = Some(arg.clone());
+            } else {
+                eprintln!("tree: extra operand '{}'", arg);
+                return ExitCode::from(1);
+            }
             i += 1;
         } else {
-            i += 1;
+            eprintln!("tree: invalid option -- '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -896,12 +1141,22 @@ pub fn run_tree(args: &[String]) -> ExitCode {
         eprintln!("{}: [error opening dir]", root_path);
         return ExitCode::from(1);
     }
-    println!("{}", root_path);
+
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
+    if let Err(e) = writeln!(out, "{}", root_path) {
+        if e.kind() == io::ErrorKind::BrokenPipe {
+            return ExitCode::SUCCESS;
+        }
+        return ExitCode::from(1);
+    }
 
     let mut dir_count = 0usize;
     let mut file_count = 0usize;
 
-    walk_tree(
+    if walk_tree(
+        &mut out,
         Path::new(&root_path),
         "",
         1,
@@ -912,18 +1167,27 @@ pub fn run_tree(args: &[String]) -> ExitCode {
         human_readable,
         &mut dir_count,
         &mut file_count,
-    );
+    ).is_err() {
+        return ExitCode::SUCCESS;
+    }
 
-    if dirs_only {
-        println!("\n{} directories", dir_count);
+    let res = if dirs_only {
+        writeln!(out, "\n{} directories", dir_count)
     } else {
-        println!("\n{} directories, {} files", dir_count, file_count);
+        writeln!(out, "\n{} directories, {} files", dir_count, file_count)
+    };
+    if let Err(e) = res {
+        if e.kind() == io::ErrorKind::BrokenPipe {
+            return ExitCode::SUCCESS;
+        }
+        return ExitCode::from(1);
     }
 
     ExitCode::SUCCESS
 }
 
-fn walk_tree(
+fn walk_tree<W: Write>(
+    w: &mut W,
     dir: &Path,
     prefix: &str,
     current_depth: usize,
@@ -934,10 +1198,10 @@ fn walk_tree(
     human_readable: bool,
     dir_count: &mut usize,
     file_count: &mut usize,
-) {
+) -> io::Result<()> {
     if let Some(max) = max_depth {
         if current_depth > max {
-            return;
+            return Ok(());
         }
     }
 
@@ -979,11 +1243,12 @@ fn walk_tree(
             String::new()
         };
 
-        println!("{}{}{}{}", prefix, branch, size_str, name);
+        writeln!(w, "{}{}{}{}", prefix, branch, size_str, name)?;
 
         if is_dir {
             *dir_count += 1;
             walk_tree(
+                w,
                 &path,
                 &next_prefix,
                 current_depth + 1,
@@ -994,11 +1259,13 @@ fn walk_tree(
                 human_readable,
                 dir_count,
                 file_count,
-            );
+            )?;
         } else {
             *file_count += 1;
         }
     }
+
+    Ok(())
 }
 
 fn format_human_size(bytes: u64) -> String {
@@ -1018,6 +1285,31 @@ fn format_human_size(bytes: u64) -> String {
 // ============================================================================
 
 pub fn run_cal(args: &[String]) -> ExitCode {
+    let mut positional = Vec::new();
+
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
+        if arg == "--help" || arg == "-h" {
+            println!("Usage: cal [options] [[[day] month] year]");
+            println!("Display a calendar.");
+            return ExitCode::SUCCESS;
+        } else if arg == "--" {
+            i += 1;
+            while i < args.len() {
+                positional.push(args[i].clone());
+                i += 1;
+            }
+            break;
+        } else if arg.starts_with('-') {
+            eprintln!("cal: invalid option -- '{}'", arg);
+            return ExitCode::FAILURE;
+        } else {
+            positional.push(arg.clone());
+            i += 1;
+        }
+    }
+
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
@@ -1028,17 +1320,38 @@ pub fn run_cal(args: &[String]) -> ExitCode {
     let mut month = curr_month;
     let mut year = curr_year;
 
-    if args.len() == 1 {
-        if let Ok(y) = args[0].parse::<u32>() {
-            year = y;
+    if positional.len() == 1 {
+        match positional[0].parse::<i64>() {
+            Ok(y) if y >= 1 && y <= 9999 => {
+                year = y as u32;
+            }
+            _ => {
+                eprintln!("cal: invalid year '{}': must be between 1 and 9999", positional[0]);
+                return ExitCode::FAILURE;
+            }
         }
-    } else if args.len() >= 2 {
-        if let Ok(m) = args[0].parse::<u32>() {
-            month = m.min(12).max(1);
+    } else if positional.len() == 2 {
+        match positional[0].parse::<i64>() {
+            Ok(m) if m >= 1 && m <= 12 => {
+                month = m as u32;
+            }
+            _ => {
+                eprintln!("cal: invalid month '{}': must be between 1 and 12", positional[0]);
+                return ExitCode::FAILURE;
+            }
         }
-        if let Ok(y) = args[1].parse::<u32>() {
-            year = y;
+        match positional[1].parse::<i64>() {
+            Ok(y) if y >= 1 && y <= 9999 => {
+                year = y as u32;
+            }
+            _ => {
+                eprintln!("cal: invalid year '{}': must be between 1 and 9999", positional[1]);
+                return ExitCode::FAILURE;
+            }
         }
+    } else if positional.len() > 2 {
+        eprintln!("cal: extra operand '{}'", positional[2]);
+        return ExitCode::FAILURE;
     }
 
     let month_names = [
@@ -1047,33 +1360,50 @@ pub fn run_cal(args: &[String]) -> ExitCode {
     ];
 
     let header = format!("{} {}", month_names[month as usize], year);
-    println!("{:^20}", header);
-    println!("Su Mo Tu We Th Fr Sa");
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
 
-    // Zeller's congruence to determine day of week for 1st of month (0 = Saturday, 1 = Sunday ... 6 = Friday)
-    // Or epoch calculation:
-    let first_day_dow = get_day_of_week(year, month, 1); // 0=Sunday, 1=Monday... 6=Saturday
+    macro_rules! write_line {
+        ($s:expr) => {
+            if writeln!(out, "{}", $s).is_err() {
+                return ExitCode::SUCCESS;
+            }
+        };
+    }
+    macro_rules! write_str {
+        ($s:expr) => {
+            if write!(out, "{}", $s).is_err() {
+                return ExitCode::SUCCESS;
+            }
+        };
+    }
+
+    write_line!(&format!("{:^20}", header));
+    write_line!("Su Mo Tu We Th Fr Sa");
+
+    let first_day_dow = get_day_of_week(year, month, 1);
     let days_in_month = get_days_in_month(year, month);
 
     let mut current_pos = 0usize;
     for _ in 0..first_day_dow {
-        print!("   ");
+        write_str!("   ");
         current_pos += 1;
     }
 
     for d in 1..=days_in_month {
-        if year == curr_year && month == curr_month && d == curr_day {
-            print!("\x1b[7m{:2}\x1b[0m ", d);
+        let cell = if year == curr_year && month == curr_month && d == curr_day {
+            format!("\x1b[7m{:2}\x1b[0m ", d)
         } else {
-            print!("{:2} ", d);
-        }
+            format!("{:2} ", d)
+        };
+        write_str!(&cell);
         current_pos += 1;
         if current_pos % 7 == 0 {
-            println!();
+            write_line!("");
         }
     }
     if current_pos % 7 != 0 {
-        println!();
+        let _ = writeln!(out);
     }
 
     ExitCode::SUCCESS
@@ -1092,8 +1422,9 @@ fn get_days_in_month(year: u32, month: u32) -> u32 {
 fn get_day_of_week(year: u32, month: u32, day: u32) -> usize {
     // Tomohiko Sakamoto's algorithm (0=Sunday, 1=Monday, ..., 6=Saturday)
     let t = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
-    let y = if month < 3 { year - 1 } else { year };
-    ((y + y / 4 - y / 100 + y / 400 + t[(month - 1) as usize] + day) % 7) as usize
+    let y = if month < 3 { year.saturating_sub(1) } else { year };
+    let month_idx = (month.saturating_sub(1) as usize).min(11);
+    ((y + y / 4 - y / 100 + y / 400 + t[month_idx] + day) % 7) as usize
 }
 
 // ============================================================================
@@ -1529,11 +1860,11 @@ mod tests {
 
     #[test]
     fn test_format_suffix() {
-        assert_eq!(format_suffix(0, 2, false), "aa");
-        assert_eq!(format_suffix(1, 2, false), "ab");
-        assert_eq!(format_suffix(26, 2, false), "ba");
-        assert_eq!(format_suffix(0, 2, true), "00");
-        assert_eq!(format_suffix(9, 2, true), "09");
+        assert_eq!(format_suffix(0, 2, false), Some("aa".to_string()));
+        assert_eq!(format_suffix(1, 2, false), Some("ab".to_string()));
+        assert_eq!(format_suffix(26, 2, false), Some("ba".to_string()));
+        assert_eq!(format_suffix(0, 2, true), Some("00".to_string()));
+        assert_eq!(format_suffix(9, 2, true), Some("09".to_string()));
     }
 
     #[test]

@@ -390,47 +390,55 @@ fn get_thread_uring() -> Option<*mut IoUring> {
             .clamp(64, 4096);
 
         // Initialize new io_uring
-        let mut uninit_ring: IoUring = unsafe { std::mem::zeroed() };
         let mut params: IoUringParams = unsafe { std::mem::zeroed() };
         params.flags = IORING_SETUP_SQPOLL;
         params.sq_thread_idle = 2000;
 
+        let mut ring1: IoUring = unsafe { std::mem::zeroed() };
         let ret = unsafe {
-            io_uring_queue_init_params(entries, &mut uninit_ring, &mut params)
+            io_uring_queue_init_params(entries, &mut ring1, &mut params)
         };
         if ret >= 0 {
             *borrow = Some(RustThreadRing {
-                ring: uninit_ring,
+                ring: ring1,
                 active: true,
                 owner_pid: pid,
             });
-            return Some(&mut borrow.as_mut().unwrap().ring as *mut IoUring);
+            if let Some(ref mut r) = *borrow {
+                return Some(&mut r.ring as *mut IoUring);
+            }
         }
 
         // Fallback 1: SINGLE_ISSUER
         let mut params2: IoUringParams = unsafe { std::mem::zeroed() };
         params2.flags = IORING_SETUP_SINGLE_ISSUER;
+        let mut ring2: IoUring = unsafe { std::mem::zeroed() };
         let ret2 = unsafe {
-            io_uring_queue_init_params(entries, &mut uninit_ring, &mut params2)
+            io_uring_queue_init_params(entries, &mut ring2, &mut params2)
         };
         if ret2 >= 0 {
             *borrow = Some(RustThreadRing {
-                ring: uninit_ring,
+                ring: ring2,
                 active: true,
                 owner_pid: pid,
             });
-            return Some(&mut borrow.as_mut().unwrap().ring as *mut IoUring);
+            if let Some(ref mut r) = *borrow {
+                return Some(&mut r.ring as *mut IoUring);
+            }
         }
 
         // Fallback 2: Standard Ring
-        let ret3 = unsafe { io_uring_queue_init(entries, &mut uninit_ring, 0) };
+        let mut ring3: IoUring = unsafe { std::mem::zeroed() };
+        let ret3 = unsafe { io_uring_queue_init(entries, &mut ring3, 0) };
         if ret3 >= 0 {
             *borrow = Some(RustThreadRing {
-                ring: uninit_ring,
+                ring: ring3,
                 active: true,
                 owner_pid: pid,
             });
-            return Some(&mut borrow.as_mut().unwrap().ring as *mut IoUring);
+            if let Some(ref mut r) = *borrow {
+                return Some(&mut r.ring as *mut IoUring);
+            }
         }
 
         None
@@ -487,7 +495,7 @@ fn ensure_symbols_initialized() {
         .compare_exchange(false, true, Ordering::AcqRel, Ordering::Relaxed)
         .is_err()
     {
-        while !INITIALIZED.load(Ordering::Acquire) && INIT_PID.load(Ordering::Acquire) == pid {
+        while INITIALIZING.load(Ordering::Acquire) {
             std::hint::spin_loop();
         }
         return;
@@ -730,7 +738,12 @@ pub unsafe extern "C" fn read(fd: c_int, buf: *mut c_void, count: size_t) -> ssi
     }
 
     ensure_symbols_initialized();
-    let real_fn: ReadFn = std::mem::transmute(REAL_READ.load(Ordering::Acquire));
+    let ptr = REAL_READ.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: ReadFn = std::mem::transmute(ptr);
 
     if is_secure_execution() || count < MIN_URING_IO_BYTES || count > u32::MAX as size_t {
         return real_fn(fd, buf, count);
@@ -781,7 +794,12 @@ pub unsafe extern "C" fn write(fd: c_int, buf: *const c_void, count: size_t) -> 
     }
 
     ensure_symbols_initialized();
-    let real_fn: WriteFn = std::mem::transmute(REAL_WRITE.load(Ordering::Acquire));
+    let ptr = REAL_WRITE.load(Ordering::Acquire);
+    if ptr.is_null() {
+        set_errno(ENOSYS);
+        return -1;
+    }
+    let real_fn: WriteFn = std::mem::transmute(ptr);
 
     if is_secure_execution() || count < MIN_URING_IO_BYTES || count > u32::MAX as size_t {
         return real_fn(fd, buf, count);

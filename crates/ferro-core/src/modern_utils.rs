@@ -1123,14 +1123,26 @@ pub fn run_patch(args: &[String]) -> ExitCode {
         }
         if parsing_options && (arg == "-p" || arg == "--strip") {
             if i + 1 < args.len() {
-                strip_count = args[i + 1].parse::<usize>().unwrap_or(0);
+                match args[i + 1].parse::<usize>() {
+                    Ok(n) => strip_count = n,
+                    Err(_) => {
+                        eprintln!("patch: invalid strip count '{}'", args[i + 1]);
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
                 eprintln!("patch: option requires an argument -- 'p'");
                 return ExitCode::from(1);
             }
         } else if parsing_options && arg.starts_with("-p") {
-            strip_count = arg[2..].parse::<usize>().unwrap_or(0);
+            match arg[2..].parse::<usize>() {
+                Ok(n) => strip_count = n,
+                Err(_) => {
+                    eprintln!("patch: invalid strip count '{}'", &arg[2..]);
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
         } else if parsing_options && (arg == "-R" || arg == "--reverse") {
             reverse = true;
@@ -2178,5 +2190,46 @@ mod tests {
         // Convert back to CRLF
         let crlf_converted = convert_to_crlf(&cleaned);
         assert_eq!(crlf_converted, windows_data);
+    }
+
+    #[test]
+    fn test_json_bracket_query_syntax() {
+        let raw = r#"{"users":[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]}"#;
+        let parsed = parse_json_value(raw).expect("must parse json");
+
+        let first_name = query_json(&parsed, ".users[0].name").expect("must query bracket notation");
+        assert_eq!(first_name, &JsonVal::String("Alice".to_string()));
+
+        let second_name = query_json(&parsed, ".users.[1].name").expect("must query dot bracket notation");
+        assert_eq!(second_name, &JsonVal::String("Bob".to_string()));
+    }
+
+    #[test]
+    fn test_cluster1_modern_utils_cli_errors() {
+        // envsubst
+        assert_eq!(run_envsubst(&["--invalid-option".to_string()]), ExitCode::FAILURE);
+
+        // patch
+        assert_eq!(run_patch(&["--invalid-option".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_patch(&["-p".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_patch(&["-p".to_string(), "invalid".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_patch(&["-i".to_string()]), ExitCode::FAILURE);
+
+        // json
+        assert_eq!(run_json(&["--invalid-option".to_string()]), ExitCode::FAILURE);
+
+        // dos2unix
+        assert_eq!(run_dos2unix(&["--invalid-option".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_dos2unix(&["/nonexistent_file_path_for_dos2unix".to_string()]), ExitCode::FAILURE);
+
+        // unix2dos
+        assert_eq!(run_unix2dos(&["--invalid-option".to_string()]), ExitCode::FAILURE);
+        assert_eq!(run_unix2dos(&["/nonexistent_file_path_for_unix2dos".to_string()]), ExitCode::FAILURE);
+
+        // sponge
+        assert_eq!(run_sponge(&["--invalid-option".to_string()]), ExitCode::FAILURE);
+
+        // ts
+        assert_eq!(run_ts(&["--invalid-option".to_string()]), ExitCode::FAILURE);
     }
 }

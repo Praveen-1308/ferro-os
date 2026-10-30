@@ -68,10 +68,15 @@ pub fn base64_decode(input: &str, ignore_garbage: bool) -> Result<Vec<u8>, Strin
     }
 
     let mut clean = Vec::new();
+    let mut saw_pad = false;
     for &b in input.as_bytes() {
         if b == b'=' {
+            saw_pad = true;
             clean.push(b);
         } else if table[b as usize] != 255 {
+            if saw_pad {
+                return Err("base64: invalid input".to_string());
+            }
             clean.push(b);
         } else if b.is_ascii_whitespace() || ignore_garbage {
             continue;
@@ -80,12 +85,24 @@ pub fn base64_decode(input: &str, ignore_garbage: bool) -> Result<Vec<u8>, Strin
         }
     }
 
-    if clean.len() % 4 != 0 {
-        return Err("base64: invalid input length".to_string());
+    // Auto-pad standard unpadded base64 if needed
+    match clean.len() % 4 {
+        0 => {}
+        2 => {
+            clean.push(b'=');
+            clean.push(b'=');
+        }
+        3 => {
+            clean.push(b'=');
+        }
+        _ => return Err("base64: invalid input length".to_string()),
     }
 
     let mut out = Vec::new();
     for chunk in clean.chunks(4) {
+        if chunk[0] == b'=' || chunk[1] == b'=' {
+            return Err("base64: invalid character".to_string());
+        }
         let c0 = table[chunk[0] as usize];
         let c1 = table[chunk[1] as usize];
         if c0 == 255 || c1 == 255 {
@@ -111,6 +128,8 @@ pub fn base64_decode(input: &str, ignore_garbage: bool) -> Result<Vec<u8>, Strin
                 let b2 = ((c2 & 0x03) << 6) | c3;
                 out.push(b2);
             }
+        } else if chunk[3] != b'=' {
+            return Err("base64: invalid padding".to_string());
         }
     }
 
@@ -134,17 +153,35 @@ pub fn run_base64(args: &[String]) -> ExitCode {
             i += 1;
         } else if arg == "-w" || arg == "--wrap" {
             if i + 1 < args.len() {
-                wrap_cols = args[i + 1].parse::<usize>().unwrap_or(76);
+                match args[i + 1].parse::<usize>() {
+                    Ok(w) => wrap_cols = w,
+                    Err(_) => {
+                        eprintln!("base64: invalid wrap size: '{}'", args[i + 1]);
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
                 eprintln!("base64: option requires an argument -- 'w'");
                 return ExitCode::from(1);
             }
         } else if let Some(w) = arg.strip_prefix("-w") {
-            wrap_cols = w.parse::<usize>().unwrap_or(76);
+            match w.parse::<usize>() {
+                Ok(w) => wrap_cols = w,
+                Err(_) => {
+                    eprintln!("base64: invalid wrap size: '{}'", w);
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
         } else if let Some(w) = arg.strip_prefix("--wrap=") {
-            wrap_cols = w.parse::<usize>().unwrap_or(76);
+            match w.parse::<usize>() {
+                Ok(w) => wrap_cols = w,
+                Err(_) => {
+                    eprintln!("base64: invalid wrap size: '{}'", w);
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
         } else if arg == "--help" || arg == "-h" {
             println!("Usage: base64 [OPTION]... [FILE]");
@@ -153,10 +190,11 @@ pub fn run_base64(args: &[String]) -> ExitCode {
             println!("  -i, --ignore-garbage  when decoding, ignore non-alphabet characters");
             println!("  -w, --wrap=COLS       wrap encoded lines after COLS characters (default 76, 0 disable)");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
-            file_path = Some(arg.clone());
-            i += 1;
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("base64: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         } else {
+            file_path = Some(arg.clone());
             i += 1;
         }
     }
@@ -193,8 +231,18 @@ pub fn run_base64(args: &[String]) -> ExitCode {
             Ok(decoded) => {
                 let stdout = io::stdout();
                 let mut handle = stdout.lock();
-                let _ = handle.write_all(&decoded);
-                let _ = handle.flush();
+                if let Err(e) = handle.write_all(&decoded) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
+                    }
+                    eprintln!("base64: write error: {}", e);
+                    return ExitCode::from(1);
+                }
+                if let Err(e) = handle.flush() {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
+                    }
+                }
                 ExitCode::SUCCESS
             }
             Err(e) => {
@@ -204,16 +252,27 @@ pub fn run_base64(args: &[String]) -> ExitCode {
         }
     } else {
         let encoded = base64_encode(&input_bytes);
+        let stdout = io::stdout();
+        let mut handle = stdout.lock();
         if wrap_cols == 0 {
-            println!("{}", encoded);
+            if let Err(e) = writeln!(handle, "{}", encoded) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+            }
         } else {
             let mut start = 0;
             while start < encoded.len() {
                 let end = (start + wrap_cols).min(encoded.len());
-                println!("{}", &encoded[start..end]);
+                if let Err(e) = writeln!(handle, "{}", &encoded[start..end]) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return ExitCode::SUCCESS;
+                    }
+                }
                 start = end;
             }
         }
+        let _ = handle.flush();
         ExitCode::SUCCESS
     }
 }
@@ -235,14 +294,35 @@ pub fn run_xargs(args: &[String]) -> ExitCode {
         let arg = &args[i];
         if arg == "-n" || arg == "--max-args" {
             if i + 1 < args.len() {
-                max_args = args[i + 1].parse::<usize>().ok();
+                match args[i + 1].parse::<usize>() {
+                    Ok(n) if n >= 1 => max_args = Some(n),
+                    _ => {
+                        eprintln!("xargs: value for -n option should be >= 1");
+                        return ExitCode::from(1);
+                    }
+                }
                 i += 2;
             } else {
                 eprintln!("xargs: option requires an argument -- 'n'");
                 return ExitCode::from(1);
             }
-        } else if let Some(n) = arg.strip_prefix("-n") {
-            max_args = n.parse::<usize>().ok();
+        } else if let Some(n_str) = arg.strip_prefix("-n") {
+            match n_str.parse::<usize>() {
+                Ok(n) if n >= 1 => max_args = Some(n),
+                _ => {
+                    eprintln!("xargs: value for -n option should be >= 1");
+                    return ExitCode::from(1);
+                }
+            }
+            i += 1;
+        } else if let Some(n_str) = arg.strip_prefix("--max-args=") {
+            match n_str.parse::<usize>() {
+                Ok(n) if n >= 1 => max_args = Some(n),
+                _ => {
+                    eprintln!("xargs: value for -n option should be >= 1");
+                    return ExitCode::from(1);
+                }
+            }
             i += 1;
         } else if arg == "-0" || arg == "--null" {
             null_delimited = true;
@@ -277,7 +357,8 @@ pub fn run_xargs(args: &[String]) -> ExitCode {
             cmd_start_idx = i;
             break;
         } else {
-            i += 1;
+            eprintln!("xargs: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -435,13 +516,14 @@ pub fn run_sed(args: &[String]) -> ExitCode {
             println!("  -n, --quiet, --silent suppress automatic printing of pattern space");
             println!("  -e script            add the script to the commands to be executed");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') && scripts.is_empty() {
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("sed: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
+        } else if scripts.is_empty() {
             scripts.push(arg.clone());
             i += 1;
-        } else if !arg.starts_with('-') || arg == "-" {
-            files.push(arg.clone());
-            i += 1;
         } else {
+            files.push(arg.clone());
             i += 1;
         }
     }
@@ -452,6 +534,20 @@ pub fn run_sed(args: &[String]) -> ExitCode {
     }
 
     let script = scripts.join(";");
+
+    if script.trim().starts_with('s') {
+        match parse_sed_subst(&script) {
+            Some(ref s) if s.pattern.is_empty() => {
+                eprintln!("sed: -e expression: no previous regular expression");
+                return ExitCode::from(1);
+            }
+            None => {
+                eprintln!("sed: -e expression: unterminated 's' command");
+                return ExitCode::from(1);
+            }
+            _ => {}
+        }
+    }
 
     if files.is_empty() {
         files.push("-".to_string());
@@ -524,7 +620,10 @@ fn process_sed_stream<R: BufRead>(
 
         // Apply substitution command s/pattern/replacement/flags
         if let Some(ref s) = subst {
-            if s.pattern == "^" {
+            if s.pattern.is_empty() {
+                // Empty pattern is invalid
+                return;
+            } else if s.pattern == "^" {
                 line = format!("{}{}", s.replacement, line);
             } else if s.pattern == "$" {
                 line = format!("{}{}", line, s.replacement);
@@ -621,7 +720,13 @@ fn process_sed_stream<R: BufRead>(
             if let Some(ref mut buf) = out_buf {
                 let _ = writeln!(buf, "{}", line);
             } else {
-                println!("{}", line);
+                let stdout = io::stdout();
+                let mut handle = stdout.lock();
+                if let Err(e) = writeln!(handle, "{}", line) {
+                    if e.kind() == io::ErrorKind::BrokenPipe {
+                        return;
+                    }
+                }
             }
         }
     }
@@ -629,16 +734,27 @@ fn process_sed_stream<R: BufRead>(
 
 fn parse_sed_subst(script: &str) -> Option<SedSubst> {
     let script = script.trim();
-    if !script.starts_with('s') || script.len() < 3 {
+    if !script.starts_with('s') {
         return None;
     }
 
-    let delim = script.chars().nth(1)?;
-    let parts: Vec<&str> = script[2..].split(delim).collect();
-    if parts.len() >= 2 {
+    let mut chars = script.chars();
+    chars.next(); // skip 's'
+    let delim = chars.next()?;
+    if delim == '\n' {
+        return None;
+    }
+
+    let offset = 's'.len_utf8() + delim.len_utf8();
+    if offset > script.len() {
+        return None;
+    }
+    let rest = &script[offset..];
+    let parts: Vec<&str> = rest.split(delim).collect();
+    if parts.len() >= 3 {
         let pattern = parts[0].to_string();
         let replacement = parts[1].to_string();
-        let flags = if parts.len() > 2 { parts[2] } else { "" };
+        let flags = parts[2];
         let global = flags.contains('g');
         let ignore_case = flags.contains('i');
         return Some(SedSubst {
@@ -736,6 +852,9 @@ pub fn run_tar(args: &[String]) -> ExitCode {
                         archive_file = Some(args[i + 1].clone());
                         i += 2;
                         continue;
+                    } else {
+                        eprintln!("tar: option requires an argument -- 'f'");
+                        return ExitCode::from(1);
                     }
                 }
                 i += 1;
@@ -747,7 +866,8 @@ pub fn run_tar(args: &[String]) -> ExitCode {
             members.push(arg.clone());
             i += 1;
         } else {
-            i += 1;
+            eprintln!("tar: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -939,6 +1059,23 @@ fn open_tar_reader(archive_path: &str) -> io::Result<Box<dyn Read>> {
     }
 }
 
+fn verify_tar_checksum(header: &[u8; 512]) -> bool {
+    let chk_str = parse_tar_string(&header[148..156]);
+    let expected = match u32::from_str_radix(chk_str.trim(), 8) {
+        Ok(v) => v,
+        Err(_) => return false,
+    };
+    let mut sum: u32 = 0;
+    for (i, &b) in header.iter().enumerate() {
+        if (148..156).contains(&i) {
+            sum += 0x20;
+        } else {
+            sum += b as u32;
+        }
+    }
+    sum == expected
+}
+
 fn extract_tar_archive(archive_path: &str, target_dir: &Path, verbose: bool) -> ExitCode {
     let mut reader = match open_tar_reader(archive_path) {
         Ok(r) => r,
@@ -949,6 +1086,7 @@ fn extract_tar_archive(archive_path: &str, target_dir: &Path, verbose: bool) -> 
     };
 
     let mut header = [0u8; 512];
+    let mut entries_count = 0;
 
     loop {
         if reader.read_exact(&mut header).is_err() {
@@ -964,6 +1102,12 @@ fn extract_tar_archive(archive_path: &str, target_dir: &Path, verbose: bool) -> 
         if name.is_empty() {
             break;
         }
+
+        if !verify_tar_checksum(&header) {
+            eprintln!("tar: checksum error in header for '{}'", name);
+            return ExitCode::from(2);
+        }
+        entries_count += 1;
 
         let mode_str = parse_tar_string(&header[100..108]);
         let mode = u32::from_str_radix(mode_str.trim(), 8).unwrap_or(0o644);
@@ -1043,6 +1187,11 @@ fn extract_tar_archive(archive_path: &str, target_dir: &Path, verbose: bool) -> 
         }
     }
 
+    if entries_count == 0 {
+        eprintln!("tar: archive is empty or invalid");
+        return ExitCode::from(2);
+    }
+
     ExitCode::SUCCESS
 }
 
@@ -1056,6 +1205,9 @@ fn list_tar_archive(archive_path: &str, verbose: bool) -> ExitCode {
     };
 
     let mut header = [0u8; 512];
+    let mut entries_count = 0;
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
 
     while reader.read_exact(&mut header).is_ok() {
         if header.iter().all(|&b| b == 0) {
@@ -1067,15 +1219,29 @@ fn list_tar_archive(archive_path: &str, verbose: bool) -> ExitCode {
             break;
         }
 
+        if !verify_tar_checksum(&header) {
+            eprintln!("tar: checksum error in header for '{}'", name);
+            return ExitCode::from(2);
+        }
+        entries_count += 1;
+
         let size_str = parse_tar_string(&header[124..136]);
         let size = u64::from_str_radix(size_str.trim(), 8).unwrap_or(0);
 
         if verbose {
             let mode_str = parse_tar_string(&header[100..108]);
             let mode = u32::from_str_radix(mode_str.trim(), 8).unwrap_or(0o644);
-            println!("{:04o} {:8} {}", mode, size, name);
+            if let Err(e) = writeln!(out, "{:04o} {:8} {}", mode, size, name) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+            }
         } else {
-            println!("{}", name);
+            if let Err(e) = writeln!(out, "{}", name) {
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    return ExitCode::SUCCESS;
+                }
+            }
         }
 
         // Skip payload plus 512-byte padding
@@ -1089,6 +1255,12 @@ fn list_tar_archive(archive_path: &str, verbose: bool) -> ExitCode {
             }
             skipped += to_read as u64;
         }
+    }
+
+    let _ = out.flush();
+    if entries_count == 0 {
+        eprintln!("tar: archive is empty or invalid");
+        return ExitCode::from(2);
     }
 
     ExitCode::SUCCESS
@@ -1111,27 +1283,53 @@ pub fn run_timeout(args: &[String]) -> ExitCode {
     }
 
     let mut duration_opt: Option<Duration> = None;
-    let mut duration_str = String::new();
     let mut cmd_idx = 0;
+    let mut end_of_opts = false;
 
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "--help" || arg == "-h" {
+        if !end_of_opts && arg == "--" {
+            end_of_opts = true;
+            i += 1;
+            continue;
+        }
+
+        if !end_of_opts && (arg == "--help" || arg == "-h") {
             println!("Usage: timeout [OPTION] DURATION COMMAND [ARG]...");
             println!("Start COMMAND, and kill it if still running after DURATION.");
             println!("  DURATION may be a floating-point number with optional suffix: 's' (seconds), 'm' (minutes), 'h' (hours), 'd' (days).");
             println!("  -s, --signal=SIGNAL   specify the signal to be sent on timeout (default: TERM)");
             return ExitCode::SUCCESS;
-        } else if (arg == "-s" || arg == "--signal") && i + 1 < args.len() {
-            i += 2;
-        } else if arg.starts_with("--signal=") {
+        } else if !end_of_opts && (arg == "-s" || arg == "--signal") {
+            if i + 1 < args.len() {
+                i += 2;
+            } else {
+                eprintln!("timeout: option requires an argument -- 's'");
+                return ExitCode::from(125);
+            }
+        } else if !end_of_opts && arg.starts_with("--signal=") {
             i += 1;
-        } else if (arg == "-k" || arg == "--kill-after") && i + 1 < args.len() {
-            i += 2;
-        } else if duration_opt.is_none() && !arg.starts_with('-') {
-            duration_str = arg.clone();
-            duration_opt = parse_timeout_duration(arg);
+        } else if !end_of_opts && (arg == "-k" || arg == "--kill-after") {
+            if i + 1 < args.len() {
+                i += 2;
+            } else {
+                eprintln!("timeout: option requires an argument -- 'k'");
+                return ExitCode::from(125);
+            }
+        } else if !end_of_opts && arg.starts_with("--kill-after=") {
+            i += 1;
+        } else if !end_of_opts && arg.starts_with('-') && !arg.chars().skip(1).next().map(|c| c.is_ascii_digit() || c == '.').unwrap_or(false) {
+            eprintln!("timeout: unrecognized option '{}'", arg);
+            return ExitCode::from(125);
+        } else if duration_opt.is_none() {
+            match parse_timeout_duration(arg) {
+                Some(d) => duration_opt = Some(d),
+                None => {
+                    eprintln!("timeout: invalid time interval '{}'", arg);
+                    return ExitCode::from(125);
+                }
+            }
             cmd_idx = i + 1;
             break;
         } else {
@@ -1142,7 +1340,7 @@ pub fn run_timeout(args: &[String]) -> ExitCode {
     let dur = match duration_opt {
         Some(d) => d,
         None => {
-            eprintln!("timeout: invalid duration: '{}'", duration_str);
+            eprintln!("timeout: missing operand");
             return ExitCode::from(125);
         }
     };
@@ -1272,7 +1470,9 @@ pub fn run_nohup(args: &[String]) -> ExitCode {
     if is_terminal {
         let nohup_out = Path::new("nohup.out");
         if let Ok(file) = OpenOptions::new().create(true).append(true).open(nohup_out) {
-            command.stdout(Stdio::from(file.try_clone().unwrap()));
+            if let Ok(file_clone) = file.try_clone() {
+                command.stdout(Stdio::from(file_clone));
+            }
             command.stderr(Stdio::from(file));
             eprintln!("nohup: ignoring input and appending output to 'nohup.out'");
         }
@@ -1321,6 +1521,16 @@ pub fn run_tty(args: &[String]) -> ExitCode {
 // diff & cmp
 // ============================================================================
 
+fn read_diff_file(file: &str) -> io::Result<String> {
+    if file == "-" {
+        let mut text = String::new();
+        io::stdin().read_to_string(&mut text)?;
+        Ok(text)
+    } else {
+        fs::read_to_string(file)
+    }
+}
+
 pub fn run_diff(args: &[String]) -> ExitCode {
     let mut unified = false;
     let mut brief = false;
@@ -1337,7 +1547,10 @@ pub fn run_diff(args: &[String]) -> ExitCode {
             println!("  -u, -U NUM, --unified   output NUM (default 3) lines of unified context");
             println!("  -q, --brief             report only when files differ");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("diff: unrecognized option '{}'", arg);
+            return ExitCode::from(2);
+        } else {
             files.push(arg.clone());
         }
     }
@@ -1350,14 +1563,14 @@ pub fn run_diff(args: &[String]) -> ExitCode {
     let file_a = &files[0];
     let file_b = &files[1];
 
-    let content_a = match fs::read_to_string(file_a) {
+    let content_a = match read_diff_file(file_a) {
         Ok(c) => c,
         Err(e) => {
             eprintln!("diff: {}: {}", file_a, e);
             return ExitCode::from(2);
         }
     };
-    let content_b = match fs::read_to_string(file_b) {
+    let content_b = match read_diff_file(file_b) {
         Ok(c) => c,
         Err(e) => {
             eprintln!("diff: {}: {}", file_b, e);
@@ -1411,6 +1624,16 @@ pub fn run_diff(args: &[String]) -> ExitCode {
     ExitCode::from(1)
 }
 
+fn read_cmp_file(file: &str) -> io::Result<Vec<u8>> {
+    if file == "-" {
+        let mut buf = Vec::new();
+        io::stdin().read_to_end(&mut buf)?;
+        Ok(buf)
+    } else {
+        fs::read(file)
+    }
+}
+
 pub fn run_cmp(args: &[String]) -> ExitCode {
     let mut silent = false;
     let mut files = Vec::new();
@@ -1423,7 +1646,10 @@ pub fn run_cmp(args: &[String]) -> ExitCode {
             println!("Compare two files byte by byte.");
             println!("  -s, --quiet, --silent  suppress all normal output");
             return ExitCode::SUCCESS;
-        } else if !arg.starts_with('-') || arg == "-" {
+        } else if arg.starts_with('-') && arg != "-" {
+            eprintln!("cmp: unrecognized option '{}'", arg);
+            return ExitCode::from(2);
+        } else {
             files.push(arg.clone());
         }
     }
@@ -1436,14 +1662,14 @@ pub fn run_cmp(args: &[String]) -> ExitCode {
     let file_a = &files[0];
     let file_b = &files[1];
 
-    let bytes_a = match fs::read(file_a) {
+    let bytes_a = match read_cmp_file(file_a) {
         Ok(b) => b,
         Err(e) => {
             eprintln!("cmp: {}: {}", file_a, e);
             return ExitCode::from(2);
         }
     };
-    let bytes_b = match fs::read(file_b) {
+    let bytes_b = match read_cmp_file(file_b) {
         Ok(b) => b,
         Err(e) => {
             eprintln!("cmp: {}: {}", file_b, e);
@@ -1517,7 +1743,10 @@ pub fn run_chroot(args: &[String]) -> ExitCode {
             }
         };
 
-        let c_slash = CString::new("/").unwrap();
+        let c_slash = match CString::new("/") {
+            Ok(c) => c,
+            Err(_) => return ExitCode::from(1),
+        };
 
         unsafe {
             if libc::chroot(c_root.as_ptr()) != 0 {
@@ -1592,7 +1821,8 @@ pub fn run_sysctl(args: &[String]) -> ExitCode {
             targets.push(arg.clone());
             i += 1;
         } else {
-            i += 1;
+            eprintln!("sysctl: unrecognized option '{}'", arg);
+            return ExitCode::from(1);
         }
     }
 
@@ -1895,5 +2125,47 @@ mod tests {
         assert_eq!(parse_timeout_duration("2m"), Some(Duration::from_secs(120)));
         assert_eq!(parse_timeout_duration("1h"), Some(Duration::from_secs(3600)));
         assert_eq!(parse_timeout_duration("abc"), None);
+    }
+
+    #[test]
+    fn test_base64_cli_validation_and_padding() {
+        // Unpadded base64 len % 4 == 2 ("YQ" -> "a")
+        assert_eq!(base64_decode("YQ", false), Ok(b"a".to_vec()));
+        // Unpadded base64 len % 4 == 3 ("YWI" -> "ab")
+        assert_eq!(base64_decode("YWI", false), Ok(b"ab".to_vec()));
+        // Unpadded base64 len % 4 == 1 is strictly invalid
+        assert!(base64_decode("Y", false).is_err());
+        // Middle '=' padding is invalid
+        assert!(base64_decode("YW=J", false).is_err());
+
+        // Option rejections
+        assert_eq!(run_base64(&["--invalid".into()]), ExitCode::from(1));
+        assert_eq!(run_base64(&["-w".into(), "abc".into()]), ExitCode::from(1));
+    }
+
+    #[test]
+    fn test_xargs_and_sed_cli_validation() {
+        assert_eq!(run_xargs(&["-n".into(), "0".into()]), ExitCode::from(1));
+        assert_eq!(run_xargs(&["--unknown".into()]), ExitCode::from(1));
+
+        assert_eq!(run_sed(&["--invalid".into()]), ExitCode::from(1));
+        assert_eq!(run_sed(&["s/unterminated".into()]), ExitCode::from(1));
+        assert_eq!(run_sed(&["s//replacement/".into()]), ExitCode::from(1));
+    }
+
+    #[test]
+    fn test_tar_and_timeout_validation() {
+        assert_eq!(run_tar(&["--unknown".into()]), ExitCode::from(1));
+        assert_eq!(run_tar(&["-cf".into()]), ExitCode::from(1));
+
+        assert_eq!(run_timeout(&["--unknown".into()]), ExitCode::from(125));
+        assert_eq!(run_timeout(&["-5".into(), "sleep".into(), "1".into()]), ExitCode::from(125));
+    }
+
+    #[test]
+    fn test_diff_cmp_sysctl_validation() {
+        assert_eq!(run_diff(&["--unknown".into()]), ExitCode::from(2));
+        assert_eq!(run_cmp(&["--unknown".into()]), ExitCode::from(2));
+        assert_eq!(run_sysctl(&["--unknown".into()]), ExitCode::from(1));
     }
 }

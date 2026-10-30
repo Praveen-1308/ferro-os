@@ -426,14 +426,24 @@ pub fn run_dhcp(args: &[String]) -> ExitCode {
                 if i + 1 < args.len() {
                     iface = Some(args[i + 1].clone());
                     i += 1;
+                } else {
+                    eprintln!("dhcp: option requires an argument -- 'i'");
+                    return ExitCode::from(1);
                 }
             }
             "-t" | "--timeout" => {
                 if i + 1 < args.len() {
-                    if let Ok(t) = args[i + 1].parse::<u64>() {
-                        timeout_secs = t;
+                    match args[i + 1].parse::<u64>() {
+                        Ok(t) if t > 0 => timeout_secs = t,
+                        _ => {
+                            eprintln!("dhcp: invalid timeout argument: '{}'", args[i + 1]);
+                            return ExitCode::from(1);
+                        }
                     }
                     i += 1;
+                } else {
+                    eprintln!("dhcp: option requires an argument -- 't'");
+                    return ExitCode::from(1);
                 }
             }
             "--dry-run" => dry_run = true,
@@ -453,6 +463,10 @@ pub fn run_dhcp(args: &[String]) -> ExitCode {
             }
             arg if !arg.starts_with('-') && iface.is_none() => {
                 iface = Some(arg.to_string());
+            }
+            arg if arg.starts_with('-') => {
+                eprintln!("dhcp: unrecognized option '{}'", arg);
+                return ExitCode::from(1);
             }
             _ => {}
         }
