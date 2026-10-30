@@ -17,10 +17,50 @@ const HOST_KEY_ED25519: &str = "/etc/ssh/ssh_host_ed25519_key";
 const HOST_KEY_RSA: &str = "/etc/ssh/ssh_host_rsa_key";
 
 pub fn run_sshd(args: &[String]) -> ExitCode {
-    let port = args.iter().position(|a| a == "--port" || a == "-p")
-        .and_then(|i| args.get(i + 1))
-        .and_then(|s| s.parse::<u16>().ok())
-        .unwrap_or(DEFAULT_SSH_PORT);
+    let mut port = DEFAULT_SSH_PORT;
+    let mut force_native = false;
+
+    let mut i = 0;
+    while i < args.len() {
+        let arg = &args[i];
+        if arg == "-p" || arg == "--port" {
+            if i + 1 < args.len() {
+                match args[i + 1].parse::<u16>() {
+                    Ok(p) if p > 0 => port = p,
+                    _ => {
+                        eprintln!("sshd: invalid port number: '{}'", args[i + 1]);
+                        return ExitCode::FAILURE;
+                    }
+                }
+                i += 2;
+            } else {
+                eprintln!("sshd: option requires an argument -- 'p'");
+                return ExitCode::FAILURE;
+            }
+        } else if let Some(p_str) = arg.strip_prefix("-p") {
+            match p_str.parse::<u16>() {
+                Ok(p) if p > 0 => port = p,
+                _ => {
+                    eprintln!("sshd: invalid port number: '{}'", p_str);
+                    return ExitCode::FAILURE;
+                }
+            }
+            i += 1;
+        } else if arg == "--native" {
+            force_native = true;
+            i += 1;
+        } else if arg == "--help" || arg == "-h" {
+            println!("Usage: sshd [OPTIONS]");
+            println!("  -p, --port <PORT>    port to listen on (default: 22)");
+            println!("  --native             force pure-Rust native SSH server");
+            return ExitCode::SUCCESS;
+        } else if arg.starts_with('-') {
+            eprintln!("sshd: unrecognized option '{}'", arg);
+            return ExitCode::FAILURE;
+        } else {
+            i += 1;
+        }
+    }
 
     println!("================================================================================");
     println!("        FERRO-OS AUTONOMOUS SECURE REMOTE ADMINISTRATION DAEMON (SSHD)          ");
@@ -35,7 +75,6 @@ pub fn run_sshd(args: &[String]) -> ExitCode {
     ensure_host_keys();
 
     // 3. Prefer external Dropbear or OpenSSH binary if available
-    let force_native = args.iter().any(|a| a == "--native");
     if !force_native {
         if Path::new("/usr/sbin/dropbear").exists() {
             println!("[sshd] Found native dropbear daemon. Supervising dropbear on port {}...", port);
@@ -115,7 +154,14 @@ fn handle_client(mut stream: TcpStream) {
     }
 
     // 2. Read Client identification banner
-    let mut reader = BufReader::new(stream.try_clone().unwrap());
+    let stream_clone1 = match stream.try_clone() {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("[sshd] Failed to clone stream: {}", e);
+            return;
+        }
+    };
+    let mut reader = BufReader::new(stream_clone1);
     let mut client_banner = String::new();
     if reader.read_line(&mut client_banner).is_err() {
         return;
@@ -123,7 +169,13 @@ fn handle_client(mut stream: TcpStream) {
 
     println!("[sshd] Client ID ({}): {}", peer_addr, client_banner.trim());
 
-    let mut stream_write = stream.try_clone().unwrap();
+    let mut stream_write = match stream.try_clone() {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("[sshd] Failed to clone stream: {}", e);
+            return;
+        }
+    };
 
     // Enforce administrative credential authentication before granting interactive shell
     if !authenticate_client(&mut reader, &mut stream_write, &peer_addr) {
@@ -168,9 +220,18 @@ fn handle_client(mut stream: TcpStream) {
         }
     };
 
-    let mut child_stdin = child.stdin.take().unwrap();
-    let mut child_stdout = child.stdout.take().unwrap();
-    let mut stream_read = stream.try_clone().unwrap();
+    let mut child_stdin = match child.stdin.take() {
+        Some(s) => s,
+        None => return,
+    };
+    let mut child_stdout = match child.stdout.take() {
+        Some(s) => s,
+        None => return,
+    };
+    let mut stream_read = match stream.try_clone() {
+        Ok(s) => s,
+        Err(_) => return,
+    };
 
     // Stream Client Input -> Shell Stdin
     let in_thread = thread::spawn(move || {
@@ -183,7 +244,10 @@ fn handle_client(mut stream: TcpStream) {
     });
 
     // Stream Shell Stdout -> Client Socket
-    let mut out_stream = stream.try_clone().unwrap();
+    let mut out_stream = match stream.try_clone() {
+        Ok(s) => s,
+        Err(_) => return,
+    };
     let out_thread = thread::spawn(move || {
         let mut buf = [0u8; 1024];
         while let Ok(n) = child_stdout.read(&mut buf) {
