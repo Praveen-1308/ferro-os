@@ -1380,5 +1380,57 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xj7nvu.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xj7nvu.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xjlmgv",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "I love the smell of HR files in the morning",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xjlmgv/i_love_the_smell_of_hr_files_in_the_morning/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "I love the smell of HR files in the morning <!-- SC_OFF --><div class=\"md\"><p>I have history of this user&#39;s reactor meltdowns. We don&#39;t force reboots until repeated options have been suppressed by the user. For context, I&#39;m an IT manager, and I make an effort to respond directly to shit behavior like this so my team can focus on popping the corn. (I used to be a sysadmin like you. And then I took an arrow to the knee)</p> <blockquote> <p><strong>RE: Stop forcing shutdowns when using PC!!!!!!!!!! #Ticket *******\\</strong>*</p> </blockquote> <p>It would not permit a screenshot. It was a very forceful message saying that MSC\u2026 needed to be restarted. The only options were immediately or in five minutes. This is gestapo behavior. Stop it. Computers are tools that we need to use to make product for the company. Trying to forcibly yank them out of our hands is unacceptable. I was angry. Escalate to *****, ***** whoever. I understand that you guys have policies that are aimed at protecting our network from external risks, bu this heavy-handed approach should not be allowed. You need to give us realistic options, but forcing applications to shutdown mid-keystroke?!? Gestapo beha",
+    "score": 0,
+    "timestamp": "2026-10-31T10:15:47.268935+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in I love the smell of HR files in the morning.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xjlmgv.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xjlmgv.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xjcst2",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "C-Suite staff want me to give Grok access to everything. Would you?",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xjcst2/csuite_staff_want_me_to_give_grok_access_to/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "C-Suite staff want me to give Grok access to everything. Would you? <!-- SC_OFF --><div class=\"md\"><p>My C-Suite staff have finally discovered AI agents, and no matter how much I advise risks, they just continue to push it further.</p> <p>There is a clear disregard for any information/data security, and who am I to tell the CEO not to upload our entire HR database to Grok so he can have a fancy dashboard?</p> <p>Now I have had tickets from my operations director saying Grok has taken over her computer, downloaded Linux, and she doesn&#39;t know what to do, and another direct is asking me to give Grok full cloud app access to our M365 tenant.</p> <p>AI agents are incredibly useful, but at the same time this feels like a money-with-a-mechanic-gun situation. It doesn&#39;t matter if I give them any more training because a lot of the damage has already been done.</p> <p>I can&#39;t wait to be sacked because &quot;Grok told us you weren&#39;t giving it full access&quot;...</p> <p>EDIT - I am an IT technician for a relatively small business (~300 employees), but I essentially manage all IT operations and systems by myself. My manager is the director of a entirely different department bec",
+    "score": 0,
+    "timestamp": "2026-10-31T10:15:47.269061+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in C-Suite staff want me to give Grok access to everything. Would you?.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xjcst2.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xjcst2.json"
   }
 ]

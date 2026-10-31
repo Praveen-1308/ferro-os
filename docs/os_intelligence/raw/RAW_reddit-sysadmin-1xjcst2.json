@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xjcst2",
+  "title": "C-Suite staff want me to give Grok access to everything. Would you?",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xjcst2/csuite_staff_want_me_to_give_grok_access_to/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "C-Suite staff want me to give Grok access to everything. Would you? <!-- SC_OFF --><div class=\"md\"><p>My C-Suite staff have finally discovered AI agents, and no matter how much I advise risks, they just continue to push it further.</p> <p>There is a clear disregard for any information/data security, and who am I to tell the CEO not to upload our entire HR database to Grok so he can have a fancy dashboard?</p> <p>Now I have had tickets from my operations director saying Grok has taken over her computer, downloaded Linux, and she doesn&#39;t know what to do, and another direct is asking me to give Grok full cloud app access to our M365 tenant.</p> <p>AI agents are incredibly useful, but at the same time this feels like a money-with-a-mechanic-gun situation. It doesn&#39;t matter if I give them any more training because a lot of the damage has already been done.</p> <p>I can&#39;t wait to be sacked because &quot;Grok told us you weren&#39;t giving it full access&quot;...</p> <p>EDIT - I am an IT technician for a relatively small business (~300 employees), but I essentially manage all IT operations and systems by myself. My manager is the director of a entirely different department bec",
+  "harvested_at": "2026-10-31T10:15:47.269061+00:00"
+}
