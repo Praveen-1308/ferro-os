@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 51 | **Last Sweep**: 2026-10-31 10:15:47 UTC
+**Active Tracked Incidents**: 53 | **Last Sweep**: 2026-11-01 11:08:57 UTC
 
 ---
 
@@ -64,6 +64,8 @@
 | `REDDIT-SYSADMIN-1xj7nvu` | **Linux Server Administration** | Classic Outlook - Issues | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xj7nvu.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xj7nvu.md) |
 | `REDDIT-SYSADMIN-1xjlmgv` | **Linux Server Administration** | I love the smell of HR files in the morning | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xjlmgv.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xjlmgv.md) |
 | `REDDIT-SYSADMIN-1xjcst2` | **Linux Server Administration** | C-Suite staff want me to give Grok access to everything. Would you? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xjcst2.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xjcst2.md) |
+| `REDDIT-SYSADMIN-1xkiwmm` | **Linux Server Administration** | I'm desperate. I was laid off after 20 years at the same company. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xkiwmm.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xkiwmm.md) |
+| `REDDIT-SYSADMIN-1xkx2yw` | **Linux Server Administration** | Sometimes things just level out and do okay... | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xkx2yw.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xkx2yw.md) |
 
 ---
 

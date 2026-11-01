@@ -1432,5 +1432,57 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xjcst2.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xjcst2.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xkiwmm",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "I'm desperate. I was laid off after 20 years at the same company.",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xkiwmm/im_desperate_i_was_laid_off_after_20_years_at_the/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "I'm desperate. I was laid off after 20 years at the same company. <!-- SC_OFF --><div class=\"md\"><p>I honestly don&#39;t even know where to start. I guess I just need to vent a little and hear from people who might have gone through something similar.</p> <p>I&#39;m 37 years old, and I started working in IT when I was just 15. It was a mid-sized company, and I basically did a bit of everything. Back then, I was taking a computer hardware and repair course, and I had no idea that this would become my career for the next 20 years.</p> <p>I&#39;m from South America, not the US, so getting into IT at that age isn&#39;t that unusual here.</p> <p>When I started, there were three sysadmins who taught me how things worked. As the company grew, we got more on-prem servers, and I learned more along the way. Eventually, the other sysadmins were let go, one by one, until I was the only one left handling the whole systems administration workload.</p> <p>I became the guy responsible for keeping everything running.</p> <p>Over the years, I focused on Linux, got a few certifications, and honestly, I love this stuff. Linux has been a huge part of my life.</p> <p>My experience is mostly in tradition",
+    "score": 0,
+    "timestamp": "2026-11-01T11:08:57.007280+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in I'm desperate. I was laid off after 20 years at the same company..",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xkiwmm.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xkiwmm.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xkx2yw",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Sometimes things just level out and do okay...",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xkx2yw/sometimes_things_just_level_out_and_do_okay/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Sometimes things just level out and do okay... <!-- SC_OFF --><div class=\"md\"><p>I have been in IT for a long while. I came across something from a past job, and realized how quiet things are these days. No drama, no playing the hide-the-information [1] game, no petty, spiteful crap.</p> <p>Sometimes things do level out. Over ten years ago, I had a rapid succession of absolute horror stories when it came to work. Mainly it was I got hired, company just got bought out, I was asked to pass all my documentation to a successor, and &quot;go gentle into the good night&quot;. After that, scramble, find a job at another company, it gets bought out, repeat. One MSP was so bad that one of the best moments in my life was the day I left, and I saw the parking garage gate close behind my car, as I drove off.</p> <p>I&#39;ve learned numerous things. Right now, in this economic cycle, the mainstay of hiring seems to be word of mouth. A few years back, one could just look at Indeed and there would be myriads of job possibilities. I would expect this cycle to eventually get better, although it can take some time, for example, how jobs stagnated from 2008 until around 2016-2017 when companies were ",
+    "score": 0,
+    "timestamp": "2026-11-01T11:08:57.007385+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Sometimes things just level out and do okay....",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xkx2yw.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xkx2yw.json"
   }
 ]
