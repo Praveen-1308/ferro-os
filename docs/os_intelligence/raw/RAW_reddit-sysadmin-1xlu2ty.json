@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xlu2ty",
+  "title": "What's Changing in Microsoft 365 This November?",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xlu2ty/whats_changing_in_microsoft_365_this_november/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "What's Changing in Microsoft 365 This November? <!-- SC_OFF --><div class=\"md\"><p>Keeping up with Microsoft 365 changes can be a challenge. Here&#39;s your November roundup of the latest announcements, upcoming changes, and important milestones that deserve an admin&#39;s attention.</p> <p><strong>In the spotlight:</strong></p> <ol> <li><strong>OneDrive Storage Goes Pay-as-you-Go</strong>: Pay-as-you-go billing for OneDrive storage will provide extra capacity when usage exceeds the allocated quota, with charges based on actual consumption.</li> <li><strong>Outlook Lets Users Transfer Meeting Ownership:</strong> Meeting organizers can request another person in their organization to take over eligible meetings and recurring series through the Change organizer option.</li> <li><strong>AI Agent Need Explicit Permission to Create Identities</strong>: AgentIdentity.CreateAsManager permission will no longer be granted automatically to Entra agent blueprint principals. Admin consent will be required.</li> <li><strong>Entra ID Drops the MemberOf Operator:</strong> The MemberOf rule operator will retire from Entra dynamic groups and administrative units. Admins must update affected membershi",
+  "harvested_at": "2026-11-02T12:09:39.162488+00:00"
+}

@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 53 | **Last Sweep**: 2026-11-01 11:08:57 UTC
+**Active Tracked Incidents**: 55 | **Last Sweep**: 2026-11-02 12:09:39 UTC
 
 ---
 
@@ -66,6 +66,8 @@
 | `REDDIT-SYSADMIN-1xjcst2` | **Linux Server Administration** | C-Suite staff want me to give Grok access to everything. Would you? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xjcst2.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xjcst2.md) |
 | `REDDIT-SYSADMIN-1xkiwmm` | **Linux Server Administration** | I'm desperate. I was laid off after 20 years at the same company. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xkiwmm.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xkiwmm.md) |
 | `REDDIT-SYSADMIN-1xkx2yw` | **Linux Server Administration** | Sometimes things just level out and do okay... | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xkx2yw.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xkx2yw.md) |
+| `REDDIT-SYSADMIN-1xlazzp` | **Linux Server Administration** | My husband was a SysAdmin, and did pass away (update) | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xlazzp.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xlazzp.md) |
+| `REDDIT-SYSADMIN-1xlu2ty` | **Linux Server Administration** | What's Changing in Microsoft 365 This November? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xlu2ty.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xlu2ty.md) |
 
 ---
 

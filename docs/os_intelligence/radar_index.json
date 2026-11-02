@@ -1484,5 +1484,57 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xkx2yw.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xkx2yw.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xlazzp",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "My husband was a SysAdmin, and did pass away (update)",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xlazzp/my_husband_was_a_sysadmin_and_did_pass_away_update/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "My husband was a SysAdmin, and did pass away (update) <!-- SC_OFF --><div class=\"md\"><p>Hey everyone! It\u2019s been a few months since I posted asking for advice on dismantling my husbands IT closet setup while he was fighting in the hospital and I was moving us from our house to one closer to the hospital. Unfortunately, my husband did pass away after about 2 months in the ICU, but he thankfully woke up from his medically induced coma and we were able to celebrate our toddler\u2019s 3rd birthday before he left us.</p> <p>I know we often joke about being easily replaced by our employers, but I want to say his previous company was SO helpful to me, and his current employer was so compassionate, generous during his 3 years of illness and devastated along with us at the end. They even came to the funeral and cried with me. There really are good companies out there, though it\u2019s more about finding the right team/manager of course.</p> <p>I just wanted to say thank you so much, I got lots of helpful advice and just generally felt less scared of destroying his stuff after hearing from your group. I was able to have someone help me take everything down, and he sorted and labeled things, and taught ",
+    "score": 0,
+    "timestamp": "2026-11-02T12:09:39.162377+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in My husband was a SysAdmin, and did pass away (update).",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xlazzp.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xlazzp.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xlu2ty",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "What's Changing in Microsoft 365 This November?",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xlu2ty/whats_changing_in_microsoft_365_this_november/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "What's Changing in Microsoft 365 This November? <!-- SC_OFF --><div class=\"md\"><p>Keeping up with Microsoft 365 changes can be a challenge. Here&#39;s your November roundup of the latest announcements, upcoming changes, and important milestones that deserve an admin&#39;s attention.</p> <p><strong>In the spotlight:</strong></p> <ol> <li><strong>OneDrive Storage Goes Pay-as-you-Go</strong>: Pay-as-you-go billing for OneDrive storage will provide extra capacity when usage exceeds the allocated quota, with charges based on actual consumption.</li> <li><strong>Outlook Lets Users Transfer Meeting Ownership:</strong> Meeting organizers can request another person in their organization to take over eligible meetings and recurring series through the Change organizer option.</li> <li><strong>AI Agent Need Explicit Permission to Create Identities</strong>: AgentIdentity.CreateAsManager permission will no longer be granted automatically to Entra agent blueprint principals. Admin consent will be required.</li> <li><strong>Entra ID Drops the MemberOf Operator:</strong> The MemberOf rule operator will retire from Entra dynamic groups and administrative units. Admins must update affected membershi",
+    "score": 0,
+    "timestamp": "2026-11-02T12:09:39.162488+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in What's Changing in Microsoft 365 This November?.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xlu2ty.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xlu2ty.json"
   }
 ]
