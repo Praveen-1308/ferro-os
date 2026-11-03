@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xmo0un",
+  "title": "Afraid I'm setting an unsustainable expectation early in my career (Solo Admin)",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xmo0un/afraid_im_setting_an_unsustainable_expectation/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Afraid I'm setting an unsustainable expectation early in my career (Solo Admin) <!-- SC_OFF --><div class=\"md\"><p>I&#39;m a few months into my very first IT job. I came in with zero prior professional experience, just a homelab setup and a passion for tech. I&#39;m currently the sole admin running our internal infrastructure.</p> <p>Recently, I was greenlit to plan, document, and build out our HA and DR redundancy plans. This is critical infrastructure that supports our daily operations, so the stakes are high. I managed to get everything implemented successfully, but I relied heavily on AI to help me architect the setup, write scripts, and build out the documentation.</p> <p>Now, severe imposter syndrome is hitting me. My boss thinks I&#39;m a rockstar, but I&#39;m worried:</p> <ol> <li><p>I&#39;m setting expectations I won&#39;t be able to keep up with.</p></li> <li><p>Relying on AI for major, business-critical systems makes me feel like a fraud.</p></li> <li><p>If an unscripted edge case takes down our daily operations, I&#39;m fully on my own without a safety net or senior review.</p></li> </ol> <p>Has anyone else navigated this early in their career? How do you handle relying ",
+  "harvested_at": "2026-11-03T11:45:02.951233+00:00"
+}
