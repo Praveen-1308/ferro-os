@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xn3myr",
+  "title": "Just solved a really irritating and niche issue, and it's weirdly specific so no one will ever care.",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xn3myr/just_solved_a_really_irritating_and_niche_issue/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Just solved a really irritating and niche issue, and it's weirdly specific so no one will ever care. <!-- SC_OFF --><div class=\"md\"><p>This isn&#39;t the first time of course - kinda goes with the territories. </p> <p>But I feel a need to post about it in a community where maybe it&#39;s not &quot;boring&quot;. </p> <p>The problem is NUMA. </p> <p>Or specifically production processes occasionally being &quot;significantly slow&quot; to a point where a real time constraint is being missed. </p> <p>Finally identified as &quot;half the cores are 50% slower&quot; via a bit of weird python hackery. </p> <p>But not always. </p> <p>Reboot &quot;fixes&quot; until next time. </p> <p>Except on a bunch of example hosts when testing this specific metric or cross NUMA node memory latency, which got worse after a reboot, and stayed that way. </p> <p>Been trying to figure this out for months now. Have done new kernels, new bios, new ipmi, and have even done a bios wipe to see if that helped. Because I couldn&#39;t honestly tell if it even was a hardware fault or not. Replacing broken hardware isn&#39;t a problem, but it&#39;s another thing entirely to try to justify replacing something that might",
+  "harvested_at": "2026-11-04T11:57:50.150871+00:00"
+}

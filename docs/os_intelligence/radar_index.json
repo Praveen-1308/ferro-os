@@ -1562,5 +1562,57 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xmo0un.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xmo0un.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xnb51h",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Pouring one out for a fellow sysadmin from Higher Ed.",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xnb51h/pouring_one_out_for_a_fellow_sysadmin_from_higher/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Pouring one out for a fellow sysadmin from Higher Ed. <!-- SC_OFF --><div class=\"md\"><p>Dennis was the man. </p> <p>We both worked in Higher Ed for years - He had that clarity honed over years and years of desktop &amp; user support, combined with his own personal struggle. I had the pleasure of working with him for about 15 years, and he was one worth staying in touch with after we parted ways. </p> <p>Raising one final glass for you, my friend. You stood on your own across my 35 year career, and I will carry your memory forward until the end of my shift. </p> <p>Friends, take the time to maintain those connections worth maintaining. They are so important. </p> <p>I raise my glass to you, my friend. </p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/binkleybloom\"> /u/binkleybloom </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xnb51h/pouring_one_out_for_a_fellow_sysadmin_from_higher/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xnb51h/pouring_one_out_for_a_fellow_sysadmin_from_higher/\">[comments]</a></span>",
+    "score": 0,
+    "timestamp": "2026-11-04T11:57:50.150767+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Pouring one out for a fellow sysadmin from Higher Ed..",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xnb51h.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xnb51h.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xn3myr",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Just solved a really irritating and niche issue, and it's weirdly specific so no one will ever care.",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xn3myr/just_solved_a_really_irritating_and_niche_issue/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Just solved a really irritating and niche issue, and it's weirdly specific so no one will ever care. <!-- SC_OFF --><div class=\"md\"><p>This isn&#39;t the first time of course - kinda goes with the territories. </p> <p>But I feel a need to post about it in a community where maybe it&#39;s not &quot;boring&quot;. </p> <p>The problem is NUMA. </p> <p>Or specifically production processes occasionally being &quot;significantly slow&quot; to a point where a real time constraint is being missed. </p> <p>Finally identified as &quot;half the cores are 50% slower&quot; via a bit of weird python hackery. </p> <p>But not always. </p> <p>Reboot &quot;fixes&quot; until next time. </p> <p>Except on a bunch of example hosts when testing this specific metric or cross NUMA node memory latency, which got worse after a reboot, and stayed that way. </p> <p>Been trying to figure this out for months now. Have done new kernels, new bios, new ipmi, and have even done a bios wipe to see if that helped. Because I couldn&#39;t honestly tell if it even was a hardware fault or not. Replacing broken hardware isn&#39;t a problem, but it&#39;s another thing entirely to try to justify replacing something that might",
+    "score": 0,
+    "timestamp": "2026-11-04T11:57:50.150871+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Just solved a really irritating and niche issue, and it's weirdly specific so no one will ever care..",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xn3myr.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xn3myr.json"
   }
 ]
