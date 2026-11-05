@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xo0w8s",
+  "title": "Too little, Too Late Broadcom...",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xo0w8s/too_little_too_late_broadcom/",
+  "sub_url": "https://imgur.com/a/HYvW8tP",
+  "sub_content": "Imgur: The magic of the Internet If you're seeing this message, that means JavaScript has been disabled on your browser , please enable JS to make Imgur work.",
+  "raw_text": "Too little, Too Late Broadcom... <!-- SC_OFF --><div class=\"md\"><p>Looks like the morons over at Broadcom started to realize they were hemorrhaging money off the VMware platform. </p> <p>The damage is done already, at least at my company, weve already cut a few hundred thousand in checks to Nutanix.</p> <p><a href=\"https://imgur.com/a/HYvW8tP\">https://imgur.com/a/HYvW8tP</a></p> <p>Hey Guys -</p> <p>Wanted to share the below for you - seems like Broadcom is finally getting the point as more and more people migrate. They released the below and it&#39;s priced at $9,600 per ESX Host (not core.)</p> <p>Might be an option for you if there are any VMWare instances that you just can&#39;t move quickly. Let me know how I can be of assistance if needed.</p> <p>Andrew</p> <p>What is vSphere Express?</p> <p>Based on customer feedback, Broadcom has introduced VMware vSphere Express, a targeted offering that builds on the proven reliability of vSphere Standard and adds vSphere Distributed Switch (VDS) and select vSphere 9.1 features at a lower cost. It is designed for smaller deployments where IT teams are lean and every outage has outsized impact.</p> <p>What is included</p> <p>\u2713 vCenter Stan",
+  "harvested_at": "2026-11-05T12:01:15.752963+00:00"
+}

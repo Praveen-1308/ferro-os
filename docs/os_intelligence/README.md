@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 58 | **Last Sweep**: 2026-11-04 11:57:50 UTC
+**Active Tracked Incidents**: 60 | **Last Sweep**: 2026-11-05 12:01:16 UTC
 
 ---
 
@@ -71,6 +71,8 @@
 | `REDDIT-SYSADMIN-1xmo0un` | **Linux Server Administration** | Afraid I'm setting an unsustainable expectation early in my career (Solo Admin) | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xmo0un.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xmo0un.md) |
 | `REDDIT-SYSADMIN-1xnb51h` | **Linux Server Administration** | Pouring one out for a fellow sysadmin from Higher Ed. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xnb51h.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xnb51h.md) |
 | `REDDIT-SYSADMIN-1xn3myr` | **Linux Server Administration** | Just solved a really irritating and niche issue, and it's weirdly specific so no one will ever care. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xn3myr.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xn3myr.md) |
+| `REDDIT-SYSADMIN-1xo2phi` | **Linux Server Administration** | Don’t use AI in interviews | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xo2phi.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xo2phi.md) |
+| `REDDIT-SYSADMIN-1xo0w8s` | **Linux Server Administration** | Too little, Too Late Broadcom... | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xo0w8s.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xo0w8s.md) |
 
 ---
 
