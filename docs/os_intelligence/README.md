@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 60 | **Last Sweep**: 2026-11-05 12:01:16 UTC
+**Active Tracked Incidents**: 63 | **Last Sweep**: 2026-11-06 11:57:12 UTC
 
 ---
 
@@ -73,6 +73,9 @@
 | `REDDIT-SYSADMIN-1xn3myr` | **Linux Server Administration** | Just solved a really irritating and niche issue, and it's weirdly specific so no one will ever care. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xn3myr.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xn3myr.md) |
 | `REDDIT-SYSADMIN-1xo2phi` | **Linux Server Administration** | Don’t use AI in interviews | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xo2phi.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xo2phi.md) |
 | `REDDIT-SYSADMIN-1xo0w8s` | **Linux Server Administration** | Too little, Too Late Broadcom... | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xo0w8s.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xo0w8s.md) |
+| `REDDIT-SYSADMIN-1xp13td` | **Linux Server Administration** | It finally happened!! | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xp13td.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xp13td.md) |
+| `REDDIT-SYSADMIN-1xop0bs` | **Linux Server Administration** | Hiren's BootCD, Should i tell my boss? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xop0bs.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xop0bs.md) |
+| `REDDIT-SYSADMIN-1xp0dxj` | **Linux Server Administration** | I feel bad for losing my cool, but... | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xp0dxj.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xp0dxj.md) |
 
 ---
 

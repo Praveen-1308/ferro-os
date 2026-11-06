@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xop0bs",
+  "title": "Hiren's BootCD, Should i tell my boss?",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xop0bs/hirens_bootcd_should_i_tell_my_boss/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Hiren's BootCD, Should i tell my boss? <!-- SC_OFF --><div class=\"md\"><p>Hello everyone,</p> <p>I downloaded this tool one day out of boredom because I had heard so much about it. One day, one of our computers came back from a different plant, but our admin password wasn&#39;t working on it. So, I decided to test the tool out and was able to bypass the password surprisingly easily.</p> <p>I was honestly shocked by how simple it was. All I had to do was plug in a USB, boot into Hiren&#39;s BootCD, and bypass the admin password. It really made me think that we should have some sort of USB blocking system in place to prevent employees from doing something like this.</p> <p>How do you guys handle situations like this? Do you think I should bring it up to my boss? I&#39;m a little concerned that instead of asking me to look into a solution, they might see it as a security risk and I could end up getting in trouble for using it in the first place.</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/lNuggyl\"> /u/lNuggyl </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xop0bs/hirens_bootcd_should_i_tell_my_boss/\">[link]</a></span> &#3",
+  "harvested_at": "2026-11-06T11:57:12.039351+00:00"
+}

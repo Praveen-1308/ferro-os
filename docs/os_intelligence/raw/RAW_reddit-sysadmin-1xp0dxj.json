@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xp0dxj",
+  "title": "I feel bad for losing my cool, but...",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xp0dxj/i_feel_bad_for_losing_my_cool_but/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "I feel bad for losing my cool, but... <!-- SC_OFF --><div class=\"md\"><p>Does anyone else have that one coworker who you genuinely think might be illiterate?</p> <p>Like, not even regular end user levels of incompetent, or &#39;there&#39;s a bit of jargon involved in the error message that I don&#39;t expect the average person to understand/have encountered before&#39;.</p> <p>I had to change a login for some software for a team member, you know, the usual stuff. I tell her that the desktop application will also need to be logged into again, and I get &#39;okk&#39; in response. It&#39;s all set up so that there&#39;s a password management portal, you log into that, and then one click on the icon for x service will launch and log it in. Usual stuff.</p> <p>Get a message last night on Team about how it&#39;s &#39;not working&#39;. I immediately know what the problem is, because I&#39;ve received the same complaint from her several times. What is the error?</p> <p>A pop-up saying that &#39;you need to be signed in to use Service Name.&#39;, above a giant button that says SIGN IN.</p> <p>Every. Single. Goddang. Time.</p> <p>Whenever the app needs to be signed in again, she will tell me ",
+  "harvested_at": "2026-11-06T11:57:12.039389+00:00"
+}

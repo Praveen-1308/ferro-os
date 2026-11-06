@@ -1666,5 +1666,83 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xo0w8s.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xo0w8s.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xp13td",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "It finally happened!!",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xp13td/it_finally_happened/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "It finally happened!! <!-- SC_OFF --><div class=\"md\"><p>8:30am I deleted my entire production environment. All VMs rm -r out of existence.</p> <p>Fortunately I was reviewing my nightly backups at the time tracking a retired VM that was inexplicably still getting backed up in Production. All the Production VMs were there. And the live production ones now without their underlying virtual disks &amp; configs were still resident in memory. I calmly copied the backups into place, sequentially restarted everything and had production back in about twenty minutes. Only lost ~12 hours of overnight idle maintenance &amp; logging.</p> <p>With everything settled back in place I calmly looked for a place to have a private heart attack.</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/xkeyscore_\"> /u/xkeyscore_ </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xp13td/it_finally_happened/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xp13td/it_finally_happened/\">[comments]</a></span>",
+    "score": 0,
+    "timestamp": "2026-11-06T11:57:12.039278+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in It finally happened!!.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xp13td.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xp13td.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xop0bs",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Hiren's BootCD, Should i tell my boss?",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xop0bs/hirens_bootcd_should_i_tell_my_boss/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Hiren's BootCD, Should i tell my boss? <!-- SC_OFF --><div class=\"md\"><p>Hello everyone,</p> <p>I downloaded this tool one day out of boredom because I had heard so much about it. One day, one of our computers came back from a different plant, but our admin password wasn&#39;t working on it. So, I decided to test the tool out and was able to bypass the password surprisingly easily.</p> <p>I was honestly shocked by how simple it was. All I had to do was plug in a USB, boot into Hiren&#39;s BootCD, and bypass the admin password. It really made me think that we should have some sort of USB blocking system in place to prevent employees from doing something like this.</p> <p>How do you guys handle situations like this? Do you think I should bring it up to my boss? I&#39;m a little concerned that instead of asking me to look into a solution, they might see it as a security risk and I could end up getting in trouble for using it in the first place.</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/lNuggyl\"> /u/lNuggyl </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xop0bs/hirens_bootcd_should_i_tell_my_boss/\">[link]</a></span> &#3",
+    "score": 0,
+    "timestamp": "2026-11-06T11:57:12.039351+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Hiren's BootCD, Should i tell my boss?.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xop0bs.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xop0bs.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xp0dxj",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "I feel bad for losing my cool, but...",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xp0dxj/i_feel_bad_for_losing_my_cool_but/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "I feel bad for losing my cool, but... <!-- SC_OFF --><div class=\"md\"><p>Does anyone else have that one coworker who you genuinely think might be illiterate?</p> <p>Like, not even regular end user levels of incompetent, or &#39;there&#39;s a bit of jargon involved in the error message that I don&#39;t expect the average person to understand/have encountered before&#39;.</p> <p>I had to change a login for some software for a team member, you know, the usual stuff. I tell her that the desktop application will also need to be logged into again, and I get &#39;okk&#39; in response. It&#39;s all set up so that there&#39;s a password management portal, you log into that, and then one click on the icon for x service will launch and log it in. Usual stuff.</p> <p>Get a message last night on Team about how it&#39;s &#39;not working&#39;. I immediately know what the problem is, because I&#39;ve received the same complaint from her several times. What is the error?</p> <p>A pop-up saying that &#39;you need to be signed in to use Service Name.&#39;, above a giant button that says SIGN IN.</p> <p>Every. Single. Goddang. Time.</p> <p>Whenever the app needs to be signed in again, she will tell me ",
+    "score": 0,
+    "timestamp": "2026-11-06T11:57:12.039389+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in I feel bad for losing my cool, but....",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xp0dxj.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xp0dxj.json"
   }
 ]

@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xp13td",
+  "title": "It finally happened!!",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xp13td/it_finally_happened/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "It finally happened!! <!-- SC_OFF --><div class=\"md\"><p>8:30am I deleted my entire production environment. All VMs rm -r out of existence.</p> <p>Fortunately I was reviewing my nightly backups at the time tracking a retired VM that was inexplicably still getting backed up in Production. All the Production VMs were there. And the live production ones now without their underlying virtual disks &amp; configs were still resident in memory. I calmly copied the backups into place, sequentially restarted everything and had production back in about twenty minutes. Only lost ~12 hours of overnight idle maintenance &amp; logging.</p> <p>With everything settled back in place I calmly looked for a place to have a private heart attack.</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/xkeyscore_\"> /u/xkeyscore_ </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xp13td/it_finally_happened/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xp13td/it_finally_happened/\">[comments]</a></span>",
+  "harvested_at": "2026-11-06T11:57:12.039278+00:00"
+}
