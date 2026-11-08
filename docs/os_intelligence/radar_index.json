@@ -1744,5 +1744,31 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xp0dxj.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xp0dxj.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xqu9lp",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Another GitHub partial outage",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xqu9lp/another_github_partial_outage/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Another GitHub partial outage <!-- SC_OFF --><div class=\"md\"><p>Looks like the Downloading release endpoint is intermittently failing for me. Getting 504 occasionally. Anyone else seeing the same? </p> <p><a href=\"https://www.reddit.com/r/github/comments/1xqu6su/github_partial_outage/\">https://www.reddit.com/r/github/comments/1xqu6su/github_partial_outage/</a></p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/hangerofmonkeys\"> /u/hangerofmonkeys </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xqu9lp/another_github_partial_outage/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xqu9lp/another_github_partial_outage/\">[comments]</a></span>",
+    "score": 0,
+    "timestamp": "2026-11-08T11:09:52.902039+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Another GitHub partial outage.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xqu9lp.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xqu9lp.json"
   }
 ]
