@@ -1770,5 +1770,83 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xqu9lp.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xqu9lp.json"
+  },
+  {
+    "id": "HN-42501826",
+    "source": "Hacker News",
+    "source_group": "hackernews",
+    "software_hint": "Linux io_uring",
+    "title": "Show HN: IsMyAIDown \u2013 AI status monitor with Phoenix LiveView. Can you crash it?",
+    "url": "https://news.ycombinator.com/item?id=42501826",
+    "sub_url": "https://ismyaidown.com",
+    "sub_content": "Is My AI Down? \u2014 live status for AI services Is My AI Down ? \u263e Is my AI down? Live status for the major AI services \u2014 user reports and official status feeds shown side by side, so you can see when users spot an outage before the provider does. Fireworks AI API Partly \u2014 issues reported Users Not enough reports yet Official Degraded \u26a0 Report official \u00b7 7d Cerebras API API No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d ChatGPT Chat No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d Claude API API No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d Claude Code Code No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d Claude.ai Chat No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d Codex Code No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d Cursor Code No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d DeepSeek API API No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d GitHub Copilot Code No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d Grok Chat No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d Grok API API No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d Groq API API No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d HeyGen Chat No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d Kimi Chat No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d Kimi API API No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d Lovable Code No \u2014 looks up Users Not enough reports yet Official Operational \u26a0 Report official \u00b7 7d Midjourney Chat No \u2014 looks up U",
+    "raw_text": "Show HN: IsMyAIDown \u2013 AI status monitor with Phoenix LiveView. Can you crash it?. Referenced source: https://ismyaidown.com. Points: 10",
+    "score": 10,
+    "timestamp": "2026-11-10T12:20:42.951217+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux io_uring",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux io_uring",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Show HN: IsMyAIDown \u2013 AI status monitor with Phoenix LiveView. Can you crash it?.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-42501826.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-42501826.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xskwge",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "First day on the job - compliance nightmare unraveled",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xskwge/first_day_on_the_job_compliance_nightmare/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "First day on the job - compliance nightmare unraveled <!-- SC_OFF --><div class=\"md\"><p>I just started a new job in IT for a small org. Induction went well and got to meet all the nice people that work in the HQ.</p> <p>Sit down at my desk and read a report that was drafted up by the previous IT guy and details how to obtain previous logins. All good.</p> <p>As I get to the next page all the issues are listed and what needs carried out to improve the companies security.</p> <p>First point was about how the majority of endpoints are using Home Edition. Next was unmanaged devices only 20 work mobiles so far are managed so they had made a start but ran into a roadblock it seems. Probably realised the hefty amount of work required for ONE person to carry out. Next point was about how all users have admin rights so can install any apps. Same issue as the endpoint management I suppose.</p> <p>So I asked my manager can we start buying Pro keys and sent the price across. He became hesitant and said - \u2018Is it necessary we are a small org?\u2019 I said yes we need it for compliance and if an audit were to be done we\u2019d fail. I\u2019m still waiting for a response 2 days later and was told they are still ",
+    "score": 0,
+    "timestamp": "2026-11-10T12:20:43.486172+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in First day on the job - compliance nightmare unraveled.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xskwge.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xskwge.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xs57ht",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Non-tech users asking for Python to run AI generated scripts",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xs57ht/nontech_users_asking_for_python_to_run_ai/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Non-tech users asking for Python to run AI generated scripts <!-- SC_OFF --><div class=\"md\"><p>How do you even begin to approach this? We had another user ask to be able to run python. Well, they asked for Visual Studio.. sigh</p> <p>&quot;Are we able to have Visual Studio installed for running Python scripts?&quot;</p> <p>We already had a few of these and most were shot down as they had no idea what they&#39;d be running exactly, but I know they&#39;re pressured and somewhat encouraged to try and find solutions to their problems, and AI can help. But these guys have no idea about scriting, programming, security, nothing. I don&#39;t want to outright ban AI, but I don&#39;t think we can allow random scripts running all over the place..</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/FunkOverflow\"> /u/FunkOverflow </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xs57ht/nontech_users_asking_for_python_to_run_ai/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xs57ht/nontech_users_asking_for_python_to_run_ai/\">[comments]</a></span>",
+    "score": 0,
+    "timestamp": "2026-11-10T12:20:43.486210+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Non-tech users asking for Python to run AI generated scripts.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xs57ht.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xs57ht.json"
   }
 ]

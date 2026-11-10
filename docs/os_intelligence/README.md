@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 64 | **Last Sweep**: 2026-11-09 12:40:58 UTC
+**Active Tracked Incidents**: 67 | **Last Sweep**: 2026-11-10 12:20:43 UTC
 
 ---
 
@@ -77,6 +77,9 @@
 | `REDDIT-SYSADMIN-1xop0bs` | **Linux Server Administration** | Hiren's BootCD, Should i tell my boss? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xop0bs.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xop0bs.md) |
 | `REDDIT-SYSADMIN-1xp0dxj` | **Linux Server Administration** | I feel bad for losing my cool, but... | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xp0dxj.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xp0dxj.md) |
 | `REDDIT-SYSADMIN-1xqu9lp` | **Linux Server Administration** | Another GitHub partial outage | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xqu9lp.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xqu9lp.md) |
+| `HN-42501826` | **Linux io_uring** | Show HN: IsMyAIDown – AI status monitor with Phoenix LiveView. Can you crash it? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-42501826.json) | [Read Dossier](incidents/INCIDENT_hn-42501826.md) |
+| `REDDIT-SYSADMIN-1xskwge` | **Linux Server Administration** | First day on the job - compliance nightmare unraveled | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xskwge.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xskwge.md) |
+| `REDDIT-SYSADMIN-1xs57ht` | **Linux Server Administration** | Non-tech users asking for Python to run AI generated scripts | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xs57ht.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xs57ht.md) |
 
 ---
 

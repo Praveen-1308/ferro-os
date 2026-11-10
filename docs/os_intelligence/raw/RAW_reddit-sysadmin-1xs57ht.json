@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xs57ht",
+  "title": "Non-tech users asking for Python to run AI generated scripts",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xs57ht/nontech_users_asking_for_python_to_run_ai/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Non-tech users asking for Python to run AI generated scripts <!-- SC_OFF --><div class=\"md\"><p>How do you even begin to approach this? We had another user ask to be able to run python. Well, they asked for Visual Studio.. sigh</p> <p>&quot;Are we able to have Visual Studio installed for running Python scripts?&quot;</p> <p>We already had a few of these and most were shot down as they had no idea what they&#39;d be running exactly, but I know they&#39;re pressured and somewhat encouraged to try and find solutions to their problems, and AI can help. But these guys have no idea about scriting, programming, security, nothing. I don&#39;t want to outright ban AI, but I don&#39;t think we can allow random scripts running all over the place..</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/FunkOverflow\"> /u/FunkOverflow </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xs57ht/nontech_users_asking_for_python_to_run_ai/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xs57ht/nontech_users_asking_for_python_to_run_ai/\">[comments]</a></span>",
+  "harvested_at": "2026-11-10T12:20:43.486210+00:00"
+}

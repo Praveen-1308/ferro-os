@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xskwge",
+  "title": "First day on the job - compliance nightmare unraveled",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xskwge/first_day_on_the_job_compliance_nightmare/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "First day on the job - compliance nightmare unraveled <!-- SC_OFF --><div class=\"md\"><p>I just started a new job in IT for a small org. Induction went well and got to meet all the nice people that work in the HQ.</p> <p>Sit down at my desk and read a report that was drafted up by the previous IT guy and details how to obtain previous logins. All good.</p> <p>As I get to the next page all the issues are listed and what needs carried out to improve the companies security.</p> <p>First point was about how the majority of endpoints are using Home Edition. Next was unmanaged devices only 20 work mobiles so far are managed so they had made a start but ran into a roadblock it seems. Probably realised the hefty amount of work required for ONE person to carry out. Next point was about how all users have admin rights so can install any apps. Same issue as the endpoint management I suppose.</p> <p>So I asked my manager can we start buying Pro keys and sent the price across. He became hesitant and said - \u2018Is it necessary we are a small org?\u2019 I said yes we need it for compliance and if an audit were to be done we\u2019d fail. I\u2019m still waiting for a response 2 days later and was told they are still ",
+  "harvested_at": "2026-11-10T12:20:43.486172+00:00"
+}
