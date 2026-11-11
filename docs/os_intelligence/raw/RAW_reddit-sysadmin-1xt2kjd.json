@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xt2kjd",
+  "title": "eMudhra Incident Report Released",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xt2kjd/emudhra_incident_report_released/",
+  "sub_url": "https://bugzilla.mozilla.org/show%5C_bug.cgi?id=2083449#c82",
+  "sub_content": null,
+  "raw_text": "eMudhra Incident Report Released <!-- SC_OFF --><div class=\"md\"><p><a href=\"https://bugzilla.mozilla.org/show%5C_bug.cgi?id=2083449#c82\">https://bugzilla.mozilla.org/show\\_bug.cgi?id=2083449#c82</a></p> <p>For the eight ECDSA P\u2011384 objects (G3B/G3C), a bug/defect in the import code resulted in a read\u2011back from the unwrapped object that truncated the private value, so the certified public keys correspond to private scalars below the expected range and are recoverable from public information.</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/jstuart-tech\"> /u/jstuart-tech </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xt2kjd/emudhra_incident_report_released/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xt2kjd/emudhra_incident_report_released/\">[comments]</a></span>",
+  "harvested_at": "2026-11-11T11:45:32.756732+00:00"
+}

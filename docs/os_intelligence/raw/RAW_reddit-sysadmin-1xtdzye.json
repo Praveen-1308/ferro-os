@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xtdzye",
+  "title": "WARNING: Dell Pro 16 Plus (PB16250) \u2013 BIOS 2.19.0 + Intel Ethernet (20.0.3.35) / Bluetooth (24.70.0.4) / NPU (32.0.100.4841) causes Windows No-Boot",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xtdzye/warning_dell_pro_16_plus_pb16250_bios_2190_intel/",
+  "sub_url": "http://20.0.3.35",
+  "sub_content": null,
+  "raw_text": "WARNING: Dell Pro 16 Plus (PB16250) \u2013 BIOS 2.19.0 + Intel Ethernet (20.0.3.35) / Bluetooth (24.70.0.4) / NPU (32.0.100.4841) causes Windows No-Boot <!-- SC_OFF --><div class=\"md\"><p>If you own a <strong>Dell Pro 16 Plus (PB16250)</strong>, hold off on installing the latest Dell updates together, or uncheck the Intel drivers below before updating.</p> <p><strong>System Details:</strong></p> <ul> <li><strong>System Model:</strong> Dell Pro 16 Plus PB16250 (SKU: 0CF5)</li> <li><strong>Processor:</strong> Intel(R) Core(TM) Ultra 7 265U</li> <li><strong>BIOS Version:</strong> Dell Inc. 2.19.0 (2.10.2026)</li> </ul> <p><strong>What Happens:</strong><br/> After updating the BIOS to <strong>2.19.0</strong> alongside the recent Intel driver updates pushed via <strong>Dell Update / Windows Update</strong>, the BIOS flash completes normally, but <strong>Windows fails to boot</strong> (hangs/crashes at early hardware initialization before a crash dump can be written).</p> <p><strong>Conflicting Driver Versions:</strong></p> <ul> <li><strong>Intel Ethernet Controller Driver:</strong> <a href=\"http://20.0.3.35\"><code>20.0.3.35</code></a></li> <li><strong>Intel Bluetooth Driver:</strong> <a href=",
+  "harvested_at": "2026-11-11T11:45:32.491041+00:00"
+}

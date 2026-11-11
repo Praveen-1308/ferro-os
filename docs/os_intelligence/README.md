@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 67 | **Last Sweep**: 2026-11-10 12:20:43 UTC
+**Active Tracked Incidents**: 71 | **Last Sweep**: 2026-11-11 11:45:33 UTC
 
 ---
 
@@ -80,6 +80,10 @@
 | `HN-42501826` | **Linux io_uring** | Show HN: IsMyAIDown – AI status monitor with Phoenix LiveView. Can you crash it? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-42501826.json) | [Read Dossier](incidents/INCIDENT_hn-42501826.md) |
 | `REDDIT-SYSADMIN-1xskwge` | **Linux Server Administration** | First day on the job - compliance nightmare unraveled | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xskwge.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xskwge.md) |
 | `REDDIT-SYSADMIN-1xs57ht` | **Linux Server Administration** | Non-tech users asking for Python to run AI generated scripts | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xs57ht.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xs57ht.md) |
+| `REDDIT-SYSADMIN-1xswv0r` | **Linux Server Administration** | Why doesn't anybody understand file sizes? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xswv0r.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xswv0r.md) |
+| `REDDIT-SYSADMIN-1xtdzye` | **Linux Server Administration** | WARNING: Dell Pro 16 Plus (PB16250) – BIOS 2.19.0 + Intel Ethernet (20.0.3.35) / Bluetooth (24.70.0.4) / NPU (32.0.100.4841) causes Windows No-Boot | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xtdzye.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xtdzye.md) |
+| `REDDIT-SYSADMIN-1xt9a3n` | **Linux Server Administration** | I feel like i'm not good enough to be a sys admin | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xt9a3n.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xt9a3n.md) |
+| `REDDIT-SYSADMIN-1xt2kjd` | **Linux Server Administration** | eMudhra Incident Report Released | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xt2kjd.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xt2kjd.md) |
 
 ---
 

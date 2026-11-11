@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xswv0r",
+  "title": "Why doesn't anybody understand file sizes?",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xswv0r/why_doesnt_anybody_understand_file_sizes/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Why doesn't anybody understand file sizes? <!-- SC_OFF --><div class=\"md\"><p>I don&#39;t know if it&#39;s just the office I work at or what. I manage a small company of about 19 people. A lot of these people have been here for a long time, several years to over a decade. We worked with computers every day. Like a lot of jobs, it&#39;s an essential component of our daily work. We use the computer to clock in, read email, download and send files, print, etc. Super basic stuff but the point is that people are actively using computer every single day. </p> <p>Yet every time I mention the <em>size</em> of anything on disk, I&#39;m told &quot;I don&#39;t know what that means&quot; or &quot;I don&#39;t know what that is&quot;. </p> <p>Okay.</p> <p>I can understand not paying super close attention to file sizes 100% of the time. A lot of people probably don&#39;t know what each and every light on the dashboard of their car means. That&#39;s fair.</p> <p>But they know how to read the fucking speedometer. </p> <p>There is a file size next to every. single. file. in Windows File Explorer. Every single time someone clicks a file, opens a file, downloads a file, etc., there is a number <em>righ",
+  "harvested_at": "2026-11-11T11:45:27.462515+00:00"
+}
