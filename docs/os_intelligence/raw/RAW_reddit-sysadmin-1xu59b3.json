@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xu59b3",
+  "title": "Today I found out...",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xu59b3/today_i_found_out/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Today I found out... <!-- SC_OFF --><div class=\"md\"><p>My very first job in IT was going around and installing Windows 3.5 sometime around 1994. I&#39;ve been doing this crap for a long time.<br/> Today I was working on a config file in notepad - I hit save and close. Forgetting to change the drop-down from .txt I jumped in to powershell real fast and did a mv config.yaml.txt to config.yaml: as I have done since forever. The kid, and I call him kid because he&#39;s a young one, I guess 22 or 23. Doesn&#39;t matter... he said you know, you can just put quotes in the file name when you save it.</p> <p>You mean to tell me that in the last 30 some odd years not a single person has mentioned this to me, EVER. Not ONCE..... Motherfunkasonabith...,a %^%$#9, *#^$(@#$^@#()$^$# ! Did we all know about this? How in the hell did I miss the memo!</p> <p>Edit to add I always forget to change the drop-down </p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/Deacon51\"> /u/Deacon51 </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xu59b3/today_i_found_out/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xu59",
+  "harvested_at": "2026-11-12T12:24:11.414682+00:00"
+}

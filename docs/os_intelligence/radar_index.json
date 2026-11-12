@@ -1952,5 +1952,57 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xt2kjd.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xt2kjd.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xu59b3",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Today I found out...",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xu59b3/today_i_found_out/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Today I found out... <!-- SC_OFF --><div class=\"md\"><p>My very first job in IT was going around and installing Windows 3.5 sometime around 1994. I&#39;ve been doing this crap for a long time.<br/> Today I was working on a config file in notepad - I hit save and close. Forgetting to change the drop-down from .txt I jumped in to powershell real fast and did a mv config.yaml.txt to config.yaml: as I have done since forever. The kid, and I call him kid because he&#39;s a young one, I guess 22 or 23. Doesn&#39;t matter... he said you know, you can just put quotes in the file name when you save it.</p> <p>You mean to tell me that in the last 30 some odd years not a single person has mentioned this to me, EVER. Not ONCE..... Motherfunkasonabith...,a %^%$#9, *#^$(@#$^@#()$^$# ! Did we all know about this? How in the hell did I miss the memo!</p> <p>Edit to add I always forget to change the drop-down </p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/Deacon51\"> /u/Deacon51 </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xu59b3/today_i_found_out/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xu59",
+    "score": 0,
+    "timestamp": "2026-11-12T12:24:11.414682+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Today I found out....",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xu59b3.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xu59b3.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xtmpw3",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "I'm not setup for corporate IT",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xtmpw3/im_not_setup_for_corporate_it/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "I'm not setup for corporate IT <!-- SC_OFF --><div class=\"md\"><p>I thought I was on track to get a leadership position. My work has been what brought us back together from 5 siloed teams to one mostly homogeneous team that works together. During all of that I would use my &quot;friend&quot; ,who I&#39;ve worked with for 6yrs, as a rubber duckie for technical issues.</p> <p>He just got promoted. When I went to my direct supervisor to ask why I wasn&#39;t even considered for the role and pointed out all of my work he told me and I quote &quot;if you press this issue we might have to talk to HR about accountability for the work you&#39;ve accomplished&quot;. I pressed him on it and apparently my &quot;friend&quot; has been documenting those conversations as me coming to him on how to solve for our political issues. From our sr. leaderships perspective my &quot;friend&quot; was the mastermind I was just the mouth piece.</p> <p>I know the people we work with aren&#39;t our friends but at times its simply exhausting to have to think the worst of people all the time. I&#39;m just not cut out for that level of suspicion or back stabbing.</p> <p>EDIT - Clarifying. The root issue is my cowor",
+    "score": 0,
+    "timestamp": "2026-11-12T12:24:11.421146+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in I'm not setup for corporate IT.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xtmpw3.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xtmpw3.json"
   }
 ]

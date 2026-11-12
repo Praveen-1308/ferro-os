@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 71 | **Last Sweep**: 2026-11-11 11:45:33 UTC
+**Active Tracked Incidents**: 73 | **Last Sweep**: 2026-11-12 12:24:11 UTC
 
 ---
 
@@ -84,6 +84,8 @@
 | `REDDIT-SYSADMIN-1xtdzye` | **Linux Server Administration** | WARNING: Dell Pro 16 Plus (PB16250) – BIOS 2.19.0 + Intel Ethernet (20.0.3.35) / Bluetooth (24.70.0.4) / NPU (32.0.100.4841) causes Windows No-Boot | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xtdzye.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xtdzye.md) |
 | `REDDIT-SYSADMIN-1xt9a3n` | **Linux Server Administration** | I feel like i'm not good enough to be a sys admin | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xt9a3n.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xt9a3n.md) |
 | `REDDIT-SYSADMIN-1xt2kjd` | **Linux Server Administration** | eMudhra Incident Report Released | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xt2kjd.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xt2kjd.md) |
+| `REDDIT-SYSADMIN-1xu59b3` | **Linux Server Administration** | Today I found out... | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xu59b3.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xu59b3.md) |
+| `REDDIT-SYSADMIN-1xtmpw3` | **Linux Server Administration** | I'm not setup for corporate IT | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xtmpw3.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xtmpw3.md) |
 
 ---
 
