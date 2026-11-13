@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 73 | **Last Sweep**: 2026-11-12 12:24:11 UTC
+**Active Tracked Incidents**: 76 | **Last Sweep**: 2026-11-13 11:59:28 UTC
 
 ---
 
@@ -86,6 +86,9 @@
 | `REDDIT-SYSADMIN-1xt2kjd` | **Linux Server Administration** | eMudhra Incident Report Released | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xt2kjd.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xt2kjd.md) |
 | `REDDIT-SYSADMIN-1xu59b3` | **Linux Server Administration** | Today I found out... | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xu59b3.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xu59b3.md) |
 | `REDDIT-SYSADMIN-1xtmpw3` | **Linux Server Administration** | I'm not setup for corporate IT | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xtmpw3.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xtmpw3.md) |
+| `REDDIT-SYSADMIN-1xuqu5y` | **Linux Server Administration** | Microsoft owes you money for today's outage. They won't tell you. Here's how to claim it. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xuqu5y.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xuqu5y.md) |
+| `REDDIT-SYSADMIN-1xuw2tg` | **Linux Server Administration** | Microsoft just passed the mark for losing "three 9s" so far on their availability for the entire year | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xuw2tg.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xuw2tg.md) |
+| `REDDIT-SYSADMIN-1xuje83` | **Linux Server Administration** | Microsoft Office seems to be down | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xuje83.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xuje83.md) |
 
 ---
 

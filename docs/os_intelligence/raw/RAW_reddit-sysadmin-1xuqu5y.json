@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xuqu5y",
+  "title": "Microsoft owes you money for today's outage. They won't tell you. Here's how to claim it.",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xuqu5y/microsoft_owes_you_money_for_todays_outage_they/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Microsoft owes you money for today's outage. They won't tell you. Here's how to claim it. <!-- SC_OFF --><div class=\"md\"><p>Outlook, Teams, Copilot, SharePoint: down for <strong>hours</strong> today and still going!</p> <p>Microsoft&#39;s SLA allows <strong>44 minutes</strong> of downtime <strong>per month</strong>.</p> <p>Today blew past that before lunch was over.</p> <p>That means a credit:</p> <ul> <li><strong>25%</strong> if you were down more than 44 minutes</li> <li><strong>50%</strong> if you were down more than about 7 hours</li> </ul> <p><strong>Microsoft won&#39;t apply it automatically. You have to ask.</strong></p> <p><strong>How (2 minutes):</strong><br/> M365 admin center \u2192 Support \u2192 New service request \u2192 &quot;SLA credit for <strong>EX1550543 / MO1550821</strong>&quot;<br/> (+ <strong>TM1550488</strong> if Teams died this morning)<br/> Bought through a reseller? Ask them.</p> <p><strong>Do this today:</strong> note when it went down, when it came back, and how many users were affected.</p> <p>Every credit nobody claims tells Microsoft outages are free.</p> <p><strong>Claim it. Share this with your IT team.</strong></p> </div><!-- SC_ON --> &#32; submitted by &#32; <",
+  "harvested_at": "2026-11-13T11:59:28.371989+00:00"
+}

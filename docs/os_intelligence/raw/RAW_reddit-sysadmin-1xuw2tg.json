@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xuw2tg",
+  "title": "Microsoft just passed the mark for losing \"three 9s\" so far on their availability for the entire year",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xuw2tg/microsoft_just_passed_the_mark_for_losing_three/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Microsoft just passed the mark for losing \"three 9s\" so far on their availability for the entire year <!-- SC_OFF --><div class=\"md\"><p>One of the more known metrics out there for availability has been the &#39;five 9s&#39;, AKA 99.999%. Well, going by when the outage was reported on this subreddit at ~12:45 Eastern Time, now crossing the 9:30 Eastern Time mark just cost them three of them. </p> <p>Here&#39;s the downtime per year at each level:</p> <p>Availability - Downtime</p> <p>99.999% - 5.25 mins</p> <p>99.99% - 52.5 mins</p> <p>99.9% - 8.76 hours</p> <p>So they&#39;re at the 99.8% now and falling, not even counting any other downtime for the year. Can&#39;t say I&#39;m feeling bad for the executives, after much more important digits lost in the bank accounts of former employees to put Microsoft in this situation.</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/BSODreboot26\"> /u/BSODreboot26 </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xuw2tg/microsoft_just_passed_the_mark_for_losing_three/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xuw2tg/microsoft_just_passed_the_mark_fo",
+  "harvested_at": "2026-11-13T11:59:28.372048+00:00"
+}

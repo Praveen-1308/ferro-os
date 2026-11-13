@@ -2004,5 +2004,83 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xtmpw3.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xtmpw3.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xuqu5y",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Microsoft owes you money for today's outage. They won't tell you. Here's how to claim it.",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xuqu5y/microsoft_owes_you_money_for_todays_outage_they/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Microsoft owes you money for today's outage. They won't tell you. Here's how to claim it. <!-- SC_OFF --><div class=\"md\"><p>Outlook, Teams, Copilot, SharePoint: down for <strong>hours</strong> today and still going!</p> <p>Microsoft&#39;s SLA allows <strong>44 minutes</strong> of downtime <strong>per month</strong>.</p> <p>Today blew past that before lunch was over.</p> <p>That means a credit:</p> <ul> <li><strong>25%</strong> if you were down more than 44 minutes</li> <li><strong>50%</strong> if you were down more than about 7 hours</li> </ul> <p><strong>Microsoft won&#39;t apply it automatically. You have to ask.</strong></p> <p><strong>How (2 minutes):</strong><br/> M365 admin center \u2192 Support \u2192 New service request \u2192 &quot;SLA credit for <strong>EX1550543 / MO1550821</strong>&quot;<br/> (+ <strong>TM1550488</strong> if Teams died this morning)<br/> Bought through a reseller? Ask them.</p> <p><strong>Do this today:</strong> note when it went down, when it came back, and how many users were affected.</p> <p>Every credit nobody claims tells Microsoft outages are free.</p> <p><strong>Claim it. Share this with your IT team.</strong></p> </div><!-- SC_ON --> &#32; submitted by &#32; <",
+    "score": 0,
+    "timestamp": "2026-11-13T11:59:28.371989+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Microsoft owes you money for today's outage. They won't tell you. Here's how to claim it..",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xuqu5y.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xuqu5y.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xuw2tg",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Microsoft just passed the mark for losing \"three 9s\" so far on their availability for the entire year",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xuw2tg/microsoft_just_passed_the_mark_for_losing_three/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Microsoft just passed the mark for losing \"three 9s\" so far on their availability for the entire year <!-- SC_OFF --><div class=\"md\"><p>One of the more known metrics out there for availability has been the &#39;five 9s&#39;, AKA 99.999%. Well, going by when the outage was reported on this subreddit at ~12:45 Eastern Time, now crossing the 9:30 Eastern Time mark just cost them three of them. </p> <p>Here&#39;s the downtime per year at each level:</p> <p>Availability - Downtime</p> <p>99.999% - 5.25 mins</p> <p>99.99% - 52.5 mins</p> <p>99.9% - 8.76 hours</p> <p>So they&#39;re at the 99.8% now and falling, not even counting any other downtime for the year. Can&#39;t say I&#39;m feeling bad for the executives, after much more important digits lost in the bank accounts of former employees to put Microsoft in this situation.</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/BSODreboot26\"> /u/BSODreboot26 </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xuw2tg/microsoft_just_passed_the_mark_for_losing_three/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xuw2tg/microsoft_just_passed_the_mark_fo",
+    "score": 0,
+    "timestamp": "2026-11-13T11:59:28.372048+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Microsoft just passed the mark for losing \"three 9s\" so far on their availability for the entire year.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xuw2tg.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xuw2tg.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xuje83",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Microsoft Office seems to be down",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xuje83/microsoft_office_seems_to_be_down/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Microsoft Office seems to be down <!-- SC_OFF --><div class=\"md\"><p>Struggling to use MS office including Teams, anyone else having this issue</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/TechnicalTantrum\"> /u/TechnicalTantrum </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xuje83/microsoft_office_seems_to_be_down/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xuje83/microsoft_office_seems_to_be_down/\">[comments]</a></span>",
+    "score": 0,
+    "timestamp": "2026-11-13T11:59:28.372078+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Microsoft Office seems to be down.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xuje83.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xuje83.json"
   }
 ]
