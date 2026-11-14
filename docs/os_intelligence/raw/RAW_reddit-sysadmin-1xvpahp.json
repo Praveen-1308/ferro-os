@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xvpahp",
+  "title": "Workday Outage Reported",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xvpahp/workday_outage_reported/",
+  "sub_url": "https://www.sfchronicle.com/tech/article/workday-outage-employees-accounts-22529939.php",
+  "sub_content": "Client Challenge JavaScript is disabled in your browser. Please enable JavaScript to proceed. A required part of this site couldn\u2019t load. This may be due to a browser extension, network issues, or browser settings. Please check your connection, disable any ad blockers, or try using a different browser.",
+  "raw_text": "Workday Outage Reported <!-- SC_OFF --><div class=\"md\"><p>Anyone else getting the feeling that something else is actually going on here? Surely just another random coincidental bug happening to work its way into prod this week. Maybe their DB is stored in Outlook PSTs?</p> <p><a href=\"https://www.sfchronicle.com/tech/article/workday-outage-employees-accounts-22529939.php\">Link to SF Chronicle Article</a></p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/penmarker222\"> /u/penmarker222 </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xvpahp/workday_outage_reported/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xvpahp/workday_outage_reported/\">[comments]</a></span>",
+  "harvested_at": "2026-11-14T11:18:08.827828+00:00"
+}

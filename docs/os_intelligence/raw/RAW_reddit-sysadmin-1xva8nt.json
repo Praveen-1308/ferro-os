@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xva8nt",
+  "title": "No, you're not going to migrate off M365",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xva8nt/no_youre_not_going_to_migrate_off_m365/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "No, you're not going to migrate off M365 <!-- SC_OFF --><div class=\"md\"><p>Migrate to <em>what</em>?</p> <p>There&#39;s a reason Microsoft and Google run most businesses in the world. Outages and all, they&#39;re ridiculously reliable, and no-one else comes close on features and integration. You can hate the licensing, the never-finished products, the abysmal support. You can pine for the days of yore when we all ran domain controllers on workstations in broom closets. But bleat as you will, the product works and your business runs on it.</p> <p><em>&quot;Just self-host.&quot;</em> Cool. Now <em>you</em> own uptime. Have a read about the French and South Korean governments who have both tried that. Maybe you&#39;re a hotshot who can design a better geo-resilient hosting architecture than a national government. Most orgs can&#39;t and won&#39;t, especially when the alternative is more reliable, more functional, and costs less.</p> <p>The bigger problem is that once you leave the walled gardens, you lose the native integrations. I have a lawyer friend who used to spend days writing a single contract. Now Copilot drafts it in minutes, grounded in her firm&#39;s own client data in M365",
+  "harvested_at": "2026-11-14T11:18:08.500799+00:00"
+}

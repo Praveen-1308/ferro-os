@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 76 | **Last Sweep**: 2026-11-13 11:59:28 UTC
+**Active Tracked Incidents**: 80 | **Last Sweep**: 2026-11-14 11:18:09 UTC
 
 ---
 
@@ -89,6 +89,10 @@
 | `REDDIT-SYSADMIN-1xuqu5y` | **Linux Server Administration** | Microsoft owes you money for today's outage. They won't tell you. Here's how to claim it. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xuqu5y.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xuqu5y.md) |
 | `REDDIT-SYSADMIN-1xuw2tg` | **Linux Server Administration** | Microsoft just passed the mark for losing "three 9s" so far on their availability for the entire year | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xuw2tg.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xuw2tg.md) |
 | `REDDIT-SYSADMIN-1xuje83` | **Linux Server Administration** | Microsoft Office seems to be down | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xuje83.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xuje83.md) |
+| `REDDIT-SYSADMIN-1xvs5vc` | **Linux Server Administration** | FAA outage caused by installing new equipment and new technology | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xvs5vc.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xvs5vc.md) |
+| `REDDIT-SYSADMIN-1xvnjcg` | **Linux Server Administration** | Multiple sources tell @CBSNews that an update to the private communications network that connects America’s air traffic control system caused the system to reboot. When the FAA’s telecommunication infrastructure rebooted, it crashed, causing the communications outage. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xvnjcg.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xvnjcg.md) |
+| `REDDIT-SYSADMIN-1xva8nt` | **Linux Server Administration** | No, you're not going to migrate off M365 | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xva8nt.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xva8nt.md) |
+| `REDDIT-SYSADMIN-1xvpahp` | **Linux Server Administration** | Workday Outage Reported | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xvpahp.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xvpahp.md) |
 
 ---
 
