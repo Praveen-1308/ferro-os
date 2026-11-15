@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xwgxr4",
+  "title": "\"Routine maintenance\" grounded every flight in the US for 4h 44m on Friday the 13th. Change management lessons?",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xwgxr4/routine_maintenance_grounded_every_flight_in_the/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "\"Routine maintenance\" grounded every flight in the US for 4h 44m on Friday the 13th. Change management lessons? <!-- SC_OFF --><div class=\"md\"><p>The official story so far: a contractor was doing a copper-to-fiber swap at one remote FAA site. The new router started flooding the rest of the network (about 1,000 connection attempts every 4\u20135 seconds). Within about 45 minutes, 17 facilities had radar and comms trouble, and at 3:36 p.m. ET the FAA stopped every departure nationwide until 8:20 p.m.</p> <p>The equipment reportedly includes routers made between 2001 and 2006. Officials haven&#39;t said yet whether it was a misconfiguration or a bad unit, and DHS ruled out a cyberattack.</p> <p>What gets me is the shape of it:<br/> - A routine change at one edge site<br/> - 45 minutes for the blast radius to grow before the big red button<br/> - A rollback that, from the outside, looks like it took hours</p> <p>Every one of us has done a &quot;routine&quot; swap that went sideways. The difference is how far it was allowed to spread. For those who&#39;ve done maintenance on legacy networks that can&#39;t go down: what controls would you want in place before letting a contractor swap a route",
+  "harvested_at": "2026-11-15T11:50:14.156939+00:00"
+}

@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 80 | **Last Sweep**: 2026-11-14 11:18:09 UTC
+**Active Tracked Incidents**: 84 | **Last Sweep**: 2026-11-15 11:50:15 UTC
 
 ---
 
@@ -93,6 +93,10 @@
 | `REDDIT-SYSADMIN-1xvnjcg` | **Linux Server Administration** | Multiple sources tell @CBSNews that an update to the private communications network that connects America’s air traffic control system caused the system to reboot. When the FAA’s telecommunication infrastructure rebooted, it crashed, causing the communications outage. | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xvnjcg.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xvnjcg.md) |
 | `REDDIT-SYSADMIN-1xva8nt` | **Linux Server Administration** | No, you're not going to migrate off M365 | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xva8nt.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xva8nt.md) |
 | `REDDIT-SYSADMIN-1xvpahp` | **Linux Server Administration** | Workday Outage Reported | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xvpahp.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xvpahp.md) |
+| `REDDIT-SYSADMIN-1xwefh5` | **Linux Server Administration** | Who installs a router in a late Friday afternoon? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xwefh5.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xwefh5.md) |
+| `REDDIT-SYSADMIN-1xwisy6` | **Linux Server Administration** | US aviation shutdown blamed on L3 Harris installed router | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xwisy6.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xwisy6.md) |
+| `REDDIT-SYSADMIN-1xwgxr4` | **Linux Server Administration** | "Routine maintenance" grounded every flight in the US for 4h 44m on Friday the 13th. Change management lessons? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xwgxr4.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xwgxr4.md) |
+| `REDDIT-SYSADMIN-1xw1mub` | **Linux Server Administration** | Windows 0-day "SignDrop" published, "this makes this vulnerability unique as it can be used to turn off any antivirus/EDR." | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xw1mub.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xw1mub.md) |
 
 ---
 
