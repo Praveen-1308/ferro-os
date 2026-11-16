@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 84 | **Last Sweep**: 2026-11-15 11:50:15 UTC
+**Active Tracked Incidents**: 88 | **Last Sweep**: 2026-11-16 12:32:49 UTC
 
 ---
 
@@ -97,6 +97,10 @@
 | `REDDIT-SYSADMIN-1xwisy6` | **Linux Server Administration** | US aviation shutdown blamed on L3 Harris installed router | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xwisy6.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xwisy6.md) |
 | `REDDIT-SYSADMIN-1xwgxr4` | **Linux Server Administration** | "Routine maintenance" grounded every flight in the US for 4h 44m on Friday the 13th. Change management lessons? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xwgxr4.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xwgxr4.md) |
 | `REDDIT-SYSADMIN-1xw1mub` | **Linux Server Administration** | Windows 0-day "SignDrop" published, "this makes this vulnerability unique as it can be used to turn off any antivirus/EDR." | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xw1mub.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xw1mub.md) |
+| `REDDIT-SYSADMIN-1xxiasy` | **Linux Server Administration** | Microsoft Post-Incident Report is up for the Exchange Online Outage | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xxiasy.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xxiasy.md) |
+| `REDDIT-SYSADMIN-1xwwks0` | **Linux Server Administration** | Root cause of FAA shutdown: Newly installed HPE Juniper router with misconfiguration that broadcast data with a thousand connections every 4-5 seconds | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xwwks0.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xwwks0.md) |
+| `REDDIT-SYSADMIN-1xxm8zt` | **Linux Server Administration** | Win11 24H2: No taskbar/Start/autostart for minutes on first logon after Oct/Nov 2026 CU in offline/restricted environment - cause: wlidsvc device auth timeout | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xxm8zt.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xxm8zt.md) |
+| `REDDIT-SYSADMIN-1xxbokq` | **Linux Server Administration** | Bets on outages tomorrow? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xxbokq.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xxbokq.md) |
 
 ---
 

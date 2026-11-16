@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xwwks0",
+  "title": "Root cause of FAA shutdown: Newly installed HPE Juniper router with misconfiguration that broadcast data with a thousand connections every 4-5 seconds",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xwwks0/root_cause_of_faa_shutdown_newly_installed_hpe/",
+  "sub_url": "https://www.msn.com/en-us/news/other/the-single-router-in-southern-arkansas-that-ground-air-travel-to-a-halt/ar-AA2hs7wV",
+  "sub_content": "MSN",
+  "raw_text": "Root cause of FAA shutdown: Newly installed HPE Juniper router with misconfiguration that broadcast data with a thousand connections every 4-5 seconds <!-- SC_OFF --><div class=\"md\"><p>They didn&#39;t mention which configuration this was specifically, but now we&#39;re actually getting more specific detail and this is worth a read if you&#39;re interested. Here&#39;s the crux of it via WSJ through MSN to avoid the paywall:</p> <p><strong>&quot;Data from that router and another at the Texas location overwhelmed the system, government and industry officials said. It led to 17 out of the FAA\u2019s 22 centers that oversee high-altitude flying to experience disruptions in communications, Bedford said, resulting in the FAA ordering the ground stop.</strong></p> <p><strong>There are about 60 Juniper routers active and operating normally in the FAA\u2019s air-traffic network, said a government official familiar with the system. It wasn\u2019t clear if the problems Friday resulted from a bad router or if L3Harris didn\u2019t configure it properly.</strong></p> <p><strong>\u201cWas it a faulty installation? Was it a faulty configuration? Or was it just a bad piece of router technology that we put into this system t",
+  "harvested_at": "2026-11-16T12:32:49.097930+00:00"
+}

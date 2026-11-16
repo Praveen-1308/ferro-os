@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xxiasy",
+  "title": "Microsoft Post-Incident Report is up for the Exchange Online Outage",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xxiasy/microsoft_postincident_report_is_up_for_the/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Microsoft Post-Incident Report is up for the Exchange Online Outage <!-- SC_OFF --><div class=\"md\"><h1>Root Cause</h1> <p>The incident on Thursday, November 12<sup>th</sup>, 2026, was caused by three main factors that together caused a global outage for the networking gateway that fronts many Microsoft 365 services.</p> <p> </p> <p>First, a latent defect caused Windows servers to become overwhelmed and unresponsive under certain load conditions. This was due to lock contention inside an internal Windows process which caused the machine\u2019s resources (CPU &amp; memory) to be exhausted. This defect was the result of a fix that was prepared specifically for Microsoft 365 networking gateway servers; neither the underlying defect nor the fix applies to broader Windows deployments.</p> <p> </p> <p>The initial change in behavior first started deployment in July of this year. The update went through safe deployment and saturated globally over several weeks, during which time no issues were observed. For more than three months, the change was deployed worldwide without impact.</p> <p>Our normal load testing did not detect the latent issue because the traffic mix and SKUs used in our labs. The",
+  "harvested_at": "2026-11-16T12:32:48.819606+00:00"
+}
