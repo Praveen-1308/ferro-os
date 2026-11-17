@@ -1,0 +1,10 @@
+{
+  "id": "REDDIT-SYSADMIN-1xxxihz",
+  "title": "Almost 20 years and this was the first TRULY urgent call I ever got",
+  "source": "Reddit r/sysadmin",
+  "source_url": "https://www.reddit.com/r/sysadmin/comments/1xxxihz/almost_20_years_and_this_was_the_first_truly/",
+  "sub_url": null,
+  "sub_content": null,
+  "raw_text": "Almost 20 years and this was the first TRULY urgent call I ever got <!-- SC_OFF --><div class=\"md\"><p>Over the span of years I must&#39;ve closed tens of thousands of tickets. I estimate roughly twenty to thirty percent had &quot;urgent&quot; somewhere in the title.</p> <p>It never was, not really. The people who created the tickets perceived it to be, many times, but it wasn&#39;t. Everyone would be alive and able to continue working, at least to some degree. There were varying degrees of annoyance, depending the nature and cause of the issue. Never anything that would constitute an emergency.</p> <p>But today I got the first call where I had to fully agree with the caller, and that even a 30 min turnaround time would be too much.</p> <p>The call came from the radiology department. They had just put a stroke victim in the MRI scanner, the scanner had done its job, but the images weren&#39;t being transmitted to the workstations.<br/> In any other case I would&#39;ve tempered expectations somewhat, but this time I dropped everything and contacted the vendor. They got it back up and running in about 10 minutes.</p> <p>So that was new. Still coming to terms with my IT skills matterin",
+  "harvested_at": "2026-11-17T12:56:08.037111+00:00"
+}

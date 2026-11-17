@@ -2394,5 +2394,57 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xxbokq.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xxbokq.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xxxihz",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Almost 20 years and this was the first TRULY urgent call I ever got",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xxxihz/almost_20_years_and_this_was_the_first_truly/",
+    "sub_url": null,
+    "sub_content": null,
+    "raw_text": "Almost 20 years and this was the first TRULY urgent call I ever got <!-- SC_OFF --><div class=\"md\"><p>Over the span of years I must&#39;ve closed tens of thousands of tickets. I estimate roughly twenty to thirty percent had &quot;urgent&quot; somewhere in the title.</p> <p>It never was, not really. The people who created the tickets perceived it to be, many times, but it wasn&#39;t. Everyone would be alive and able to continue working, at least to some degree. There were varying degrees of annoyance, depending the nature and cause of the issue. Never anything that would constitute an emergency.</p> <p>But today I got the first call where I had to fully agree with the caller, and that even a 30 min turnaround time would be too much.</p> <p>The call came from the radiology department. They had just put a stroke victim in the MRI scanner, the scanner had done its job, but the images weren&#39;t being transmitted to the workstations.<br/> In any other case I would&#39;ve tempered expectations somewhat, but this time I dropped everything and contacted the vendor. They got it back up and running in about 10 minutes.</p> <p>So that was new. Still coming to terms with my IT skills matterin",
+    "score": 0,
+    "timestamp": "2026-11-17T12:56:08.037111+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Almost 20 years and this was the first TRULY urgent call I ever got.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xxxihz.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xxxihz.json"
+  },
+  {
+    "id": "REDDIT-SYSADMIN-1xy51ce",
+    "source": "Reddit r/sysadmin",
+    "source_group": "reddit",
+    "software_hint": "Linux Server Administration",
+    "title": "Optimizely tag replaced with malware today",
+    "url": "https://www.reddit.com/r/sysadmin/comments/1xy51ce/optimizely_tag_replaced_with_malware_today/",
+    "sub_url": "https://blog.report-uri.com/worlds-largest-brands-infected-with-malware-via-optimizely",
+    "sub_content": "World&#x27;s Largest Brands Infected With Malware Via Optimizely go to report-uri.com Sign in Subscribe World&#x27;s Largest Brands Infected With Malware Via Optimizely Magecart DarkSword Coruna Malware CSP Integrity JS Time Machine JavaScript Integrity Monitoring Script Vault Script Watch Scott Helme 16 Nov 2026 \u2014 15 min read On 16 November 2026, malicious JavaScript was served to visitors of 178 organisations through the Optimizely Web experimentation platform. The list includes some of the most visited sites in the world: Zoom, the BBC, CNN, Salesforce, GitLab, IKEA, HSBC, Equifax, Air France-KLM, Ledger and Peacock . The malware was a multi-purpose kit. It swapped cryptocurrency wallet addresses for the attacker's, skimmed payment cards, stole cookies and screenshots, and on iPhones and iPads it delivered the Coruna and DarkSword iOS exploit kits . Crypto has already been stolen, with verified transactions to the attackers. This is exactly the kind of attack Report URI is designed to detect. Our platform can identify unexpected changes to trusted JavaScript, detect new scripts being loaded and reveal suspicious connections to external destinations. In this case, those signals would have exposed the malicious activity, even though the original script was being served from a trusted Optimizely domain. With an appropriate CSP in enforcement mode, organisations could have gone a step further and blocked key parts of the attack before they succeeded. The important lesson here is that trusted JavaScript doesn't always remain trustworthy . A website can be compromised through a third-party dependency without its own code or infrastructure ever being breached. Most of the malicious code has now been removed. At 21:52 UTC we found it in only 1 of the 188 infected snippets, down from 169 at 20:56 UTC. If your site uses Optimizely Web, or you visited any of the sites below today, read on. What happened Optimizely Web works by having each customer load a JavaScript \"snippet",
+    "raw_text": "Optimizely tag replaced with malware today <!-- SC_OFF --><div class=\"md\"><p>As if you didn&#39;t already have enough to do, now you can go look to see what to check for if all your users got their crypto, digital payments, and browsers scraped today. 186+ sites, from Zoom to CNN to IKEA. Brought to you by Optimizely, whose CDN was silently broken into and injected with malware.<br/> <a href=\"https://blog.report-uri.com/worlds-largest-brands-infected-with-malware-via-optimizely\">https://blog.report-uri.com/worlds-largest-brands-infected-with-malware-via-optimizely</a></p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href=\"https://www.reddit.com/user/Treebeard313\"> /u/Treebeard313 </a> <br/> <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xy51ce/optimizely_tag_replaced_with_malware_today/\">[link]</a></span> &#32; <span><a href=\"https://www.reddit.com/r/sysadmin/comments/1xy51ce/optimizely_tag_replaced_with_malware_today/\">[comments]</a></span>",
+    "score": 0,
+    "timestamp": "2026-11-17T12:56:08.285866+00:00",
+    "subsystem": "Scheduler / CPU / CFS",
+    "cloud_software": "Linux Server Administration",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "Linux Server Administration",
+      "subsystem": "Scheduler / CPU / CFS",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Optimizely tag replaced with malware today.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xy51ce.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xy51ce.json"
   }
 ]

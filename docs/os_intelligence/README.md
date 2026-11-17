@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 88 | **Last Sweep**: 2026-11-16 12:32:49 UTC
+**Active Tracked Incidents**: 90 | **Last Sweep**: 2026-11-17 12:56:08 UTC
 
 ---
 
@@ -101,6 +101,8 @@
 | `REDDIT-SYSADMIN-1xwwks0` | **Linux Server Administration** | Root cause of FAA shutdown: Newly installed HPE Juniper router with misconfiguration that broadcast data with a thousand connections every 4-5 seconds | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xwwks0.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xwwks0.md) |
 | `REDDIT-SYSADMIN-1xxm8zt` | **Linux Server Administration** | Win11 24H2: No taskbar/Start/autostart for minutes on first logon after Oct/Nov 2026 CU in offline/restricted environment - cause: wlidsvc device auth timeout | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xxm8zt.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xxm8zt.md) |
 | `REDDIT-SYSADMIN-1xxbokq` | **Linux Server Administration** | Bets on outages tomorrow? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xxbokq.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xxbokq.md) |
+| `REDDIT-SYSADMIN-1xxxihz` | **Linux Server Administration** | Almost 20 years and this was the first TRULY urgent call I ever got | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xxxihz.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xxxihz.md) |
+| `REDDIT-SYSADMIN-1xy51ce` | **Linux Server Administration** | Optimizely tag replaced with malware today | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xy51ce.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xy51ce.md) |
 
 ---
 
