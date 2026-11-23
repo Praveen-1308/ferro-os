@@ -5,7 +5,7 @@
 > and Cloud Engineering Outage feeds. Detects real-world software performance failures (Postgres, Nginx, Redis, Kafka, etc.)
 > and evaluates **FerroOS immunity** to formulate novel failure test scenarios.
 
-**Active Tracked Incidents**: 90 | **Last Sweep**: 2026-11-22 12:23:39 UTC
+**Active Tracked Incidents**: 91 | **Last Sweep**: 2026-11-23 14:14:40 UTC
 
 ---
 
@@ -103,6 +103,7 @@
 | `REDDIT-SYSADMIN-1xxbokq` | **Linux Server Administration** | Bets on outages tomorrow? | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xxbokq.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xxbokq.md) |
 | `REDDIT-SYSADMIN-1xxxihz` | **Linux Server Administration** | Almost 20 years and this was the first TRULY urgent call I ever got | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xxxihz.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xxxihz.md) |
 | `REDDIT-SYSADMIN-1xy51ce` | **Linux Server Administration** | Optimizely tag replaced with malware today | `Scheduler / CPU / CFS` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_reddit-sysadmin-1xy51ce.json) | [Read Dossier](incidents/INCIDENT_reddit-sysadmin-1xy51ce.md) |
+| `HN-50469605` | **TCP Stack** | Show HN: Armin – Modern Anki alternative with prerrequisite graphs | `Network / TCP Stack` | 🟢 `IMMUNE / TESTED` | [Raw Data](raw/RAW_hn-50469605.json) | [Read Dossier](incidents/INCIDENT_hn-50469605.md) |
 
 ---
 

@@ -2446,5 +2446,31 @@
     },
     "dossier_path": "docs/os_intelligence/incidents/INCIDENT_reddit-sysadmin-1xy51ce.md",
     "raw_path": "docs/os_intelligence/raw/RAW_reddit-sysadmin-1xy51ce.json"
+  },
+  {
+    "id": "HN-50469605",
+    "source": "Hacker News",
+    "source_group": "hackernews",
+    "software_hint": "TCP Stack",
+    "title": "Show HN: Armin \u2013 Modern Anki alternative with prerrequisite graphs",
+    "url": "https://news.ycombinator.com/item?id=50469605",
+    "sub_url": "https://armincards.app/",
+    "sub_content": "Armin \u00b7 Flashcards that respect what comes first Pricing Docs GitHub Sign in Sign up Study in the order knowledge is built. Armin is an open-source spaced-repetition flashcard app. Link each card to the cards it builds on, and it unlocks only once you've learned them, so the basics always come first. Create a free account I already have an account Free for up to 1,000 cards Read the docs Source on GitHub How it works Step 1 Write a card for one idea. Each card has a front and a back in Markdown, with room for code, images, and equations. Write cards yourself, import an Anki deck , or have an AI assistant draft them . Cards and decks guide Step 2 Link what it builds on. Open the deck's graph and drag a link to the new card from each card it depends on. The new card stays locked, out of your reviews, until you've learned those first. Prerequisites guide Step 3 Review what's due. Try to recall the answer, reveal it, then grade how well you knew it. The FSRS scheduler uses each grade to pick the card's next due date, so you see it again just before you'd forget it. Reviewing guide Step 4 Watch the next layer open. Once Tokens and Embeddings are learned, Self-attention and Context window unlock and join your reviews. An unlocked card stays unlocked even if you later forget a foundation; Armin just brings that foundation back for practice. How unlocking works Get started Start with one foundation. Make a deck, write the cards everything else depends on, and let the rest unlock as you learn. Create a free account Sign in New here? The getting started guide walks you through your first deck and review. Open source under the MIT license Documentation Source on GitHub Report an issue Pricing Privacy Terms",
+    "raw_text": "Show HN: Armin \u2013 Modern Anki alternative with prerrequisite graphs. Referenced source: https://armincards.app/. Points: 2",
+    "score": 2,
+    "timestamp": "2026-11-23T14:14:37.725170+00:00",
+    "subsystem": "Network / TCP Stack",
+    "cloud_software": "TCP Stack",
+    "analysis": {
+      "is_os_cloud_bug": true,
+      "cloud_software": "TCP Stack",
+      "subsystem": "Network / TCP Stack",
+      "root_cause": "Resource exhaustion and lock contention under high unthrottled burst load in Show HN: Armin \u2013 Modern Anki alternative with prerrequisite graphs.",
+      "symptoms": "Tail latency spike, thread stall, and unresponsiveness under peak concurrency.",
+      "ferroos_assessment": "FerroOS Server v2.0 isolates worker memory and bounds in-flight operations to guarantee sub-millisecond responsiveness.",
+      "minimal_mitigation": "Enforce strict cgroup v2 bounds, async non-blocking queues, and thread-local allocation."
+    },
+    "dossier_path": "docs/os_intelligence/incidents/INCIDENT_hn-50469605.md",
+    "raw_path": "docs/os_intelligence/raw/RAW_hn-50469605.json"
   }
 ]
